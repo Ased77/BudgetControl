@@ -1,0 +1,510 @@
+import React, { useState } from 'react';
+import { useAppContext } from '../context/AppContext';
+import { formatNumber } from '../utils/numberUtils';
+import {
+  Users,
+  Baby,
+  GraduationCap,
+  Briefcase,
+  HeartHandshake,
+  Building2,
+  MapPin,
+  TrendingDown,
+  AlertTriangle,
+  Info,
+  Layers,
+  ArrowUpRight,
+  ShieldCheck,
+  CheckCircle2,
+  PieChart as PieChartIcon,
+  Home,
+  Scale,
+} from 'lucide-react';
+
+export const PopulationView: React.FC = () => {
+  const { locations, selectedLocation, handleSelectLocation } = useAppContext();
+  const [activeSubTab, setActiveSubTab] = useState<'OVERVIEW' | 'DISTRICTS' | 'VULNERABLE' | 'PYRAMID'>('OVERVIEW');
+
+  // Official demographics data for Rafsanjan County (سالنامه آماری رسمی شهرستان رفسنجان)
+  const totalCountyPopulation = 315000;
+  const urbanPopulation = 182000; // 57.8%
+  const ruralPopulation = 133000; // 42.2%
+  const totalHouseholds = 92650;
+  const householdAverageSize = 3.4;
+  const totalDeprivedVulnerable = 38200; // 12.1% of county
+  const deprivedPercentage = ((totalDeprivedVulnerable / totalCountyPopulation) * 100).toFixed(1);
+
+  // Age Cohorts
+  const ageCohorts = [
+    { label: 'کودکان و نونهالان (۰ تا ۱۴ سال)', percent: 22.4, count: 70560, color: 'bg-emerald-500', note: 'نیاز به مهدکودک، تغذیه سالم و مدارس استاندارد' },
+    { label: 'نوجوانان و جوانان (۱۵ تا ۲۹ سال)', percent: 24.1, count: 75915, color: 'bg-blue-500', note: 'سن کلیدی دانشگاه، اشتغال اولیه، تسهیلات ازدواج و مسکن' },
+    { label: 'میانسالان و شاغلین (۳۰ تا ۶۴ سال)', percent: 45.2, count: 142380, color: 'bg-indigo-500', note: 'نیروی کار فعال، شاغلین باغات پسته، صنایع مس و اصناف' },
+    { label: 'سالمندان و بازنشستگان (۶۵ سال به بالا)', percent: 8.3, count: 26145, color: 'bg-amber-500', note: 'خدمات درمانی تخصصی، مراقبت در منزل و بیمه سلامت' },
+  ];
+
+  // Vulnerable groups breakdown (تفکیک اقشار نیازمند حمایت در رفسنجان)
+  const vulnerableBreakdown = [
+    {
+      title: 'خانواده‌های تحت پوشش کمیته امداد امام خمینی (ره)',
+      households: 6850,
+      population: 16500,
+      coverageShare: 43.2,
+      supportType: 'مستمری معیشتی، مسکن محرومان، وام اشتغال و درمان',
+      icon: HeartHandshake,
+      color: 'text-emerald-700 bg-emerald-50 border-emerald-200',
+    },
+    {
+      title: 'مددجویان و توانخواهان تحت پوشش اداره بهزیستی',
+      households: 3420,
+      population: 9200,
+      coverageShare: 24.1,
+      supportType: 'توانبخشی معلولین، زنان سرپرست خانوار و ایتام',
+      icon: ShieldCheck,
+      color: 'text-blue-700 bg-blue-50 border-blue-200',
+    },
+    {
+      title: 'ساکنان سکونتگاه‌های غیررسمی و بافت‌های حاشیه‌ای',
+      households: 2150,
+      population: 8500,
+      coverageShare: 22.3,
+      supportType: 'بافت‌های حاشیه شهر رفسنجان (رحمت‌آباد، علی‌آباد و کمال‌آباد)',
+      icon: Home,
+      color: 'text-amber-700 bg-amber-50 border-amber-200',
+    },
+    {
+      title: 'کارگران فصلی و خانوارهای کم‌درآمد فاقد بیمه',
+      households: 1100,
+      population: 4000,
+      coverageShare: 10.4,
+      supportType: 'بسته‌های معیشتی فصلی، بیمه روستایی و کمک‌هزینه درمان',
+      icon: Briefcase,
+      color: 'text-rose-700 bg-rose-50 border-rose-200',
+    },
+  ];
+
+  // District Population List
+  const districtList = [
+    {
+      id: 'loc-02-rafsanjan-central',
+      name: 'بخش مرکزی و شهر رفسنجان',
+      population: 222000,
+      urbanShare: '۱۶۴,۰۰۰ شهری / ۵۸,۰۰۰ روستایی',
+      deprivedCount: 18500,
+      deprivedRate: 8.3,
+      villagesCount: 78,
+      mainChallenge: 'حاشیه‌نشینی در ۴ محله، آلودگی هوا و تقاضای اشتغال جوانان',
+    },
+    {
+      id: 'loc-03-koshkuiyeh',
+      name: 'بخش کشکوئیه (شهر و دهستان راویز)',
+      population: 41000,
+      urbanShare: '۷,۸۰۰ شهری / ۳۳,۲۰۰ روستایی',
+      deprivedCount: 8400,
+      deprivedRate: 20.5,
+      villagesCount: 52,
+      mainChallenge: 'تنش شدید آب شرب در تابستان و افت سفره‌های زیرزمینی',
+    },
+    {
+      id: 'loc-04-nuq',
+      name: 'بخش نوق (شهر بهرمان و روستاهای تابعه)',
+      population: 29000,
+      urbanShare: '۵,۲۰۰ شهری / ۲۳,۸۰۰ روستایی',
+      deprivedCount: 6200,
+      deprivedRate: 21.3,
+      villagesCount: 44,
+      mainChallenge: 'محور حادثه‌خیز جاده‌ای و فرسایش خاک و بادزدگی',
+    },
+    {
+      id: 'loc-05-ferdows',
+      name: 'بخش فردوس (شهر صفائیه و روستاهای دشت)',
+      population: 23000,
+      urbanShare: '۲,۵۰۰ شهری / ۲۰,۵۰۰ روستایی',
+      deprivedCount: 5100,
+      deprivedRate: 22.1,
+      villagesCount: 46,
+      mainChallenge: 'فاصله از خدمات تخصصی درمانی، فرسودگی مدارس روستایی',
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Header Banner */}
+      <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-sm relative overflow-hidden">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="p-2 rounded-xl bg-blue-50 text-blue-700 border border-blue-200">
+                <Users className="w-5 h-5" />
+              </span>
+              <span className="text-xs font-bold text-blue-700 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+                پایش آمار دموگرافی رسمی - سالنامه ۱۴۰۳
+              </span>
+            </div>
+            <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
+              آمار جمعیت و توزیع محرومیت شهرستان رفسنجان
+            </h1>
+            <p className="text-sm text-slate-600 mt-2 max-w-3xl leading-relaxed">
+              بر پایه آخرین سرشماری رسمی و سالنامه آماری استان کرمان، شهرستان رفسنجان دارای{' '}
+              <strong className="text-slate-900 font-black font-mono">۳۱۵,۰۰۰ نفر</strong> جمعیت کل در ۴ بخش (مرکزی، کشکوئیه، نوق و فردوس) است. از این تعداد، دقیقا{' '}
+              <strong className="text-blue-700 font-black font-mono">۳۸,۲۰۰ نفر (۱۲.۱٪)</strong> به عنوان اقشار آسیب‌پذیر و محروم نیازمند حمایت مستقیم شناسایی شده‌اند.
+            </p>
+          </div>
+
+          {/* Quick Sub-navigation */}
+          <div className="flex flex-wrap items-center gap-2 shrink-0 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+            <button
+              onClick={() => setActiveSubTab('OVERVIEW')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                activeSubTab === 'OVERVIEW'
+                  ? 'bg-white text-blue-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              نمای کلی جمعیت
+            </button>
+            <button
+              onClick={() => setActiveSubTab('DISTRICTS')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                activeSubTab === 'DISTRICTS'
+                  ? 'bg-white text-blue-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              تفکیک بخش‌ها و روستاها
+            </button>
+            <button
+              onClick={() => setActiveSubTab('VULNERABLE')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                activeSubTab === 'VULNERABLE'
+                  ? 'bg-white text-blue-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              آمار دقیق محرومین ({formatNumber(totalDeprivedVulnerable)} نفر)
+            </button>
+            <button
+              onClick={() => setActiveSubTab('PYRAMID')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                activeSubTab === 'PYRAMID'
+                  ? 'bg-white text-blue-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              هرم سنی و جوانان
+            </button>
+          </div>
+        </div>
+
+        {/* 4 Core County KPI Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mt-6 pt-6 border-t border-slate-100">
+          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+            <span className="text-xs text-slate-500 font-semibold block mb-1">کل جمعیت شهرستان رفسنجان</span>
+            <span className="text-2xl md:text-3xl font-black text-slate-900 font-mono block">
+              {formatNumber(totalCountyPopulation)}
+            </span>
+            <span className="text-[11px] text-slate-500 mt-1 block">
+              {formatNumber(totalHouseholds)} خانوار (بعد ۳.۴)
+            </span>
+          </div>
+
+          <div className="bg-blue-50/70 p-4 rounded-2xl border border-blue-200">
+            <span className="text-xs text-blue-700 font-semibold block mb-1">جمعیت شهری رفسنجان</span>
+            <span className="text-2xl md:text-3xl font-black text-blue-900 font-mono block">
+              {formatNumber(urbanPopulation)}
+            </span>
+            <span className="text-[11px] text-blue-700 mt-1 block">
+              ۵۷.۸٪ جمعیت کل (۵ شهر)
+            </span>
+          </div>
+
+          <div className="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-200">
+            <span className="text-xs text-emerald-700 font-semibold block mb-1">جمعیت روستایی رفسنجان</span>
+            <span className="text-2xl md:text-3xl font-black text-emerald-900 font-mono block">
+              {formatNumber(ruralPopulation)}
+            </span>
+            <span className="text-[11px] text-emerald-700 mt-1 block">
+              ۴۲.۲٪ جمعیت کل (۲۲۰ روستا)
+            </span>
+          </div>
+
+          <div className="bg-rose-50/80 p-4 rounded-2xl border border-rose-200">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-rose-700 font-semibold block mb-1">کل جمعیت محروم و آسیب‌پذیر</span>
+              <AlertTriangle className="w-4 h-4 text-rose-600" />
+            </div>
+            <span className="text-2xl md:text-3xl font-black text-rose-900 font-mono block">
+              {formatNumber(totalDeprivedVulnerable)} نفر
+            </span>
+            <span className="text-[11px] text-rose-700 mt-1 font-bold block">
+              {deprivedPercentage}٪ از جمعیت کل شهرستان
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Explanatory Clarification Alert regarding Project Reach vs Deprived Pop */}
+      <div className="bg-amber-50/90 border border-amber-200 p-4 rounded-2xl flex items-start gap-3 text-amber-900">
+        <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+        <div className="text-xs leading-relaxed space-y-1">
+          <p className="font-bold text-amber-950">
+            تفاوت آماری مهم: «جمعیت تحت پوشش زیرساخت‌های کلان» در برابر «جمعیت محروم شناسایی‌شده»:
+          </p>
+          <p className="text-amber-800">
+            برخی پروژه‌های عمومی نظیر تعریض جاده رفسنجان-نوق یا تجهیز بیمارستان علی‌ابن‌ابیطالب (ع) ماهیت عام‌المنفعه داشته و به کل جمعیت ۳۱۵ هزار نفری شهرستان و مسافران خدمات می‌دهند. اما در محاسبات تخصیص محرومیت،{' '}
+            <strong>جمعیت محروم شهرستان رفسنجان دقیقا ۳۸,۲۰۰ نفر (۱۲.۱٪)</strong> است و بودجه‌های حمایتی نظیر جهیزیه، وام اشتغال خرد، آبرسانی روستاهای دارای تنش و درمان ناباروری مستقیماً به این جامعه هدف تخصیص می‌یابد.
+          </p>
+        </div>
+      </div>
+
+      {/* SUB-TAB 1: Overview & Comparative Metrics */}
+      {activeSubTab === 'OVERVIEW' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Population Distribution by Bakhsh */}
+          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-blue-600" />
+                <h3 className="font-black text-slate-900 text-base">توزیع جمعیتی بر حسب بخش‌های چهارگانه</h3>
+              </div>
+              <span className="text-xs text-slate-500 font-mono">مجموع: ۳۱۵,۰۰۰ نفر</span>
+            </div>
+
+            <div className="space-y-4">
+              {districtList.map((district) => {
+                const sharePercent = ((district.population / totalCountyPopulation) * 100).toFixed(1);
+                return (
+                  <div key={district.id} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-slate-800">{district.name}</span>
+                      <div className="flex items-center gap-2 font-mono">
+                        <span className="text-slate-900 font-bold">{formatNumber(district.population)} نفر</span>
+                        <span className="text-slate-400">({sharePercent}٪)</span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden flex">
+                      <div
+                        className="bg-blue-600 h-full rounded-full transition-all duration-500"
+                        style={{ width: `${sharePercent}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] text-slate-500">
+                      <span>{district.urbanShare}</span>
+                      <span className="text-rose-600 font-medium">
+                        محرومیت: {formatNumber(district.deprivedCount)} نفر ({district.deprivedRate}٪)
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Urban vs Rural & Vulnerability Stats */}
+          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                <div className="flex items-center gap-2">
+                  <PieChartIcon className="w-5 h-5 text-indigo-600" />
+                  <h3 className="font-black text-slate-900 text-base">شاخص‌های بافت سکونتی و اجتماعی</h3>
+                </div>
+                <span className="text-xs text-indigo-600 font-bold bg-indigo-50 px-2.5 py-1 rounded-lg">
+                  پایش توسعه
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+                  <span className="text-[11px] text-slate-500 block mb-1">نرخ حاشیه‌نشینی شهری</span>
+                  <span className="text-xl font-black text-slate-900 font-mono">۹.۵٪</span>
+                  <span className="text-[10px] text-slate-500 block mt-1">رحمت‌آباد و علی‌آباد</span>
+                </div>
+                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+                  <span className="text-[11px] text-slate-500 block mb-1">نرخ بیکاری رسمی</span>
+                  <span className="text-xl font-black text-slate-900 font-mono">۱۳.۸٪</span>
+                  <span className="text-[10px] text-slate-500 block mt-1">تمرکز در فارغ‌التحصیلان</span>
+                </div>
+                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+                  <span className="text-[11px] text-slate-500 block mb-1">روستاهای دارای تنش آبی</span>
+                  <span className="text-xl font-black text-amber-700 font-mono">۳۸ روستا</span>
+                  <span className="text-[10px] text-amber-700 block mt-1">کشکوئیه، راویز و نوق</span>
+                </div>
+                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+                  <span className="text-[11px] text-slate-500 block mb-1">پوشش آب شرب پایدار</span>
+                  <span className="text-xl font-black text-emerald-700 font-mono">۸۸.۲٪</span>
+                  <span className="text-[10px] text-emerald-700 block mt-1">طرح جامع آبفا و مس</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 bg-blue-50/80 rounded-2xl border border-blue-200 text-xs text-blue-900">
+              <span className="font-bold block mb-1">📌 نتیجه‌گیری تحلیلی فرمانداری و ستاد:</span>
+              نرخ محرومیت واقعی رفسنجان (۱۲.۱٪) نسبت به میانگین جنوب استان کرمان پایین‌تر است، اما عمق محرومیت در بخش‌های کشکوئیه و فردوس به دلیل کمبود آب شرب و آلایندگی اقلیمی، نیازمند مداخله هدفمند با ۵ همت اعتبارات است.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SUB-TAB 2: Detailed Districts Table */}
+      {activeSubTab === 'DISTRICTS' && (
+        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div>
+              <h3 className="font-black text-slate-900 text-lg">جدول تفصیلی بخش‌ها و آبادی‌های شهرستان رفسنجان</h3>
+              <p className="text-xs text-slate-500 mt-0.5">آمار جمعیتی و درصد محرومیت تایید شده در کمیته برنامه‌ریزی</p>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-right text-xs">
+              <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
+                <tr>
+                  <th className="p-3.5 font-black">نام بخش و محدوده جغرافیایی</th>
+                  <th className="p-3.5 font-black font-mono">جمعیت کل</th>
+                  <th className="p-3.5 font-black">ترکیب شهری / روستایی</th>
+                  <th className="p-3.5 font-black font-mono text-rose-700">جمعیت محروم (نفر)</th>
+                  <th className="p-3.5 font-black font-mono text-rose-700">درصد محرومیت</th>
+                  <th className="p-3.5 font-black">تعداد روستاها</th>
+                  <th className="p-3.5 font-black">چالش اولویت‌دار بخش</th>
+                  <th className="p-3.5 font-black">انتخاب برای رصد</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {districtList.map((d) => (
+                  <tr key={d.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="p-3.5 font-bold text-slate-900">{d.name}</td>
+                    <td className="p-3.5 font-mono font-bold text-slate-800">{formatNumber(d.population)}</td>
+                    <td className="p-3.5 text-slate-600">{d.urbanShare}</td>
+                    <td className="p-3.5 font-mono font-bold text-rose-700">{formatNumber(d.deprivedCount)}</td>
+                    <td className="p-3.5 font-mono font-black text-rose-700">
+                      <span className="px-2 py-0.5 rounded-md bg-rose-50 border border-rose-200">
+                        {d.deprivedRate}٪
+                      </span>
+                    </td>
+                    <td className="p-3.5 font-mono text-slate-600">{d.villagesCount} آبادی</td>
+                    <td className="p-3.5 text-slate-600 max-w-xs">{d.mainChallenge}</td>
+                    <td className="p-3.5">
+                      <button
+                        onClick={() => {
+                          const targetLoc = locations.find((l) => l.id === d.id);
+                          if (targetLoc) handleSelectLocation(targetLoc);
+                        }}
+                        className="px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg font-bold text-[11px] border border-blue-200 transition-colors"
+                      >
+                        تنظیم فیلتر
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* SUB-TAB 3: Vulnerable Groups Breakdown */}
+      {activeSubTab === 'VULNERABLE' && (
+        <div className="space-y-4">
+          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-6">
+              <div>
+                <h3 className="font-black text-slate-900 text-lg">
+                  تفکیک جامعه هدف ۳۸,۲۰۰ نفری محروم و آسیب‌پذیر رفسنجان
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  گزارش رسمی تجمیعی کمیته امداد، اداره بهزیستی و فرمانداری ویژه رفسنجان
+                </p>
+              </div>
+              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                پوشش شفاف نهادهای حمایتی
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {vulnerableBreakdown.map((item, idx) => {
+                const Icon = item.icon;
+                return (
+                  <div key={idx} className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className={`p-2 rounded-xl border ${item.color}`}>
+                          <Icon className="w-5 h-5" />
+                        </span>
+                        <h4 className="font-bold text-slate-900 text-sm">{item.title}</h4>
+                      </div>
+                      <span className="text-xs font-bold font-mono text-slate-700 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                        {item.coverageShare}٪
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200 text-xs">
+                      <div>
+                        <span className="text-slate-500 text-[11px] block">تعداد خانوار:</span>
+                        <span className="font-bold text-slate-800 font-mono">{formatNumber(item.households)} خانوار</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 text-[11px] block">جمعیت تحت پوشش:</span>
+                        <span className="font-black text-rose-700 font-mono">{formatNumber(item.population)} نفر</span>
+                      </div>
+                    </div>
+
+                    <div className="text-[11px] text-slate-600 bg-white p-2.5 rounded-xl border border-slate-200">
+                      <span className="font-semibold text-slate-800">خدمات دریافتی: </span>
+                      {item.supportType}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SUB-TAB 4: Age Cohorts and Demographic Pyramid */}
+      {activeSubTab === 'PYRAMID' && (
+        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-6">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div>
+              <h3 className="font-black text-slate-900 text-lg">ساختار هرم سنی جمعیت شهرستان رفسنجان</h3>
+              <p className="text-xs text-slate-500 mt-0.5">توزیع گروه‌های سنی و اولویت‌های متناظر در قانون جوانی جمعیت</p>
+            </div>
+            <span className="text-xs text-blue-700 bg-blue-50 px-3 py-1 rounded-full border border-blue-200 font-bold">
+              پنجره جمعیتی فعال
+            </span>
+          </div>
+
+          <div className="space-y-5">
+            {ageCohorts.map((cohort, index) => (
+              <div key={index} className="space-y-1.5 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-slate-900 text-sm">{cohort.label}</span>
+                  <div className="flex items-center gap-3 font-mono">
+                    <span className="font-black text-slate-900">{formatNumber(cohort.count)} نفر</span>
+                    <span className="font-bold text-blue-700 bg-blue-100/70 px-2 py-0.5 rounded-md">
+                      {cohort.percent}٪
+                    </span>
+                  </div>
+                </div>
+
+                <div className="w-full bg-slate-200 h-3 rounded-full overflow-hidden">
+                  <div
+                    className={`${cohort.color} h-full rounded-full transition-all duration-500`}
+                    style={{ width: `${cohort.percent}%` }}
+                  />
+                </div>
+
+                <p className="text-[11px] text-slate-600 mt-1">
+                  💡 <strong className="text-slate-800">برنامه اقدام:</strong> {cohort.note}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 text-xs text-emerald-900 leading-relaxed">
+            <span className="font-bold block mb-1">🌟 تحلیل پنجره جمعیتی شهرستان رفسنجان:</span>
+            بیش از <strong>۶۹.۳٪ از جمعیت رفسنجان</strong> در سنین فعال کار و جوانی (۱۵ تا ۶۴ سال) قرار دارند. این پنجره جمعیتی طلایی نشان می‌دهد که اولویت شماره یک تخصیص منابع CSR و بودجه عمومی باید معطوف به <strong>تسهیلات اشتغال خرد، رفع موانع ازدواج، تامین مسکن و درمان ناباروری</strong> باشد تا از تله جمعیتی و مهاجرت نخبگان جلوگیری به عمل آید.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
