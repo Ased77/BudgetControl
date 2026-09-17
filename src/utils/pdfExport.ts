@@ -1,6 +1,34 @@
 import { CsrPriority, OrganizationConfig, LocalIndicators } from '../types';
 import { formatCurrency, formatLargeBudgetPersian, toPersianDigits } from './numberUtils';
 
+/** Keep in sync with the @font-face list in src/index.css (and public/fonts/README.md). */
+const IRANSANSX_WEIGHTS: Array<{ file: string; weight: number }> = [
+  { file: 'IRANSansX-Regular.woff2', weight: 400 },
+  { file: 'IRANSansX-Medium.woff2', weight: 500 },
+  { file: 'IRANSansX-DemiBold.woff2', weight: 600 },
+  { file: 'IRANSansX-Bold.woff2', weight: 700 },
+  { file: 'IRANSansX-ExtraBold.woff2', weight: 800 },
+  { file: 'IRANSansX-Black.woff2', weight: 900 },
+];
+
+/**
+ * The report is written into a popup opened on `about:blank`, where root-relative
+ * URLs have no origin to resolve against — so every font URL is absolutised
+ * against the running app's origin.
+ */
+function buildFontFaceCss(): string {
+  const origin = window.location.origin;
+  return IRANSANSX_WEIGHTS.map(
+    ({ file, weight }) => `@font-face {
+          font-family: 'IRANSansX';
+          src: url('${new URL(`/fonts/${file}`, origin).href}') format('woff2');
+          font-weight: ${weight};
+          font-style: normal;
+          font-display: swap;
+        }`
+  ).join('\n        ');
+}
+
 export function triggerPrintPdf(
   orgConfig: OrganizationConfig,
   priorities: CsrPriority[],
@@ -33,8 +61,8 @@ export function triggerPrintPdf(
         <td style="padding: 10px; font-weight: bold;">${p.title}</td>
         <td style="padding: 10px; color: #4b5563;">${p.category}</td>
         <td style="padding: 10px; text-align: center; font-weight: bold; color: #1e40af;">${toPersianDigits(pct)}٪</td>
-        <td style="padding: 10px; text-align: left; font-weight: bold; dir: ltr;">${formatCurrency(amountToman, 'TOMAN', true)}</td>
-        <td style="padding: 10px; text-align: left; color: #6b7280; font-size: 11px; dir: ltr;">${formatCurrency(amountToman, 'RIAL', true)}</td>
+        <td style="padding: 10px; text-align: left; font-weight: bold; direction: ltr; unicode-bidi: embed;">${formatCurrency(amountToman, 'TOMAN', true)}</td>
+        <td style="padding: 10px; text-align: left; color: #6b7280; font-size: 11px; direction: ltr; unicode-bidi: embed;">${formatCurrency(amountToman, 'RIAL', true)}</td>
       </tr>
     `;
   });
@@ -46,9 +74,10 @@ export function triggerPrintPdf(
       <meta charset="UTF-8">
       <title>گزارش رسمی تخصیص بودجه مسئولیت اجتماعی (CSR)</title>
       <style>
-        @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;700;800&display=swap');
+        ${buildFontFaceCss()}
         body {
-          font-family: 'Vazirmatn', sans-serif;
+          font-family: 'IRANSansX', Tahoma, sans-serif;
+          font-synthesis-weight: none;
           margin: 0;
           padding: 24px;
           color: #1f2937;
@@ -193,8 +222,8 @@ export function triggerPrintPdf(
           <tr style="background-color: #f1f5f9; font-weight: bold; border-top: 2px solid #cbd5e1;">
             <td colspan="3" style="padding: 12px; text-align: left;">جمع کل تخصیص‌ها:</td>
             <td style="padding: 12px; text-align: center; color: #166534;">${toPersianDigits(Math.round(sumPct * 10) / 10)}٪</td>
-            <td style="padding: 12px; text-align: left; color: #166534; dir: ltr;">${formatCurrency(sumAmount, 'TOMAN', true)}</td>
-            <td style="padding: 12px; text-align: left; color: #475569; font-size: 11px; dir: ltr;">${formatCurrency(sumAmount, 'RIAL', true)}</td>
+            <td style="padding: 12px; text-align: left; color: #166534; direction: ltr; unicode-bidi: embed;">${formatCurrency(sumAmount, 'TOMAN', true)}</td>
+            <td style="padding: 12px; text-align: left; color: #475569; font-size: 11px; direction: ltr; unicode-bidi: embed;">${formatCurrency(sumAmount, 'RIAL', true)}</td>
           </tr>
         </tbody>
       </table>
@@ -215,11 +244,48 @@ export function triggerPrintPdf(
       </div>
 
       <script>
-        window.onload = function() {
-          setTimeout(function() {
-            window.print();
-          }, 400);
-        };
+        (function () {
+          var printed = false;
+          function triggerPrint() {
+            if (printed) return;
+            printed = true;
+            try {
+              window.focus();
+              window.print();
+            } catch (e) {}
+          }
+          // Print once the Persian face has loaded, otherwise the dialog can
+          // snapshot fallback glyphs. Hard-capped so a font failure never
+          // leaves the report un-printed.
+          var hardCap = setTimeout(triggerPrint, 1500);
+          function start() {
+            var fonts = window.document.fonts;
+            if (!fonts || !fonts.load) {
+              clearTimeout(hardCap);
+              triggerPrint();
+              return;
+            }
+            Promise.all([
+              fonts.load('400 16px IRANSansX'),
+              fonts.load('700 16px IRANSansX'),
+              fonts.load('900 16px IRANSansX')
+            ])
+              .then(function () { return fonts.ready; })
+              .then(function () {
+                clearTimeout(hardCap);
+                triggerPrint();
+              })
+              .catch(function () {
+                clearTimeout(hardCap);
+                triggerPrint();
+              });
+          }
+          if (document.readyState === 'complete') {
+            start();
+          } else {
+            window.addEventListener('load', start);
+          }
+        })();
       </script>
     </body>
     </html>

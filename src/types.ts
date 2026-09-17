@@ -17,6 +17,9 @@ export interface UserProfile {
   id: string;
   name: string;
   role: UserRole;
+  /** Short role name (e.g. "مدیر اداره") for compact badges and pills. */
+  roleFa: string;
+  /** Full formal job title of the person. */
   roleTitleFa: string;
   avatar: string;
   organization: string;
@@ -336,7 +339,9 @@ export type AuditActionType =
   | 'SCENARIO_APPLIED'
   | 'EXPORT_REPORT'
   | 'LOCATION_CHANGE'
-  | 'DUPLICATE_FLAGGED';
+  | 'DUPLICATE_FLAGGED'
+  | 'LOGIN'
+  | 'LOGOUT';
 
 export interface AuditLogItem {
   id: string;

@@ -75,6 +75,8 @@ export const RolesAndAccessView: React.FC = () => {
     CONTRACTOR_DELETE: { label: 'حذف پیمانکار', badge: 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300' },
     EXPORT_REPORT: { label: 'دریافت خروجی گزارش', badge: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' },
     DUPLICATE_FLAGGED: { label: 'ردیابی موازی‌کاری', badge: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300' },
+    LOGIN: { label: 'ورود به سامانه', badge: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' },
+    LOGOUT: { label: 'خروج از سامانه', badge: 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300' },
   };
 
   // Filtered Logs

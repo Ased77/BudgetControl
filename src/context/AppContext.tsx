@@ -36,6 +36,30 @@ import { calculateSmartRecommendations } from '../utils/recommendationEngine';
 import { roundPercentage } from '../utils/numberUtils';
 import { analyzeProjectDuplicatesAndEfficiency, OptimizationMetrics } from '../utils/antiDuplicationEngine';
 
+const AUTH_STORAGE_KEY = 'csr.auth.userId';
+
+/** Persisted identity survives a refresh. Storage may be unavailable (private
+ *  mode, quota, SSR), in which case the session simply stays in-memory. */
+function readPersistedUserId(): string | null {
+  try {
+    return window.localStorage.getItem(AUTH_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function persistUserId(userId: string | null) {
+  try {
+    if (userId) {
+      window.localStorage.setItem(AUTH_STORAGE_KEY, userId);
+    } else {
+      window.localStorage.removeItem(AUTH_STORAGE_KEY);
+    }
+  } catch {
+    /* ignore — the gate still works for this session */
+  }
+}
+
 interface AppContextType {
   // State
   locations: LocationData[];
@@ -58,6 +82,9 @@ interface AppContextType {
   currentUser: UserProfile;
   activeTab: string;
 
+  // Access gate (identity simulation)
+  isAuthenticated: boolean;
+
   // Analysis & Engine
   antiDuplicationAlerts: AntiDuplicationAlert[];
   optimizationMetrics: OptimizationMetrics;
@@ -65,6 +92,8 @@ interface AppContextType {
   // Actions
   setActiveTab: (tab: string) => void;
   setCurrentUser: (user: UserProfile) => void;
+  login: (userId: string) => void;
+  logout: () => void;
   setAdministrativeScope: (scope: AdministrativeLevel) => void;
   handleSelectLocation: (newLoc: LocationData) => void;
   handleUpdateIndicators: (newIndicators: LocalIndicators) => void;
@@ -120,7 +149,8 @@ interface AppContextType {
     targetPriorityTitle?: string,
     oldValue?: string,
     newValue?: string,
-    rationale?: string
+    rationale?: string,
+    actingUser?: UserProfile
   ) => void;
 }
 
@@ -144,7 +174,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [projects, setProjects] = useState<ExecutiveProject[]>(INITIAL_PROJECTS);
   const [rolesPermissions, setRolesPermissions] = useState<SystemRolePermission[]>(INITIAL_ROLES_PERMISSIONS);
   const [users] = useState<UserProfile[]>(INITIAL_USERS);
-  const [currentUser, setCurrentUser] = useState<UserProfile>(INITIAL_USERS[0]);
+  const [currentUser, setCurrentUser] = useState<UserProfile>(() => {
+    const persistedId = readPersistedUserId();
+    return INITIAL_USERS.find((u) => u.id === persistedId) ?? INITIAL_USERS[0];
+  });
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() =>
+    INITIAL_USERS.some((u) => u.id === readPersistedUserId())
+  );
   const [activeTab, setActiveTab] = useState<string>('DASHBOARD');
 
   // Initial Percentages state mapped directly from smart recommendations for active location
@@ -159,13 +195,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     targetPriorityTitle?: string,
     oldValue?: string,
     newValue?: string,
-    rationale?: string
+    rationale?: string,
+    actingUser?: UserProfile
   ) => {
+    // `actingUser` exists because sign-in/sign-out write an entry in the same
+    // tick as the user change: this closure still holds the previous user.
+    const actor = actingUser ?? currentUser;
     const newEntry: AuditLogItem = {
       id: `audit-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
       timestamp: new Date().toLocaleDateString('fa-IR') + ' - ' + new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }),
-      userName: currentUser.name,
-      userRole: currentUser.role,
+      userName: actor.name,
+      userRole: actor.role,
       actionType,
       targetPriorityTitle,
       oldValue,
@@ -173,6 +213,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       rationale,
     };
     setAuditLogs((prev) => [newEntry, ...prev]);
+  };
+
+  // --- Access gate (organizational identity simulation) ---
+  const login = (userId: string) => {
+    const user = users.find((u) => u.id === userId) ?? INITIAL_USERS[0];
+    setCurrentUser(user);
+    setIsAuthenticated(true);
+    setActiveTab('DASHBOARD');
+    persistUserId(user.id);
+    addAuditLog('LOGIN', 'ورود به سامانه', '-', user.roleFa, `ورود ${user.name} به سامانه مدیریت توسعه`, user);
+  };
+
+  const logout = () => {
+    addAuditLog('LOGOUT', 'خروج از سامانه', currentUser.roleFa, '-', `خروج ${currentUser.name} از سامانه مدیریت توسعه`, currentUser);
+    setIsAuthenticated(false);
+    setActiveTab('DASHBOARD');
+    persistUserId(null);
+  };
+
+  // Persona switching from the header / نقش‌ها tab keeps the persisted identity
+  // in step, but only while signed in.
+  const handleSetCurrentUser = (user: UserProfile) => {
+    setCurrentUser(user);
+    if (isAuthenticated) {
+      persistUserId(user.id);
+    }
   };
 
   // Smart Recommendations recalculated dynamically based on selectedLocation indicators
@@ -589,10 +655,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     users,
     currentUser,
     activeTab,
+    isAuthenticated,
     antiDuplicationAlerts,
     optimizationMetrics,
     setActiveTab,
-    setCurrentUser,
+    setCurrentUser: handleSetCurrentUser,
+    login,
+    logout,
     setAdministrativeScope,
     handleSelectLocation,
     handleUpdateIndicators,

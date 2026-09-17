@@ -19,6 +19,7 @@ import { CreateProjectView } from './components/CreateProjectView';
 import { RolesAndAccessView } from './components/RolesAndAccessView';
 import { AiAnalysisModal } from './components/AiAnalysisModal';
 import { GlobalLocationSelector } from './components/GlobalLocationSelector';
+import { LoginView } from './components/LoginView';
 
 import {
   LayoutDashboard,
@@ -44,6 +45,7 @@ import {
   ShieldAlert,
   HelpCircle,
   Bell,
+  LogOut,
 } from 'lucide-react';
 
 function AppContent() {
@@ -64,6 +66,8 @@ function AppContent() {
     currentUser,
     users,
     setCurrentUser,
+    isAuthenticated,
+    logout,
     activeTab,
     setActiveTab,
     handleSelectLocation,
@@ -129,6 +133,12 @@ function AppContent() {
     { id: 'LOCATIONS', label: 'شاخص‌های مکانی و محرومیت', icon: MapPin, count: null, color: 'text-emerald-600' },
     { id: 'ROLES_PERMISSIONS', label: 'نقش‌ها، دسترسی و لاگ‌ها', icon: ShieldCheck, count: auditLogs.length, color: 'text-slate-600' },
   ];
+
+  // Access gate — every hook above runs unconditionally, then signed-out users
+  // see only the identity screen.
+  if (!isAuthenticated) {
+    return <LoginView />;
+  }
 
   return (
     <div className="flex h-screen w-full bg-[#f8fafc] text-slate-800 font-sans antialiased overflow-hidden dir-rtl">
@@ -248,15 +258,25 @@ function AppContent() {
                 <div className="text-[10px] text-slate-500 truncate">{currentUser.roleFa}</div>
               </div>
             </div>
-            <button
-              onClick={() => {
-                setActiveTab('ROLES_PERMISSIONS');
-                setSidebarOpen(false);
-              }}
-              className="text-[10px] text-blue-600 hover:text-blue-800 font-bold hover:underline shrink-0"
-            >
-              مدیریت
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => {
+                  setActiveTab('ROLES_PERMISSIONS');
+                  setSidebarOpen(false);
+                }}
+                className="text-[10px] text-blue-600 hover:text-blue-800 font-bold hover:underline"
+              >
+                مدیریت
+              </button>
+              <button
+                onClick={logout}
+                title={`خروج ${currentUser.name} از سامانه`}
+                className="flex items-center gap-1 text-[10px] text-rose-600 hover:text-rose-800 font-bold hover:underline"
+              >
+                <LogOut className="w-3 h-3" />
+                خروج
+              </button>
+            </div>
           </div>
         </div>
       </aside>
@@ -331,6 +351,19 @@ function AppContent() {
                         </span>
                       </button>
                     ))}
+                  </div>
+
+                  <div className="border-t border-slate-100 mt-2 pt-2">
+                    <button
+                      onClick={() => {
+                        setShowUserDropdown(false);
+                        logout();
+                      }}
+                      className="w-full text-right p-2 rounded-xl text-rose-600 hover:bg-rose-50 font-bold flex items-center gap-2 transition-colors"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      خروج از حساب
+                    </button>
                   </div>
                 </div>
               )}
