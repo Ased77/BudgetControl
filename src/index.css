@@ -10,29 +10,16 @@
    The print template declares the same faces independently — keep the two
    lists in sync when changing weights or filenames.
 
-   Expected files: IRANSansX-{Regular,Medium,DemiBold,Bold,ExtraBold,Black}.woff2
-   mapping to weights 400 / 500 / 600 / 700 / 800 / 900.
+   Available files: IRANSansX-{Regular,Bold}.woff2 only (the distribution this
+   project sourced ships exactly these two weights). Bold is aliased across the
+   whole heavy range 600–900 and Regular across 100–500, so every font-black
+   heading gets real Bold glyphs and nothing is synthesized — reinforced by
+   font-synthesis-weight: none below.
    ========================================================================= */
 @font-face {
   font-family: 'IRANSansX';
   src: url('/fonts/IRANSansX-Regular.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'IRANSansX';
-  src: url('/fonts/IRANSansX-Medium.woff2') format('woff2');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'IRANSansX';
-  src: url('/fonts/IRANSansX-DemiBold.woff2') format('woff2');
-  font-weight: 600;
+  font-weight: 100 500;
   font-style: normal;
   font-display: swap;
 }
@@ -40,23 +27,7 @@
 @font-face {
   font-family: 'IRANSansX';
   src: url('/fonts/IRANSansX-Bold.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'IRANSansX';
-  src: url('/fonts/IRANSansX-ExtraBold.woff2') format('woff2');
-  font-weight: 800;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'IRANSansX';
-  src: url('/fonts/IRANSansX-Black.woff2') format('woff2');
-  font-weight: 900;
+  font-weight: 600 900;
   font-style: normal;
   font-display: swap;
 }

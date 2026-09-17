@@ -1,14 +1,12 @@
 import { CsrPriority, OrganizationConfig, LocalIndicators } from '../types';
 import { formatCurrency, formatLargeBudgetPersian, toPersianDigits } from './numberUtils';
 
-/** Keep in sync with the @font-face list in src/index.css (and public/fonts/README.md). */
-const IRANSANSX_WEIGHTS: Array<{ file: string; weight: number }> = [
-  { file: 'IRANSansX-Regular.woff2', weight: 400 },
-  { file: 'IRANSansX-Medium.woff2', weight: 500 },
-  { file: 'IRANSansX-DemiBold.woff2', weight: 600 },
-  { file: 'IRANSansX-Bold.woff2', weight: 700 },
-  { file: 'IRANSansX-ExtraBold.woff2', weight: 800 },
-  { file: 'IRANSansX-Black.woff2', weight: 900 },
+/** Keep in sync with the @font-face list in src/index.css (and public/fonts/README.md).
+ *  Only Regular and Bold cuts exist in the distribution, so Bold is aliased
+ *  across the whole heavy range — same as the app stylesheet. */
+const IRANSANSX_FACES: Array<{ file: string; range: string }> = [
+  { file: 'IRANSansX-Regular.woff2', range: '100 500' },
+  { file: 'IRANSansX-Bold.woff2', range: '600 900' },
 ];
 
 /**
@@ -18,11 +16,11 @@ const IRANSANSX_WEIGHTS: Array<{ file: string; weight: number }> = [
  */
 function buildFontFaceCss(): string {
   const origin = window.location.origin;
-  return IRANSANSX_WEIGHTS.map(
-    ({ file, weight }) => `@font-face {
+  return IRANSANSX_FACES.map(
+    ({ file, range }) => `@font-face {
           font-family: 'IRANSansX';
           src: url('${new URL(`/fonts/${file}`, origin).href}') format('woff2');
-          font-weight: ${weight};
+          font-weight: ${range};
           font-style: normal;
           font-display: swap;
         }`
@@ -267,7 +265,6 @@ export function triggerPrintPdf(
             }
             Promise.all([
               fonts.load('400 16px IRANSansX'),
-              fonts.load('700 16px IRANSansX'),
               fonts.load('900 16px IRANSansX')
             ])
               .then(function () { return fonts.ready; })
