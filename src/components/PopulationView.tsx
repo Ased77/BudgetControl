@@ -150,49 +150,6 @@ export const PopulationView: React.FC = () => {
             </p>
           </div>
 
-          {/* Quick Sub-navigation */}
-          <div id="population-view-quick-sub-navigation" className="flex flex-wrap items-center gap-2 shrink-0 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
-            <button
-              onClick={() => setActiveSubTab('OVERVIEW')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                activeSubTab === 'OVERVIEW'
-                  ? 'bg-white text-blue-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              نمای کلی جمعیت
-            </button>
-            <button
-              onClick={() => setActiveSubTab('DISTRICTS')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                activeSubTab === 'DISTRICTS'
-                  ? 'bg-white text-blue-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              تفکیک بخش‌ها و روستاها
-            </button>
-            <button
-              onClick={() => setActiveSubTab('VULNERABLE')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                activeSubTab === 'VULNERABLE'
-                  ? 'bg-white text-blue-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              آمار دقیق محرومین ({formatNumber(totalDeprivedVulnerable)} نفر)
-            </button>
-            <button
-              onClick={() => setActiveSubTab('PYRAMID')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                activeSubTab === 'PYRAMID'
-                  ? 'bg-white text-blue-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              هرم سنی و جوانان
-            </button>
-          </div>
         </div>
 
         {/* 4 Core County KPI Cards */}
@@ -254,6 +211,50 @@ export const PopulationView: React.FC = () => {
             <strong>جمعیت محروم شهرستان رفسنجان دقیقا ۳۸,۲۰۰ نفر (۱۲.۱٪)</strong> است و بودجه‌های حمایتی نظیر جهیزیه، وام اشتغال خرد، آبرسانی روستاهای دارای تنش و درمان ناباروری مستقیماً به این جامعه هدف تخصیص می‌یابد.
           </p>
         </div>
+      </div>
+
+      {/* Quick Sub-navigation — sits below the clarification alert */}
+      <div id="population-view-quick-sub-navigation" className="flex flex-wrap items-center gap-2 shrink-0 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+        <button
+          onClick={() => setActiveSubTab('OVERVIEW')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            activeSubTab === 'OVERVIEW'
+              ? 'bg-white text-blue-700 shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          نمای کلی جمعیت
+        </button>
+        <button
+          onClick={() => setActiveSubTab('DISTRICTS')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            activeSubTab === 'DISTRICTS'
+              ? 'bg-white text-blue-700 shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          تفکیک بخش‌ها و روستاها
+        </button>
+        <button
+          onClick={() => setActiveSubTab('VULNERABLE')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            activeSubTab === 'VULNERABLE'
+              ? 'bg-white text-blue-700 shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          آمار دقیق محرومین ({formatNumber(totalDeprivedVulnerable)} نفر)
+        </button>
+        <button
+          onClick={() => setActiveSubTab('PYRAMID')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            activeSubTab === 'PYRAMID'
+              ? 'bg-white text-blue-700 shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          هرم سنی و جوانان
+        </button>
       </div>
 
       {/* SUB-TAB 1: Overview & Comparative Metrics */}
