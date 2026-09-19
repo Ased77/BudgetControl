@@ -284,8 +284,12 @@ function AppContent() {
 
       {/* Main Content Area */}
       <div id="app-main-content-area" className="flex-1 flex flex-col h-full overflow-hidden">
-        {/* Top Navbar */}
-        <header className="bg-white border-b border-slate-200 shadow-2xs h-16 px-4 md:px-6 flex items-center justify-between shrink-0 z-10">
+        {/* Top Navbar.
+            Deliberately no z-index: a z-index here makes the header a stacking
+            context, which would trap the persona dropdown's z-50 inside it and
+            let the sidebar (z-40) and the workspace paint over the open menu.
+            The dropdown itself carries the z-50, so it wins over the sidebar. */}
+        <header className="bg-white border-b border-slate-200 shadow-2xs h-16 px-4 md:px-6 flex items-center justify-between shrink-0">
           <div id="app-top-navbar" className="flex items-center gap-3 md:gap-4">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
