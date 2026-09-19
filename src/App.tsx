@@ -372,25 +372,21 @@ function AppContent() {
           </div>
         </header>
 
-        {/* Global Location Selector Bar (Expandable or always accessible) */}
+        {/* Global Location Selector Modal — opened from the sidebar location button */}
         {showLocationDrawer && (
-          <div id="app-global-location-selector-bar" className="p-4 bg-white border-b border-slate-200 shadow-sm animate-in slide-in-from-top duration-200">
-            <GlobalLocationSelector
-              locations={locations}
-              selectedLocation={selectedLocation}
-              onSelectLocation={(loc) => {
-                handleSelectLocation(loc);
-                setShowLocationDrawer(false);
-              }}
-              vulnerabilityIndex={selectedLocation.indicators.overallVulnerabilityScore || 45}
-              onApplySmartRecommendations={handleApplySmartRecommendations}
-              onOpenIndicatorsTab={() => {
-                setActiveTab('LOCATIONS');
-                setShowLocationDrawer(false);
-              }}
-              activeTab={activeTab}
-            />
-          </div>
+          <GlobalLocationSelector
+            locations={locations}
+            selectedLocation={selectedLocation}
+            onSelectLocation={handleSelectLocation}
+            onClose={() => setShowLocationDrawer(false)}
+            vulnerabilityIndex={selectedLocation.indicators.overallVulnerabilityScore || 45}
+            onApplySmartRecommendations={handleApplySmartRecommendations}
+            onOpenIndicatorsTab={() => {
+              setActiveTab('LOCATIONS');
+              setShowLocationDrawer(false);
+            }}
+            activeTab={activeTab}
+          />
         )}
 
         {/* Scrollable Main Workspace */}
