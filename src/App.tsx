@@ -141,21 +141,21 @@ function AppContent() {
   }
 
   return (
-    <div className="flex h-screen w-full bg-[#f8fafc] text-slate-800 font-sans antialiased overflow-hidden dir-rtl">
+    <div id="app-root" className="flex h-screen w-full bg-[#f8fafc] text-slate-800 font-sans antialiased overflow-hidden dir-rtl">
       {/* Sleek Right Navigation Sidebar (Light Theme) */}
       <aside
         className={`fixed inset-y-0 right-0 z-40 w-72 bg-white text-slate-800 flex flex-col justify-between border-l border-slate-200 shadow-xl lg:shadow-none transition-transform duration-300 lg:static lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
         }`}
       >
-        <div className="flex-1 flex flex-col min-h-0">
+        <div id="app-sleek-right-navigation-sidebar" className="flex-1 flex flex-col min-h-0">
           {/* Brand Header */}
-          <div className="p-5 border-b border-slate-100 flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl text-white font-black text-lg flex items-center justify-center shadow-md shadow-blue-500/20">
+          <div id="app-brand-header" className="p-5 border-b border-slate-100 flex items-center justify-between shrink-0">
+            <div id="app-brand-header-2" className="flex items-center gap-3">
+              <div id="app-brand-header-3" className="w-10 h-10 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl text-white font-black text-lg flex items-center justify-center shadow-md shadow-blue-500/20">
                 ملی
               </div>
-              <div>
+              <div id="app-brand-header-4">
                 <h1 className="font-black text-sm text-slate-900 tracking-tight">سامانه توسعه ملی</h1>
                 <p className="text-[10px] text-slate-500">توسعه هوشمند روستایی و شهری</p>
               </div>
@@ -169,12 +169,12 @@ function AppContent() {
           </div>
 
           {/* Quick Location & Anti-Overlap Alert Banner */}
-          <div className="p-3 bg-slate-50 border-b border-slate-100 shrink-0">
+          <div id="app-quick-location-anti-overlap" className="p-3 bg-slate-50 border-b border-slate-100 shrink-0">
             <button
               onClick={() => setShowLocationDrawer(!showLocationDrawer)}
               className="w-full flex items-center justify-between p-2 rounded-xl bg-white hover:bg-slate-100 text-xs border border-slate-200 shadow-2xs transition-colors text-right"
             >
-              <div className="flex items-center gap-2 truncate">
+              <div id="app-quick-location-anti-overlap-2" className="flex items-center gap-2 truncate">
                 <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span className="truncate text-[11px] text-slate-700 font-semibold">
                   {selectedLocation.province} - {selectedLocation.county}
@@ -187,6 +187,7 @@ function AppContent() {
 
             {antiDuplicationAlerts.length > 0 && (
               <div
+                id="app-quick-location-anti-overlap-3"
                 onClick={() => {
                   setActiveTab('PROJECTS');
                   setSidebarOpen(false);
@@ -221,12 +222,12 @@ function AppContent() {
                       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
+                  <div id={`app-nav-list-${item.id}`} className="flex items-center gap-3">
                     <Icon className={`w-4 h-4 ${isActive ? 'text-white' : item.color}`} />
                     <span className="text-[12px]">{item.label}</span>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
+                  <div id={`app-nav-list-2-${item.id}`} className="flex items-center gap-1.5">
                     {item.badgeAlert && (
                       <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
                     )}
@@ -247,18 +248,18 @@ function AppContent() {
         </div>
 
         {/* Sidebar Footer User Role */}
-        <div className="p-4 border-t border-slate-100 bg-slate-50 text-xs shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center font-bold text-xs text-white shadow-xs">
+        <div id="app-sidebar-footer-user-role" className="p-4 border-t border-slate-100 bg-slate-50 text-xs shrink-0">
+          <div id="app-sidebar-footer-user-role-2" className="flex items-center justify-between">
+            <div id="app-sidebar-footer-user-role-3" className="flex items-center gap-2">
+              <div id="app-sidebar-footer-user-role-4" className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center font-bold text-xs text-white shadow-xs">
                 {currentUser.name.charAt(0)}
               </div>
-              <div className="truncate">
-                <div className="font-bold text-slate-800 text-xs truncate">{currentUser.name}</div>
-                <div className="text-[10px] text-slate-500 truncate">{currentUser.roleFa}</div>
+              <div id="app-sidebar-footer-user-role-5" className="truncate">
+                <div id="app-sidebar-footer-user-role-6" className="font-bold text-slate-800 text-xs truncate">{currentUser.name}</div>
+                <div id="app-sidebar-footer-user-role-7" className="text-[10px] text-slate-500 truncate">{currentUser.roleFa}</div>
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div id="app-sidebar-footer-user-role-8" className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => {
                   setActiveTab('ROLES_PERMISSIONS');
@@ -282,10 +283,10 @@ function AppContent() {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
+      <div id="app-main-content-area" className="flex-1 flex flex-col h-full overflow-hidden">
         {/* Top Navbar */}
         <header className="bg-white border-b border-slate-200 shadow-2xs h-16 px-4 md:px-6 flex items-center justify-between shrink-0 z-10">
-          <div className="flex items-center gap-3 md:gap-4">
+          <div id="app-top-navbar" className="flex items-center gap-3 md:gap-4">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="lg:hidden text-slate-600 hover:text-slate-900 p-1 rounded-lg"
@@ -293,7 +294,7 @@ function AppContent() {
               <Menu className="w-6 h-6" />
             </button>
 
-            <div>
+            <div id="app-top-navbar-2">
               <h2 className="font-black text-sm text-slate-900 flex items-center gap-2">
                 <span>
                   {activeTab === 'DASHBOARD' && 'داشبورد'}
@@ -313,9 +314,9 @@ function AppContent() {
           </div>
 
           {/* Actions & Persona */}
-          <div className="flex items-center gap-2 md:gap-3">
+          <div id="app-actions-persona" className="flex items-center gap-2 md:gap-3">
             {/* Persona Switcher Quick Pill */}
-            <div className="relative">
+            <div id="app-persona-switcher-quick-pill" className="relative">
               <button
                 onClick={() => setShowUserDropdown(!showUserDropdown)}
                 className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-800 transition-colors"
@@ -327,11 +328,11 @@ function AppContent() {
               </button>
 
               {showUserDropdown && (
-                <div className="absolute left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 p-3 z-50 text-xs">
-                  <div className="border-b border-slate-100 pb-2 mb-2">
+                <div id="app-persona-switcher-quick-pill-2" className="absolute left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 p-3 z-50 text-xs">
+                  <div id="app-persona-switcher-quick-pill-3" className="border-b border-slate-100 pb-2 mb-2">
                     <span className="text-[10px] text-slate-500 block">تغییر کاربر و نقش سیستمی (شبیه‌سازی دسترسی):</span>
                   </div>
-                  <div className="space-y-1">
+                  <div id="app-persona-switcher-quick-pill-4" className="space-y-1">
                     {users.map((u) => (
                       <button
                         key={u.id}
@@ -353,7 +354,7 @@ function AppContent() {
                     ))}
                   </div>
 
-                  <div className="border-t border-slate-100 mt-2 pt-2">
+                  <div id="app-persona-switcher-quick-pill-5" className="border-t border-slate-100 mt-2 pt-2">
                     <button
                       onClick={() => {
                         setShowUserDropdown(false);
@@ -373,7 +374,7 @@ function AppContent() {
 
         {/* Global Location Selector Bar (Expandable or always accessible) */}
         {showLocationDrawer && (
-          <div className="p-4 bg-white border-b border-slate-200 shadow-sm animate-in slide-in-from-top duration-200">
+          <div id="app-global-location-selector-bar" className="p-4 bg-white border-b border-slate-200 shadow-sm animate-in slide-in-from-top duration-200">
             <GlobalLocationSelector
               locations={locations}
               selectedLocation={selectedLocation}
@@ -393,7 +394,7 @@ function AppContent() {
         )}
 
         {/* Scrollable Main Workspace */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+        <div id="app-scrollable-main-workspace" className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
           {activeTab === 'DASHBOARD' && <NationalDashboardView />}
 
           {activeTab === 'POPULATION' && <PopulationView />}
@@ -415,7 +416,7 @@ function AppContent() {
           {activeTab === 'PROJECTS' && <ProjectsView />}
 
           {/* Charts View: Kept mounted in DOM with display style so Bubble Chart animation & state survive seamlessly */}
-          <div style={{ display: activeTab === 'CHARTS' ? 'block' : 'none' }}>
+          <div id="app-charts-view-kept-mounted-in-dom" style={{ display: activeTab === 'CHARTS' ? 'block' : 'none' }}>
             <ChartsView />
           </div>
 

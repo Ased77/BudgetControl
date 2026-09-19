@@ -59,21 +59,22 @@ export const LoginView: React.FC = () => {
 
   return (
     <div
+      id="login-view-root"
       dir="rtl"
       className="min-h-screen w-full bg-gradient-to-br from-slate-100 via-white to-indigo-50 flex items-stretch lg:items-center justify-center lg:p-8"
     >
-      <div className="w-full max-w-6xl bg-white lg:rounded-3xl lg:shadow-2xl lg:border lg:border-slate-200 overflow-hidden grid grid-cols-1 lg:grid-cols-[1fr_1.3fr]">
+      <div id="login-view-div-2" className="w-full max-w-6xl bg-white lg:rounded-3xl lg:shadow-2xl lg:border lg:border-slate-200 overflow-hidden grid grid-cols-1 lg:grid-cols-[1fr_1.3fr]">
         {/* ---------------- Brand column ---------------- */}
         <aside className="relative bg-gradient-to-br from-blue-700 via-indigo-700 to-slate-900 text-white p-8 lg:p-10 flex flex-col justify-between gap-10 overflow-hidden">
-          <div className="absolute -top-24 -left-24 w-72 h-72 bg-blue-400/20 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-28 -right-16 w-80 h-80 bg-indigo-400/20 rounded-full blur-3xl pointer-events-none" />
+          <div id="login-view-brand-column" className="absolute -top-24 -left-24 w-72 h-72 bg-blue-400/20 rounded-full blur-3xl pointer-events-none" />
+          <div id="login-view-brand-column-2" className="absolute -bottom-28 -right-16 w-80 h-80 bg-indigo-400/20 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="relative space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-white/15 border border-white/25 backdrop-blur-sm rounded-2xl text-white font-black text-lg flex items-center justify-center shadow-lg">
+          <div id="login-view-brand-column-3" className="relative space-y-6">
+            <div id="login-view-brand-column-4" className="flex items-center gap-3">
+              <div id="login-view-brand-column-5" className="w-12 h-12 bg-white/15 border border-white/25 backdrop-blur-sm rounded-2xl text-white font-black text-lg flex items-center justify-center shadow-lg">
                 ملی
               </div>
-              <div>
+              <div id="login-view-brand-column-6">
                 <h1 className="font-black text-lg tracking-tight">سامانه توسعه ملی</h1>
                 <p className="text-[11px] text-blue-100/80">مدیریت هوشمند توسعه روستایی و شهری</p>
               </div>
@@ -100,7 +101,7 @@ export const LoginView: React.FC = () => {
             </ul>
           </div>
 
-          <div className="relative flex items-center gap-2 text-[10px] text-blue-100/70 border-t border-white/15 pt-4">
+          <div id="login-view-brand-column-7" className="relative flex items-center gap-2 text-[10px] text-blue-100/70 border-t border-white/15 pt-4">
             <Sparkles className="w-3.5 h-3.5" />
             <span>نسخه ۲.۰ — دوره مالی ۱۴۰۵ الی ۱۴۰۶</span>
           </div>
@@ -108,7 +109,7 @@ export const LoginView: React.FC = () => {
 
         {/* ---------------- Identity selection ---------------- */}
         <section className="p-6 lg:p-10 flex flex-col justify-center">
-          <div className="mb-6">
+          <div id="login-view-identity-selection" className="mb-6">
             <h2 className="text-xl lg:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
               <LogIn className="w-6 h-6 text-blue-600" />
               ورود به سامانه
@@ -124,6 +125,7 @@ export const LoginView: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <div
+              id="login-view-identity-selection-2"
               role="radiogroup"
               aria-label="انتخاب هویت سازمانی"
               onKeyDown={handleGroupKeyDown}
@@ -187,7 +189,7 @@ export const LoginView: React.FC = () => {
             </div>
 
             {selectedUser && (
-              <div className="text-[11px] text-slate-600 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 leading-relaxed">
+              <div id="login-view-identity-selection-3" className="text-[11px] text-slate-600 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 leading-relaxed">
                 ورود به عنوان <strong className="text-slate-900">{selectedUser.name}</strong> —{' '}
                 <span className="text-slate-700">{selectedUser.roleTitleFa}</span>
               </div>
@@ -206,7 +208,7 @@ export const LoginView: React.FC = () => {
               {selectedUser ? 'ورود به سامانه' : 'برای ادامه یک هویت را انتخاب کنید'}
             </button>
 
-            <div className="flex items-start gap-2 text-[10px] text-amber-900 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 leading-relaxed">
+            <div id="login-view-identity-selection-4" className="flex items-start gap-2 text-[10px] text-amber-900 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 leading-relaxed">
               <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
               <span>
                 این صفحه دروازه شبیه‌سازی دسترسی سازمانی است؛ رمز عبور و احراز هویت واقعی در سامانه

@@ -343,29 +343,29 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
   };
 
   return (
-    <div className="space-y-4" ref={headerMenuRef}>
+    <div id="priority-allocation-table-root" className="space-y-4" ref={headerMenuRef}>
       
       {/* 1. Executive KPI Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div id="priority-allocation-table-1-executive-kpi-summary-cards" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Card 1: Total Approved CSR Budget */}
-        <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
-          <div>
+        <div id="priority-allocation-table-card-1-total-approved-csr-budget" className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
+          <div id="priority-allocation-table-card-1-total-approved-csr-budget-2">
             <span className="text-[11px] font-bold text-slate-500 block">بودجه کل مصوب CSR</span>
             <span className="text-base font-black text-slate-900 mt-0.5 block dir-rtl font-mono">
               {formatLargeBudgetPersian(totalBudgetToman)}
             </span>
             <span className="text-[10px] text-slate-400 mt-0.5 block">سال مالی ۱۴۰۳ - کل شهرستان رفسنجان</span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
+          <div id="priority-allocation-table-card-1-total-approved-csr-budget-3" className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
             <Coins className="w-5 h-5" />
           </div>
         </div>
 
         {/* Card 2: Allocation Balance Status */}
-        <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
-          <div>
+        <div id="priority-allocation-table-card-2-allocation-balance-status" className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
+          <div id="priority-allocation-table-card-2-allocation-balance-status-2">
             <span className="text-[11px] font-bold text-slate-500 block">وضعیت توازن بودجه</span>
-            <div className="flex items-center gap-1.5 mt-0.5">
+            <div id="priority-allocation-table-card-2-allocation-balance-status-3" className="flex items-center gap-1.5 mt-0.5">
               <span className={`text-base font-black font-mono ${
                 roundedSum === 100 ? 'text-emerald-700' : roundedSum > 100 ? 'text-rose-700' : 'text-amber-700'
               }`}>
@@ -385,7 +385,7 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
               تخصیص‌یافته: {formatCurrency(Math.round((totalBudgetToman * roundedSum) / 100), 'TOMAN', true)}
             </span>
           </div>
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
+          <div id="priority-allocation-table-card-2-allocation-balance-status-4" className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
             roundedSum === 100 
               ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
               : 'bg-amber-50 text-amber-600 border-amber-100'
@@ -395,8 +395,8 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
         </div>
 
         {/* Card 3: Prioritized CSR Domains */}
-        <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
-          <div>
+        <div id="priority-allocation-table-card-3-prioritized-csr-domains" className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
+          <div id="priority-allocation-table-card-3-prioritized-csr-domains-2">
             <span className="text-[11px] font-bold text-slate-500 block">سرفصل‌های مسئولیت اجتماعی</span>
             <span className="text-base font-black text-slate-900 mt-0.5 block">
               {toPersianDigits(priorities.length)} حوزه کلان مصوب
@@ -406,36 +406,36 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
               {toPersianDigits(filterCounts.hotspots)} کانون بحران حاد در رفسنجان
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100">
+          <div id="priority-allocation-table-card-3-prioritized-csr-domains-3" className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100">
             <FolderTree className="w-5 h-5" />
           </div>
         </div>
 
         {/* Card 4: Action Projects */}
-        <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
-          <div>
+        <div id="priority-allocation-table-card-4-action-projects" className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
+          <div id="priority-allocation-table-card-4-action-projects-2">
             <span className="text-[11px] font-bold text-slate-500 block">پروژه‌های اجرایی عام‌المنفعه</span>
             <span className="text-base font-black text-slate-900 mt-0.5 block">
               ۱۲ پروژه میدانی فعال
             </span>
             <span className="text-[10px] text-slate-400 mt-0.5 block">آب شرب، درمان، حاشیه‌نشینی، اشتغال</span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 border border-purple-100">
+          <div id="priority-allocation-table-card-4-action-projects-3" className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 border border-purple-100">
             <FolderKanban className="w-5 h-5" />
           </div>
         </div>
       </div>
 
       {/* 2. Main Table Container */}
-      <div className="bg-white rounded-xl shadow-2xs border border-slate-200 overflow-hidden">
+      <div id="priority-allocation-table-2-main-table-container" className="bg-white rounded-xl shadow-2xs border border-slate-200 overflow-hidden">
         
         {/* Executive Header Toolbar */}
-        <div className="p-3 sm:p-4 bg-slate-50/70 border-b border-slate-200 space-y-2.5">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div id="priority-allocation-table-executive-header-toolbar" className="p-3 sm:p-4 bg-slate-50/70 border-b border-slate-200 space-y-2.5">
+          <div id="priority-allocation-table-executive-header-toolbar-2" className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             
             {/* Title and Active Filter Tag */}
-            <div>
-              <div className="flex items-center gap-2">
+            <div id="priority-allocation-table-title-and-active-filter-tag">
+              <div id="priority-allocation-table-title-and-active-filter-tag-2" className="flex items-center gap-2">
                 <h2 className="text-sm sm:text-base font-extrabold text-slate-800">جدول تخصیص و اولویت‌بندی بودجه CSR</h2>
                 <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
                   ({toPersianDigits(visiblePriorities.length)} سرفصل)
@@ -456,7 +456,7 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
             </div>
 
             {/* Main Action Buttons */}
-            <div className="flex items-center gap-1.5 flex-wrap">
+            <div id="priority-allocation-table-main-action-buttons" className="flex items-center gap-1.5 flex-wrap">
               <button
                 onClick={() => {
                   onApplySmartRecommendations();
@@ -548,15 +548,15 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
 
           {/* Live Synchronized Bubble Chart Dock in Dashboard */}
           {showLiveBubbleDock && (
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white border border-indigo-500/30 shadow-lg space-y-3 animate-in fade-in zoom-in-95 duration-200">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-indigo-800/40">
-                <div className="flex items-center gap-2.5">
+            <div id="priority-allocation-table-live-synchronized-bubble-chart" className="p-4 rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white border border-indigo-500/30 shadow-lg space-y-3 animate-in fade-in zoom-in-95 duration-200">
+              <div id="priority-allocation-table-live-synchronized-bubble-chart-2" className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-indigo-800/40">
+                <div id="priority-allocation-table-live-synchronized-bubble-chart-3" className="flex items-center gap-2.5">
                   <span className="relative flex h-3 w-3">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-400"></span>
                   </span>
-                  <div>
-                    <div className="flex items-center gap-2">
+                  <div id="priority-allocation-table-live-synchronized-bubble-chart-4">
+                    <div id="priority-allocation-table-live-synchronized-bubble-chart-5" className="flex items-center gap-2">
                       <CircleDot className="w-4 h-4 text-purple-400" />
                       <h4 className="font-black text-sm text-white">
                         پیش‌نمایش زنده نمودار حبابی (ارتباط شاخص محرومیت و تخصیص بودجه)
@@ -571,7 +571,7 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div id="priority-allocation-table-live-synchronized-bubble-chart-6" className="flex items-center gap-2">
                   {onOpenCharts && (
                     <button
                       type="button"
@@ -595,7 +595,7 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
               </div>
 
               {/* Mini Interactive Bubble Chart SVG */}
-              <div className="h-64 w-full relative bg-slate-950/60 rounded-xl p-3 border border-indigo-500/20 overflow-hidden">
+              <div id="priority-allocation-table-mini-interactive-bubble-chart" className="h-64 w-full relative bg-slate-950/60 rounded-xl p-3 border border-indigo-500/20 overflow-hidden">
                 <svg className="w-full h-full" viewBox="0 0 800 240" preserveAspectRatio="none">
                   {/* 4 Quadrants Background Tint */}
                   {/* Top-Right: High Deprivation + High Budget (Optimal) */}
@@ -682,8 +682,8 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
 
           {/* Realtime Feedback Alert */}
           {smartFeedback && (
-            <div className="p-2 rounded-lg bg-emerald-50 text-emerald-900 border border-emerald-300 flex items-center justify-between text-xs animate-in fade-in zoom-in-95 duration-200">
-              <div className="flex items-center gap-2">
+            <div id="priority-allocation-table-realtime-feedback-alert" className="p-2 rounded-lg bg-emerald-50 text-emerald-900 border border-emerald-300 flex items-center justify-between text-xs animate-in fade-in zoom-in-95 duration-200">
+              <div id="priority-allocation-table-realtime-feedback-alert-2" className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-emerald-600" />
                 <span className="font-bold">{smartFeedback}</span>
               </div>
@@ -694,10 +694,10 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
           )}
 
           {/* Compact Control Bar: Search + Sorting + Category Select */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-slate-200/80">
+          <div id="priority-allocation-table-compact-control-bar-search" className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-slate-200/80">
             
             {/* Search Input */}
-            <div className="relative flex-1 max-w-sm">
+            <div id="priority-allocation-table-search-input" className="relative flex-1 max-w-sm">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-2.5" />
               <input
                 type="text"
@@ -717,10 +717,10 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
             </div>
 
             {/* Quick Selectors: Sort & Category */}
-            <div className="flex items-center gap-2 flex-wrap">
+            <div id="priority-allocation-table-quick-selectors-sort-category" className="flex items-center gap-2 flex-wrap">
               
               {/* Category Dropdown */}
-              <div className="flex items-center gap-1">
+              <div id="priority-allocation-table-category-dropdown" className="flex items-center gap-1">
                 <span className="text-[11px] text-slate-500 font-medium hidden md:inline">دسته‌بندی:</span>
                 <select
                   value={headerCategoryFilter}
@@ -735,7 +735,7 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
               </div>
 
               {/* Sort Dropdown */}
-              <div className="flex items-center gap-1">
+              <div id="priority-allocation-table-sort-dropdown" className="flex items-center gap-1">
                 <span className="text-[11px] text-slate-500 font-medium hidden md:inline">مرتب‌سازی:</span>
                 <select
                   value={sortBy}
@@ -761,14 +761,14 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
           </div>
 
           {/* Slim Multi-Color Allocation Progress Bar */}
-          <div className="pt-1">
-            <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+          <div id="priority-allocation-table-slim-multi-color-allocation" className="pt-1">
+            <div id="priority-allocation-table-slim-multi-color-allocation-2" className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
               <span>نوار توزیع سهم‌ها بر روی ۱۰۰٪ بودجه کل</span>
               <span className={`font-mono font-bold ${roundedSum === 100 ? 'text-emerald-600' : 'text-amber-600'}`}>
                 مجموع: {toPersianDigits(roundedSum)}٪
               </span>
             </div>
-            <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden flex shadow-inner">
+            <div id="priority-allocation-table-slim-multi-color-allocation-3" className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden flex shadow-inner">
               {priorities.map((p, idx) => {
                 const pct = currentPercentages[p.id] || 0;
                 if (pct <= 0) return null;
@@ -778,6 +778,7 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
                 ];
                 return (
                   <div
+                    id={`priority-allocation-table-slim-multi-color-allocation-4-${p.id}`}
                     key={p.id}
                     style={{ width: `${(pct / Math.max(100, roundedSum)) * 100}%` }}
                     className={`${colors[idx % colors.length]} transition-all duration-300`}
@@ -792,10 +793,10 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
 
         {/* 3. Collapsible Advanced Filters Drawer (Hidden by default to keep dashboard clean) */}
         {showAdvancedFilters && (
-          <div className="p-3.5 bg-slate-100/90 border-b border-slate-200 space-y-3 animate-in fade-in duration-200">
+          <div id="priority-allocation-table-3-collapsible-advanced-filters" className="p-3.5 bg-slate-100/90 border-b border-slate-200 space-y-3 animate-in fade-in duration-200">
             
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div id="priority-allocation-table-3-collapsible-advanced-filters-2" className="flex items-center justify-between">
+              <div id="priority-allocation-table-3-collapsible-advanced-filters-3" className="flex items-center gap-2">
                 <span className="text-xs font-black text-slate-800 flex items-center gap-1.5">
                   <Filter className="w-3.5 h-3.5 text-indigo-600" />
                   فیلترهای پیشرفته و کانون‌های بحران رفسنجان
@@ -815,7 +816,7 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
             </div>
 
             {/* Quick Severity Ranking Chips */}
-            <div className="flex items-center gap-1.5 flex-wrap">
+            <div id="priority-allocation-table-quick-severity-ranking-chips" className="flex items-center gap-1.5 flex-wrap">
               <button
                 type="button"
                 onClick={() => setFilterTier('ALL')}
@@ -891,7 +892,7 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
             </div>
 
             {/* Social Harms Topic Filter Pills */}
-            <div className="pt-2 border-t border-slate-200/80">
+            <div id="priority-allocation-table-social-harms-topic-filter-pills" className="pt-2 border-t border-slate-200/80">
               <TableTopicFilters
                 selectedTopicId={selectedTopicId}
                 onSelectTopic={setSelectedTopicId}
@@ -903,7 +904,7 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
         )}
 
         {/* 4. Main Priorities Table */}
-        <div className="overflow-x-auto">
+        <div id="priority-allocation-table-4-main-priorities-table" className="overflow-x-auto">
         <table className="w-full text-right text-xs">
           <thead className="bg-slate-100/90 text-slate-700 font-bold border-b border-slate-200 text-[11px] select-none">
             <tr>
@@ -912,14 +913,14 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
 
               {/* Col 2: Title & Actions & Search Filter */}
               <th className="py-2.5 px-3 relative">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5">
+                <div id="priority-allocation-table-col-2-title-actions-search" className="flex items-center justify-between gap-2">
+                  <div id="priority-allocation-table-col-2-title-actions-search-2" className="flex items-center gap-1.5">
                     <span>عنوان سرفصل، رتبه بحران و اقدامات اجرایی</span>
                     {tableSearchQuery && (
                       <span className="w-2 h-2 rounded-full bg-indigo-600 inline-block animate-ping" />
                     )}
                   </div>
-                  <div className="relative inline-flex items-center">
+                  <div id="priority-allocation-table-col-2-title-actions-search-3" className="relative inline-flex items-center">
                     <input
                       type="text"
                       placeholder="فیلتر در عناوین..."
@@ -942,9 +943,9 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
 
               {/* Col 3: Category Filter */}
               <th className="py-2.5 px-2 text-center w-28 hidden md:table-cell relative">
-                <div className="inline-flex items-center gap-1 justify-center">
+                <div id="priority-allocation-table-col-3-category-filter" className="inline-flex items-center gap-1 justify-center">
                   <span>دسته</span>
-                  <div className="relative">
+                  <div id="priority-allocation-table-col-3-category-filter-2" className="relative">
                     <button
                       type="button"
                       onClick={(e) => {
@@ -962,11 +963,11 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
                     </button>
 
                     {openHeaderMenu === 'CATEGORY' && (
-                      <div 
+                      <div id="priority-allocation-table-col-3-category-filter-3" 
                         className="absolute top-full left-0 sm:right-0 mt-1 bg-white rounded-lg shadow-xl border border-slate-200 z-50 p-1.5 w-44 text-right space-y-1 text-[10px]"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="font-bold text-slate-800 pb-1 border-b border-slate-100 flex items-center justify-between">
+                        <div id="priority-allocation-table-col-3-category-filter-4" className="font-bold text-slate-800 pb-1 border-b border-slate-100 flex items-center justify-between">
                           <span>فیلتر دسته</span>
                           {headerCategoryFilter !== 'ALL' && (
                             <button
@@ -1014,9 +1015,9 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
 
               {/* Col 4: Severity & Damage Filter */}
               <th className="py-2.5 px-2 text-center w-36 relative">
-                <div className="inline-flex items-center gap-1 justify-center">
+                <div id="priority-allocation-table-col-4-severity-damage-filter" className="inline-flex items-center gap-1 justify-center">
                   <span>شدت آسیب در منطقه</span>
-                  <div className="relative">
+                  <div id="priority-allocation-table-col-4-severity-damage-filter-2" className="relative">
                     <button
                       type="button"
                       onClick={(e) => {
@@ -1034,11 +1035,11 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
                     </button>
 
                     {openHeaderMenu === 'SEVERITY' && (
-                      <div 
+                      <div id="priority-allocation-table-col-4-severity-damage-filter-3" 
                         className="absolute top-full left-0 sm:right-0 mt-1 bg-white rounded-lg shadow-xl border border-slate-200 z-50 p-1.5 w-48 text-right space-y-1 text-[10px]"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="font-bold text-slate-800 pb-1 border-b border-slate-100 flex items-center justify-between">
+                        <div id="priority-allocation-table-col-4-severity-damage-filter-4" className="font-bold text-slate-800 pb-1 border-b border-slate-100 flex items-center justify-between">
                           <span>فیلتر سطح بحران</span>
                           {headerSeverityFilter !== 'ALL' && (
                             <button
@@ -1080,9 +1081,9 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
 
               {/* Col 5: Percentage & Allocation Range Filter */}
               <th className="py-2.5 px-2 text-center w-40 relative">
-                <div className="inline-flex items-center gap-1 justify-center">
+                <div id="priority-allocation-table-col-5-percentage-allocation" className="inline-flex items-center gap-1 justify-center">
                   <span>تنظیم سهم (درصد)</span>
-                  <div className="relative">
+                  <div id="priority-allocation-table-col-5-percentage-allocation-2" className="relative">
                     <button
                       type="button"
                       onClick={(e) => {
@@ -1100,11 +1101,11 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
                     </button>
 
                     {openHeaderMenu === 'PERCENTAGE' && (
-                      <div 
+                      <div id="priority-allocation-table-col-5-percentage-allocation-3" 
                         className="absolute top-full left-0 sm:right-0 mt-1 bg-white rounded-lg shadow-xl border border-slate-200 z-50 p-1.5 w-44 text-right space-y-1 text-[10px]"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="font-bold text-slate-800 pb-1 border-b border-slate-100 flex items-center justify-between">
+                        <div id="priority-allocation-table-col-5-percentage-allocation-4" className="font-bold text-slate-800 pb-1 border-b border-slate-100 flex items-center justify-between">
                           <span>فیلتر درصد سهم</span>
                           {headerPctRangeFilter !== 'ALL' && (
                             <button
@@ -1200,8 +1201,8 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
 
                   {/* Priority Title & Info */}
                   <td className="py-2 px-3">
-                    <div className="flex items-start gap-2">
-                      <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
+                    <div id={`priority-allocation-table-priority-title-info-${p.id}`} className="flex items-start gap-2">
+                      <div id={`priority-allocation-table-priority-title-info-2-${p.id}`} className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
                         priorityStat?.isHotspot 
                           ? 'bg-rose-100 text-rose-700' 
                           : priorityStat?.isUniversal 
@@ -1210,8 +1211,8 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
                       }`}>
                         <IconComp className="w-3.5 h-3.5" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5 flex-wrap">
+                      <div id={`priority-allocation-table-priority-title-info-3-${p.id}`} className="flex-1 min-w-0">
+                        <div id={`priority-allocation-table-priority-title-info-4-${p.id}`} className="font-bold text-slate-900 text-xs flex items-center gap-1.5 flex-wrap">
                           
                           {/* Code number badge */}
                           <span className="w-4 h-4 rounded bg-indigo-100 text-indigo-800 text-[10px] font-black flex items-center justify-center shrink-0">
@@ -1271,7 +1272,7 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
 
                         {/* Sub-Items Badge & Accordion */}
                         {p.subItems && p.subItems.length > 0 && (
-                          <div className="mt-1">
+                          <div id={`priority-allocation-table-sub-items-badge-accordion-${p.id}`} className="mt-1">
                             <button
                               type="button"
                               onClick={() => toggleSubItems(p.id)}
@@ -1288,16 +1289,16 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
 
                             {/* Sub-Items List */}
                             {expandedSubItems[p.id] && (
-                              <div className="mt-2 p-2.5 bg-slate-50 border border-indigo-100 rounded-lg space-y-1.5 shadow-2xs">
-                                <div className="flex items-center justify-between pb-1 border-b border-slate-200 text-[10px] font-bold text-slate-700">
+                              <div id={`priority-allocation-table-sub-items-list-${p.id}`} className="mt-2 p-2.5 bg-slate-50 border border-indigo-100 rounded-lg space-y-1.5 shadow-2xs">
+                                <div id={`priority-allocation-table-sub-items-list-2-${p.id}`} className="flex items-center justify-between pb-1 border-b border-slate-200 text-[10px] font-bold text-slate-700">
                                   <span>اقدامات تفکیکی ذیل «{p.category}»:</span>
                                   <span className="text-slate-400 font-normal">
                                     {toPersianDigits(p.subItems.length)} عنوان اقدام
                                   </span>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
+                                <div id={`priority-allocation-table-sub-items-list-3-${p.id}`} className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
                                   {p.subItems.map((sub, idx) => (
-                                    <div 
+                                    <div id={`priority-allocation-table-sub-items-list-4-${idx}`} 
                                       key={idx} 
                                       className="p-1.5 rounded bg-white border border-slate-200 text-[10px] text-slate-700 flex items-start gap-1.5"
                                     >
@@ -1315,9 +1316,9 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
 
                         {/* Expandable Explanation Popover with 4-Level Diagnostics */}
                         {activeTooltip === p.id && explainInfo && (
-                          <div className="mt-1.5 p-3 bg-slate-900 text-slate-100 text-[11px] rounded-xl shadow-xl border border-slate-800 space-y-2 max-w-xl">
-                            <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
-                              <div className="font-bold text-amber-300 flex items-center gap-1 text-xs">
+                          <div id={`priority-allocation-table-expandable-explanation-popover-${p.id}`} className="mt-1.5 p-3 bg-slate-900 text-slate-100 text-[11px] rounded-xl shadow-xl border border-slate-800 space-y-2 max-w-xl">
+                            <div id={`priority-allocation-table-expandable-explanation-popover-2-${p.id}`} className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                              <div id={`priority-allocation-table-expandable-explanation-popover-3-${p.id}`} className="font-bold text-amber-300 flex items-center gap-1 text-xs">
                                 <Sparkles className="w-3.5 h-3.5" />
                                 نسبت‌سنجی آماری ۴ سطحی و استدلال هوشمند:
                               </div>
@@ -1329,22 +1330,22 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
                             </div>
 
                             {explainInfo.prevalence && (
-                              <div className="grid grid-cols-4 gap-1.5 text-[9px] bg-slate-800/80 p-2 rounded-lg text-center">
-                                <div className="p-1 bg-slate-700/60 rounded">
-                                  <div className="text-slate-400">۱. کشوری</div>
-                                  <div className="font-bold text-white mt-0.5">{toPersianDigits(explainInfo.prevalence.national)}</div>
+                              <div id={`priority-allocation-table-expandable-explanation-popover-4-${p.id}`} className="grid grid-cols-4 gap-1.5 text-[9px] bg-slate-800/80 p-2 rounded-lg text-center">
+                                <div id={`priority-allocation-table-expandable-explanation-popover-5-${p.id}`} className="p-1 bg-slate-700/60 rounded">
+                                  <div id={`priority-allocation-table-expandable-explanation-popover-6-${p.id}`} className="text-slate-400">۱. کشوری</div>
+                                  <div id={`priority-allocation-table-expandable-explanation-popover-7-${p.id}`} className="font-bold text-white mt-0.5">{toPersianDigits(explainInfo.prevalence.national)}</div>
                                 </div>
-                                <div className="p-1 bg-slate-700/60 rounded">
-                                  <div className="text-slate-400">۲. استانی</div>
-                                  <div className="font-bold text-indigo-300 mt-0.5">{toPersianDigits(explainInfo.prevalence.provincial)}</div>
+                                <div id={`priority-allocation-table-expandable-explanation-popover-8-${p.id}`} className="p-1 bg-slate-700/60 rounded">
+                                  <div id={`priority-allocation-table-expandable-explanation-popover-9-${p.id}`} className="text-slate-400">۲. استانی</div>
+                                  <div id={`priority-allocation-table-expandable-explanation-popover-10-${p.id}`} className="font-bold text-indigo-300 mt-0.5">{toPersianDigits(explainInfo.prevalence.provincial)}</div>
                                 </div>
-                                <div className="p-1 bg-slate-700/60 rounded">
-                                  <div className="text-slate-400">۳. شهرستانی</div>
-                                  <div className="font-bold text-blue-300 mt-0.5">{toPersianDigits(explainInfo.prevalence.county)}</div>
+                                <div id={`priority-allocation-table-expandable-explanation-popover-11-${p.id}`} className="p-1 bg-slate-700/60 rounded">
+                                  <div id={`priority-allocation-table-expandable-explanation-popover-12-${p.id}`} className="text-slate-400">۳. شهرستانی</div>
+                                  <div id={`priority-allocation-table-expandable-explanation-popover-13-${p.id}`} className="font-bold text-blue-300 mt-0.5">{toPersianDigits(explainInfo.prevalence.county)}</div>
                                 </div>
-                                <div className={`p-1 rounded ${explainInfo.isLocalHotspot ? 'bg-rose-900/60 text-rose-200 font-bold' : 'bg-slate-700/60 text-emerald-300'}`}>
-                                  <div className="text-slate-300">۴. کانون محلی</div>
-                                  <div className="font-bold mt-0.5">{toPersianDigits(explainInfo.prevalence.local)}</div>
+                                <div id={`priority-allocation-table-expandable-explanation-popover-14-${p.id}`} className={`p-1 rounded ${explainInfo.isLocalHotspot ? 'bg-rose-900/60 text-rose-200 font-bold' : 'bg-slate-700/60 text-emerald-300'}`}>
+                                  <div id={`priority-allocation-table-expandable-explanation-popover-15-${p.id}`} className="text-slate-300">۴. کانون محلی</div>
+                                  <div id={`priority-allocation-table-expandable-explanation-popover-16-${p.id}`} className="font-bold mt-0.5">{toPersianDigits(explainInfo.prevalence.local)}</div>
                                 </div>
                               </div>
                             )}
@@ -1359,7 +1360,7 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
                               </p>
                             )}
 
-                            <div className="flex items-center gap-1.5 flex-wrap pt-1 text-[9px] text-slate-400">
+                            <div id={`priority-allocation-table-expandable-explanation-popover-17-${p.id}`} className="flex items-center gap-1.5 flex-wrap pt-1 text-[9px] text-slate-400">
                               {explainInfo.keyMetrics.map((m, i) => (
                                 <span key={i} className="bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">
                                   {m.label}: <strong className="text-white">{toPersianDigits(m.value)}</strong>
@@ -1383,8 +1384,8 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
                   {/* Real Statistical Damage / Vulnerability Column */}
                   <td className="py-2 px-2 text-center">
                     {priorityStat && (
-                      <div className="flex flex-col items-center gap-1">
-                        <div className="flex items-center justify-between w-full max-w-[120px] text-[10px]">
+                      <div id={`priority-allocation-table-real-statistical-damage-${p.id}`} className="flex flex-col items-center gap-1">
+                        <div id={`priority-allocation-table-real-statistical-damage-2-${p.id}`} className="flex items-center justify-between w-full max-w-[120px] text-[10px]">
                           <span className={`px-1.5 py-0.2 rounded border font-extrabold ${priorityStat.damageColor}`}>
                             {priorityStat.damageLabel}
                           </span>
@@ -1393,8 +1394,9 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
                           </span>
                         </div>
                         {/* Mini visual damage progress bar */}
-                        <div className="w-full max-w-[120px] bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                        <div id={`priority-allocation-table-mini-visual-damage-progress-bar-${p.id}`} className="w-full max-w-[120px] bg-slate-200 h-1.5 rounded-full overflow-hidden">
                           <div
+                            id={`priority-allocation-table-mini-visual-damage-progress-bar-2-${p.id}`}
                             className={`h-full rounded-full transition-all duration-300 ${
                               priorityStat.isHotspot || priorityStat.localDamage >= 65
                                 ? 'bg-rose-600'
@@ -1411,7 +1413,7 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
 
                   {/* Slider & Percentage Input */}
                   <td className="py-2 px-2 text-center">
-                    <div className="flex items-center gap-1.5 justify-center">
+                    <div id={`priority-allocation-table-slider-percentage-input-${p.id}`} className="flex items-center gap-1.5 justify-center">
                       <input
                         type="range"
                         min="0"
@@ -1422,7 +1424,7 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
                         onChange={(e) => onPercentageChange(p.id, parseFloat(e.target.value))}
                         className="w-16 accent-blue-600 cursor-pointer disabled:opacity-40"
                       />
-                      <div className="relative flex items-center">
+                      <div id={`priority-allocation-table-slider-percentage-input-2-${p.id}`} className="relative flex items-center">
                         <input
                           type="number"
                           min="0"
@@ -1440,7 +1442,7 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
 
                   {/* AI Recommendation Preview */}
                   <td className="py-2 px-2 text-center hidden sm:table-cell">
-                    <div className="flex flex-col items-center">
+                    <div id={`priority-allocation-table-ai-recommendation-preview-${p.id}`} className="flex flex-col items-center">
                       <span className="font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 text-[11px] font-mono">
                         {toPersianDigits(smartPct)}٪
                       </span>
@@ -1484,18 +1486,18 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
       </div>
 
       {/* 5. Executive Quick Navigation Cards to Other Tabs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+      <div id="priority-allocation-table-5-executive-quick-navigation" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
         {onOpenCharts && (
           <button
             type="button"
             onClick={onOpenCharts}
             className="p-3.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-right transition-all flex items-center justify-between group shadow-2xs"
           >
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-105 transition-transform border border-blue-100">
+            <div id="priority-allocation-table-5-executive-quick-navigation-2" className="flex items-center gap-2.5">
+              <div id="priority-allocation-table-5-executive-quick-navigation-3" className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-105 transition-transform border border-blue-100">
                 <BarChart3 className="w-4 h-4" />
               </div>
-              <div>
+              <div id="priority-allocation-table-5-executive-quick-navigation-4">
                 <span className="text-xs font-black text-slate-800 block">نمودارها و تحلیل بصری</span>
                 <span className="text-[10px] text-slate-400">توزیع بخشی، مقایسه AI، تحلیل بودجه</span>
               </div>
@@ -1510,11 +1512,11 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
             onClick={onOpenComparison}
             className="p-3.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-right transition-all flex items-center justify-between group shadow-2xs"
           >
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center group-hover:scale-105 transition-transform border border-rose-100">
+            <div id="priority-allocation-table-5-executive-quick-navigation-5" className="flex items-center gap-2.5">
+              <div id="priority-allocation-table-5-executive-quick-navigation-6" className="w-9 h-9 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center group-hover:scale-105 transition-transform border border-rose-100">
                 <Scale className="w-4 h-4" />
               </div>
-              <div>
+              <div id="priority-allocation-table-5-executive-quick-navigation-7">
                 <span className="text-xs font-black text-slate-800 block">جدول مقایسه‌ای آسیب‌ها</span>
                 <span className="text-[10px] text-slate-400">مقایسه نرخ رفسنجان با استان و کشور</span>
               </div>
@@ -1529,11 +1531,11 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
             onClick={onOpenProjects}
             className="p-3.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-right transition-all flex items-center justify-between group shadow-2xs"
           >
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center group-hover:scale-105 transition-transform border border-purple-100">
+            <div id="priority-allocation-table-5-executive-quick-navigation-8" className="flex items-center gap-2.5">
+              <div id="priority-allocation-table-5-executive-quick-navigation-9" className="w-9 h-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center group-hover:scale-105 transition-transform border border-purple-100">
                 <FolderKanban className="w-4 h-4" />
               </div>
-              <div>
+              <div id="priority-allocation-table-5-executive-quick-navigation-10">
                 <span className="text-xs font-black text-slate-800 block">پروژه‌های اجرایی میدانی</span>
                 <span className="text-[10px] text-slate-400">۱۲ پروژه محرومیت‌زدایی و پیشرفت فیزیکی</span>
               </div>
@@ -1548,11 +1550,11 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
             onClick={onOpenCsrDomains}
             className="p-3.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-right transition-all flex items-center justify-between group shadow-2xs"
           >
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-105 transition-transform border border-indigo-100">
+            <div id="priority-allocation-table-5-executive-quick-navigation-11" className="flex items-center gap-2.5">
+              <div id="priority-allocation-table-5-executive-quick-navigation-12" className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-105 transition-transform border border-indigo-100">
                 <FolderTree className="w-4 h-4" />
               </div>
-              <div>
+              <div id="priority-allocation-table-5-executive-quick-navigation-13">
                 <span className="text-xs font-black text-slate-800 block">عناوین و اقدامات CSR</span>
                 <span className="text-[10px] text-slate-400">ساختار درختی ۱۱ حوزه و اقدامات تفصیلی</span>
               </div>
@@ -1564,11 +1566,11 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
 
       {/* Add Priority Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
+        <div id="priority-allocation-table-add-priority-modal" className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div id="priority-allocation-table-add-priority-modal-2" className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
             <h3 className="text-base font-bold text-slate-900 mb-4">افزودن اولویت جدید مسئولیت اجتماعی</h3>
             <form onSubmit={handleAddSubmit} className="space-y-4 text-xs">
-              <div>
+              <div id="priority-allocation-table-add-priority-modal-3">
                 <label className="block text-slate-700 font-bold mb-1">عنوان اولویت محلی</label>
                 <input
                   type="text"
@@ -1580,7 +1582,7 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
                 />
               </div>
 
-              <div>
+              <div id="priority-allocation-table-add-priority-modal-4">
                 <label className="block text-slate-700 font-bold mb-1">دسته‌بندی موضوعی</label>
                 <select
                   value={newCategory}
@@ -1596,7 +1598,7 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
                 </select>
               </div>
 
-              <div>
+              <div id="priority-allocation-table-add-priority-modal-5">
                 <label className="block text-slate-700 font-bold mb-1">توضیح مختصر</label>
                 <textarea
                   rows={2}
@@ -1607,7 +1609,7 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
                 />
               </div>
 
-              <div>
+              <div id="priority-allocation-table-add-priority-modal-6">
                 <label className="block text-slate-700 font-bold mb-1">درصد اولیه پیشنهادی (٪)</label>
                 <input
                   type="number"
@@ -1619,7 +1621,7 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t">
+              <div id="priority-allocation-table-add-priority-modal-7" className="flex items-center justify-end gap-2 pt-3 border-t">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}

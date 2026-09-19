@@ -137,12 +137,12 @@ export const ExecutorsView: React.FC = () => {
   const availableCount = useMemo(() => executors.filter((e) => e.capacityStatus === 'AVAILABLE').length, [executors]);
 
   return (
-    <div className="space-y-6">
+    <div id="executors-view-root" className="space-y-6">
       {/* Header Banner (Light Theme) */}
-      <div className="bg-gradient-to-r from-cyan-50/90 via-sky-50/70 to-slate-50 rounded-2xl p-6 text-slate-900 border border-cyan-200/80 shadow-2xs relative overflow-hidden">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
+      <div id="executors-view-header-banner-light-theme" className="bg-gradient-to-r from-cyan-50/90 via-sky-50/70 to-slate-50 rounded-2xl p-6 text-slate-900 border border-cyan-200/80 shadow-2xs relative overflow-hidden">
+        <div id="executors-view-header-banner-light-theme-2" className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div id="executors-view-header-banner-light-theme-3">
+            <div id="executors-view-header-banner-light-theme-4" className="flex items-center gap-2 mb-2">
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-cyan-100 text-cyan-800 border border-cyan-200">
                 بازوی اجرایی و پیاده‌سازی میدانی
               </span>
@@ -158,7 +158,7 @@ export const ExecutorsView: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-3 self-start md:self-auto">
+          <div id="executors-view-header-banner-light-theme-5" className="flex items-center gap-3 self-start md:self-auto">
             {canManage && (
               <button
                 id="btn-add-executor"
@@ -173,20 +173,20 @@ export const ExecutorsView: React.FC = () => {
         </div>
 
         {/* Micro-KPI Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-cyan-200/60">
-          <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
+        <div id="executors-view-micro-kpi-strip" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-cyan-200/60">
+          <div id="executors-view-micro-kpi-strip-2" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">کل مجریان شناسنامه‌دار</span>
             <span className="text-xl font-black text-slate-900 mt-0.5 block font-mono">{executors.length} نهاد</span>
           </div>
-          <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
+          <div id="executors-view-micro-kpi-strip-3" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">پروژه‌های با موفقیت تحویل‌شده</span>
             <span className="text-xl font-black text-emerald-700 mt-0.5 block font-mono">{totalCompleted} پروژه</span>
           </div>
-          <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
+          <div id="executors-view-micro-kpi-strip-4" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">میانگین نرخ موفقیت میدانی</span>
             <span className="text-xl font-black text-cyan-700 mt-0.5 block font-mono">{avgSuccess}٪</span>
           </div>
-          <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
+          <div id="executors-view-micro-kpi-strip-5" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">مجریان دارای ظرفیت آزاد</span>
             <span className="text-xl font-black text-amber-700 mt-0.5 block font-mono">{availableCount} مجری</span>
           </div>
@@ -194,8 +194,8 @@ export const ExecutorsView: React.FC = () => {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
-        <div className="relative w-full md:w-80">
+      <div id="executors-view-filter-and-search-bar" className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
+        <div id="executors-view-filter-and-search-bar-2" className="relative w-full md:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-3" />
           <input
             type="text"
@@ -206,8 +206,8 @@ export const ExecutorsView: React.FC = () => {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+        <div id="executors-view-filter-and-search-bar-3" className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <div id="executors-view-filter-and-search-bar-4" className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
             <Filter className="w-3.5 h-3.5" />
             <span>نوع مجری:</span>
           </div>
@@ -239,22 +239,23 @@ export const ExecutorsView: React.FC = () => {
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div id="executors-view-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredExecutors.map((exec) => {
           const execProjects = projects.filter((p) => p.executorId === exec.id);
 
           return (
             <div
+              id={`executors-view-grid-2-${exec.id}`}
               key={exec.id}
               className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
             >
-              <div>
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-10 h-10 rounded-xl bg-cyan-50 dark:bg-cyan-950/60 border border-cyan-200 dark:border-cyan-800 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
+              <div id={`executors-view-grid-3-${exec.id}`}>
+                <div id={`executors-view-grid-4-${exec.id}`} className="flex items-start justify-between gap-2 mb-3">
+                  <div id={`executors-view-grid-5-${exec.id}`} className="flex items-center gap-2.5">
+                    <div id={`executors-view-grid-6-${exec.id}`} className="w-10 h-10 rounded-xl bg-cyan-50 dark:bg-cyan-950/60 border border-cyan-200 dark:border-cyan-800 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
                       <Briefcase className="w-5 h-5" />
                     </div>
-                    <div>
+                    <div id={`executors-view-grid-7-${exec.id}`}>
                       <span className="text-[10px] font-mono text-slate-400 tracking-wider block">{exec.code}</span>
                       <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight">{exec.name}</h3>
                     </div>
@@ -278,16 +279,16 @@ export const ExecutorsView: React.FC = () => {
                 </div>
 
                 {/* Lead Person & Contact */}
-                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 space-y-1.5 text-xs text-slate-600 dark:text-slate-300 border border-slate-100 dark:border-slate-800/80 mb-4">
-                  <div className="flex items-center justify-between">
+                <div id={`executors-view-lead-person-contact-${exec.id}`} className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 space-y-1.5 text-xs text-slate-600 dark:text-slate-300 border border-slate-100 dark:border-slate-800/80 mb-4">
+                  <div id={`executors-view-lead-person-contact-2-${exec.id}`} className="flex items-center justify-between">
                     <span className="text-slate-400 text-[11px]">فرمانده / مدیر:</span>
                     <span className="font-semibold text-slate-800 dark:text-slate-200">{exec.managingDirector}</span>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div id={`executors-view-lead-person-contact-3-${exec.id}`} className="flex items-center justify-between">
                     <span className="text-slate-400 text-[11px]">ساختار:</span>
                     <span className="font-medium text-cyan-600 dark:text-cyan-400">{exec.typeFa}</span>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div id={`executors-view-lead-person-contact-4-${exec.id}`} className="flex items-center justify-between">
                     <span className="text-slate-400 text-[11px] flex items-center gap-1">
                       <Phone className="w-3 h-3 text-slate-400" />
                       تماس:
@@ -297,18 +298,19 @@ export const ExecutorsView: React.FC = () => {
                 </div>
 
                 {/* Success Rate & Operational Region */}
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center justify-between text-xs">
+                <div id={`executors-view-success-rate-operational-region-${exec.id}`} className="space-y-2 mb-4">
+                  <div id={`executors-view-success-rate-operational-region-2-${exec.id}`} className="flex items-center justify-between text-xs">
                     <span className="text-slate-500 dark:text-slate-400">محدوده پوشش:</span>
                     <span className="font-medium text-slate-700 dark:text-slate-300 text-[11px]">{exec.coverageRegion}</span>
                   </div>
-                  <div className="flex items-center justify-between text-xs">
+                  <div id={`executors-view-success-rate-operational-region-3-${exec.id}`} className="flex items-center justify-between text-xs">
                     <span className="text-slate-500 dark:text-slate-400">نرخ موفقیت پروژه‌ها:</span>
                     <span className="font-bold text-cyan-600 dark:text-cyan-400">{exec.successRate}٪</span>
                   </div>
 
-                  <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                  <div id={`executors-view-success-rate-operational-region-4-${exec.id}`} className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                     <div
+                      id={`executors-view-success-rate-operational-region-5-${exec.id}`}
                       className="h-full bg-cyan-500 rounded-full transition-all duration-500"
                       style={{ width: `${exec.successRate}%` }}
                     />
@@ -317,8 +319,8 @@ export const ExecutorsView: React.FC = () => {
               </div>
 
               {/* Footer */}
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+              <div id={`executors-view-footer-${exec.id}`} className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                <div id={`executors-view-footer-2-${exec.id}`} className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
                   <FolderGit2 className="w-3.5 h-3.5 text-cyan-500" />
                   <span>{execProjects.length} پروژه جاری</span>
                   <span className="text-slate-300 dark:text-slate-700">|</span>
@@ -326,7 +328,7 @@ export const ExecutorsView: React.FC = () => {
                 </div>
 
                 {canManage && (
-                  <div className="flex items-center gap-1">
+                  <div id={`executors-view-footer-3-${exec.id}`} className="flex items-center gap-1">
                     <button
                       onClick={() => handleOpenEdit(exec)}
                       className="p-1.5 text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
@@ -351,9 +353,9 @@ export const ExecutorsView: React.FC = () => {
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[90vh]">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-4">
+        <div id="executors-view-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div id="executors-view-modal-2" className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div id="executors-view-modal-3" className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-4">
               <h3 className="font-black text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <Users2 className="w-5 h-5 text-cyan-500" />
                 {editingExec ? 'ویرایش مشخصات نهاد مجری' : 'ثبت و شناسنامه‌دار کردن نهاد مجری'}
@@ -367,7 +369,7 @@ export const ExecutorsView: React.FC = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-              <div>
+              <div id="executors-view-modal-4">
                 <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">نام نهاد مجری *</label>
                 <input
                   type="text"
@@ -379,8 +381,8 @@ export const ExecutorsView: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div id="executors-view-modal-5" className="grid grid-cols-2 gap-3">
+                <div id="executors-view-modal-6">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">کد شناسایی سیستمی *</label>
                   <input
                     type="text"
@@ -390,7 +392,7 @@ export const ExecutorsView: React.FC = () => {
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:outline-none font-mono"
                   />
                 </div>
-                <div>
+                <div id="executors-view-modal-7">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">نوع ساختار مجری</label>
                   <select
                     value={formType}
@@ -407,8 +409,8 @@ export const ExecutorsView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div id="executors-view-modal-8" className="grid grid-cols-2 gap-3">
+                <div id="executors-view-modal-9">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">فرمانده / مدیر ارشد *</label>
                   <input
                     type="text"
@@ -418,7 +420,7 @@ export const ExecutorsView: React.FC = () => {
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:outline-none"
                   />
                 </div>
-                <div>
+                <div id="executors-view-modal-10">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">تلفن هماهنگی *</label>
                   <input
                     type="text"
@@ -430,8 +432,8 @@ export const ExecutorsView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div id="executors-view-modal-11" className="grid grid-cols-2 gap-3">
+                <div id="executors-view-modal-12">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">محدوده پوشش عملیاتی</label>
                   <input
                     type="text"
@@ -441,7 +443,7 @@ export const ExecutorsView: React.FC = () => {
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:outline-none"
                   />
                 </div>
-                <div>
+                <div id="executors-view-modal-13">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">وضعیت ظرفیت اجرایی</label>
                   <select
                     value={formCapacity}
@@ -455,7 +457,7 @@ export const ExecutorsView: React.FC = () => {
                 </div>
               </div>
 
-              <div>
+              <div id="executors-view-modal-14">
                 <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">نرخ موفقیت گذشته (درصد)</label>
                 <input
                   type="number"
@@ -467,7 +469,7 @@ export const ExecutorsView: React.FC = () => {
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <div id="executors-view-modal-15" className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}

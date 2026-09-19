@@ -171,12 +171,12 @@ export const DepartmentsView: React.FC = () => {
   );
 
   return (
-    <div className="space-y-6">
+    <div id="departments-view-root" className="space-y-6">
       {/* Header Banner (Light Theme) */}
-      <div className="bg-gradient-to-r from-blue-50/90 via-indigo-50/70 to-slate-50 rounded-2xl p-6 text-slate-900 border border-blue-200/80 shadow-2xs relative overflow-hidden">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
+      <div id="departments-view-header-banner-light-theme" className="bg-gradient-to-r from-blue-50/90 via-indigo-50/70 to-slate-50 rounded-2xl p-6 text-slate-900 border border-blue-200/80 shadow-2xs relative overflow-hidden">
+        <div id="departments-view-header-banner-light-theme-2" className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div id="departments-view-header-banner-light-theme-3">
+            <div id="departments-view-header-banner-light-theme-4" className="flex items-center gap-2 mb-2">
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
                 دستگاه‌های اجرایی و نهادهای حاکمیتی
               </span>
@@ -192,7 +192,7 @@ export const DepartmentsView: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-3 self-start md:self-auto">
+          <div id="departments-view-header-banner-light-theme-5" className="flex items-center gap-3 self-start md:self-auto">
             {canEdit && (
               <button
                 id="btn-add-department"
@@ -207,20 +207,20 @@ export const DepartmentsView: React.FC = () => {
         </div>
 
         {/* Micro-KPI Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-blue-200/60">
-          <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
+        <div id="departments-view-micro-kpi-strip" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-blue-200/60">
+          <div id="departments-view-micro-kpi-strip-2" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">کل نهادهای فعال</span>
             <span className="text-xl font-black text-slate-900 mt-0.5 block">{departments.length} نهاد</span>
           </div>
-          <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
+          <div id="departments-view-micro-kpi-strip-3" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">مجموع بودجه مصوب</span>
             <span className="text-xl font-black text-emerald-700 mt-0.5 block font-mono">{formatToman(totalAllocated)}</span>
           </div>
-          <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
+          <div id="departments-view-micro-kpi-strip-4" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">بودجه جذب‌شده</span>
             <span className="text-xl font-black text-blue-700 mt-0.5 block font-mono">{formatToman(totalAbsorbed)}</span>
           </div>
-          <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
+          <div id="departments-view-micro-kpi-strip-5" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">میانگین امتیاز عملکرد</span>
             <span className="text-xl font-black text-amber-700 mt-0.5 block flex items-center gap-1 font-mono">
               <Award className="w-4 h-4" />
@@ -231,8 +231,8 @@ export const DepartmentsView: React.FC = () => {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
-        <div className="relative w-full md:w-80">
+      <div id="departments-view-filter-and-search-bar" className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
+        <div id="departments-view-filter-and-search-bar-2" className="relative w-full md:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-3" />
           <input
             type="text"
@@ -243,8 +243,8 @@ export const DepartmentsView: React.FC = () => {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+        <div id="departments-view-filter-and-search-bar-3" className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <div id="departments-view-filter-and-search-bar-4" className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
             <Filter className="w-3.5 h-3.5" />
             <span>حوزه فعالیت:</span>
           </div>
@@ -277,7 +277,7 @@ export const DepartmentsView: React.FC = () => {
       </div>
 
       {/* Departments Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div id="departments-view-departments-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredDepartments.map((dept) => {
           const deptProjects = projects.filter((p) => p.departmentId === dept.id);
           const absorptionRate =
@@ -287,16 +287,17 @@ export const DepartmentsView: React.FC = () => {
 
           return (
             <div
+              id={`departments-view-departments-grid-2-${dept.id}`}
               key={dept.id}
               className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
             >
-              <div>
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+              <div id={`departments-view-departments-grid-3-${dept.id}`}>
+                <div id={`departments-view-departments-grid-4-${dept.id}`} className="flex items-start justify-between gap-2 mb-3">
+                  <div id={`departments-view-departments-grid-5-${dept.id}`} className="flex items-center gap-2.5">
+                    <div id={`departments-view-departments-grid-6-${dept.id}`} className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                       <Building2 className="w-5 h-5" />
                     </div>
-                    <div>
+                    <div id={`departments-view-departments-grid-7-${dept.id}`}>
                       <span className="text-[10px] font-mono text-slate-400 tracking-wider block">{dept.code}</span>
                       <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight">{dept.name}</h3>
                     </div>
@@ -312,12 +313,12 @@ export const DepartmentsView: React.FC = () => {
                 </p>
 
                 {/* Manager and Contact */}
-                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 space-y-1.5 text-xs text-slate-600 dark:text-slate-300 border border-slate-100 dark:border-slate-800/80 mb-4">
-                  <div className="flex items-center justify-between">
+                <div id={`departments-view-manager-and-contact-${dept.id}`} className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 space-y-1.5 text-xs text-slate-600 dark:text-slate-300 border border-slate-100 dark:border-slate-800/80 mb-4">
+                  <div id={`departments-view-manager-and-contact-2-${dept.id}`} className="flex items-center justify-between">
                     <span className="text-slate-400 text-[11px]">مدیر مسئول:</span>
                     <span className="font-semibold text-slate-800 dark:text-slate-200">{dept.headPersonName}</span>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div id={`departments-view-manager-and-contact-3-${dept.id}`} className="flex items-center justify-between">
                     <span className="text-slate-400 text-[11px] flex items-center gap-1">
                       <Phone className="w-3 h-3 text-slate-400" />
                       تماس:
@@ -327,25 +328,26 @@ export const DepartmentsView: React.FC = () => {
                 </div>
 
                 {/* Financial & Absorption Progress */}
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center justify-between text-xs">
+                <div id={`departments-view-financial-absorption-progress-${dept.id}`} className="space-y-2 mb-4">
+                  <div id={`departments-view-financial-absorption-progress-2-${dept.id}`} className="flex items-center justify-between text-xs">
                     <span className="text-slate-500 dark:text-slate-400">بودجه مصوب:</span>
                     <span className="font-bold text-slate-800 dark:text-slate-200">{formatToman(dept.allocatedBudgetToman)}</span>
                   </div>
-                  <div className="flex items-center justify-between text-xs">
+                  <div id={`departments-view-financial-absorption-progress-3-${dept.id}`} className="flex items-center justify-between text-xs">
                     <span className="text-slate-500 dark:text-slate-400">جذب شده:</span>
                     <span className="font-bold text-indigo-600 dark:text-indigo-400">{formatToman(dept.absorbedBudgetToman)}</span>
                   </div>
 
-                  <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                  <div id={`departments-view-financial-absorption-progress-4-${dept.id}`} className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                     <div
+                      id={`departments-view-financial-absorption-progress-5-${dept.id}`}
                       className={`h-full rounded-full transition-all duration-500 ${
                         absorptionRate >= 75 ? 'bg-emerald-500' : absorptionRate >= 40 ? 'bg-indigo-500' : 'bg-amber-500'
                       }`}
                       style={{ width: `${absorptionRate}%` }}
                     />
                   </div>
-                  <div className="flex justify-between items-center text-[10px] text-slate-400">
+                  <div id={`departments-view-financial-absorption-progress-6-${dept.id}`} className="flex justify-between items-center text-[10px] text-slate-400">
                     <span>درصد جذب بودجه</span>
                     <span className="font-bold text-slate-700 dark:text-slate-300">{absorptionRate}٪</span>
                   </div>
@@ -353,14 +355,14 @@ export const DepartmentsView: React.FC = () => {
               </div>
 
               {/* Footer Actions */}
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+              <div id={`departments-view-footer-actions-${dept.id}`} className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                <div id={`departments-view-footer-actions-2-${dept.id}`} className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
                   <FolderGit2 className="w-3.5 h-3.5 text-indigo-500" />
                   <span>{deptProjects.length} پروژه فعال</span>
                 </div>
 
-                <div className="flex items-center gap-1.5">
-                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-300 font-bold text-[11px] border border-amber-200 dark:border-amber-800/40">
+                <div id={`departments-view-footer-actions-3-${dept.id}`} className="flex items-center gap-1.5">
+                  <div id={`departments-view-footer-actions-4-${dept.id}`} className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-300 font-bold text-[11px] border border-amber-200 dark:border-amber-800/40">
                     <Award className="w-3 h-3" />
                     <span>{dept.performanceScore}</span>
                   </div>
@@ -391,7 +393,7 @@ export const DepartmentsView: React.FC = () => {
       </div>
 
       {filteredDepartments.length === 0 && (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-12 text-center border border-slate-200 dark:border-slate-800">
+        <div id="departments-view-footer-actions-5" className="bg-white dark:bg-slate-900 rounded-2xl p-12 text-center border border-slate-200 dark:border-slate-800">
           <AlertCircle className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
           <h3 className="font-bold text-slate-700 dark:text-slate-200 text-sm">هیچ اداره یا نهادی با این مشخصات یافت نشد</h3>
           <p className="text-xs text-slate-400 mt-1">لطفاً عبارت جستجو یا فیلترهای خود را تغییر دهید.</p>
@@ -400,9 +402,9 @@ export const DepartmentsView: React.FC = () => {
 
       {/* CRUD Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[90vh]">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-4">
+        <div id="departments-view-crud-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div id="departments-view-crud-modal-2" className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div id="departments-view-crud-modal-3" className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-4">
               <h3 className="font-black text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-indigo-500" />
                 {editingDept ? 'ویرایش مشخصات نهاد متولی' : 'ثبت نهاد / اداره جدید در سامانه ملی'}
@@ -416,7 +418,7 @@ export const DepartmentsView: React.FC = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-              <div>
+              <div id="departments-view-crud-modal-4">
                 <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">نام کامل دستگاه اجرایی / اداره *</label>
                 <input
                   type="text"
@@ -428,8 +430,8 @@ export const DepartmentsView: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div id="departments-view-crud-modal-5" className="grid grid-cols-2 gap-3">
+                <div id="departments-view-crud-modal-6">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">کد شناسایی سیستمی</label>
                   <input
                     type="text"
@@ -438,7 +440,7 @@ export const DepartmentsView: React.FC = () => {
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono"
                   />
                 </div>
-                <div>
+                <div id="departments-view-crud-modal-7">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">سطح مدیریتی</label>
                   <select
                     value={formLevel}
@@ -453,8 +455,8 @@ export const DepartmentsView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div id="departments-view-crud-modal-8" className="grid grid-cols-2 gap-3">
+                <div id="departments-view-crud-modal-9">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">حوزه تخصصی فعالیت</label>
                   <select
                     value={formCategory}
@@ -475,7 +477,7 @@ export const DepartmentsView: React.FC = () => {
                   </select>
                 </div>
 
-                <div>
+                <div id="departments-view-crud-modal-10">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">نام مدیر مسئول</label>
                   <input
                     type="text"
@@ -487,8 +489,8 @@ export const DepartmentsView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div id="departments-view-crud-modal-11" className="grid grid-cols-2 gap-3">
+                <div id="departments-view-crud-modal-12">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">شماره تماس مستقیم</label>
                   <input
                     type="text"
@@ -498,7 +500,7 @@ export const DepartmentsView: React.FC = () => {
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono"
                   />
                 </div>
-                <div>
+                <div id="departments-view-crud-modal-13">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">ایمیل سازمانی</label>
                   <input
                     type="email"
@@ -510,8 +512,8 @@ export const DepartmentsView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div id="departments-view-crud-modal-14" className="grid grid-cols-2 gap-3">
+                <div id="departments-view-crud-modal-15">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">بودجه مصوب (تومان)</label>
                   <input
                     type="number"
@@ -521,7 +523,7 @@ export const DepartmentsView: React.FC = () => {
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono"
                   />
                 </div>
-                <div>
+                <div id="departments-view-crud-modal-16">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">بودجه جذب شده (تومان)</label>
                   <input
                     type="number"
@@ -533,7 +535,7 @@ export const DepartmentsView: React.FC = () => {
                 </div>
               </div>
 
-              <div>
+              <div id="departments-view-crud-modal-17">
                 <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">شرح مأموریت و وظایف در توسعه منطقه</label>
                 <textarea
                   rows={3}
@@ -544,7 +546,7 @@ export const DepartmentsView: React.FC = () => {
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <div id="departments-view-crud-modal-18" className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}

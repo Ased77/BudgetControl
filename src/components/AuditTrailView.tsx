@@ -8,8 +8,8 @@ interface AuditTrailViewProps {
 
 export const AuditTrailView: React.FC<AuditTrailViewProps> = ({ auditLogs }) => {
   return (
-    <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-2xs space-y-4">
-      <div className="border-b border-slate-100 pb-3">
+    <div id="audit-trail-view-root" className="bg-white rounded-2xl p-6 border border-slate-200 shadow-2xs space-y-4">
+      <div id="audit-trail-view-div-2" className="border-b border-slate-100 pb-3">
         <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
           <History className="w-5 h-5 text-blue-600" />
           سوابق و لاگ تغییرات حسابرسی (Audit Trail)
@@ -19,7 +19,7 @@ export const AuditTrailView: React.FC<AuditTrailViewProps> = ({ auditLogs }) => 
         </p>
       </div>
 
-      <div className="overflow-x-auto">
+      <div id="audit-trail-view-div-3" className="overflow-x-auto">
         <table className="w-full text-right text-xs">
           <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
             <tr>
@@ -38,8 +38,8 @@ export const AuditTrailView: React.FC<AuditTrailViewProps> = ({ auditLogs }) => 
                   {log.timestamp}
                 </td>
                 <td className="py-3 px-4">
-                  <div className="font-bold text-slate-900">{log.userName}</div>
-                  <div className="text-[10px] text-blue-600 font-medium">{log.userRole}</div>
+                  <div id={`audit-trail-view-div-4-${log.id}`} className="font-bold text-slate-900">{log.userName}</div>
+                  <div id={`audit-trail-view-div-5-${log.id}`} className="text-[10px] text-blue-600 font-medium">{log.userRole}</div>
                 </td>
                 <td className="py-3 px-4">
                   <span className="bg-blue-50 text-blue-800 font-semibold px-2.5 py-0.5 rounded-full text-[10px] border border-blue-200">

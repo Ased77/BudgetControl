@@ -127,12 +127,12 @@ export const PopulationView: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6">
+    <div id="population-view-root" className="space-y-6">
       {/* Header Banner */}
-      <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-sm relative overflow-hidden">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
+      <div id="population-view-header-banner" className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-sm relative overflow-hidden">
+        <div id="population-view-header-banner-2" className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div id="population-view-header-banner-3">
+            <div id="population-view-header-banner-4" className="flex items-center gap-2 mb-2">
               <span className="p-2 rounded-xl bg-blue-50 text-blue-700 border border-blue-200">
                 <Users className="w-5 h-5" />
               </span>
@@ -151,7 +151,7 @@ export const PopulationView: React.FC = () => {
           </div>
 
           {/* Quick Sub-navigation */}
-          <div className="flex flex-wrap items-center gap-2 shrink-0 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+          <div id="population-view-quick-sub-navigation" className="flex flex-wrap items-center gap-2 shrink-0 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
             <button
               onClick={() => setActiveSubTab('OVERVIEW')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -196,8 +196,8 @@ export const PopulationView: React.FC = () => {
         </div>
 
         {/* 4 Core County KPI Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mt-6 pt-6 border-t border-slate-100">
-          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+        <div id="population-view-4-core-county-kpi-cards" className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mt-6 pt-6 border-t border-slate-100">
+          <div id="population-view-4-core-county-kpi-cards-2" className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
             <span className="text-xs text-slate-500 font-semibold block mb-1">کل جمعیت شهرستان رفسنجان</span>
             <span className="text-2xl md:text-3xl font-black text-slate-900 font-mono block">
               {formatNumber(totalCountyPopulation)}
@@ -207,7 +207,7 @@ export const PopulationView: React.FC = () => {
             </span>
           </div>
 
-          <div className="bg-blue-50/70 p-4 rounded-2xl border border-blue-200">
+          <div id="population-view-4-core-county-kpi-cards-3" className="bg-blue-50/70 p-4 rounded-2xl border border-blue-200">
             <span className="text-xs text-blue-700 font-semibold block mb-1">جمعیت شهری رفسنجان</span>
             <span className="text-2xl md:text-3xl font-black text-blue-900 font-mono block">
               {formatNumber(urbanPopulation)}
@@ -217,7 +217,7 @@ export const PopulationView: React.FC = () => {
             </span>
           </div>
 
-          <div className="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-200">
+          <div id="population-view-4-core-county-kpi-cards-4" className="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-200">
             <span className="text-xs text-emerald-700 font-semibold block mb-1">جمعیت روستایی رفسنجان</span>
             <span className="text-2xl md:text-3xl font-black text-emerald-900 font-mono block">
               {formatNumber(ruralPopulation)}
@@ -227,8 +227,8 @@ export const PopulationView: React.FC = () => {
             </span>
           </div>
 
-          <div className="bg-rose-50/80 p-4 rounded-2xl border border-rose-200">
-            <div className="flex items-center justify-between">
+          <div id="population-view-4-core-county-kpi-cards-5" className="bg-rose-50/80 p-4 rounded-2xl border border-rose-200">
+            <div id="population-view-4-core-county-kpi-cards-6" className="flex items-center justify-between">
               <span className="text-xs text-rose-700 font-semibold block mb-1">کل جمعیت محروم و آسیب‌پذیر</span>
               <AlertTriangle className="w-4 h-4 text-rose-600" />
             </div>
@@ -243,9 +243,9 @@ export const PopulationView: React.FC = () => {
       </div>
 
       {/* Explanatory Clarification Alert regarding Project Reach vs Deprived Pop */}
-      <div className="bg-amber-50/90 border border-amber-200 p-4 rounded-2xl flex items-start gap-3 text-amber-900">
+      <div id="population-view-explanatory-clarification-alert" className="bg-amber-50/90 border border-amber-200 p-4 rounded-2xl flex items-start gap-3 text-amber-900">
         <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-        <div className="text-xs leading-relaxed space-y-1">
+        <div id="population-view-explanatory-clarification-alert-2" className="text-xs leading-relaxed space-y-1">
           <p className="font-bold text-amber-950">
             تفاوت آماری مهم: «جمعیت تحت پوشش زیرساخت‌های کلان» در برابر «جمعیت محروم شناسایی‌شده»:
           </p>
@@ -258,36 +258,37 @@ export const PopulationView: React.FC = () => {
 
       {/* SUB-TAB 1: Overview & Comparative Metrics */}
       {activeSubTab === 'OVERVIEW' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div id="population-view-sub-tab-1-overview-comparative" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Population Distribution by Bakhsh */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
+          <div id="population-view-population-distribution-by" className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
+            <div id="population-view-population-distribution-by-2" className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div id="population-view-population-distribution-by-3" className="flex items-center gap-2">
                 <MapPin className="w-5 h-5 text-blue-600" />
                 <h3 className="font-black text-slate-900 text-base">توزیع جمعیتی بر حسب بخش‌های چهارگانه</h3>
               </div>
               <span className="text-xs text-slate-500 font-mono">مجموع: ۳۱۵,۰۰۰ نفر</span>
             </div>
 
-            <div className="space-y-4">
+            <div id="population-view-population-distribution-by-4" className="space-y-4">
               {districtList.map((district) => {
                 const sharePercent = ((district.population / totalCountyPopulation) * 100).toFixed(1);
                 return (
-                  <div key={district.id} className="space-y-1.5">
-                    <div className="flex items-center justify-between text-xs">
+                  <div id={`population-view-population-distribution-by-5-${district.id}`} key={district.id} className="space-y-1.5">
+                    <div id={`population-view-population-distribution-by-6-${district.id}`} className="flex items-center justify-between text-xs">
                       <span className="font-bold text-slate-800">{district.name}</span>
-                      <div className="flex items-center gap-2 font-mono">
+                      <div id={`population-view-population-distribution-by-7-${district.id}`} className="flex items-center gap-2 font-mono">
                         <span className="text-slate-900 font-bold">{formatNumber(district.population)} نفر</span>
                         <span className="text-slate-400">({sharePercent}٪)</span>
                       </div>
                     </div>
-                    <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden flex">
+                    <div id={`population-view-population-distribution-by-8-${district.id}`} className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden flex">
                       <div
+                        id={`population-view-population-distribution-by-9-${district.id}`}
                         className="bg-blue-600 h-full rounded-full transition-all duration-500"
                         style={{ width: `${sharePercent}%` }}
                       />
                     </div>
-                    <div className="flex items-center justify-between text-[11px] text-slate-500">
+                    <div id={`population-view-population-distribution-by-10-${district.id}`} className="flex items-center justify-between text-[11px] text-slate-500">
                       <span>{district.urbanShare}</span>
                       <span className="text-rose-600 font-medium">
                         محرومیت: {formatNumber(district.deprivedCount)} نفر ({district.deprivedRate}٪)
@@ -300,10 +301,10 @@ export const PopulationView: React.FC = () => {
           </div>
 
           {/* Urban vs Rural & Vulnerability Stats */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-                <div className="flex items-center gap-2">
+          <div id="population-view-urban-vs-rural-vulnerability" className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4 flex flex-col justify-between">
+            <div id="population-view-urban-vs-rural-vulnerability-2">
+              <div id="population-view-urban-vs-rural-vulnerability-3" className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                <div id="population-view-urban-vs-rural-vulnerability-4" className="flex items-center gap-2">
                   <PieChartIcon className="w-5 h-5 text-indigo-600" />
                   <h3 className="font-black text-slate-900 text-base">شاخص‌های بافت سکونتی و اجتماعی</h3>
                 </div>
@@ -312,23 +313,23 @@ export const PopulationView: React.FC = () => {
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+              <div id="population-view-urban-vs-rural-vulnerability-5" className="grid grid-cols-2 gap-3 mb-4">
+                <div id="population-view-urban-vs-rural-vulnerability-6" className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
                   <span className="text-[11px] text-slate-500 block mb-1">نرخ حاشیه‌نشینی شهری</span>
                   <span className="text-xl font-black text-slate-900 font-mono">۹.۵٪</span>
                   <span className="text-[10px] text-slate-500 block mt-1">رحمت‌آباد و علی‌آباد</span>
                 </div>
-                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+                <div id="population-view-urban-vs-rural-vulnerability-7" className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
                   <span className="text-[11px] text-slate-500 block mb-1">نرخ بیکاری رسمی</span>
                   <span className="text-xl font-black text-slate-900 font-mono">۱۳.۸٪</span>
                   <span className="text-[10px] text-slate-500 block mt-1">تمرکز در فارغ‌التحصیلان</span>
                 </div>
-                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+                <div id="population-view-urban-vs-rural-vulnerability-8" className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
                   <span className="text-[11px] text-slate-500 block mb-1">روستاهای دارای تنش آبی</span>
                   <span className="text-xl font-black text-amber-700 font-mono">۳۸ روستا</span>
                   <span className="text-[10px] text-amber-700 block mt-1">کشکوئیه، راویز و نوق</span>
                 </div>
-                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+                <div id="population-view-urban-vs-rural-vulnerability-9" className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
                   <span className="text-[11px] text-slate-500 block mb-1">پوشش آب شرب پایدار</span>
                   <span className="text-xl font-black text-emerald-700 font-mono">۸۸.۲٪</span>
                   <span className="text-[10px] text-emerald-700 block mt-1">طرح جامع آبفا و مس</span>
@@ -336,7 +337,7 @@ export const PopulationView: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-4 bg-blue-50/80 rounded-2xl border border-blue-200 text-xs text-blue-900">
+            <div id="population-view-urban-vs-rural-vulnerability-10" className="p-4 bg-blue-50/80 rounded-2xl border border-blue-200 text-xs text-blue-900">
               <span className="font-bold block mb-1">📌 نتیجه‌گیری تحلیلی فرمانداری و ستاد:</span>
               نرخ محرومیت واقعی رفسنجان (۱۲.۱٪) نسبت به میانگین جنوب استان کرمان پایین‌تر است، اما عمق محرومیت در بخش‌های کشکوئیه و فردوس به دلیل کمبود آب شرب و آلایندگی اقلیمی، نیازمند مداخله هدفمند با ۵ همت اعتبارات است.
             </div>
@@ -346,15 +347,15 @@ export const PopulationView: React.FC = () => {
 
       {/* SUB-TAB 2: Detailed Districts Table */}
       {activeSubTab === 'DISTRICTS' && (
-        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div>
+        <div id="population-view-sub-tab-2-detailed-districts" className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
+          <div id="population-view-sub-tab-2-detailed-districts-2" className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div id="population-view-sub-tab-2-detailed-districts-3">
               <h3 className="font-black text-slate-900 text-lg">جدول تفصیلی بخش‌ها و آبادی‌های شهرستان رفسنجان</h3>
               <p className="text-xs text-slate-500 mt-0.5">آمار جمعیتی و درصد محرومیت تایید شده در کمیته برنامه‌ریزی</p>
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div id="population-view-sub-tab-2-detailed-districts-4" className="overflow-x-auto">
             <table className="w-full text-right text-xs">
               <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
                 <tr>
@@ -403,10 +404,10 @@ export const PopulationView: React.FC = () => {
 
       {/* SUB-TAB 3: Vulnerable Groups Breakdown */}
       {activeSubTab === 'VULNERABLE' && (
-        <div className="space-y-4">
-          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-6">
-              <div>
+        <div id="population-view-sub-tab-3-vulnerable-groups" className="space-y-4">
+          <div id="population-view-sub-tab-3-vulnerable-groups-2" className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
+            <div id="population-view-sub-tab-3-vulnerable-groups-3" className="flex items-center justify-between pb-3 border-b border-slate-100 mb-6">
+              <div id="population-view-sub-tab-3-vulnerable-groups-4">
                 <h3 className="font-black text-slate-900 text-lg">
                   تفکیک جامعه هدف ۳۸,۲۰۰ نفری محروم و آسیب‌پذیر رفسنجان
                 </h3>
@@ -419,13 +420,13 @@ export const PopulationView: React.FC = () => {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div id="population-view-sub-tab-3-vulnerable-groups-5" className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {vulnerableBreakdown.map((item, idx) => {
                 const Icon = item.icon;
                 return (
-                  <div key={idx} className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
+                  <div id={`population-view-sub-tab-3-vulnerable-groups-6-${idx}`} key={idx} className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-3">
+                    <div id={`population-view-sub-tab-3-vulnerable-groups-7-${idx}`} className="flex items-center justify-between">
+                      <div id={`population-view-sub-tab-3-vulnerable-groups-8-${idx}`} className="flex items-center gap-2">
                         <span className={`p-2 rounded-xl border ${item.color}`}>
                           <Icon className="w-5 h-5" />
                         </span>
@@ -436,18 +437,18 @@ export const PopulationView: React.FC = () => {
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200 text-xs">
-                      <div>
+                    <div id={`population-view-sub-tab-3-vulnerable-groups-9-${idx}`} className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200 text-xs">
+                      <div id={`population-view-sub-tab-3-vulnerable-groups-10-${idx}`}>
                         <span className="text-slate-500 text-[11px] block">تعداد خانوار:</span>
                         <span className="font-bold text-slate-800 font-mono">{formatNumber(item.households)} خانوار</span>
                       </div>
-                      <div>
+                      <div id={`population-view-sub-tab-3-vulnerable-groups-11-${idx}`}>
                         <span className="text-slate-500 text-[11px] block">جمعیت تحت پوشش:</span>
                         <span className="font-black text-rose-700 font-mono">{formatNumber(item.population)} نفر</span>
                       </div>
                     </div>
 
-                    <div className="text-[11px] text-slate-600 bg-white p-2.5 rounded-xl border border-slate-200">
+                    <div id={`population-view-sub-tab-3-vulnerable-groups-12-${idx}`} className="text-[11px] text-slate-600 bg-white p-2.5 rounded-xl border border-slate-200">
                       <span className="font-semibold text-slate-800">خدمات دریافتی: </span>
                       {item.supportType}
                     </div>
@@ -461,9 +462,9 @@ export const PopulationView: React.FC = () => {
 
       {/* SUB-TAB 4: Age Cohorts and Demographic Pyramid */}
       {activeSubTab === 'PYRAMID' && (
-        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-6">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div>
+        <div id="population-view-sub-tab-4-age-cohorts-and" className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-6">
+          <div id="population-view-sub-tab-4-age-cohorts-and-2" className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div id="population-view-sub-tab-4-age-cohorts-and-3">
               <h3 className="font-black text-slate-900 text-lg">ساختار هرم سنی جمعیت شهرستان رفسنجان</h3>
               <p className="text-xs text-slate-500 mt-0.5">توزیع گروه‌های سنی و اولویت‌های متناظر در قانون جوانی جمعیت</p>
             </div>
@@ -472,12 +473,12 @@ export const PopulationView: React.FC = () => {
             </span>
           </div>
 
-          <div className="space-y-5">
+          <div id="population-view-sub-tab-4-age-cohorts-and-4" className="space-y-5">
             {ageCohorts.map((cohort, index) => (
-              <div key={index} className="space-y-1.5 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                <div className="flex items-center justify-between text-xs">
+              <div id={`population-view-sub-tab-4-age-cohorts-and-5-${index}`} key={index} className="space-y-1.5 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                <div id={`population-view-sub-tab-4-age-cohorts-and-6-${index}`} className="flex items-center justify-between text-xs">
                   <span className="font-bold text-slate-900 text-sm">{cohort.label}</span>
-                  <div className="flex items-center gap-3 font-mono">
+                  <div id={`population-view-sub-tab-4-age-cohorts-and-7-${index}`} className="flex items-center gap-3 font-mono">
                     <span className="font-black text-slate-900">{formatNumber(cohort.count)} نفر</span>
                     <span className="font-bold text-blue-700 bg-blue-100/70 px-2 py-0.5 rounded-md">
                       {cohort.percent}٪
@@ -485,8 +486,9 @@ export const PopulationView: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="w-full bg-slate-200 h-3 rounded-full overflow-hidden">
+                <div id={`population-view-sub-tab-4-age-cohorts-and-8-${index}`} className="w-full bg-slate-200 h-3 rounded-full overflow-hidden">
                   <div
+                    id={`population-view-sub-tab-4-age-cohorts-and-9-${index}`}
                     className={`${cohort.color} h-full rounded-full transition-all duration-500`}
                     style={{ width: `${cohort.percent}%` }}
                   />
@@ -499,7 +501,7 @@ export const PopulationView: React.FC = () => {
             ))}
           </div>
 
-          <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 text-xs text-emerald-900 leading-relaxed">
+          <div id="population-view-sub-tab-4-age-cohorts-and-10" className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 text-xs text-emerald-900 leading-relaxed">
             <span className="font-bold block mb-1">🌟 تحلیل پنجره جمعیتی شهرستان رفسنجان:</span>
             بیش از <strong>۶۹.۳٪ از جمعیت رفسنجان</strong> در سنین فعال کار و جوانی (۱۵ تا ۶۴ سال) قرار دارند. این پنجره جمعیتی طلایی نشان می‌دهد که اولویت شماره یک تخصیص منابع CSR و بودجه عمومی باید معطوف به <strong>تسهیلات اشتغال خرد، رفع موانع ازدواج، تامین مسکن و درمان ناباروری</strong> باشد تا از تله جمعیتی و مهاجرت نخبگان جلوگیری به عمل آید.
           </div>

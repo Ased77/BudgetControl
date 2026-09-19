@@ -121,10 +121,10 @@ router.post('/api/calculate', (req, res) => {
 });`;
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto text-right">
+    <div id="architecture-docs-view-root" className="space-y-8 max-w-5xl mx-auto text-right">
       
       {/* Title */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs">
+      <div id="architecture-docs-view-title" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs">
         <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
           <Server className="w-6 h-6 text-blue-600" />
           مستندات معماری، پایگاه داده و الگوریتم هوشمند سامانه CSR
@@ -135,13 +135,13 @@ router.post('/api/calculate', (req, res) => {
       </div>
 
       {/* 1. Overall System Architecture Diagram */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
+      <div id="architecture-docs-view-1-overall-system-architecture" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
         <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
           <Cpu className="w-5 h-5 text-indigo-600" />
           ۱. دیاگرام معماری کلی سامانه (C4 Level 2 Component Architecture)
         </h3>
 
-        <div className="bg-slate-950 text-slate-200 p-5 rounded-2xl font-mono text-xs overflow-x-auto leading-relaxed dir-ltr border border-slate-800">
+        <div id="architecture-docs-view-1-overall-system-architecture-2" className="bg-slate-950 text-slate-200 p-5 rounded-2xl font-mono text-xs overflow-x-auto leading-relaxed dir-ltr border border-slate-800">
           <pre className="text-blue-300">
 {`+-----------------------------------------------------------------------------------+
 |                                FRONTEND LAYER (React 19)                           |
@@ -172,8 +172,8 @@ router.post('/api/calculate', (req, res) => {
       </div>
 
       {/* 2. Database Schema (PostgreSQL) */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
-        <div className="flex items-center justify-between">
+      <div id="architecture-docs-view-2-database-schema-postgresql" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
+        <div id="architecture-docs-view-2-database-schema-postgresql-2" className="flex items-center justify-between">
           <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
             <Database className="w-5 h-5 text-emerald-600" />
             ۲. طرح پایگاه داده (PostgreSQL / Drizzle Schema SQL)
@@ -187,14 +187,14 @@ router.post('/api/calculate', (req, res) => {
           </button>
         </div>
 
-        <div className="bg-slate-950 text-emerald-400 p-4 rounded-2xl font-mono text-xs overflow-x-auto dir-ltr border border-slate-800">
+        <div id="architecture-docs-view-2-database-schema-postgresql-3" className="bg-slate-950 text-emerald-400 p-4 rounded-2xl font-mono text-xs overflow-x-auto dir-ltr border border-slate-800">
           <pre>{sqlSchemaCode}</pre>
         </div>
       </div>
 
       {/* 3. Backend Endpoint Implementation Code */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
-        <div className="flex items-center justify-between">
+      <div id="architecture-docs-view-3-backend-endpoint" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
+        <div id="architecture-docs-view-3-backend-endpoint-2" className="flex items-center justify-between">
           <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
             <Code className="w-5 h-5 text-amber-600" />
             ۳. نمونه کد اندپوینت بک‌اند (Express API Endpoint)
@@ -208,13 +208,13 @@ router.post('/api/calculate', (req, res) => {
           </button>
         </div>
 
-        <div className="bg-slate-950 text-amber-300 p-4 rounded-2xl font-mono text-xs overflow-x-auto dir-ltr border border-slate-800">
+        <div id="architecture-docs-view-3-backend-endpoint-3" className="bg-slate-950 text-amber-300 p-4 rounded-2xl font-mono text-xs overflow-x-auto dir-ltr border border-slate-800">
           <pre>{backendEndpointCode}</pre>
         </div>
       </div>
 
       {/* 4. Smart Recommendation Formula */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
+      <div id="architecture-docs-view-4-smart-recommendation-formula" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
         <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
           <Terminal className="w-5 h-5 text-purple-600" />
           ۴. فرمول ریاضی و مدل امتیازدهی موتور پیشنهاد هوشمند
@@ -223,20 +223,20 @@ router.post('/api/calculate', (req, res) => {
           امتیاز خام اولیه هر اولویت $S_p$ بر اساس ترکیب خطی وزن‌دار شاخص‌های آماری محرومیت منطقه محاسبه می‌شود:
         </p>
 
-        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs font-mono text-slate-800 dir-ltr">
-          <div>S_1 (آسیب‌های اجتماعی) = 0.5 * SocialHarms + 0.3 * PovertyRate + 0.2 * DropOutRate</div>
-          <div>S_2 (حاشیه‌نشینی) = 0.55 * Marginalization + 0.25 * PovertyRate + 0.20 * InfrastructureDeficit</div>
-          <div>S_3 (آموزش) = 0.50 * DropOutRate + 0.30 * PovertyRate + 0.20 * CulturalDeficit</div>
-          <div>S_4 (بهداشت) = 0.45 * HealthAccessDeficit + 0.35 * EnvironmentalRisk + 0.20 * VulnerablePopNorm</div>
-          <div>...</div>
-          <div className="pt-2 text-purple-700 font-bold border-t border-slate-200">
+        <div id="architecture-docs-view-4-smart-recommendation-formula-2" className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs font-mono text-slate-800 dir-ltr">
+          <div id="architecture-docs-view-4-smart-recommendation-formula-3">S_1 (آسیب‌های اجتماعی) = 0.5 * SocialHarms + 0.3 * PovertyRate + 0.2 * DropOutRate</div>
+          <div id="architecture-docs-view-4-smart-recommendation-formula-4">S_2 (حاشیه‌نشینی) = 0.55 * Marginalization + 0.25 * PovertyRate + 0.20 * InfrastructureDeficit</div>
+          <div id="architecture-docs-view-4-smart-recommendation-formula-5">S_3 (آموزش) = 0.50 * DropOutRate + 0.30 * PovertyRate + 0.20 * CulturalDeficit</div>
+          <div id="architecture-docs-view-4-smart-recommendation-formula-6">S_4 (بهداشت) = 0.45 * HealthAccessDeficit + 0.35 * EnvironmentalRisk + 0.20 * VulnerablePopNorm</div>
+          <div id="architecture-docs-view-4-smart-recommendation-formula-7">...</div>
+          <div id="architecture-docs-view-4-smart-recommendation-formula-8" className="pt-2 text-purple-700 font-bold border-t border-slate-200">
             Normalized_Percentage_P = ( S_P / SUM(S_1 ... S_N) ) * 100
           </div>
         </div>
       </div>
 
       {/* 5. Future Roadmap & Integration Expansion */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
+      <div id="architecture-docs-view-5-future-roadmap-integration" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
         <h3 className="font-bold text-slate-900 text-sm">۵. نقشه راه توسعه و اتصال به سرویس‌های بیرونی</h3>
         <ul className="list-disc list-inside text-xs text-slate-600 space-y-2 leading-relaxed">
           <li><strong>اتصال به API مرکز آمار و استانداری‌ها:</strong> فراخوانی اتوماتیک آمار فقر و حاشیه‌نشینی بر اساس کد ملی منطقه.</li>

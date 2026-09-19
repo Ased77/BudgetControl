@@ -114,12 +114,12 @@ export const DashboardPredictiveEngine: React.FC = () => {
   const CustomChartTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white/95 backdrop-blur-md p-3.5 rounded-xl border border-slate-200 shadow-xl text-xs space-y-1.5 font-sans z-50">
+        <div id="dashboard-predictive-engine-root" className="bg-white/95 backdrop-blur-md p-3.5 rounded-xl border border-slate-200 shadow-xl text-xs space-y-1.5 font-sans z-50">
           <span className="font-bold text-slate-900 block pb-1 border-b border-slate-100 font-mono">
             سال مالی {label}
           </span>
           {payload.map((entry: any, index: number) => (
-            <div key={`tooltip-${index}`} className="flex items-center justify-between gap-4">
+            <div id={`dashboard-predictive-engine-div-2-${index}`} key={`tooltip-${index}`} className="flex items-center justify-between gap-4">
               <span className="flex items-center gap-1.5" style={{ color: entry.color }}>
                 <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
                 <span>{entry.name}:</span>
@@ -136,11 +136,11 @@ export const DashboardPredictiveEngine: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-6">
+    <div id="dashboard-predictive-engine-div-3" className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-6">
       {/* Engine Header & Scenario Selector (Light Theme) */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-200">
-        <div className="space-y-1">
-          <div className="flex flex-wrap items-center gap-2">
+      <div id="dashboard-predictive-engine-engine-header-scenario-selector" className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-200">
+        <div id="dashboard-predictive-engine-engine-header-scenario-selector-2" className="space-y-1">
+          <div id="dashboard-predictive-engine-engine-header-scenario-selector-3" className="flex flex-wrap items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 border border-indigo-200 flex items-center gap-1">
               <BrainCircuit className="w-3.5 h-3.5 text-indigo-600" />
               موتور تحلیل پیش‌بین تقاضای توسعه‌ای
@@ -157,12 +157,12 @@ export const DashboardPredictiveEngine: React.FC = () => {
         </div>
 
         {/* Scenario Controls */}
-        <div className="bg-slate-50 p-2 rounded-xl border border-slate-200 shrink-0 space-y-1.5 self-start lg:self-auto">
-          <div className="flex items-center justify-between text-[11px] text-slate-600 font-bold px-1">
+        <div id="dashboard-predictive-engine-scenario-controls" className="bg-slate-50 p-2 rounded-xl border border-slate-200 shrink-0 space-y-1.5 self-start lg:self-auto">
+          <div id="dashboard-predictive-engine-scenario-controls-2" className="flex items-center justify-between text-[11px] text-slate-600 font-bold px-1">
             <span>سناریوی مدل پیش‌بین:</span>
             <Sliders className="w-3 h-3 text-indigo-600" />
           </div>
-          <div className="flex items-center gap-1">
+          <div id="dashboard-predictive-engine-scenario-controls-3" className="flex items-center gap-1">
             <button
               onClick={() => setScenario('BASE')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
@@ -198,9 +198,9 @@ export const DashboardPredictiveEngine: React.FC = () => {
       </div>
 
       {/* 4 Macro Forecast KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold mb-1">
+      <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards-2" className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200">
+          <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards-3" className="flex items-center justify-between text-slate-500 text-xs font-semibold mb-1">
             <span>برآورد کل نیاز بودجه‌ای ۱۴۰۴</span>
             <Calendar className="w-3.5 h-3.5 text-indigo-600" />
           </div>
@@ -212,8 +212,8 @@ export const DashboardPredictiveEngine: React.FC = () => {
           </span>
         </div>
 
-        <div className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold mb-1">
+        <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards-4" className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200">
+          <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards-5" className="flex items-center justify-between text-slate-500 text-xs font-semibold mb-1">
             <span>نرخ رشد سالانه تقاضا</span>
             <ArrowUpRight className="w-3.5 h-3.5 text-amber-600" />
           </div>
@@ -225,8 +225,8 @@ export const DashboardPredictiveEngine: React.FC = () => {
           </span>
         </div>
 
-        <div className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold mb-1">
+        <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards-6" className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200">
+          <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards-7" className="flex items-center justify-between text-slate-500 text-xs font-semibold mb-1">
             <span>بیشترین کانون جهش تقاضا</span>
             <Flame className="w-3.5 h-3.5 text-rose-600" />
           </div>
@@ -238,8 +238,8 @@ export const DashboardPredictiveEngine: React.FC = () => {
           </span>
         </div>
 
-        <div className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold mb-1">
+        <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards-8" className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200">
+          <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards-9" className="flex items-center justify-between text-slate-500 text-xs font-semibold mb-1">
             <span>شکاف مالی پیش‌بینی‌شده</span>
             <AlertTriangle className="w-3.5 h-3.5 text-purple-600" />
           </div>
@@ -253,13 +253,13 @@ export const DashboardPredictiveEngine: React.FC = () => {
       </div>
 
       {/* Main Interactive Trend Chart Section */}
-      <div className="bg-slate-50/50 rounded-2xl p-4 md:p-5 border border-slate-200 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
-          <div className="flex items-center gap-2">
+      <div id="dashboard-predictive-engine-main-interactive-trend-chart" className="bg-slate-50/50 rounded-2xl p-4 md:p-5 border border-slate-200 space-y-4">
+        <div id="dashboard-predictive-engine-main-interactive-trend-chart-2" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
+          <div id="dashboard-predictive-engine-main-interactive-trend-chart-3" className="flex items-center gap-2">
             <span className="p-1.5 bg-indigo-100 text-indigo-700 rounded-lg">
               <TrendingUp className="w-4 h-4" />
             </span>
-            <div>
+            <div id="dashboard-predictive-engine-main-interactive-trend-chart-4">
               <h3 className="font-bold text-sm text-slate-900">
                 نمودار روند چندساله اعتبارات مصوب در برابر تقاضای واقعی پیش‌بینی‌شده
               </h3>
@@ -270,7 +270,7 @@ export const DashboardPredictiveEngine: React.FC = () => {
           </div>
 
           {/* Chart Type Toggle */}
-          <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 self-start sm:self-auto shadow-2xs">
+          <div id="dashboard-predictive-engine-chart-type-toggle" className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 self-start sm:self-auto shadow-2xs">
             <button
               onClick={() => setChartType('BUDGET_VS_NEED')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
@@ -295,7 +295,7 @@ export const DashboardPredictiveEngine: React.FC = () => {
         </div>
 
         {/* Chart Canvas */}
-        <div className="h-72 md:h-80 w-full" dir="ltr">
+        <div id="dashboard-predictive-engine-chart-canvas" className="h-72 md:h-80 w-full" dir="ltr">
           <ResponsiveContainer width="100%" height="100%">
             {chartType === 'BUDGET_VS_NEED' ? (
               <AreaChart data={timelineTrends} margin={{ top: 10, right: 30, left: 10, bottom: 0 }}>
@@ -382,8 +382,8 @@ export const DashboardPredictiveEngine: React.FC = () => {
         </div>
 
         {/* Legend annotation */}
-        <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-200">
-          <div className="flex items-center gap-4">
+        <div id="dashboard-predictive-engine-legend-annotation" className="flex flex-wrap items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-200">
+          <div id="dashboard-predictive-engine-legend-annotation-2" className="flex items-center gap-4">
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-indigo-600" />
               منحنی پیش‌بین حاصل ترکیب لاگ‌های تاریخی، تورم ساخت و نیازهای معوقه است.
@@ -398,9 +398,9 @@ export const DashboardPredictiveEngine: React.FC = () => {
       </div>
 
       {/* Sector Forecast Details & Log-Derived Rationales */}
-      <div className="space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2">
-          <div>
+      <div id="dashboard-predictive-engine-sector-forecast-details-log" className="space-y-3">
+        <div id="dashboard-predictive-engine-sector-forecast-details-log-2" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2">
+          <div id="dashboard-predictive-engine-sector-forecast-details-log-3">
             <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
               <Layers className="w-4 h-4 text-indigo-600" />
               تفکیک برآورد نیازهای توسعه‌ای سال آینده به همراه دلایل مستخرج از لاگ‌ها
@@ -411,7 +411,7 @@ export const DashboardPredictiveEngine: React.FC = () => {
           </div>
 
           {/* Filter badges */}
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div id="dashboard-predictive-engine-filter-badges" className="flex items-center gap-1.5 flex-wrap">
             <button
               onClick={() => setFilterUrgency('ALL')}
               className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
@@ -446,19 +446,20 @@ export const DashboardPredictiveEngine: React.FC = () => {
         </div>
 
         {/* Sector Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div id="dashboard-predictive-engine-sector-cards-grid" className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {filteredSectors.map((sector) => (
             <div
+              id={`dashboard-predictive-engine-sector-cards-grid-2-${sector.priorityId}`}
               key={sector.priorityId}
               className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs hover:border-indigo-300 transition-colors space-y-3 flex flex-col justify-between"
             >
-              <div>
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-2">
+              <div id={`dashboard-predictive-engine-sector-cards-grid-3-${sector.priorityId}`}>
+                <div id={`dashboard-predictive-engine-sector-cards-grid-4-${sector.priorityId}`} className="flex items-start justify-between gap-2 mb-2">
+                  <div id={`dashboard-predictive-engine-sector-cards-grid-5-${sector.priorityId}`} className="flex items-center gap-2">
                     <span className="p-1.5 rounded-lg bg-slate-100 border border-slate-200">
                       {getSectorIcon(sector.code)}
                     </span>
-                    <div>
+                    <div id={`dashboard-predictive-engine-sector-cards-grid-6-${sector.priorityId}`}>
                       <h4 className="font-bold text-xs text-slate-900 leading-snug line-clamp-1" title={sector.titleFa}>
                         {sector.titleFa}
                       </h4>
@@ -480,20 +481,20 @@ export const DashboardPredictiveEngine: React.FC = () => {
                 </div>
 
                 {/* Financial comparison row */}
-                <div className="grid grid-cols-3 gap-2 py-2 px-2.5 bg-slate-50 rounded-lg border border-slate-100 text-center text-xs">
-                  <div>
+                <div id={`dashboard-predictive-engine-financial-comparison-row-${sector.priorityId}`} className="grid grid-cols-3 gap-2 py-2 px-2.5 bg-slate-50 rounded-lg border border-slate-100 text-center text-xs">
+                  <div id={`dashboard-predictive-engine-financial-comparison-row-2-${sector.priorityId}`}>
                     <span className="text-[10px] text-slate-500 block">تخصیص جاری (۱۴۰۳)</span>
                     <span className="font-bold font-mono text-slate-800">
                       {formatToman(sector.currentAllocatedToman)}
                     </span>
                   </div>
-                  <div>
+                  <div id={`dashboard-predictive-engine-financial-comparison-row-3-${sector.priorityId}`}>
                     <span className="text-[10px] text-slate-500 block">برآورد نیاز (۱۴۰۴)</span>
                     <span className="font-bold font-mono text-indigo-700">
                       {formatToman(sector.projectedNeedNextYearToman)}
                     </span>
                   </div>
-                  <div>
+                  <div id={`dashboard-predictive-engine-financial-comparison-row-4-${sector.priorityId}`}>
                     <span className="text-[10px] text-slate-500 block">درصد رشد نیاز</span>
                     <span className="font-bold font-mono text-rose-700">
                       +{toPersianDigits(sector.growthRatePct)}٪
@@ -502,8 +503,8 @@ export const DashboardPredictiveEngine: React.FC = () => {
                 </div>
 
                 {/* Log-derived Rationale */}
-                <div className="mt-2.5 pt-2 border-t border-slate-100 text-[11px] text-slate-600 leading-relaxed">
-                  <div className="flex items-center gap-1 text-slate-500 mb-1 font-semibold text-[10px]">
+                <div id={`dashboard-predictive-engine-log-derived-rationale-${sector.priorityId}`} className="mt-2.5 pt-2 border-t border-slate-100 text-[11px] text-slate-600 leading-relaxed">
+                  <div id={`dashboard-predictive-engine-log-derived-rationale-2-${sector.priorityId}`} className="flex items-center gap-1 text-slate-500 mb-1 font-semibold text-[10px]">
                     <FileClock className="w-3 h-3 text-indigo-600" />
                     <span>علت مستخرج از سوابق لاگ‌ها و شاخص‌های محلی:</span>
                   </div>
@@ -511,7 +512,7 @@ export const DashboardPredictiveEngine: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px] text-slate-500">
+              <div id={`dashboard-predictive-engine-log-derived-rationale-3-${sector.priorityId}`} className="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px] text-slate-500">
                 <span>تعداد لاگ‌های مرتبط: {toPersianDigits(sector.logInterventionCount)} لاگ ممیزی</span>
                 <button
                   onClick={() => setActiveTab('PRIORITIES')}
@@ -527,12 +528,12 @@ export const DashboardPredictiveEngine: React.FC = () => {
       </div>
 
       {/* AI Executive Insight Strip */}
-      <div className="bg-indigo-50/70 rounded-xl p-4 border border-indigo-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
+      <div id="dashboard-predictive-engine-ai-executive-insight-strip" className="bg-indigo-50/70 rounded-xl p-4 border border-indigo-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div id="dashboard-predictive-engine-ai-executive-insight-strip-2" className="flex items-start gap-3">
+          <div id="dashboard-predictive-engine-ai-executive-insight-strip-3" className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
             <Sparkles className="w-4 h-4 text-amber-300" />
           </div>
-          <div>
+          <div id="dashboard-predictive-engine-ai-executive-insight-strip-4">
             <span className="font-black text-xs text-indigo-900 block">
               جمع‌بندی تحلیلی برای کمیته برنامه‌ریزی و بودجه شهرستان:
             </span>
@@ -542,7 +543,7 @@ export const DashboardPredictiveEngine: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0 self-end md:self-auto">
+        <div id="dashboard-predictive-engine-ai-executive-insight-strip-5" className="flex items-center gap-2 shrink-0 self-end md:self-auto">
           <button
             onClick={() => setActiveTab('PRIORITIES')}
             className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer"

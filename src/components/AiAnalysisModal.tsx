@@ -79,16 +79,16 @@ ${report.strategicAdvice}
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 z-50 text-right">
-      <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+    <div id="ai-analysis-modal-root" className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 z-50 text-right">
+      <div id="ai-analysis-modal-div-2" className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
         
         {/* Header */}
-        <div className="bg-gradient-to-r from-slate-900 to-indigo-950 p-5 text-white flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-amber-500/20 text-amber-300 rounded-xl border border-amber-500/30">
+        <div id="ai-analysis-modal-header" className="bg-gradient-to-r from-slate-900 to-indigo-950 p-5 text-white flex items-center justify-between">
+          <div id="ai-analysis-modal-header-2" className="flex items-center gap-3">
+            <div id="ai-analysis-modal-header-3" className="p-2 bg-amber-500/20 text-amber-300 rounded-xl border border-amber-500/30">
               <Sparkles className="w-5 h-5" />
             </div>
-            <div>
+            <div id="ai-analysis-modal-header-4">
               <h3 className="font-bold text-base">تحلیل هوشمند AI برای هیئت‌مدیره</h3>
               <p className="text-xs text-slate-300">ارزیابی هوشمند الگوی تخصیص بودجه CSR بر اساس آمارهای محرومیت</p>
             </div>
@@ -99,12 +99,12 @@ ${report.strategicAdvice}
         </div>
 
         {/* Body */}
-        <div className="p-6 overflow-y-auto space-y-5 text-xs text-slate-700">
+        <div id="ai-analysis-modal-body" className="p-6 overflow-y-auto space-y-5 text-xs text-slate-700">
           
           {!report && !loading && (
-            <div className="text-center py-8 space-y-4">
+            <div id="ai-analysis-modal-body-2" className="text-center py-8 space-y-4">
               <Bot className="w-12 h-12 text-indigo-500 mx-auto animate-bounce" />
-              <div>
+              <div id="ai-analysis-modal-body-3">
                 <h4 className="font-bold text-slate-900 text-sm">تولید گزارش کارشناسی خودکار با هوش مصنوعی</h4>
                 <p className="text-slate-500 mt-1 max-w-md mx-auto">
                   هوش مصنوعی داده‌های مربوط به نرخ فقر ({indicators.povertyRate}٪)، حاشیه‌نشینی ({indicators.marginalizationRate}٪) و اعتبارات {orgConfig.name} را تحلیل کرده و گزارش رسمی تولید می‌کند.
@@ -120,15 +120,15 @@ ${report.strategicAdvice}
           )}
 
           {loading && (
-            <div className="text-center py-12 space-y-3">
+            <div id="ai-analysis-modal-body-4" className="text-center py-12 space-y-3">
               <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mx-auto" />
               <p className="font-bold text-slate-800">در حال تحلیل شاخص‌های محرومیت محلی و بودجه...</p>
             </div>
           )}
 
           {report && !loading && (
-            <div className="space-y-4">
-              <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+            <div id="ai-analysis-modal-body-5" className="space-y-4">
+              <div id="ai-analysis-modal-body-6" className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
                 <strong className="text-indigo-900 font-bold block mb-1 flex items-center gap-1.5">
                   <FileText className="w-4 h-4 text-indigo-600" />
                   خلاصه مدیریتی:
@@ -136,7 +136,7 @@ ${report.strategicAdvice}
                 <p className="leading-relaxed text-slate-800 text-xs">{report.executiveSummary}</p>
               </div>
 
-              <div>
+              <div id="ai-analysis-modal-body-7">
                 <strong className="text-slate-900 font-bold block mb-2">نکات کلیدی برای جلسات هیئت مدیره:</strong>
                 <ul className="space-y-1.5">
                   {report.keyTakeaways?.map((t, idx) => (
@@ -148,7 +148,7 @@ ${report.strategicAdvice}
                 </ul>
               </div>
 
-              <div className="bg-amber-50 p-4 rounded-xl border border-amber-200">
+              <div id="ai-analysis-modal-body-8" className="bg-amber-50 p-4 rounded-xl border border-amber-200">
                 <strong className="text-amber-900 font-bold block mb-1 flex items-center gap-1.5">
                   <Lightbulb className="w-4 h-4 text-amber-600" />
                   توصیه استراتژیک نهایی:
@@ -162,7 +162,7 @@ ${report.strategicAdvice}
 
         {/* Footer */}
         {report && (
-          <div className="bg-slate-50 p-4 border-t border-slate-200 flex justify-between items-center">
+          <div id="ai-analysis-modal-footer" className="bg-slate-50 p-4 border-t border-slate-200 flex justify-between items-center">
             <button
               onClick={handleCopy}
               className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2 rounded-xl text-xs"

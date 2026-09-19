@@ -328,16 +328,16 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
   }, [currentLocation]);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-right dir-rtl space-y-4 p-4 sm:p-6">
+    <div id="comparative-harms-table-root" className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-right dir-rtl space-y-4 p-4 sm:p-6">
       
       {/* Header Banner */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-200">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-rose-600 to-indigo-600 text-white flex items-center justify-center shadow-md">
+      <div id="comparative-harms-table-header-banner" className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+        <div id="comparative-harms-table-header-banner-2">
+          <div id="comparative-harms-table-header-banner-3" className="flex items-center gap-2.5">
+            <div id="comparative-harms-table-header-banner-4" className="w-9 h-9 rounded-xl bg-gradient-to-tr from-rose-600 to-indigo-600 text-white flex items-center justify-center shadow-md">
               <Scale className="w-5 h-5" />
             </div>
-            <div>
+            <div id="comparative-harms-table-header-banner-5">
               <h2 className="text-base sm:text-lg font-extrabold text-slate-800 flex items-center gap-2">
                 <span>جدول مقایسه‌ای شاخص‌های آسیب اجتماعی و بزه‌ها</span>
                 <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
@@ -352,9 +352,9 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
         </div>
 
         {/* Current Active Location Badge & Quick Switcher */}
-        <div className="flex items-center gap-2 self-start lg:self-auto bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs">
+        <div id="comparative-harms-table-current-active-location-badge" className="flex items-center gap-2 self-start lg:self-auto bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs">
           <MapPin className="w-4 h-4 text-rose-600 shrink-0" />
-          <div>
+          <div id="comparative-harms-table-current-active-location-badge-2">
             <span className="text-slate-500 font-medium ml-1">منطقه مبنای مقایسه:</span>
             <strong className="text-slate-800 font-black">
               استان {currentLocation.province} - شهرستان {currentLocation.county} ({currentLocation.district})
@@ -364,52 +364,52 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
       </div>
 
       {/* KPI Cards Strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="p-3.5 rounded-xl bg-rose-50/70 border border-rose-200/80 flex items-center justify-between">
-          <div>
+      <div id="comparative-harms-table-kpi-cards-strip" className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div id="comparative-harms-table-kpi-cards-strip-2" className="p-3.5 rounded-xl bg-rose-50/70 border border-rose-200/80 flex items-center justify-between">
+          <div id="comparative-harms-table-kpi-cards-strip-3">
             <span className="text-[11px] font-bold text-rose-800">شاخص‌های فراتر از میانگین کشور</span>
-            <div className="text-lg font-black text-rose-900 mt-0.5">
+            <div id="comparative-harms-table-kpi-cards-strip-4" className="text-lg font-black text-rose-900 mt-0.5">
               {toPersianDigits(locationStats.worseThanNationalCount)} از {toPersianDigits(locationStats.totalIndicators)} شاخص
             </div>
             <span className="text-[10px] text-rose-600">نیازمند مداخله و حمایت CSR</span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-rose-200/60 text-rose-700 flex items-center justify-center font-bold">
+          <div id="comparative-harms-table-kpi-cards-strip-5" className="w-10 h-10 rounded-xl bg-rose-200/60 text-rose-700 flex items-center justify-center font-bold">
             <Flame className="w-5 h-5 text-rose-600 animate-pulse" />
           </div>
         </div>
 
-        <div className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/80 flex items-center justify-between">
-          <div>
+        <div id="comparative-harms-table-kpi-cards-strip-6" className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/80 flex items-center justify-between">
+          <div id="comparative-harms-table-kpi-cards-strip-7">
             <span className="text-[11px] font-bold text-amber-800">شاخص‌های در آستانه بحران حاد</span>
-            <div className="text-lg font-black text-amber-900 mt-0.5">
+            <div id="comparative-harms-table-kpi-cards-strip-8" className="text-lg font-black text-amber-900 mt-0.5">
               {toPersianDigits(locationStats.criticalCount)} شاخص حساس
             </div>
             <span className="text-[10px] text-amber-700">بالاتر از حد مجاز استاندارد</span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-amber-200/60 text-amber-700 flex items-center justify-center font-bold">
+          <div id="comparative-harms-table-kpi-cards-strip-9" className="w-10 h-10 rounded-xl bg-amber-200/60 text-amber-700 flex items-center justify-center font-bold">
             <AlertTriangle className="w-5 h-5 text-amber-600" />
           </div>
         </div>
 
-        <div className="p-3.5 rounded-xl bg-indigo-50/70 border border-indigo-200/80 flex items-center justify-between">
-          <div>
+        <div id="comparative-harms-table-kpi-cards-strip-10" className="p-3.5 rounded-xl bg-indigo-50/70 border border-indigo-200/80 flex items-center justify-between">
+          <div id="comparative-harms-table-kpi-cards-strip-11">
             <span className="text-[11px] font-bold text-indigo-800">ضریب تمرکز تجمیعی آسیب‌ها (LQ)</span>
-            <div className="text-lg font-black text-indigo-900 mt-0.5">
+            <div id="comparative-harms-table-kpi-cards-strip-12" className="text-lg font-black text-indigo-900 mt-0.5">
               {toPersianDigits(locationStats.avgLq)} برابر کشور
             </div>
             <span className="text-[10px] text-indigo-600">تراکم آسیب نسبت به کل ایران</span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-indigo-200/60 text-indigo-700 flex items-center justify-center font-bold">
+          <div id="comparative-harms-table-kpi-cards-strip-13" className="w-10 h-10 rounded-xl bg-indigo-200/60 text-indigo-700 flex items-center justify-center font-bold">
             <TrendingUp className="w-5 h-5 text-indigo-600" />
           </div>
         </div>
       </div>
 
       {/* Filter and Control Bars */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-50/80 p-3 rounded-xl border border-slate-200">
+      <div id="comparative-harms-table-filter-and-control-bars" className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-50/80 p-3 rounded-xl border border-slate-200">
         
         {/* Category Pills */}
-        <div className="flex items-center gap-1.5 flex-wrap">
+        <div id="comparative-harms-table-category-pills" className="flex items-center gap-1.5 flex-wrap">
           <span className="text-xs font-bold text-slate-500 flex items-center gap-1 shrink-0 ml-1">
             <Filter className="w-3.5 h-3.5" />
             حوزه آسیب:
@@ -437,9 +437,9 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
         </div>
 
         {/* Search & Compare Scope Buttons */}
-        <div className="flex items-center gap-2">
+        <div id="comparative-harms-table-search-compare-scope-buttons" className="flex items-center gap-2">
           {/* Comparison target toggle */}
-          <div className="inline-flex rounded-lg border border-slate-300 bg-white p-0.5 text-xs">
+          <div id="comparative-harms-table-comparison-target-toggle" className="inline-flex rounded-lg border border-slate-300 bg-white p-0.5 text-xs">
             <button
               type="button"
               onClick={() => setComparisonTarget('BOTH')}
@@ -481,7 +481,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
       </div>
 
       {/* Main Comparative Table */}
-      <div className="overflow-x-auto border border-slate-200 rounded-xl">
+      <div id="comparative-harms-table-main-comparative-table" className="overflow-x-auto border border-slate-200 rounded-xl">
         <table className="w-full text-right text-xs">
           <thead className="bg-slate-100/90 text-slate-700 font-bold border-b border-slate-200 text-[11px]">
             <tr>
@@ -533,7 +533,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
 
                     {/* Indicator Title & Description */}
                     <td className="py-3 px-3">
-                      <div className="font-extrabold text-slate-900 flex items-center gap-1.5">
+                      <div id={`comparative-harms-table-indicator-title-description-${item.key}`} className="font-extrabold text-slate-900 flex items-center gap-1.5">
                         <span>{item.title}</span>
                         {isHotspot && (
                           <span className="text-[10px] font-black px-1.5 py-0.2 rounded bg-rose-100 text-rose-700 border border-rose-300 flex items-center gap-0.5">
@@ -552,7 +552,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
 
                     {/* Local Value */}
                     <td className="py-3 px-3 text-center bg-blue-50/40 font-black text-sm text-blue-900 border-x border-blue-200">
-                      <div className="flex flex-col items-center">
+                      <div id={`comparative-harms-table-local-value-${item.key}`} className="flex flex-col items-center">
                         <span className="text-base font-black">
                           {toPersianDigits(localVal)}
                         </span>
@@ -565,7 +565,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                     {/* Province Average */}
                     {(comparisonTarget === 'BOTH' || comparisonTarget === 'PROVINCE') && (
                       <td className="py-3 px-3 text-center bg-indigo-50/30 font-bold text-xs text-indigo-950 border-l border-indigo-100">
-                        <div className="flex flex-col items-center">
+                        <div id={`comparative-harms-table-province-average-${item.key}`} className="flex flex-col items-center">
                           <span>{toPersianDigits(provVal)}</span>
                           <span className="text-[10px] text-slate-400">{item.unit}</span>
                           {localVal !== provVal && (
@@ -582,7 +582,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                     {/* National Average */}
                     {(comparisonTarget === 'BOTH' || comparisonTarget === 'NATIONAL') && (
                       <td className="py-3 px-3 text-center bg-slate-50/50 font-bold text-xs text-slate-700 border-l border-slate-200">
-                        <div className="flex flex-col items-center">
+                        <div id={`comparative-harms-table-national-average-${item.key}`} className="flex flex-col items-center">
                           <span>{toPersianDigits(natVal)}</span>
                           <span className="text-[10px] text-slate-400">{item.unit}</span>
                         </div>
@@ -591,8 +591,8 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
 
                     {/* Gap / LQ */}
                     <td className="py-3 px-3 text-center">
-                      <div className="flex flex-col items-center">
-                        <div className="flex items-center gap-1">
+                      <div id={`comparative-harms-table-gap-lq-${item.key}`} className="flex flex-col items-center">
+                        <div id={`comparative-harms-table-gap-lq-2-${item.key}`} className="flex items-center gap-1">
                           {isWorseThanNat ? (
                             <TrendingUp className="w-3.5 h-3.5 text-rose-600" />
                           ) : (
@@ -647,9 +647,9 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                   {isExpanded && (
                     <tr className="bg-slate-50/90 border-b border-slate-200">
                       <td colSpan={8} className="p-4">
-                        <div className="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm space-y-3">
-                          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                            <div className="flex items-center gap-2">
+                        <div id={`comparative-harms-table-expanded-detail-panel-${item.key}`} className="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm space-y-3">
+                          <div id={`comparative-harms-table-expanded-detail-panel-2-${item.key}`} className="flex items-center justify-between border-b border-slate-100 pb-2">
+                            <div id={`comparative-harms-table-expanded-detail-panel-3-${item.key}`} className="flex items-center gap-2">
                               <Sparkles className="w-4 h-4 text-indigo-600" />
                               <strong className="text-xs font-black text-slate-800">
                                 تحلیل تفصیلی مداخله مسئولیت اجتماعی (CSR) برای «{item.title}»
@@ -660,8 +660,8 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                             </span>
                           </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-                            <div className="p-3 bg-rose-50/50 rounded-lg border border-rose-100">
+                          <div id={`comparative-harms-table-expanded-detail-panel-4-${item.key}`} className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                            <div id={`comparative-harms-table-expanded-detail-panel-5-${item.key}`} className="p-3 bg-rose-50/50 rounded-lg border border-rose-100">
                               <span className="font-bold text-rose-900 block mb-1">
                                 آسیب‌ها و بزه‌های تحت پوشش:
                               </span>
@@ -672,7 +672,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                               </ul>
                             </div>
 
-                            <div className="p-3 bg-amber-50/50 rounded-lg border border-amber-100">
+                            <div id={`comparative-harms-table-expanded-detail-panel-6-${item.key}`} className="p-3 bg-amber-50/50 rounded-lg border border-amber-100">
                               <span className="font-bold text-amber-900 block mb-1">
                                 پیامدها و ریسک عدم مداخله:
                               </span>
@@ -681,7 +681,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                               </p>
                             </div>
 
-                            <div className="p-3 bg-indigo-50/50 rounded-lg border border-indigo-100">
+                            <div id={`comparative-harms-table-expanded-detail-panel-7-${item.key}`} className="p-3 bg-indigo-50/50 rounded-lg border border-indigo-100">
                               <span className="font-bold text-indigo-900 block mb-1">
                                 اقدام عملیاتی پیشنهادی به کمیته CSR:
                               </span>
@@ -702,8 +702,8 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
       </div>
 
       {/* Comparative Legend and Guidelines */}
-      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-4 flex-wrap">
+      <div id="comparative-harms-table-comparative-legend-and" className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 flex flex-wrap items-center justify-between gap-3">
+        <div id="comparative-harms-table-comparative-legend-and-2" className="flex items-center gap-4 flex-wrap">
           <span className="font-bold text-slate-800">راهنمای علائم:</span>
           <span className="flex items-center gap-1 text-rose-700 font-bold">
             <Flame className="w-3.5 h-3.5" />

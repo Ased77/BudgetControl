@@ -55,12 +55,12 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
   };
 
   return (
-    <div className="space-y-6 dir-rtl">
+    <div id="location-module-root" className="space-y-6 dir-rtl">
       
       {/* Region Selector Grid Header & Controls */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-          <div>
+      <div id="location-module-region-selector-grid-header" className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-4">
+        <div id="location-module-region-selector-grid-header-2" className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div id="location-module-region-selector-grid-header-3">
             <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
               <Globe className="w-5 h-5 text-blue-600" />
               انتخاب و پایش لوکیشن‌های محلی (هدف CSR)
@@ -70,7 +70,7 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-xl text-xs text-blue-800 font-bold self-start md:self-auto">
+          <div id="location-module-region-selector-grid-header-4" className="flex items-center gap-2 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-xl text-xs text-blue-800 font-bold self-start md:self-auto">
             <span>لوکیشن فعال فعلی:</span>
             <span className="bg-blue-600 text-white px-2 py-0.5 rounded-md">
               {selectedLocation.province} - {selectedLocation.county} ({selectedLocation.district})
@@ -79,10 +79,10 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
         </div>
 
         {/* Filter and Search Bar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+        <div id="location-module-filter-and-search-bar" className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
           
           {/* Province Filter Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+          <div id="location-module-province-filter-pills" className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
             <span className="text-xs font-bold text-slate-500 flex items-center gap-1 shrink-0 ml-1">
               <Filter className="w-3.5 h-3.5 text-slate-400" />
               فیلتر استان:
@@ -128,7 +128,7 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
           </div>
 
           {/* Search Box */}
-          <div className="relative w-full sm:w-64">
+          <div id="location-module-search-box" className="relative w-full sm:w-64">
             <Search className="w-4 h-4 text-slate-400 absolute right-3 top-2.5" />
             <input
               type="text"
@@ -142,9 +142,9 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
         </div>
 
         {/* Location Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+        <div id="location-module-location-cards-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
           {filteredLocations.length === 0 ? (
-            <div className="col-span-full text-center py-8 text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+            <div id="location-module-location-cards-grid-2" className="col-span-full text-center py-8 text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200">
               هیچ لوکیشنی با مشخصات جستجو شده یافت نشد
             </div>
           ) : (
@@ -152,6 +152,7 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
               const isSelected = loc.id === selectedLocation.id;
               return (
                 <div
+                  id={`location-module-location-cards-grid-3-${loc.id}`}
                   key={loc.id}
                   onClick={() => onSelectLocation(loc)}
                   className={`cursor-pointer p-4 rounded-2xl border transition-all text-right flex flex-col justify-between ${
@@ -160,8 +161,8 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
                       : 'bg-white border-slate-200 hover:border-blue-300 hover:shadow-xs'
                   }`}
                 >
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
+                  <div id={`location-module-location-cards-grid-4-${loc.id}`}>
+                    <div id={`location-module-location-cards-grid-5-${loc.id}`} className="flex items-center justify-between mb-2">
                       <span
                         className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
                           isSelected
@@ -190,14 +191,14 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
                     </p>
                   </div>
 
-                  <div className="mt-3 pt-2 border-t border-slate-100 space-y-1.5">
-                    <div className="flex items-center justify-between text-[11px] text-slate-500">
+                  <div id={`location-module-location-cards-grid-6-${loc.id}`} className="mt-3 pt-2 border-t border-slate-100 space-y-1.5">
+                    <div id={`location-module-location-cards-grid-7-${loc.id}`} className="flex items-center justify-between text-[11px] text-slate-500">
                       <span>جمعیت محلی:</span>
                       <strong className="text-slate-800">
                         {toPersianDigits(loc.population.toLocaleString('fa-IR'))} نفر
                       </strong>
                     </div>
-                    <div className="flex items-center justify-between text-[11px] text-slate-500">
+                    <div id={`location-module-location-cards-grid-8-${loc.id}`} className="flex items-center justify-between text-[11px] text-slate-500">
                       <span>نرخ فقر:</span>
                       <strong className="text-rose-600 font-bold">
                         {toPersianDigits(loc.indicators.povertyRate)}٪
@@ -230,9 +231,9 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
       />
 
       {/* Interactive Indicators Panel */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-2xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 border-b border-slate-100 pb-3">
-          <div className="flex items-center gap-2">
+      <div id="location-module-interactive-indicators-panel" className="bg-white rounded-2xl p-6 border border-slate-200 shadow-2xs">
+        <div id="location-module-interactive-indicators-panel-2" className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 border-b border-slate-100 pb-3">
+          <div id="location-module-interactive-indicators-panel-3" className="flex items-center gap-2">
             <Sliders className="w-5 h-5 text-blue-600" />
             <h3 className="font-bold text-slate-800 text-sm">
               ویرایش ۱۱ شاخص محلی برای: {selectedLocation.province} - شهرستان {selectedLocation.county} ({selectedLocation.district})
@@ -243,11 +244,11 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 text-xs">
+        <div id="location-module-interactive-indicators-panel-4" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 text-xs">
           
           {/* Poverty Rate */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-            <div className="flex justify-between font-bold text-slate-800 mb-1">
+          <div id="location-module-poverty-rate" className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div id="location-module-poverty-rate-2" className="flex justify-between font-bold text-slate-800 mb-1">
               <span>نرخ فقر و محرومیت</span>
               <span className="text-blue-700">{toPersianDigits(selectedLocation.indicators.povertyRate)}٪</span>
             </div>
@@ -265,8 +266,8 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
           </div>
 
           {/* Marginalization Rate */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-            <div className="flex justify-between font-bold text-slate-800 mb-1">
+          <div id="location-module-marginalization-rate" className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div id="location-module-marginalization-rate-2" className="flex justify-between font-bold text-slate-800 mb-1">
               <span>درصد حاشیه‌نشینی</span>
               <span className="text-blue-700">{toPersianDigits(selectedLocation.indicators.marginalizationRate)}٪</span>
             </div>
@@ -284,8 +285,8 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
           </div>
 
           {/* Unemployment Rate */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-            <div className="flex justify-between font-bold text-slate-800 mb-1">
+          <div id="location-module-unemployment-rate" className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div id="location-module-unemployment-rate-2" className="flex justify-between font-bold text-slate-800 mb-1">
               <span>نرخ بیکاری محلی</span>
               <span className="text-blue-700">{toPersianDigits(selectedLocation.indicators.unemploymentRate)}٪</span>
             </div>
@@ -303,8 +304,8 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
           </div>
 
           {/* Social Harms Index */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-            <div className="flex justify-between font-bold text-slate-800 mb-1">
+          <div id="location-module-social-harms-index" className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div id="location-module-social-harms-index-2" className="flex justify-between font-bold text-slate-800 mb-1">
               <span>شاخص آسیب‌های اجتماعی</span>
               <span className="text-rose-700">{toPersianDigits(selectedLocation.indicators.socialHarmsIndex)} از ۱۰۰</span>
             </div>
@@ -322,8 +323,8 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
           </div>
 
           {/* Health Deficit */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-            <div className="flex justify-between font-bold text-slate-800 mb-1">
+          <div id="location-module-health-deficit" className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div id="location-module-health-deficit-2" className="flex justify-between font-bold text-slate-800 mb-1">
               <span>کمبود دسترسی درمان و بهداشت</span>
               <span className="text-blue-700">{toPersianDigits(selectedLocation.indicators.healthAccessDeficit)}٪</span>
             </div>
@@ -341,8 +342,8 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
           </div>
 
           {/* Environmental Risk */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-            <div className="flex justify-between font-bold text-slate-800 mb-1">
+          <div id="location-module-environmental-risk" className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div id="location-module-environmental-risk-2" className="flex justify-between font-bold text-slate-800 mb-1">
               <span>ریسک آلودگی زیست‌محیطی</span>
               <span className="text-amber-700">{toPersianDigits(selectedLocation.indicators.environmentalRiskScore)} از ۱۰۰</span>
             </div>

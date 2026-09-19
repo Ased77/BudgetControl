@@ -130,12 +130,12 @@ export const PrioritiesView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div id="priorities-view-root" className="space-y-6">
       {/* Header Banner (Light Theme) */}
-      <div className="bg-gradient-to-r from-purple-50/90 via-indigo-50/70 to-slate-50 rounded-2xl p-6 text-slate-900 border border-purple-200/80 shadow-2xs relative overflow-hidden">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
+      <div id="priorities-view-header-banner-light-theme" className="bg-gradient-to-r from-purple-50/90 via-indigo-50/70 to-slate-50 rounded-2xl p-6 text-slate-900 border border-purple-200/80 shadow-2xs relative overflow-hidden">
+        <div id="priorities-view-header-banner-light-theme-2" className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div id="priorities-view-header-banner-light-theme-3">
+            <div id="priorities-view-header-banner-light-theme-4" className="flex items-center gap-2 mb-2">
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200 flex items-center gap-1">
                 <Target className="w-3.5 h-3.5 text-purple-600" />
                 ماتریس هوشمند اولویت‌های توسعه
@@ -152,7 +152,7 @@ export const PrioritiesView: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
+          <div id="priorities-view-header-banner-light-theme-5" className="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
             <button
               onClick={handleApplySmartRecommendations}
               className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-md shadow-purple-600/25 transition-all hover:scale-105 active:scale-95"
@@ -192,8 +192,8 @@ export const PrioritiesView: React.FC = () => {
         </div>
 
         {/* Sum Indicator Strip */}
-        <div className="mt-5 pt-4 border-t border-purple-200/60 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-3 text-xs">
+        <div id="priorities-view-sum-indicator-strip" className="mt-5 pt-4 border-t border-purple-200/60 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div id="priorities-view-sum-indicator-strip-2" className="flex items-center gap-3 text-xs">
             <span className="text-slate-500 font-semibold">مجموع درصدهای تخصیص فعلی:</span>
             <span
               className={`font-black font-mono text-base px-3 py-1 rounded-lg ${
@@ -218,15 +218,15 @@ export const PrioritiesView: React.FC = () => {
             )}
           </div>
 
-          <div className="text-xs text-slate-400 font-mono">
+          <div id="priorities-view-sum-indicator-strip-3" className="text-xs text-slate-400 font-mono">
             کل بودجه محاسباتی: <span className="text-white font-bold">{formatToman(orgConfig.totalBudget)}</span>
           </div>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
-        <div className="relative w-full md:w-80">
+      <div id="priorities-view-filter-and-search-bar" className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
+        <div id="priorities-view-filter-and-search-bar-2" className="relative w-full md:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-3" />
           <input
             type="text"
@@ -237,8 +237,8 @@ export const PrioritiesView: React.FC = () => {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+        <div id="priorities-view-filter-and-search-bar-3" className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <div id="priorities-view-filter-and-search-bar-4" className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
             <Filter className="w-3.5 h-3.5" />
             <span>دسته‌بندی:</span>
           </div>
@@ -258,7 +258,7 @@ export const PrioritiesView: React.FC = () => {
       </div>
 
       {/* Priorities Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div id="priorities-view-priorities-grid" className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredPriorities.map((p) => {
           const currentPct = currentPercentages[p.id] || 0;
           const isLocked = lockedIds.has(p.id);
@@ -268,6 +268,7 @@ export const PrioritiesView: React.FC = () => {
 
           return (
             <div
+              id={`priorities-view-priorities-grid-2-${p.id}`}
               key={p.id}
               className={`bg-white dark:bg-slate-900 rounded-2xl p-5 border shadow-sm hover:shadow-md transition-all flex flex-col justify-between ${
                 isLocked
@@ -275,19 +276,19 @@ export const PrioritiesView: React.FC = () => {
                   : 'border-slate-200 dark:border-slate-800'
               }`}
             >
-              <div>
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
+              <div id={`priorities-view-priorities-grid-3-${p.id}`}>
+                <div id={`priorities-view-priorities-grid-4-${p.id}`} className="flex items-start justify-between gap-2 mb-3">
+                  <div id={`priorities-view-priorities-grid-5-${p.id}`} className="flex items-center gap-2.5">
+                    <div id={`priorities-view-priorities-grid-6-${p.id}`} className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
                       <Target className="w-5 h-5" />
                     </div>
-                    <div>
+                    <div id={`priorities-view-priorities-grid-7-${p.id}`}>
                       <span className="text-[10px] font-bold text-slate-400 block">اولویت کد #{p.code}</span>
                       <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight">{p.title}</h3>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
+                  <div id={`priorities-view-priorities-grid-8-${p.id}`} className="flex items-center gap-1.5">
                     <button
                       onClick={() => handleToggleLock(p.id)}
                       className={`p-1.5 rounded-lg border transition-colors ${
@@ -309,10 +310,10 @@ export const PrioritiesView: React.FC = () => {
                 <p className="text-xs text-slate-600 dark:text-slate-400 mb-3 leading-relaxed">{p.description}</p>
 
                 {/* Slider and Percentage Display */}
-                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800/80 mb-3 space-y-2">
-                  <div className="flex items-center justify-between text-xs">
+                <div id={`priorities-view-slider-and-percentage-display-${p.id}`} className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800/80 mb-3 space-y-2">
+                  <div id={`priorities-view-slider-and-percentage-display-2-${p.id}`} className="flex items-center justify-between text-xs">
                     <span className="text-slate-500 dark:text-slate-400">درصد تخصیص فعلی:</span>
-                    <div className="flex items-center gap-2">
+                    <div id={`priorities-view-slider-and-percentage-display-3-${p.id}`} className="flex items-center gap-2">
                       {aiRecPct > 0 && (
                         <span className="text-[10px] text-purple-600 dark:text-purple-400 font-mono">
                           (پیشنهاد AI: {aiRecPct}٪)
@@ -335,7 +336,7 @@ export const PrioritiesView: React.FC = () => {
                     className="w-full accent-purple-600 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer disabled:opacity-50"
                   />
 
-                  <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/60 dark:border-slate-700/50">
+                  <div id={`priorities-view-slider-and-percentage-display-4-${p.id}`} className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/60 dark:border-slate-700/50">
                     <span className="text-slate-400 text-[11px] flex items-center gap-1">
                       <Coins className="w-3 h-3 text-purple-500" />
                       بودجه متناظر ریالی:
@@ -347,7 +348,7 @@ export const PrioritiesView: React.FC = () => {
                 </div>
 
                 {/* Sub-items accordion */}
-                <div className="border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden mb-3">
+                <div id={`priorities-view-sub-items-accordion-${p.id}`} className="border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden mb-3">
                   <button
                     onClick={() => setExpandedSubItemId(isExpanded ? null : p.id)}
                     className="w-full flex items-center justify-between px-3 py-2 bg-slate-50/70 dark:bg-slate-800/40 text-[11px] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -360,11 +361,12 @@ export const PrioritiesView: React.FC = () => {
                   </button>
 
                   {isExpanded && (
-                    <div className="p-3 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 space-y-2 text-xs">
+                    <div id={`priorities-view-sub-items-accordion-2-${p.id}`} className="p-3 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 space-y-2 text-xs">
                       {p.subItems && p.subItems.length > 0 ? (
-                        <div className="space-y-1.5">
+                        <div id={`priorities-view-sub-items-accordion-3-${p.id}`} className="space-y-1.5">
                           {p.subItems.map((sub, idx) => (
                             <div
+                              id={`priorities-view-sub-items-accordion-4-${idx}`}
                               key={idx}
                               className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/60 px-2.5 py-1.5 rounded-lg text-[11px]"
                             >
@@ -386,7 +388,7 @@ export const PrioritiesView: React.FC = () => {
                       )}
 
                       {canEdit && (
-                        <div className="flex items-center gap-1.5 pt-1.5">
+                        <div id={`priorities-view-sub-items-accordion-5-${p.id}`} className="flex items-center gap-1.5 pt-1.5">
                           <input
                             type="text"
                             placeholder="افزودن اقدام فرعی جدید..."
@@ -415,7 +417,7 @@ export const PrioritiesView: React.FC = () => {
 
               {/* Actions */}
               {canEdit && (
-                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2 text-xs">
+                <div id={`priorities-view-actions-${p.id}`} className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2 text-xs">
                   <button
                     onClick={() => handleOpenEdit(p)}
                     className="p-1.5 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
@@ -439,9 +441,9 @@ export const PrioritiesView: React.FC = () => {
 
       {/* CRUD Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[90vh]">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-4">
+        <div id="priorities-view-crud-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div id="priorities-view-crud-modal-2" className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div id="priorities-view-crud-modal-3" className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-4">
               <h3 className="font-black text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <Target className="w-5 h-5 text-purple-500" />
                 {editingPriority ? 'ویرایش مشخصات اولویت توسعه' : 'افزودن اولویت توسعه جدید'}
@@ -455,7 +457,7 @@ export const PrioritiesView: React.FC = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-              <div>
+              <div id="priorities-view-crud-modal-4">
                 <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">عنوان اولویت توسعه *</label>
                 <input
                   type="text"
@@ -467,8 +469,8 @@ export const PrioritiesView: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div id="priorities-view-crud-modal-5" className="grid grid-cols-2 gap-3">
+                <div id="priorities-view-crud-modal-6">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">دسته‌بندی اصلی</label>
                   <input
                     type="text"
@@ -479,7 +481,7 @@ export const PrioritiesView: React.FC = () => {
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none"
                   />
                 </div>
-                <div>
+                <div id="priorities-view-crud-modal-7">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">درصد پیش‌فرض (٪)</label>
                   <input
                     type="number"
@@ -492,7 +494,7 @@ export const PrioritiesView: React.FC = () => {
                 </div>
               </div>
 
-              <div>
+              <div id="priorities-view-crud-modal-8">
                 <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">شرح و اهداف توسعه‌ای</label>
                 <textarea
                   rows={3}
@@ -503,7 +505,7 @@ export const PrioritiesView: React.FC = () => {
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <div id="priorities-view-crud-modal-9" className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}

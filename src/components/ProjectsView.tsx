@@ -228,12 +228,12 @@ export const ProjectsView: React.FC = () => {
   const flaggedCount = useMemo(() => projects.filter((p) => p.antiOverlapStatus !== 'CLEAR').length, [projects]);
 
   return (
-    <div className="space-y-6">
+    <div id="projects-view-root" className="space-y-6">
       {/* Header Banner (Light Theme) */}
-      <div className="bg-gradient-to-r from-blue-50/90 via-indigo-50/70 to-slate-50 rounded-2xl p-6 text-slate-900 border border-blue-200/80 shadow-2xs relative overflow-hidden">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
+      <div id="projects-view-header-banner-light-theme" className="bg-gradient-to-r from-blue-50/90 via-indigo-50/70 to-slate-50 rounded-2xl p-6 text-slate-900 border border-blue-200/80 shadow-2xs relative overflow-hidden">
+        <div id="projects-view-header-banner-light-theme-2" className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div id="projects-view-header-banner-light-theme-3">
+            <div id="projects-view-header-banner-light-theme-4" className="flex items-center gap-2 mb-2">
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200 flex items-center gap-1">
                 <FolderKanban className="w-3.5 h-3.5 text-blue-600" />
                 رصد پروژه‌های اجرایی و ممانعت از موازی‌کاری
@@ -250,7 +250,7 @@ export const ProjectsView: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-3 self-start md:self-auto">
+          <div id="projects-view-header-banner-light-theme-5" className="flex items-center gap-3 self-start md:self-auto">
             <button
               onClick={() => setActiveTab('CREATE_PROJECT')}
               className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-md shadow-indigo-600/25 transition-all hover:scale-105 active:scale-95"
@@ -272,20 +272,20 @@ export const ProjectsView: React.FC = () => {
         </div>
 
         {/* Micro-KPI Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-blue-200/60">
-          <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
+        <div id="projects-view-micro-kpi-strip" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-blue-200/60">
+          <div id="projects-view-micro-kpi-strip-2" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">کل پروژه‌های ثبت‌شده</span>
             <span className="text-xl font-black text-slate-900 mt-0.5 block font-mono">{projects.length} پروژه</span>
           </div>
-          <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
+          <div id="projects-view-micro-kpi-strip-3" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">ارزش کل اعتبارات پروژه‌ها</span>
             <span className="text-xl font-black text-emerald-700 mt-0.5 block font-mono">{formatToman(totalBudget)}</span>
           </div>
-          <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
+          <div id="projects-view-micro-kpi-strip-4" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">جمعیت بهره‌بردار مستقیم</span>
             <span className="text-xl font-black text-blue-700 mt-0.5 block font-mono">{formatNumber(totalBeneficiaries)} نفر</span>
           </div>
-          <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
+          <div id="projects-view-micro-kpi-strip-5" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">پروژه‌های نیازمند بازنگری موازی‌کاری</span>
             <span className="text-xl font-black text-rose-700 mt-0.5 block flex items-center gap-1 font-mono">
               <ShieldAlert className="w-4 h-4 text-rose-600" />
@@ -297,9 +297,9 @@ export const ProjectsView: React.FC = () => {
 
       {/* Anti-Duplication Engine Alerts Strip */}
       {antiDuplicationAlerts.length > 0 && (
-        <div className="bg-amber-500/10 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800/80 rounded-2xl p-4 shadow-sm">
-          <div className="flex items-center justify-between gap-2 mb-3">
-            <div className="flex items-center gap-2">
+        <div id="projects-view-anti-duplication-engine-alerts" className="bg-amber-500/10 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800/80 rounded-2xl p-4 shadow-sm">
+          <div id="projects-view-anti-duplication-engine-alerts-2" className="flex items-center justify-between gap-2 mb-3">
+            <div id="projects-view-anti-duplication-engine-alerts-3" className="flex items-center gap-2">
               <ShieldAlert className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
               <h3 className="font-black text-sm text-amber-900 dark:text-amber-200">
                 هشدارهای فعال موتور ضد موازی‌کاری و اتلاف بودجه ({antiDuplicationAlerts.length} مورد کشف شد)
@@ -310,13 +310,14 @@ export const ProjectsView: React.FC = () => {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+          <div id="projects-view-anti-duplication-engine-alerts-4" className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
             {antiDuplicationAlerts.map((alert) => (
               <div
+                id={`projects-view-anti-duplication-engine-alerts-5-${alert.id}`}
                 key={alert.id}
                 className="bg-white/90 dark:bg-slate-900/90 rounded-xl p-3 border border-amber-200 dark:border-amber-900/60 text-xs shadow-xs"
               >
-                <div className="flex items-start justify-between gap-2">
+                <div id={`projects-view-anti-duplication-engine-alerts-6-${alert.id}`} className="flex items-start justify-between gap-2">
                   <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
                     {alert.projectTitle}
@@ -332,7 +333,7 @@ export const ProjectsView: React.FC = () => {
                   </span>
                 </div>
                 <p className="text-slate-600 dark:text-slate-300 text-[11px] mt-1 leading-relaxed">{alert.message}</p>
-                <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px] text-indigo-600 dark:text-indigo-400 flex items-center gap-1 font-medium">
+                <div id={`projects-view-anti-duplication-engine-alerts-7-${alert.id}`} className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px] text-indigo-600 dark:text-indigo-400 flex items-center gap-1 font-medium">
                   <Sparkles className="w-3 h-3 text-indigo-500" />
                   <span>پیشنهاد الگوریتم: {alert.recommendation}</span>
                 </div>
@@ -343,8 +344,8 @@ export const ProjectsView: React.FC = () => {
       )}
 
       {/* Filter and Search Bar */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
-        <div className="relative w-full md:w-80">
+      <div id="projects-view-filter-and-search-bar" className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
+        <div id="projects-view-filter-and-search-bar-2" className="relative w-full md:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-3" />
           <input
             type="text"
@@ -355,8 +356,8 @@ export const ProjectsView: React.FC = () => {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+        <div id="projects-view-filter-and-search-bar-3" className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <div id="projects-view-filter-and-search-bar-4" className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
             <Filter className="w-3.5 h-3.5" />
             <span>فیلترها:</span>
           </div>
@@ -414,12 +415,13 @@ export const ProjectsView: React.FC = () => {
       </div>
 
       {/* Projects List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div id="projects-view-projects-list" className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredProjects.map((proj) => {
           const isWarning = proj.antiOverlapStatus !== 'CLEAR';
 
           return (
             <div
+              id={`projects-view-projects-list-2-${proj.id}`}
               key={proj.id}
               className={`bg-white dark:bg-slate-900 rounded-2xl p-5 border shadow-sm hover:shadow-md transition-all flex flex-col justify-between ${
                 isWarning
@@ -427,19 +429,19 @@ export const ProjectsView: React.FC = () => {
                   : 'border-slate-200 dark:border-slate-800'
               }`}
             >
-              <div>
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+              <div id={`projects-view-projects-list-3-${proj.id}`}>
+                <div id={`projects-view-projects-list-4-${proj.id}`} className="flex items-start justify-between gap-2 mb-3">
+                  <div id={`projects-view-projects-list-5-${proj.id}`} className="flex items-center gap-2.5">
+                    <div id={`projects-view-projects-list-6-${proj.id}`} className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
                       <FolderKanban className="w-5 h-5" />
                     </div>
-                    <div>
+                    <div id={`projects-view-projects-list-7-${proj.id}`}>
                       <span className="text-[10px] font-mono text-slate-400 tracking-wider block">{proj.code}</span>
                       <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight">{proj.title}</h3>
                     </div>
                   </div>
 
-                  <div className="flex flex-col items-end gap-1">
+                  <div id={`projects-view-projects-list-8-${proj.id}`} className="flex flex-col items-end gap-1">
                     <span
                       className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold whitespace-nowrap ${
                         proj.status === 'COMPLETED'
@@ -472,49 +474,50 @@ export const ProjectsView: React.FC = () => {
                 <p className="text-xs text-slate-600 dark:text-slate-400 mb-3 leading-relaxed">{proj.description}</p>
 
                 {/* Meta Matrix: Department, Budget, Executor, Contractor */}
-                <div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 text-xs mb-3 border border-slate-100 dark:border-slate-800">
-                  <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+                <div id={`projects-view-meta-matrix-department-budget-${proj.id}`} className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 text-xs mb-3 border border-slate-100 dark:border-slate-800">
+                  <div id={`projects-view-meta-matrix-department-budget-2-${proj.id}`} className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
                     <Building2 className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                     <span className="truncate">{proj.departmentName}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+                  <div id={`projects-view-meta-matrix-department-budget-3-${proj.id}`} className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
                     <Wallet className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                     <span className="truncate">{proj.budgetSourceTitle}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+                  <div id={`projects-view-meta-matrix-department-budget-4-${proj.id}`} className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
                     <Users2 className="w-3.5 h-3.5 text-cyan-500 shrink-0" />
                     <span className="truncate">مجری: {proj.executorName}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+                  <div id={`projects-view-meta-matrix-department-budget-5-${proj.id}`} className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
                     <HardHat className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                     <span className="truncate">پیمانکار: {proj.contractorName || 'تعیین نشده'}</span>
                   </div>
                 </div>
 
                 {/* Financial & Per-Capita Breakdown */}
-                <div className="grid grid-cols-3 gap-2 bg-slate-100/70 dark:bg-slate-800/80 rounded-xl p-2.5 text-[11px] mb-3">
-                  <div>
+                <div id={`projects-view-financial-per-capita-breakdown-${proj.id}`} className="grid grid-cols-3 gap-2 bg-slate-100/70 dark:bg-slate-800/80 rounded-xl p-2.5 text-[11px] mb-3">
+                  <div id={`projects-view-financial-per-capita-breakdown-2-${proj.id}`}>
                     <span className="text-slate-400 block text-[10px]">کل اعتبار مصوب:</span>
                     <span className="font-black text-slate-900 dark:text-slate-100">{formatToman(proj.estimatedCostToman)}</span>
                   </div>
-                  <div>
+                  <div id={`projects-view-financial-per-capita-breakdown-3-${proj.id}`}>
                     <span className="text-slate-400 block text-[10px]">جمعیت بهره‌بردار:</span>
                     <span className="font-bold text-blue-600 dark:text-blue-400">{formatNumber(proj.beneficiariesCount)} نفر</span>
                   </div>
-                  <div>
+                  <div id={`projects-view-financial-per-capita-breakdown-4-${proj.id}`}>
                     <span className="text-slate-400 block text-[10px]">سرانه هر نفر:</span>
                     <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatToman(proj.costPerBeneficiaryToman)}</span>
                   </div>
                 </div>
 
                 {/* Progress Bar */}
-                <div className="space-y-1 mb-4">
-                  <div className="flex justify-between items-center text-[11px]">
+                <div id={`projects-view-progress-bar-${proj.id}`} className="space-y-1 mb-4">
+                  <div id={`projects-view-progress-bar-2-${proj.id}`} className="flex justify-between items-center text-[11px]">
                     <span className="text-slate-500 dark:text-slate-400">پیشرفت فیزیکی پروژه:</span>
                     <span className="font-bold text-slate-800 dark:text-slate-200">{proj.progressPercentage}٪</span>
                   </div>
-                  <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                  <div id={`projects-view-progress-bar-3-${proj.id}`} className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                     <div
+                      id={`projects-view-progress-bar-4-${proj.id}`}
                       className="h-full bg-blue-500 rounded-full transition-all duration-500"
                       style={{ width: `${proj.progressPercentage}%` }}
                     />
@@ -523,8 +526,8 @@ export const ProjectsView: React.FC = () => {
               </div>
 
               {/* Footer */}
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
+              <div id={`projects-view-footer-${proj.id}`} className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                <div id={`projects-view-footer-2-${proj.id}`} className="flex items-center gap-2">
                   <span className="text-slate-400 text-[11px]">{proj.districtOrVillage}</span>
                   <span className="text-slate-300 dark:text-slate-700">|</span>
                   <span className="text-slate-400 font-mono text-[11px]">
@@ -532,7 +535,7 @@ export const ProjectsView: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div id={`projects-view-footer-3-${proj.id}`} className="flex items-center gap-1">
                   {canManage && (
                     <>
                       {proj.status === 'PROPOSED' && (
@@ -585,9 +588,9 @@ export const ProjectsView: React.FC = () => {
 
       {/* CRUD Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-xl w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[92vh]">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-4">
+        <div id="projects-view-crud-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div id="projects-view-crud-modal-2" className="bg-white dark:bg-slate-900 rounded-2xl max-w-xl w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[92vh]">
+            <div id="projects-view-crud-modal-3" className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-4">
               <h3 className="font-black text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <FolderKanban className="w-5 h-5 text-blue-500" />
                 {editingProject ? 'ویرایش مشخصات پروژه عمرانی' : 'تعریف و ثبت پروژه عمرانی جدید'}
@@ -601,7 +604,7 @@ export const ProjectsView: React.FC = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-              <div>
+              <div id="projects-view-crud-modal-4">
                 <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">عنوان کامل پروژه *</label>
                 <input
                   type="text"
@@ -613,8 +616,8 @@ export const ProjectsView: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div id="projects-view-crud-modal-5" className="grid grid-cols-2 gap-3">
+                <div id="projects-view-crud-modal-6">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">اداره / نهاد متولی *</label>
                   <select
                     value={formDeptId}
@@ -628,7 +631,7 @@ export const ProjectsView: React.FC = () => {
                     ))}
                   </select>
                 </div>
-                <div>
+                <div id="projects-view-crud-modal-7">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">سرفصل منبع تأمین مالی *</label>
                   <select
                     value={formBudgetId}
@@ -644,8 +647,8 @@ export const ProjectsView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div id="projects-view-crud-modal-8" className="grid grid-cols-2 gap-3">
+                <div id="projects-view-crud-modal-9">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">نهاد مجری طرح *</label>
                   <select
                     value={formExecId}
@@ -659,7 +662,7 @@ export const ProjectsView: React.FC = () => {
                     ))}
                   </select>
                 </div>
-                <div>
+                <div id="projects-view-crud-modal-10">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">پیمانکار ذیصلاح</label>
                   <select
                     value={formContractorId}
@@ -676,8 +679,8 @@ export const ProjectsView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div id="projects-view-crud-modal-11" className="grid grid-cols-2 gap-3">
+                <div id="projects-view-crud-modal-12">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">اولویت توسعه مرتبط *</label>
                   <select
                     value={formPriorityId}
@@ -691,7 +694,7 @@ export const ProjectsView: React.FC = () => {
                     ))}
                   </select>
                 </div>
-                <div>
+                <div id="projects-view-crud-modal-13">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">پاسخ به بحران / آسیب</label>
                   <select
                     value={formCrisisId}
@@ -708,8 +711,8 @@ export const ProjectsView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div id="projects-view-crud-modal-14" className="grid grid-cols-2 gap-3">
+                <div id="projects-view-crud-modal-15">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">اعتبار برآوردی کل (تومان) *</label>
                   <input
                     type="number"
@@ -720,7 +723,7 @@ export const ProjectsView: React.FC = () => {
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono"
                   />
                 </div>
-                <div>
+                <div id="projects-view-crud-modal-16">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">جمعیت بهره‌بردار مستقیم (نفر) *</label>
                   <input
                     type="number"
@@ -734,8 +737,8 @@ export const ProjectsView: React.FC = () => {
               </div>
 
               {/* Online Per Capita Indicator */}
-              <div className="bg-slate-100 dark:bg-slate-800/80 rounded-xl p-3 flex items-center justify-between">
-                <div>
+              <div id="projects-view-online-per-capita-indicator" className="bg-slate-100 dark:bg-slate-800/80 rounded-xl p-3 flex items-center justify-between">
+                <div id="projects-view-online-per-capita-indicator-2">
                   <span className="text-slate-500 dark:text-slate-400 block text-[11px]">محاسبه خودکار سرانه هر بهره‌بردار:</span>
                   <span className="font-black text-sm text-slate-900 dark:text-slate-100">{formatToman(computedPerCapita)}</span>
                 </div>
@@ -750,8 +753,8 @@ export const ProjectsView: React.FC = () => {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div id="projects-view-online-per-capita-indicator-3" className="grid grid-cols-2 gap-3">
+                <div id="projects-view-online-per-capita-indicator-4">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">روستا / بخش / محدوده</label>
                   <input
                     type="text"
@@ -761,7 +764,7 @@ export const ProjectsView: React.FC = () => {
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
-                <div>
+                <div id="projects-view-online-per-capita-indicator-5">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">وضعیت اولیه پروژه</label>
                   <select
                     value={formStatus}
@@ -776,7 +779,7 @@ export const ProjectsView: React.FC = () => {
                 </div>
               </div>
 
-              <div>
+              <div id="projects-view-online-per-capita-indicator-6">
                 <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">شرح اهداف، مشخصات فنی و خروجی‌های ملموس</label>
                 <textarea
                   rows={2}
@@ -787,7 +790,7 @@ export const ProjectsView: React.FC = () => {
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <div id="projects-view-online-per-capita-indicator-7" className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}

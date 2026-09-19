@@ -96,8 +96,8 @@ export const CompanySetupView: React.FC<CompanySetupViewProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-2xs max-w-4xl mx-auto space-y-6 dir-rtl">
-      <div className="border-b border-slate-100 pb-4">
+    <div id="company-setup-view-root" className="bg-white rounded-2xl p-6 border border-slate-200 shadow-2xs max-w-4xl mx-auto space-y-6 dir-rtl">
+      <div id="company-setup-view-div-2" className="border-b border-slate-100 pb-4">
         <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
           <Building2 className="w-5 h-5 text-blue-600" />
           تنظیمات مشخصات شرکت/نهاد و بودجه کل CSR
@@ -110,8 +110,8 @@ export const CompanySetupView: React.FC<CompanySetupViewProps> = ({
       <form onSubmit={handleSubmit} className="space-y-6 text-xs">
         
         {/* Org Basic Info */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
+        <div id="company-setup-view-org-basic-info" className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div id="company-setup-view-org-basic-info-2">
             <label className="block text-slate-700 font-bold mb-1">نام کامل شرکت / سازمان</label>
             <input
               type="text"
@@ -122,7 +122,7 @@ export const CompanySetupView: React.FC<CompanySetupViewProps> = ({
             />
           </div>
 
-          <div>
+          <div id="company-setup-view-org-basic-info-3">
             <label className="block text-slate-700 font-bold mb-1">نوع سازمان</label>
             <select
               value={orgType}
@@ -135,7 +135,7 @@ export const CompanySetupView: React.FC<CompanySetupViewProps> = ({
             </select>
           </div>
 
-          <div>
+          <div id="company-setup-view-org-basic-info-4">
             <label className="block text-slate-700 font-bold mb-1">حوزه اصلی فعالیت صنعت</label>
             <input
               type="text"
@@ -145,7 +145,7 @@ export const CompanySetupView: React.FC<CompanySetupViewProps> = ({
             />
           </div>
 
-          <div>
+          <div id="company-setup-view-org-basic-info-5">
             <label className="block text-slate-700 font-bold mb-1">دوره/سال مالی مصوب</label>
             <input
               type="text"
@@ -157,7 +157,7 @@ export const CompanySetupView: React.FC<CompanySetupViewProps> = ({
         </div>
 
         {/* Budget Definition */}
-        <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3">
+        <div id="company-setup-view-budget-definition" className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3">
           <label className="block text-slate-900 font-extrabold text-sm">
             بودجه کل مسئولیت اجتماعی (به تومان)
           </label>
@@ -171,15 +171,15 @@ export const CompanySetupView: React.FC<CompanySetupViewProps> = ({
             className="w-full text-lg font-mono font-bold px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-slate-900"
           />
 
-          <div className="p-3 bg-blue-100/60 rounded-xl text-blue-900 border border-blue-200 flex items-center justify-between">
+          <div id="company-setup-view-budget-definition-2" className="p-3 bg-blue-100/60 rounded-xl text-blue-900 border border-blue-200 flex items-center justify-between">
             <span className="font-semibold">معادل حروفی مالی:</span>
             <strong className="text-sm dir-rtl">{formatLargeBudgetPersian(totalBudget)}</strong>
           </div>
         </div>
 
         {/* Location Definition (Dynamic Active Selectors) */}
-        <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100 space-y-3">
-          <div className="flex items-center justify-between">
+        <div id="company-setup-view-location-definition-dynamic" className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100 space-y-3">
+          <div id="company-setup-view-location-definition-dynamic-2" className="flex items-center justify-between">
             <span className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
               <MapPin className="w-4 h-4 text-blue-600" />
               موقعیت جغرافیایی و منطقه همجوار سازمان
@@ -189,9 +189,9 @@ export const CompanySetupView: React.FC<CompanySetupViewProps> = ({
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div id="company-setup-view-location-definition-dynamic-3" className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Province selector */}
-            <div>
+            <div id="company-setup-view-province-selector">
               <label className="block text-slate-700 font-bold mb-1">استان اصلی همجوار</label>
               {availableProvinces.length > 0 ? (
                 <select
@@ -216,7 +216,7 @@ export const CompanySetupView: React.FC<CompanySetupViewProps> = ({
             </div>
 
             {/* County selector */}
-            <div>
+            <div id="company-setup-view-county-selector">
               <label className="block text-slate-700 font-bold mb-1">شهرستان / شهر</label>
               {availableCounties.length > 0 ? (
                 <select
@@ -241,7 +241,7 @@ export const CompanySetupView: React.FC<CompanySetupViewProps> = ({
             </div>
 
             {/* District / Neighborhood selector */}
-            <div>
+            <div id="company-setup-view-district-neighborhood-selector">
               <label className="block text-slate-700 font-bold mb-1">منطقه / محله هدف</label>
               {availableDistricts.length > 0 ? (
                 <select
@@ -271,7 +271,7 @@ export const CompanySetupView: React.FC<CompanySetupViewProps> = ({
           </div>
         </div>
 
-        <div>
+        <div id="company-setup-view-district-neighborhood-selector-2">
           <label className="block text-slate-700 font-bold mb-1">توضیحات و مصوبه مجمع عمومی</label>
           <textarea
             rows={3}
@@ -281,7 +281,7 @@ export const CompanySetupView: React.FC<CompanySetupViewProps> = ({
           />
         </div>
 
-        <div className="flex justify-end pt-3 border-t">
+        <div id="company-setup-view-district-neighborhood-selector-3" className="flex justify-end pt-3 border-t">
           <button
             type="submit"
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-6 py-3 rounded-xl shadow-md transition-all cursor-pointer"

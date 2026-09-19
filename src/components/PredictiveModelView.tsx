@@ -79,13 +79,13 @@ export const PredictiveModelView: React.FC<PredictiveModelViewProps> = ({
   const simulatedTotalBudgetToman = orgConfig.totalBudget * budgetMultiplier;
 
   return (
-    <div className="space-y-6">
+    <div id="predictive-model-view-root" className="space-y-6">
       
       {/* Top Banner & Scenario Controller (Light Theme) */}
-      <div className="bg-gradient-to-r from-indigo-50/90 via-slate-50 to-blue-50/80 text-slate-900 rounded-2xl p-6 shadow-2xs border border-indigo-200/80">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-3xl">
-            <div className="inline-flex items-center gap-2 bg-indigo-100 text-indigo-800 border border-indigo-200 px-3 py-1 rounded-full text-xs font-semibold">
+      <div id="predictive-model-view-top-banner-scenario-controller" className="bg-gradient-to-r from-indigo-50/90 via-slate-50 to-blue-50/80 text-slate-900 rounded-2xl p-6 shadow-2xs border border-indigo-200/80">
+        <div id="predictive-model-view-top-banner-scenario-controller-2" className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div id="predictive-model-view-top-banner-scenario-controller-3" className="space-y-2 max-w-3xl">
+            <div id="predictive-model-view-top-banner-scenario-controller-4" className="inline-flex items-center gap-2 bg-indigo-100 text-indigo-800 border border-indigo-200 px-3 py-1 rounded-full text-xs font-semibold">
               <Sparkles className="w-4 h-4 text-indigo-600" />
               مدل الگوریتمی پیش‌بینی اثرات سرمایه‌گذاری CSR
             </div>
@@ -98,9 +98,9 @@ export const PredictiveModelView: React.FC<PredictiveModelViewProps> = ({
           </div>
 
           {/* Scenario Buttons */}
-          <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs shrink-0 space-y-2">
+          <div id="predictive-model-view-scenario-buttons" className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs shrink-0 space-y-2">
             <span className="text-[11px] text-slate-600 block font-bold text-center">سناریوی پیش‌بینی بودجه:</span>
-            <div className="flex items-center gap-1.5">
+            <div id="predictive-model-view-scenario-buttons-2" className="flex items-center gap-1.5">
               <button
                 onClick={() => { setActiveScenario('CURRENT'); setBudgetMultiplier(1.0); }}
                 className={`px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
@@ -136,18 +136,18 @@ export const PredictiveModelView: React.FC<PredictiveModelViewProps> = ({
         </div>
 
         {/* Budget Multiplier Interactive Range Slider */}
-        <div className="mt-6 pt-5 border-t border-indigo-200/60 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-          <div className="md:col-span-5 flex items-center gap-2">
+        <div id="predictive-model-view-budget-multiplier-interactive" className="mt-6 pt-5 border-t border-indigo-200/60 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+          <div id="predictive-model-view-budget-multiplier-interactive-2" className="md:col-span-5 flex items-center gap-2">
             <Sliders className="w-4 h-4 text-indigo-600 shrink-0" />
-            <div>
+            <div id="predictive-model-view-budget-multiplier-interactive-3">
               <span className="text-xs font-bold text-slate-800">شبیه‌ساز ضریب بودجه (تست چه-می‌شود اگر؟):</span>
-              <div className="text-[11px] text-slate-500">
+              <div id="predictive-model-view-budget-multiplier-interactive-4" className="text-[11px] text-slate-500">
                 بودجه کل شبیه‌سازی‌شده: <strong className="text-indigo-700 font-bold">{formatLargeBudgetPersian(simulatedTotalBudgetToman)}</strong>
               </div>
             </div>
           </div>
 
-          <div className="md:col-span-7 flex items-center gap-4">
+          <div id="predictive-model-view-budget-multiplier-interactive-5" className="md:col-span-7 flex items-center gap-4">
             <input
               type="range"
               min="0.5"
@@ -165,15 +165,15 @@ export const PredictiveModelView: React.FC<PredictiveModelViewProps> = ({
       </div>
 
       {/* KPI Prediction Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div id="predictive-model-view-kpi-prediction-summary-cards" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-2 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-2 h-full bg-emerald-500"></div>
-          <div className="flex items-center justify-between text-slate-500">
+        <div id="predictive-model-view-kpi-prediction-summary-cards-2" className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-2 relative overflow-hidden">
+          <div id="predictive-model-view-kpi-prediction-summary-cards-3" className="absolute top-0 left-0 w-2 h-full bg-emerald-500"></div>
+          <div id="predictive-model-view-kpi-prediction-summary-cards-4" className="flex items-center justify-between text-slate-500">
             <span className="text-xs font-bold">نرخ بهبود کلی منطقه</span>
             <TrendingUp className="w-5 h-5 text-emerald-600" />
           </div>
-          <div className="flex items-baseline gap-2">
+          <div id="predictive-model-view-kpi-prediction-summary-cards-5" className="flex items-baseline gap-2">
             <span className="text-2xl font-black text-slate-900">
               +{toPersianDigits(predictionResult.overallRegionalImprovementPct)}٪
             </span>
@@ -186,13 +186,13 @@ export const PredictiveModelView: React.FC<PredictiveModelViewProps> = ({
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-2 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-2 h-full bg-blue-500"></div>
-          <div className="flex items-center justify-between text-slate-500">
+        <div id="predictive-model-view-kpi-prediction-summary-cards-6" className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-2 relative overflow-hidden">
+          <div id="predictive-model-view-kpi-prediction-summary-cards-7" className="absolute top-0 left-0 w-2 h-full bg-blue-500"></div>
+          <div id="predictive-model-view-kpi-prediction-summary-cards-8" className="flex items-center justify-between text-slate-500">
             <span className="text-xs font-bold">بازدهی سرمایه‌گذاری اجتماعی (Social ROI)</span>
             <Award className="w-5 h-5 text-blue-600" />
           </div>
-          <div className="flex items-baseline gap-2">
+          <div id="predictive-model-view-kpi-prediction-summary-cards-9" className="flex items-baseline gap-2">
             <span className="text-2xl font-black text-slate-900">
               {toPersianDigits(predictionResult.roiSocialRatio)}x
             </span>
@@ -205,13 +205,13 @@ export const PredictiveModelView: React.FC<PredictiveModelViewProps> = ({
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-2 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-2 h-full bg-purple-500"></div>
-          <div className="flex items-center justify-between text-slate-500">
+        <div id="predictive-model-view-kpi-prediction-summary-cards-10" className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-2 relative overflow-hidden">
+          <div id="predictive-model-view-kpi-prediction-summary-cards-11" className="absolute top-0 left-0 w-2 h-full bg-purple-500"></div>
+          <div id="predictive-model-view-kpi-prediction-summary-cards-12" className="flex items-center justify-between text-slate-500">
             <span className="text-xs font-bold">جمعیت مستقیم ذی‌نفع</span>
             <Users className="w-5 h-5 text-purple-600" />
           </div>
-          <div className="flex items-baseline gap-2">
+          <div id="predictive-model-view-kpi-prediction-summary-cards-13" className="flex items-baseline gap-2">
             <span className="text-2xl font-black text-slate-900">
               {toPersianDigits(predictionResult.totalBeneficiariesProjected.toLocaleString('fa-IR'))}
             </span>
@@ -224,13 +224,13 @@ export const PredictiveModelView: React.FC<PredictiveModelViewProps> = ({
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-2 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-2 h-full bg-amber-500"></div>
-          <div className="flex items-center justify-between text-slate-500">
+        <div id="predictive-model-view-kpi-prediction-summary-cards-14" className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-2 relative overflow-hidden">
+          <div id="predictive-model-view-kpi-prediction-summary-cards-15" className="absolute top-0 left-0 w-2 h-full bg-amber-500"></div>
+          <div id="predictive-model-view-kpi-prediction-summary-cards-16" className="flex items-center justify-between text-slate-500">
             <span className="text-xs font-bold">اشتغال‌زایی بومی پیش‌بینی‌شده</span>
             <Briefcase className="w-5 h-5 text-amber-600" />
           </div>
-          <div className="flex items-baseline gap-2">
+          <div id="predictive-model-view-kpi-prediction-summary-cards-17" className="flex items-baseline gap-2">
             <span className="text-2xl font-black text-slate-900">
               {toPersianDigits(predictionResult.jobsCreatedProjected.toLocaleString('fa-IR'))}
             </span>
@@ -246,18 +246,18 @@ export const PredictiveModelView: React.FC<PredictiveModelViewProps> = ({
       </div>
 
       {/* Executive Narrative Callout */}
-      <div className="bg-slate-900 text-slate-100 rounded-2xl p-5 border border-slate-800 shadow-md flex items-start gap-3">
+      <div id="predictive-model-view-executive-narrative-callout" className="bg-slate-900 text-slate-100 rounded-2xl p-5 border border-slate-800 shadow-md flex items-start gap-3">
         <Zap className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-        <div className="space-y-1 text-xs leading-relaxed">
+        <div id="predictive-model-view-executive-narrative-callout-2" className="space-y-1 text-xs leading-relaxed">
           <span className="font-bold text-amber-300 block">جمع‌بندی پیش‌بینی الگوریتمی برای هیئت مدیره:</span>
           <p className="text-slate-300">{predictionResult.executiveForecastNarrative}</p>
         </div>
       </div>
 
       {/* Detailed Indicator Forecast Grid */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-2xs space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
-          <div>
+      <div id="predictive-model-view-detailed-indicator-forecast-grid" className="bg-white rounded-2xl p-6 border border-slate-200 shadow-2xs space-y-6">
+        <div id="predictive-model-view-detailed-indicator-forecast-grid-2" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
+          <div id="predictive-model-view-detailed-indicator-forecast-grid-3">
             <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
               <BarChart3 className="w-4 h-4 text-blue-600" />
               جدول مقایسه‌ای: شاخص‌های فعلی در برابر تخمین بهبود سال ۱۴۰۴
@@ -267,13 +267,13 @@ export const PredictiveModelView: React.FC<PredictiveModelViewProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
+          <div id="predictive-model-view-detailed-indicator-forecast-grid-4" className="flex items-center gap-2 text-xs font-bold text-slate-600">
             <span className="w-3 h-3 bg-red-400 rounded-full inline-block"></span> وضعیت فعلی
             <span className="w-3 h-3 bg-emerald-500 rounded-full inline-block ms-3"></span> پیش‌بینی سال آینده
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div id="predictive-model-view-detailed-indicator-forecast-grid-5" className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {predictionResult.forecasts.map((item) => {
             const isHighImpact = item.improvementPercentage >= 15;
             const formatUnit = (val: number) => {
@@ -284,6 +284,7 @@ export const PredictiveModelView: React.FC<PredictiveModelViewProps> = ({
 
             return (
               <div
+                id={`predictive-model-view-detailed-indicator-forecast-grid-6-${item.key}`}
                 key={item.key}
                 className={`p-4 rounded-xl border transition-all ${
                   isHighImpact
@@ -291,8 +292,8 @@ export const PredictiveModelView: React.FC<PredictiveModelViewProps> = ({
                     : 'bg-slate-50/70 border-slate-200 hover:border-slate-300'
                 }`}
               >
-                <div className="flex items-start justify-between gap-3 mb-2">
-                  <div>
+                <div id={`predictive-model-view-detailed-indicator-forecast-grid-7-${item.key}`} className="flex items-start justify-between gap-3 mb-2">
+                  <div id={`predictive-model-view-detailed-indicator-forecast-grid-8-${item.key}`}>
                     <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
                       {item.titleFa}
                     </h4>
@@ -317,8 +318,8 @@ export const PredictiveModelView: React.FC<PredictiveModelViewProps> = ({
                 </div>
 
                 {/* Progress Visualizer Bar */}
-                <div className="space-y-1.5 my-3">
-                  <div className="flex justify-between text-[11px] font-extrabold">
+                <div id={`predictive-model-view-progress-visualizer-bar-${item.key}`} className="space-y-1.5 my-3">
+                  <div id={`predictive-model-view-progress-visualizer-bar-2-${item.key}`} className="flex justify-between text-[11px] font-extrabold">
                     <span className="text-slate-600 flex items-center gap-1">
                       فعلی: <strong className="text-slate-900">{formatUnit(item.currentValue)}</strong>
                     </span>
@@ -328,13 +329,15 @@ export const PredictiveModelView: React.FC<PredictiveModelViewProps> = ({
                     </span>
                   </div>
 
-                  <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden flex">
+                  <div id={`predictive-model-view-progress-visualizer-bar-3-${item.key}`} className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden flex">
                     <div
+                      id={`predictive-model-view-progress-visualizer-bar-4-${item.key}`}
                       style={{ width: `${Math.min(100, (item.currentValue / 100) * 100)}%` }}
                       className="bg-red-400 h-full transition-all duration-500"
                       title="وضعیت فعلی"
                     ></div>
                     <div
+                      id={`predictive-model-view-progress-visualizer-bar-5-${item.key}`}
                       style={{ width: `${Math.min(100, (item.predictedValueNextYear / 100) * 100)}%` }}
                       className="bg-emerald-500 h-full transition-all duration-500 -ms-[100%]"
                       title="پیش‌بینی بهبود سال آینده"

@@ -28,16 +28,16 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header className="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40 shadow-lg">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <div id="navbar-root" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+        <div id="navbar-div-2" className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           
           {/* Logo & Org Title */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+          <div id="navbar-logo-org-title" className="flex items-center gap-3">
+            <div id="navbar-logo-org-title-2" className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
               <Building2 className="w-6 h-6" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
+            <div id="navbar-logo-org-title-3">
+              <div id="navbar-logo-org-title-4" className="flex items-center gap-2">
                 <h1 className="text-lg font-bold text-slate-100 tracking-tight">
                   {orgConfig.name}
                 </h1>
@@ -45,7 +45,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   سامانه تخصیص CSR
                 </span>
               </div>
-              <div className="flex items-center gap-3 text-xs text-slate-400 mt-0.5">
+              <div id="navbar-logo-org-title-5" className="flex items-center gap-3 text-xs text-slate-400 mt-0.5">
                 <span className="flex items-center gap-1">
                   <MapPin className="w-3.5 h-3.5 text-blue-400" />
                   {orgConfig.province} • {orgConfig.county} ({orgConfig.district})
@@ -57,10 +57,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Budget Quick Info Badge */}
-          <div className="flex items-center gap-2 bg-slate-800/80 border border-slate-700/60 rounded-xl px-3 py-1.5 backdrop-blur-sm self-start md:self-auto">
-            <div className="text-right">
-              <div className="text-[11px] text-slate-400">بودجه کل مسئولیت اجتماعی</div>
-              <div className="text-sm font-extrabold text-emerald-400 dir-rtl">
+          <div id="navbar-budget-quick-info-badge" className="flex items-center gap-2 bg-slate-800/80 border border-slate-700/60 rounded-xl px-3 py-1.5 backdrop-blur-sm self-start md:self-auto">
+            <div id="navbar-budget-quick-info-badge-2" className="text-right">
+              <div id="navbar-budget-quick-info-badge-3" className="text-[11px] text-slate-400">بودجه کل مسئولیت اجتماعی</div>
+              <div id="navbar-budget-quick-info-badge-4" className="text-sm font-extrabold text-emerald-400 dir-rtl">
                 {formatLargeBudgetPersian(orgConfig.totalBudget)}
               </div>
             </div>
@@ -73,7 +73,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Actions & User Switcher */}
-          <div className="flex items-center gap-2 flex-wrap">
+          <div id="navbar-actions-user-switcher" className="flex items-center gap-2 flex-wrap">
             
             <button
               onClick={onOpenAiModal}
@@ -84,7 +84,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
 
             {/* Export Menu */}
-            <div className="flex items-center gap-1 bg-slate-800 rounded-lg p-1 border border-slate-700">
+            <div id="navbar-export-menu" className="flex items-center gap-1 bg-slate-800 rounded-lg p-1 border border-slate-700">
               <button
                 onClick={onExportPdf}
                 title="دانلود گزارش رسمی PDF"
@@ -105,7 +105,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
 
             {/* User Role Selector */}
-            <div className="relative">
+            <div id="navbar-user-role-selector" className="relative">
               <button
                 onClick={() => setShowUserDropdown(!showUserDropdown)}
                 className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 transition-colors"
@@ -115,16 +115,16 @@ export const Navbar: React.FC<NavbarProps> = ({
                   alt={currentUser.name}
                   className="w-6 h-6 rounded-full object-cover border border-blue-400/40"
                 />
-                <div className="text-right hidden lg:block">
-                  <div className="font-medium text-slate-200">{currentUser.name}</div>
-                  <div className="text-[10px] text-blue-300">{currentUser.roleTitleFa}</div>
+                <div id="navbar-user-role-selector-2" className="text-right hidden lg:block">
+                  <div id="navbar-user-role-selector-3" className="font-medium text-slate-200">{currentUser.name}</div>
+                  <div id="navbar-user-role-selector-4" className="text-[10px] text-blue-300">{currentUser.roleTitleFa}</div>
                 </div>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </button>
 
               {showUserDropdown && (
-                <div className="absolute left-0 mt-2 w-64 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl z-50 py-2 text-xs">
-                  <div className="px-3 py-1.5 border-b border-slate-700 text-slate-400 font-semibold text-[11px]">
+                <div id="navbar-user-role-selector-5" className="absolute left-0 mt-2 w-64 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl z-50 py-2 text-xs">
+                  <div id="navbar-user-role-selector-6" className="px-3 py-1.5 border-b border-slate-700 text-slate-400 font-semibold text-[11px]">
                     تغییر نقش کاربری (تست دسترسی‌ها)
                   </div>
                   {allUsers.map((u) => (
@@ -139,9 +139,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                       }`}
                     >
                       <img src={u.avatar} className="w-7 h-7 rounded-full object-cover" alt={u.name} />
-                      <div className="flex-1">
-                        <div>{u.name}</div>
-                        <div className="text-[10px] text-slate-400">{u.roleTitleFa}</div>
+                      <div id={`navbar-user-role-selector-7-${u.id}`} className="flex-1">
+                        <div id={`navbar-user-role-selector-8-${u.id}`}>{u.name}</div>
+                        <div id={`navbar-user-role-selector-9-${u.id}`} className="text-[10px] text-slate-400">{u.roleTitleFa}</div>
                       </div>
                       {u.id === currentUser.id && <ShieldCheck className="w-4 h-4 text-blue-400" />}
                     </button>

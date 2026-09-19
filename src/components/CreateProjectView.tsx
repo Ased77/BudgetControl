@@ -1332,13 +1332,13 @@ export const CreateProjectView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-16">
+    <div id="create-project-view-root" className="space-y-6 pb-16">
       {/* Header Banner */}
-      <div className="bg-gradient-to-l from-indigo-900 via-blue-900 to-slate-900 text-white rounded-2xl p-6 shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-80 h-80 bg-blue-500/10 rounded-full filter blur-3xl pointer-events-none" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-lg text-xs font-semibold text-blue-200 border border-white/15 mb-3">
+      <div id="create-project-view-header-banner" className="bg-gradient-to-l from-indigo-900 via-blue-900 to-slate-900 text-white rounded-2xl p-6 shadow-xl relative overflow-hidden">
+        <div id="create-project-view-header-banner-2" className="absolute top-0 left-0 w-80 h-80 bg-blue-500/10 rounded-full filter blur-3xl pointer-events-none" />
+        <div id="create-project-view-header-banner-3" className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div id="create-project-view-header-banner-4">
+            <div id="create-project-view-header-banner-5" className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-lg text-xs font-semibold text-blue-200 border border-white/15 mb-3">
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
               موتور هوشمند تجمیع و پیوند تمامی تب‌ها
             </div>
@@ -1353,7 +1353,7 @@ export const CreateProjectView: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div id="create-project-view-header-banner-6" className="flex items-center gap-3 shrink-0">
             <button
               onClick={() => setActiveTab('PROJECTS')}
               className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white text-sm font-semibold rounded-xl border border-white/20 transition-all flex items-center gap-2"
@@ -1365,28 +1365,28 @@ export const CreateProjectView: React.FC = () => {
         </div>
 
         {/* Interconnected Tabs Legend */}
-        <div className="mt-6 pt-5 border-t border-white/10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs">
-          <div className="flex items-center gap-2 bg-white/5 rounded-lg p-2 border border-white/10">
+        <div id="create-project-view-interconnected-tabs-legend" className="mt-6 pt-5 border-t border-white/10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs">
+          <div id="create-project-view-interconnected-tabs-legend-2" className="flex items-center gap-2 bg-white/5 rounded-lg p-2 border border-white/10">
             <Building2 className="w-4 h-4 text-blue-300 shrink-0" />
             <span className="text-slate-200">تب ادارات: سهم و مشارکت</span>
           </div>
-          <div className="flex items-center gap-2 bg-white/5 rounded-lg p-2 border border-white/10">
+          <div id="create-project-view-interconnected-tabs-legend-3" className="flex items-center gap-2 bg-white/5 rounded-lg p-2 border border-white/10">
             <Wallet className="w-4 h-4 text-emerald-300 shrink-0" />
             <span className="text-slate-200">تب بودجه: چندمنبعی (CSR/دولت)</span>
           </div>
-          <div className="flex items-center gap-2 bg-white/5 rounded-lg p-2 border border-white/10">
+          <div id="create-project-view-interconnected-tabs-legend-4" className="flex items-center gap-2 bg-white/5 rounded-lg p-2 border border-white/10">
             <Scale className="w-4 h-4 text-purple-300 shrink-0" />
             <span className="text-slate-200">تب اولویت‌ها: وزن استراتژیک</span>
           </div>
-          <div className="flex items-center gap-2 bg-white/5 rounded-lg p-2 border border-white/10">
+          <div id="create-project-view-interconnected-tabs-legend-5" className="flex items-center gap-2 bg-white/5 rounded-lg p-2 border border-white/10">
             <Flame className="w-4 h-4 text-rose-300 shrink-0" />
             <span className="text-slate-200">تب بحران: کانون و فوریت</span>
           </div>
-          <div className="flex items-center gap-2 bg-white/5 rounded-lg p-2 border border-white/10">
+          <div id="create-project-view-interconnected-tabs-legend-6" className="flex items-center gap-2 bg-white/5 rounded-lg p-2 border border-white/10">
             <Users2 className="w-4 h-4 text-cyan-300 shrink-0" />
             <span className="text-slate-200">تب مجریان و پیمانکاران</span>
           </div>
-          <div className="flex items-center gap-2 bg-white/5 rounded-lg p-2 border border-white/10">
+          <div id="create-project-view-interconnected-tabs-legend-7" className="flex items-center gap-2 bg-white/5 rounded-lg p-2 border border-white/10">
             <Users className="w-4 h-4 text-amber-300 shrink-0" />
             <span className="text-slate-200">تب جمعیت: افراد ذینفع و محروم</span>
           </div>
@@ -1395,19 +1395,19 @@ export const CreateProjectView: React.FC = () => {
 
       {/* Success Modal / Banner */}
       {submittedSuccess && (
-        <div className="bg-emerald-50 border-2 border-emerald-500/30 rounded-2xl p-6 shadow-lg flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in duration-300">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-emerald-500 rounded-xl text-white flex items-center justify-center shrink-0 shadow-md">
+        <div id="create-project-view-success-modal-banner" className="bg-emerald-50 border-2 border-emerald-500/30 rounded-2xl p-6 shadow-lg flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in duration-300">
+          <div id="create-project-view-success-modal-banner-2" className="flex items-center gap-4">
+            <div id="create-project-view-success-modal-banner-3" className="w-12 h-12 bg-emerald-500 rounded-xl text-white flex items-center justify-center shrink-0 shadow-md">
               <Check className="w-7 h-7" />
             </div>
-            <div>
+            <div id="create-project-view-success-modal-banner-4">
               <h3 className="text-base font-bold text-emerald-900">پروژه با موفقیت در سامانه ملی ثبت شد</h3>
               <p className="text-xs text-emerald-700 mt-1">
                 اطلاعات به صورت یکپارچه در داشبورد، ماتریس اولویت‌ها، اعتبارات دستگاه‌ها و جدول رصد پروژه‌ها درج شد.
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div id="create-project-view-success-modal-banner-5" className="flex items-center gap-3">
             <button
               onClick={handleResetForm}
               className="px-4 py-2 bg-white hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-xl border border-emerald-300 transition-colors shadow-sm"
@@ -1426,23 +1426,23 @@ export const CreateProjectView: React.FC = () => {
       )}
 
       {/* Main Grid: Form + Live Project Passport Card */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div id="create-project-view-main-grid-form-live-project" className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Main Form (8 Columns) */}
-        <div className="lg:col-span-8 space-y-6">
+        <div id="create-project-view-main-form-8-columns" className="lg:col-span-8 space-y-6">
           {/* Smart Demographic Priority Recommendations Panel */}
-          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white rounded-2xl p-5 shadow-lg border border-slate-700/60 relative overflow-hidden">
+          <div id="create-project-view-smart-demographic-priority" className="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white rounded-2xl p-5 shadow-lg border border-slate-700/60 relative overflow-hidden">
             {/* Subtle decorative background glow */}
-            <div className="absolute -left-12 -top-12 w-48 h-48 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
-            <div className="absolute -right-12 -bottom-12 w-48 h-48 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
+            <div id="create-project-view-subtle-decorative-background" className="absolute -left-12 -top-12 w-48 h-48 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
+            <div id="create-project-view-subtle-decorative-background-2" className="absolute -right-12 -bottom-12 w-48 h-48 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
 
             {/* Header Row */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4 relative z-10">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-cyan-500/20 shrink-0">
+            <div id="create-project-view-header-row" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4 relative z-10">
+              <div id="create-project-view-header-row-2" className="flex items-center gap-3">
+                <div id="create-project-view-header-row-3" className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-cyan-500/20 shrink-0">
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
+                <div id="create-project-view-header-row-4">
+                  <div id="create-project-view-header-row-5" className="flex items-center gap-2">
                     <h2 className="text-sm font-bold text-white tracking-tight">
                       دستیار برنامه‌ریزی دموگرافیک و اولویت‌های پیشنهادی منطقه
                     </h2>
@@ -1477,8 +1477,8 @@ export const CreateProjectView: React.FC = () => {
 
             {/* Applied Priority Notification Banner */}
             {appliedPriorityNotice && (
-              <div className="mt-3 p-3 bg-emerald-950/80 border border-emerald-500/50 rounded-xl flex items-center justify-between text-xs text-emerald-200 animate-in fade-in slide-in-from-top-2 duration-300 relative z-10">
-                <div className="flex items-center gap-2">
+              <div id="create-project-view-applied-priority-notification" className="mt-3 p-3 bg-emerald-950/80 border border-emerald-500/50 rounded-xl flex items-center justify-between text-xs text-emerald-200 animate-in fade-in slide-in-from-top-2 duration-300 relative z-10">
+                <div id="create-project-view-applied-priority-notification-2" className="flex items-center gap-2">
                   <CheckCheck className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span>
                     اولویت <strong>«{appliedPriorityNotice}»</strong> با موفقیت در فرم اعمال شد (عنوان، بودجه، سهم CSR، جمعیت هدف و دستگاه متولی تنظیم گردید).
@@ -1496,11 +1496,11 @@ export const CreateProjectView: React.FC = () => {
 
             {/* Expanded Content */}
             {plannerExpanded && (
-              <div className="mt-4 space-y-4 relative z-10">
+              <div id="create-project-view-expanded-content" className="mt-4 space-y-4 relative z-10">
                 {/* Filter Controls: Location Selector + Category Selector */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                <div id="create-project-view-filter-controls-location" className="grid grid-cols-1 md:grid-cols-12 gap-3">
                   {/* Location Select (5 cols) */}
-                  <div className="md:col-span-5 bg-white/5 rounded-xl p-3 border border-white/10">
+                  <div id="create-project-view-location-select-5-cols" className="md:col-span-5 bg-white/5 rounded-xl p-3 border border-white/10">
                     <label className="block text-xs font-bold text-slate-200 mb-1.5 flex items-center gap-1.5">
                       <MapPin className="w-3.5 h-3.5 text-cyan-400" />
                       <span>مکان اجرای پروژه (بخش هدف):</span>
@@ -1519,15 +1519,15 @@ export const CreateProjectView: React.FC = () => {
                   </div>
 
                   {/* Project Category / Domain Selector (7 cols) */}
-                  <div className="md:col-span-7 bg-white/5 rounded-xl p-3 border border-white/10">
+                  <div id="create-project-view-project-category-domain" className="md:col-span-7 bg-white/5 rounded-xl p-3 border border-white/10">
                     <label className="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
+                      <div id="create-project-view-project-category-domain-2" className="flex items-center gap-1.5">
                         <Layers className="w-3.5 h-3.5 text-blue-400" />
                         <span>نوع پروژه و حوزه مأموریت:</span>
                       </div>
                       <span className="text-[10px] text-slate-400">یک حوزه را انتخاب کنید</span>
                     </label>
-                    <div className="flex items-center gap-1.5 flex-wrap">
+                    <div id="create-project-view-project-category-domain-3" className="flex items-center gap-1.5 flex-wrap">
                       {PROJECT_CATEGORIES.map((cat) => {
                         const IconComponent = cat.icon;
                         const isSelected = selectedCategory === cat.key;
@@ -1552,48 +1552,48 @@ export const CreateProjectView: React.FC = () => {
                 </div>
 
                 {/* Regional Demographic Snapshot Bar */}
-                <div className="bg-white/5 rounded-xl p-3 border border-white/10">
-                  <div className="flex items-center justify-between mb-2">
+                <div id="create-project-view-regional-demographic-snapshot" className="bg-white/5 rounded-xl p-3 border border-white/10">
+                  <div id="create-project-view-regional-demographic-snapshot-2" className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                       <Activity className="w-3.5 h-3.5 text-emerald-400" />
                       <span>شناسنامه شاخص‌های دموگرافیک {activeLocationData?.nameFa || district}:</span>
                     </span>
                     <span className="text-[10px] text-slate-400">منبع داده: سرشماری و اطلس محرومیت رفسنجان</span>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-center">
-                    <div className="bg-slate-900/60 p-2 rounded-lg border border-white/5">
-                      <div className="text-[10px] text-slate-400">جمعیت کل</div>
-                      <div className="text-xs font-bold text-white mt-0.5">
+                  <div id="create-project-view-regional-demographic-snapshot-3" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-center">
+                    <div id="create-project-view-regional-demographic-snapshot-4" className="bg-slate-900/60 p-2 rounded-lg border border-white/5">
+                      <div id="create-project-view-regional-demographic-snapshot-5" className="text-[10px] text-slate-400">جمعیت کل</div>
+                      <div id="create-project-view-regional-demographic-snapshot-6" className="text-xs font-bold text-white mt-0.5">
                         {formatNumber(activeLocationData?.totalPopulation || 0)} نفر
                       </div>
                     </div>
-                    <div className="bg-slate-900/60 p-2 rounded-lg border border-white/5">
-                      <div className="text-[10px] text-amber-300">اقشار آسیب‌پذیر</div>
-                      <div className="text-xs font-bold text-amber-400 mt-0.5">
+                    <div id="create-project-view-regional-demographic-snapshot-7" className="bg-slate-900/60 p-2 rounded-lg border border-white/5">
+                      <div id="create-project-view-regional-demographic-snapshot-8" className="text-[10px] text-amber-300">اقشار آسیب‌پذیر</div>
+                      <div id="create-project-view-regional-demographic-snapshot-9" className="text-xs font-bold text-amber-400 mt-0.5">
                         {formatNumber(activeLocationData?.vulnerablePopulation || 0)} نفر
                       </div>
                     </div>
-                    <div className="bg-slate-900/60 p-2 rounded-lg border border-white/5">
-                      <div className="text-[10px] text-rose-300">کمبود زیرساخت</div>
-                      <div className="text-xs font-bold text-rose-400 mt-0.5">
+                    <div id="create-project-view-regional-demographic-snapshot-10" className="bg-slate-900/60 p-2 rounded-lg border border-white/5">
+                      <div id="create-project-view-regional-demographic-snapshot-11" className="text-[10px] text-rose-300">کمبود زیرساخت</div>
+                      <div id="create-project-view-regional-demographic-snapshot-12" className="text-xs font-bold text-rose-400 mt-0.5">
                         {activeLocationData?.indicators.infrastructureDeficitPct}%
                       </div>
                     </div>
-                    <div className="bg-slate-900/60 p-2 rounded-lg border border-white/5">
-                      <div className="text-[10px] text-cyan-300">کمبود دسترسی سلامت</div>
-                      <div className="text-xs font-bold text-cyan-400 mt-0.5">
+                    <div id="create-project-view-regional-demographic-snapshot-13" className="bg-slate-900/60 p-2 rounded-lg border border-white/5">
+                      <div id="create-project-view-regional-demographic-snapshot-14" className="text-[10px] text-cyan-300">کمبود دسترسی سلامت</div>
+                      <div id="create-project-view-regional-demographic-snapshot-15" className="text-xs font-bold text-cyan-400 mt-0.5">
                         {activeLocationData?.indicators.healthAccessDeficitPct}%
                       </div>
                     </div>
-                    <div className="bg-slate-900/60 p-2 rounded-lg border border-white/5">
-                      <div className="text-[10px] text-purple-300">نرخ فقر / بیکاری</div>
-                      <div className="text-xs font-bold text-purple-400 mt-0.5">
+                    <div id="create-project-view-regional-demographic-snapshot-16" className="bg-slate-900/60 p-2 rounded-lg border border-white/5">
+                      <div id="create-project-view-regional-demographic-snapshot-17" className="text-[10px] text-purple-300">نرخ فقر / بیکاری</div>
+                      <div id="create-project-view-regional-demographic-snapshot-18" className="text-xs font-bold text-purple-400 mt-0.5">
                         {activeLocationData?.indicators.povertyRatePct}%
                       </div>
                     </div>
-                    <div className="bg-slate-900/60 p-2 rounded-lg border border-white/5">
-                      <div className="text-[10px] text-emerald-300">ریسک محیط‌زیستی</div>
-                      <div className="text-xs font-bold text-emerald-400 mt-0.5">
+                    <div id="create-project-view-regional-demographic-snapshot-19" className="bg-slate-900/60 p-2 rounded-lg border border-white/5">
+                      <div id="create-project-view-regional-demographic-snapshot-20" className="text-[10px] text-emerald-300">ریسک محیط‌زیستی</div>
+                      <div id="create-project-view-regional-demographic-snapshot-21" className="text-xs font-bold text-emerald-400 mt-0.5">
                         {activeLocationData?.indicators.environmentalRiskScore}%
                       </div>
                     </div>
@@ -1601,8 +1601,8 @@ export const CreateProjectView: React.FC = () => {
                 </div>
 
                 {/* Priority Cards List */}
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
+                <div id="create-project-view-priority-cards-list" className="space-y-2.5">
+                  <div id="create-project-view-priority-cards-list-2" className="flex items-center justify-between">
                     <span className="text-xs font-bold text-cyan-300 flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
                       <span>
@@ -1615,15 +1615,16 @@ export const CreateProjectView: React.FC = () => {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-2.5">
+                  <div id="create-project-view-priority-cards-list-3" className="grid grid-cols-1 gap-2.5">
                     {demographicPrioritySuggestions.map((prop, idx) => (
                       <div
+                        id={`create-project-view-priority-cards-list-4-${prop.id}`}
                         key={prop.id}
                         className="bg-white/5 hover:bg-white/[0.08] transition-all rounded-xl p-3.5 border border-white/10 hover:border-cyan-500/40 relative group"
                       >
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                          <div className="space-y-1.5 flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
+                        <div id={`create-project-view-priority-cards-list-5-${prop.id}`} className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                          <div id={`create-project-view-priority-cards-list-6-${prop.id}`} className="space-y-1.5 flex-1 min-w-0">
+                            <div id={`create-project-view-priority-cards-list-7-${prop.id}`} className="flex items-center gap-2 flex-wrap">
                               <span className="text-[10px] bg-cyan-500 text-slate-950 font-bold px-2 py-0.5 rounded-md">
                                 اولویت پیشنهادی {idx + 1}
                               </span>
@@ -1644,7 +1645,7 @@ export const CreateProjectView: React.FC = () => {
                               {prop.demographicRationale}
                             </p>
 
-                            <div className="flex items-center gap-3 text-[11px] text-slate-400 flex-wrap pt-1">
+                            <div id={`create-project-view-priority-cards-list-8-${prop.id}`} className="flex items-center gap-3 text-[11px] text-slate-400 flex-wrap pt-1">
                               <span>
                                 برآورد بودجه:{' '}
                                 <strong className="text-emerald-300 font-bold">
@@ -1666,7 +1667,7 @@ export const CreateProjectView: React.FC = () => {
                           </div>
 
                           {/* Apply Button */}
-                          <div className="shrink-0 flex sm:flex-col items-end justify-between gap-2 border-t sm:border-t-0 sm:border-r sm:border-white/10 pt-2 sm:pt-0 sm:pr-3">
+                          <div id={`create-project-view-apply-button-${prop.id}`} className="shrink-0 flex sm:flex-col items-end justify-between gap-2 border-t sm:border-t-0 sm:border-r sm:border-white/10 pt-2 sm:pt-0 sm:pr-3">
                             <button
                               type="button"
                               onClick={() => handleApplyDemographicPriority(prop)}
@@ -1687,13 +1688,13 @@ export const CreateProjectView: React.FC = () => {
 
           <form onSubmit={handleSubmitProject} className="space-y-6">
             {/* Section 1: Basic Project Profile */}
-            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
+            <div id="create-project-view-section-1-basic-project-profile" className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+              <div id="create-project-view-section-1-basic-project-profile-2" className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div id="create-project-view-section-1-basic-project-profile-3" className="flex items-center gap-2">
+                  <div id="create-project-view-section-1-basic-project-profile-4" className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
                     ۱
                   </div>
-                  <div>
+                  <div id="create-project-view-section-1-basic-project-profile-5">
                     <h2 className="text-sm font-bold text-slate-900">مشخصات پایه و شناسنامه طرح</h2>
                     <p className="text-xs text-slate-500">عنوان، کد یکتا، بازه زمانی و وضعیت اولیه پروژه</p>
                   </div>
@@ -1703,8 +1704,8 @@ export const CreateProjectView: React.FC = () => {
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="md:col-span-2">
+              <div id="create-project-view-section-1-basic-project-profile-6" className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div id="create-project-view-section-1-basic-project-profile-7" className="md:col-span-2">
                   <label className="block text-xs font-bold text-slate-700 mb-1">
                     عنوان کامل و دقیق پروژه <span className="text-rose-500">*</span>
                   </label>
@@ -1718,7 +1719,7 @@ export const CreateProjectView: React.FC = () => {
                   />
                 </div>
 
-                <div>
+                <div id="create-project-view-section-1-basic-project-profile-8">
                   <label className="block text-xs font-bold text-slate-700 mb-1">وضعیت فرآیندی طرح</label>
                   <select
                     value={status}
@@ -1736,13 +1737,13 @@ export const CreateProjectView: React.FC = () => {
 
               {/* Smart Assistance & Recommendation Banner based on Title & Location */}
               {smartInference.hasSignal ? (
-                <div className="p-3 bg-gradient-to-l from-indigo-50/90 via-blue-50/70 to-slate-50 border border-indigo-200/80 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <div id="create-project-view-smart-assistance-recommendation" className="p-3 bg-gradient-to-l from-indigo-50/90 via-blue-50/70 to-slate-50 border border-indigo-200/80 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+                  <div id="create-project-view-smart-assistance-recommendation-2" className="flex items-center gap-2.5">
+                    <div id="create-project-view-smart-assistance-recommendation-3" className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
                       <Sparkles className="w-4 h-4" />
                     </div>
-                    <div>
-                      <div className="text-xs font-bold text-indigo-950 flex items-center gap-2">
+                    <div id="create-project-view-smart-assistance-recommendation-4">
+                      <div id="create-project-view-smart-assistance-recommendation-5" className="text-xs font-bold text-indigo-950 flex items-center gap-2">
                         <span>تشخیص هوشمند مشخصات طرح:</span>
                         <span className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded text-[11px] font-bold">
                           {smartInference.domainLabel}
@@ -1752,7 +1753,7 @@ export const CreateProjectView: React.FC = () => {
                           موقعیت: <strong className="text-indigo-900">{smartInference.districtNameFa}</strong>
                         </span>
                       </div>
-                      <div className="text-[11px] text-slate-600 mt-0.5">
+                      <div id="create-project-view-smart-assistance-recommendation-6" className="text-[11px] text-slate-600 mt-0.5">
                         پیشنهاد جمعیت بهره‌بردار: <strong className="text-indigo-700">{formatNumber(smartInference.suggestedBeneficiaries)} نفر</strong> ({smartInference.suggestedBeneficiariesReason})
                       </div>
                     </div>
@@ -1767,12 +1768,12 @@ export const CreateProjectView: React.FC = () => {
                   </button>
                 </div>
               ) : (
-                <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
-                  <div className="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
+                <div id="create-project-view-smart-assistance-recommendation-7" className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
+                  <div id="create-project-view-smart-assistance-recommendation-8" className="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
                     <Sparkles className="w-3 h-3 text-indigo-500" />
                     <span>نمونه‌های آماده طرح‌های محوری رفسنجان جهت بررسی و اعمال هوشمند:</span>
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div id="create-project-view-smart-assistance-recommendation-9" className="flex flex-wrap gap-1.5">
                     {[
                       { t: 'آبرسانی پایدار به روستاهای تنش‌دار کشکوئیه و دهستان راویز', d: 'بخش کشکوئیه و دهستان راویز', a: 'دهستان راویز و روستاهای تابعه' },
                       { t: 'تعریض، روشنایی و ایمن‌سازی نقاط حادثه‌خیز محور رفسنجان - نوق', d: 'بخش نوق و شهر بهرمان', a: 'کیلومتر ۱۵ تا ۳۵ محور نوق' },
@@ -1793,8 +1794,8 @@ export const CreateProjectView: React.FC = () => {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
+              <div id="create-project-view-smart-assistance-recommendation-10" className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div id="create-project-view-smart-assistance-recommendation-11">
                   <label className="block text-xs font-bold text-slate-700 mb-1">سال آغاز عملیات</label>
                   <input
                     type="number"
@@ -1803,7 +1804,7 @@ export const CreateProjectView: React.FC = () => {
                     className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2"
                   />
                 </div>
-                <div>
+                <div id="create-project-view-smart-assistance-recommendation-12">
                   <label className="block text-xs font-bold text-slate-700 mb-1">سال پیش‌بینی پایان</label>
                   <input
                     type="number"
@@ -1812,7 +1813,7 @@ export const CreateProjectView: React.FC = () => {
                     className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2"
                   />
                 </div>
-                <div>
+                <div id="create-project-view-smart-assistance-recommendation-13">
                   <label className="block text-xs font-bold text-slate-700 mb-1">مدت زمان اجرا (ماه)</label>
                   <input
                     type="number"
@@ -1823,7 +1824,7 @@ export const CreateProjectView: React.FC = () => {
                 </div>
               </div>
 
-              <div>
+              <div id="create-project-view-smart-assistance-recommendation-14">
                 <label className="block text-xs font-bold text-slate-700 mb-1">شرح اهداف، دامنه کار و ضرورت اجرایی</label>
                 <textarea
                   rows={2}
@@ -1836,13 +1837,13 @@ export const CreateProjectView: React.FC = () => {
             </div>
 
             {/* Section 2: Department Governance & Multi-Department Collaboration */}
-            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm">
+            <div id="create-project-view-section-2-department-governance" className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+              <div id="create-project-view-section-2-department-governance-2" className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div id="create-project-view-section-2-department-governance-3" className="flex items-center gap-2">
+                  <div id="create-project-view-section-2-department-governance-4" className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm">
                     ۲
                   </div>
-                  <div>
+                  <div id="create-project-view-section-2-department-governance-5">
                     <h2 className="text-sm font-bold text-slate-900">حکمرانی دستگاهی و پروژه‌های چنداداره‌ای</h2>
                     <p className="text-xs text-slate-500">
                       تعیین اداره متقاضی، دستگاه متولی اصلی و سهم مشارکت سایر دستگاه‌های اجرایی (همکاری بین‌بخشی)
@@ -1852,9 +1853,9 @@ export const CreateProjectView: React.FC = () => {
                 <Building2 className="w-5 h-5 text-indigo-500" />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
+              <div id="create-project-view-section-2-department-governance-6" className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div id="create-project-view-section-2-department-governance-7">
+                  <div id="create-project-view-section-2-department-governance-8" className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-bold text-slate-700">
                       اداره متقاضی / پیشنهاددهنده طرح
                     </label>
@@ -1882,8 +1883,8 @@ export const CreateProjectView: React.FC = () => {
                   </select>
                 </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-1">
+                <div id="create-project-view-section-2-department-governance-9">
+                  <div id="create-project-view-section-2-department-governance-10" className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-bold text-slate-700">
                       دستگاه اجرایی متولی اصلی و پاسخگو <span className="text-rose-500">*</span>
                     </label>
@@ -1913,9 +1914,9 @@ export const CreateProjectView: React.FC = () => {
               </div>
 
               {/* Multi-Department Toggle */}
-              <div className="p-4 bg-indigo-50/70 border border-indigo-200/80 rounded-xl space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+              <div id="create-project-view-multi-department-toggle" className="p-4 bg-indigo-50/70 border border-indigo-200/80 rounded-xl space-y-3">
+                <div id="create-project-view-multi-department-toggle-2" className="flex items-center justify-between">
+                  <div id="create-project-view-multi-department-toggle-3" className="flex items-center gap-2">
                     <input
                       type="checkbox"
                       id="multiDeptCheck"
@@ -1935,14 +1936,14 @@ export const CreateProjectView: React.FC = () => {
                 </div>
 
                 {isMultiDept && (
-                  <div className="space-y-3 pt-2 border-t border-indigo-200/50">
+                  <div id="create-project-view-multi-department-toggle-4" className="space-y-3 pt-2 border-t border-indigo-200/50">
                     <p className="text-[11px] text-indigo-800">
                       برای تسهیم اعتبارات و جلوگیری از ادعای همزمان چند دستگاه بر سر یک پروژه، سهم هر اداره و وظیفه اجرایی را معین نمایید:
                     </p>
 
                     {/* Add Contributing Department Row */}
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-white p-3 rounded-xl border border-indigo-200">
-                      <div className="md:col-span-4">
+                    <div id="create-project-view-add-contributing-department-row" className="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-white p-3 rounded-xl border border-indigo-200">
+                      <div id="create-project-view-add-contributing-department-row-2" className="md:col-span-4">
                         <label className="block text-[10px] font-bold text-slate-600 mb-1">انتخاب اداره همکار</label>
                         <select
                           value={newContribDeptId}
@@ -1959,7 +1960,7 @@ export const CreateProjectView: React.FC = () => {
                         </select>
                       </div>
 
-                      <div className="md:col-span-3">
+                      <div id="create-project-view-add-contributing-department-row-3" className="md:col-span-3">
                         <label className="block text-[10px] font-bold text-slate-600 mb-1">درصد سهم / مشارکت (٪)</label>
                         <input
                           type="number"
@@ -1971,7 +1972,7 @@ export const CreateProjectView: React.FC = () => {
                         />
                       </div>
 
-                      <div className="md:col-span-4">
+                      <div id="create-project-view-add-contributing-department-row-4" className="md:col-span-4">
                         <label className="block text-[10px] font-bold text-slate-600 mb-1">مسئولیت و شرح اقدام</label>
                         <input
                           type="text"
@@ -1982,7 +1983,7 @@ export const CreateProjectView: React.FC = () => {
                         />
                       </div>
 
-                      <div className="md:col-span-1 pt-4">
+                      <div id="create-project-view-add-contributing-department-row-5" className="md:col-span-1 pt-4">
                         <button
                           type="button"
                           onClick={handleAddContributingDept}
@@ -1996,25 +1997,26 @@ export const CreateProjectView: React.FC = () => {
 
                     {/* Contributing Departments List */}
                     {contributingDepts.length > 0 && (
-                      <div className="space-y-2">
+                      <div id="create-project-view-contributing-departments-list" className="space-y-2">
                         {contributingDepts.map((c) => {
                           const deptShareToman = Math.round((estimatedCostToman * c.sharePercentage) / 100);
                           return (
                             <div
+                              id={`create-project-view-contributing-departments-list-2-${c.departmentId}`}
                               key={c.departmentId}
                               className="flex items-center justify-between p-2.5 bg-white rounded-lg border border-slate-200 text-xs shadow-sm"
                             >
-                              <div className="flex items-center gap-3">
+                              <div id={`create-project-view-contributing-departments-list-3-${c.departmentId}`} className="flex items-center gap-3">
                                 <Building2 className="w-4 h-4 text-indigo-600 shrink-0" />
-                                <div>
+                                <div id={`create-project-view-contributing-departments-list-4-${c.departmentId}`}>
                                   <span className="font-bold text-slate-800">{c.departmentName}</span>
                                   <span className="text-slate-400 mx-2">|</span>
                                   <span className="text-slate-500 text-[11px]">{c.roleDescription}</span>
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-4">
-                                <div className="text-left">
+                              <div id={`create-project-view-contributing-departments-list-5-${c.departmentId}`} className="flex items-center gap-4">
+                                <div id={`create-project-view-contributing-departments-list-6-${c.departmentId}`} className="text-left">
                                   <span className="font-bold text-indigo-700">{c.sharePercentage}٪</span>
                                   <span className="text-[11px] text-slate-500 mr-2">
                                     ({formatToman(deptShareToman)})
@@ -2039,13 +2041,13 @@ export const CreateProjectView: React.FC = () => {
             </div>
 
             {/* Section 3: Strategic Priorities & Crisis Alignment */}
-            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-sm">
+            <div id="create-project-view-section-3-strategic-priorities" className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+              <div id="create-project-view-section-3-strategic-priorities-2" className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div id="create-project-view-section-3-strategic-priorities-3" className="flex items-center gap-2">
+                  <div id="create-project-view-section-3-strategic-priorities-4" className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-sm">
                     ۳
                   </div>
-                  <div>
+                  <div id="create-project-view-section-3-strategic-priorities-5">
                     <h2 className="text-sm font-bold text-slate-900">ارتباط با اولویت‌های توسعه و بحران‌های هدف</h2>
                     <p className="text-xs text-slate-500">
                       انتخاب کانون آسیب تحت پوشش (از تب بحران‌ها) و سرفصل مصوب استراتژیک (از تب اولویت‌ها)
@@ -2055,9 +2057,9 @@ export const CreateProjectView: React.FC = () => {
                 <Flame className="w-5 h-5 text-rose-500" />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
+              <div id="create-project-view-section-3-strategic-priorities-6" className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div id="create-project-view-section-3-strategic-priorities-7">
+                  <div id="create-project-view-section-3-strategic-priorities-8" className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-bold text-slate-700">
                       کانون آسیب / بحران متناظر (تب بحران‌ها و آسیب‌ها)
                     </label>
@@ -2084,14 +2086,14 @@ export const CreateProjectView: React.FC = () => {
                     ))}
                   </select>
                   {selectedCrisis && (
-                    <div className="mt-1.5 flex items-center gap-2 text-[11px] text-slate-500">
+                    <div id="create-project-view-section-3-strategic-priorities-9" className="mt-1.5 flex items-center gap-2 text-[11px] text-slate-500">
                       <span className="font-semibold text-slate-700">علت ریشه‌ای:</span> {selectedCrisis.primaryCause}
                     </div>
                   )}
                 </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-1">
+                <div id="create-project-view-section-3-strategic-priorities-10">
+                  <div id="create-project-view-section-3-strategic-priorities-11" className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-bold text-slate-700">
                       اولویت توسعه و حوزه مداخله (تب اولویت‌ها و ضرایب)
                     </label>
@@ -2118,22 +2120,22 @@ export const CreateProjectView: React.FC = () => {
                     ))}
                   </select>
                   {selectedPriority && (
-                    <div className="mt-1.5 flex items-center gap-2 text-[11px] text-slate-500">
+                    <div id="create-project-view-section-3-strategic-priorities-12" className="mt-1.5 flex items-center gap-2 text-[11px] text-slate-500">
                       <span className="font-semibold text-slate-700">دسته استراتژیک:</span> {selectedPriority.category}
                     </div>
                   )}
 
                   {/* Contextual Demographic Priority Quick Suggestions */}
                   {demographicPrioritySuggestions.length > 0 && (
-                    <div className="mt-3 p-2.5 bg-purple-50/70 border border-purple-200/80 rounded-xl space-y-1.5">
-                      <div className="flex items-center justify-between text-[11px] font-bold text-purple-900">
+                    <div id="create-project-view-contextual-demographic-priority" className="mt-3 p-2.5 bg-purple-50/70 border border-purple-200/80 rounded-xl space-y-1.5">
+                      <div id="create-project-view-contextual-demographic-priority-2" className="flex items-center justify-between text-[11px] font-bold text-purple-900">
                         <span className="flex items-center gap-1">
                           <Sparkles className="w-3 h-3 text-purple-600" />
                           <span>اولویت‌های پیشنهادی دموگرافیک برای {district.split(' ')[1] || district}:</span>
                         </span>
                         <span className="text-[10px] text-purple-600 font-normal">کلیک جهت اعمال آنی</span>
                       </div>
-                      <div className="flex flex-wrap gap-1.5 pt-0.5">
+                      <div id="create-project-view-contextual-demographic-priority-3" className="flex flex-wrap gap-1.5 pt-0.5">
                         {demographicPrioritySuggestions.map((prop) => (
                           <button
                             key={prop.id}
@@ -2152,9 +2154,9 @@ export const CreateProjectView: React.FC = () => {
                 </div>
               </div>
 
-              <div>
+              <div id="create-project-view-contextual-demographic-priority-4">
                 <label className="block text-xs font-bold text-slate-700 mb-1">درجه فوریت مداخله</label>
-                <div className="grid grid-cols-4 gap-2">
+                <div id="create-project-view-contextual-demographic-priority-5" className="grid grid-cols-4 gap-2">
                   {[
                     { level: 'CRITICAL', label: 'بحرانی و آنی', bg: 'bg-rose-50 text-rose-700 border-rose-300' },
                     { level: 'HIGH', label: 'اولویت بالا', bg: 'bg-amber-50 text-amber-700 border-amber-300' },
@@ -2177,20 +2179,20 @@ export const CreateProjectView: React.FC = () => {
             </div>
 
             {/* Section 4: Multi-Source Budgeting (CSR vs Government vs Dehyari vs Facilities) */}
-            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm">
+            <div id="create-project-view-section-4-multi-source" className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+              <div id="create-project-view-section-4-multi-source-2" className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div id="create-project-view-section-4-multi-source-3" className="flex items-center gap-2">
+                  <div id="create-project-view-section-4-multi-source-4" className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm">
                     ۴
                   </div>
-                  <div>
+                  <div id="create-project-view-section-4-multi-source-5">
                     <h2 className="text-sm font-bold text-slate-900">مدل ترکیبی تأمین مالی و بودجه چندمنبعی</h2>
                     <p className="text-xs text-slate-500">
                       تفکیک سهم مسئولیت اجتماعی شرکت‌ها (CSR)، بودجه عمومی دولت، عوارض آلایندگی دهیاری‌ها و تسهیلات
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div id="create-project-view-section-4-multi-source-6" className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={handleAutoBalanceShares}
@@ -2204,9 +2206,9 @@ export const CreateProjectView: React.FC = () => {
               </div>
 
               {/* Total Cost & Annual Breakdown */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
+              <div id="create-project-view-total-cost-annual-breakdown" className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <div id="create-project-view-total-cost-annual-breakdown-2">
+                  <div id="create-project-view-total-cost-annual-breakdown-3" className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-bold text-slate-700">
                       برآورد کل هزینه طرح (تومان) <span className="text-rose-500">*</span>
                     </label>
@@ -2236,7 +2238,7 @@ export const CreateProjectView: React.FC = () => {
                   </span>
                 </div>
 
-                <div>
+                <div id="create-project-view-total-cost-annual-breakdown-4">
                   <label className="block text-xs font-bold text-slate-700 mb-1">تخصیص مصوب سال جاری (تومان)</label>
                   <input
                     type="number"
@@ -2250,7 +2252,7 @@ export const CreateProjectView: React.FC = () => {
                   </span>
                 </div>
 
-                <div>
+                <div id="create-project-view-total-cost-annual-breakdown-5">
                   <label className="block text-xs font-bold text-slate-700 mb-1">سرفصل اصلی منبع اعتباری</label>
                   <select
                     value={primaryBudgetSourceId}
@@ -2267,9 +2269,9 @@ export const CreateProjectView: React.FC = () => {
               </div>
 
               {/* Source Shares Sliders & Balance Validation */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div className="flex items-center gap-2 flex-wrap">
+              <div id="create-project-view-source-shares-sliders-balance" className="space-y-3">
+                <div id="create-project-view-source-shares-sliders-balance-2" className="flex items-center justify-between flex-wrap gap-2">
+                  <div id="create-project-view-source-shares-sliders-balance-3" className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-bold text-slate-800">
                       تسهیم منابع اعتباری (مجموع باید دقیقاً ۱۰۰٪ باشد):
                     </span>
@@ -2292,6 +2294,7 @@ export const CreateProjectView: React.FC = () => {
                     )}
                   </div>
                   <div
+                    id="create-project-view-source-shares-sliders-balance-4"
                     className={`text-xs font-black px-3 py-1 rounded-full border ${
                       isBudgetShareValid
                         ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
@@ -2303,18 +2306,18 @@ export const CreateProjectView: React.FC = () => {
                 </div>
 
                 {/* Stacked Visual Bar */}
-                <div className="h-3 w-full bg-slate-200 rounded-full overflow-hidden flex shadow-inner">
-                  <div style={{ width: `${csrSharePct}%` }} className="bg-emerald-500 transition-all duration-300" title={`مسئولیت اجتماعی: ${csrSharePct}%`} />
-                  <div style={{ width: `${govSharePct}%` }} className="bg-blue-500 transition-all duration-300" title={`اعتبارات دولت: ${govSharePct}%`} />
-                  <div style={{ width: `${dehyariSharePct}%` }} className="bg-amber-500 transition-all duration-300" title={`عوارض آلایندگی/دهیاری: ${dehyariSharePct}%`} />
-                  <div style={{ width: `${bankSharePct}%` }} className="bg-purple-500 transition-all duration-300" title={`تسهیلات بانکی: ${bankSharePct}%`} />
-                  <div style={{ width: `${charitySharePct}%` }} className="bg-rose-500 transition-all duration-300" title={`خیرین: ${charitySharePct}%`} />
+                <div id="create-project-view-stacked-visual-bar" className="h-3 w-full bg-slate-200 rounded-full overflow-hidden flex shadow-inner">
+                  <div id="create-project-view-stacked-visual-bar-2" style={{ width: `${csrSharePct}%` }} className="bg-emerald-500 transition-all duration-300" title={`مسئولیت اجتماعی: ${csrSharePct}%`} />
+                  <div id="create-project-view-stacked-visual-bar-3" style={{ width: `${govSharePct}%` }} className="bg-blue-500 transition-all duration-300" title={`اعتبارات دولت: ${govSharePct}%`} />
+                  <div id="create-project-view-stacked-visual-bar-4" style={{ width: `${dehyariSharePct}%` }} className="bg-amber-500 transition-all duration-300" title={`عوارض آلایندگی/دهیاری: ${dehyariSharePct}%`} />
+                  <div id="create-project-view-stacked-visual-bar-5" style={{ width: `${bankSharePct}%` }} className="bg-purple-500 transition-all duration-300" title={`تسهیلات بانکی: ${bankSharePct}%`} />
+                  <div id="create-project-view-stacked-visual-bar-6" style={{ width: `${charitySharePct}%` }} className="bg-rose-500 transition-all duration-300" title={`خیرین: ${charitySharePct}%`} />
                 </div>
 
                 {/* Shares Inputs Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 pt-2">
-                  <div className="bg-emerald-50/70 border border-emerald-200 p-2.5 rounded-xl">
-                    <div className="flex items-center justify-between text-xs font-bold text-emerald-900 mb-1">
+                <div id="create-project-view-shares-inputs-grid" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 pt-2">
+                  <div id="create-project-view-shares-inputs-grid-2" className="bg-emerald-50/70 border border-emerald-200 p-2.5 rounded-xl">
+                    <div id="create-project-view-shares-inputs-grid-3" className="flex items-center justify-between text-xs font-bold text-emerald-900 mb-1">
                       <span>سهم CSR مس</span>
                       <span>{csrSharePct}٪</span>
                     </div>
@@ -2326,13 +2329,13 @@ export const CreateProjectView: React.FC = () => {
                       onChange={(e) => setCsrSharePct(Number(e.target.value))}
                       className="w-full accent-emerald-600 cursor-pointer"
                     />
-                    <div className="text-[10px] text-emerald-700 font-semibold mt-1">
+                    <div id="create-project-view-shares-inputs-grid-4" className="text-[10px] text-emerald-700 font-semibold mt-1">
                       {formatToman(Math.round((estimatedCostToman * csrSharePct) / 100))}
                     </div>
                   </div>
 
-                  <div className="bg-blue-50/70 border border-blue-200 p-2.5 rounded-xl">
-                    <div className="flex items-center justify-between text-xs font-bold text-blue-900 mb-1">
+                  <div id="create-project-view-shares-inputs-grid-5" className="bg-blue-50/70 border border-blue-200 p-2.5 rounded-xl">
+                    <div id="create-project-view-shares-inputs-grid-6" className="flex items-center justify-between text-xs font-bold text-blue-900 mb-1">
                       <span>سهم دولت</span>
                       <span>{govSharePct}٪</span>
                     </div>
@@ -2344,13 +2347,13 @@ export const CreateProjectView: React.FC = () => {
                       onChange={(e) => setGovSharePct(Number(e.target.value))}
                       className="w-full accent-blue-600 cursor-pointer"
                     />
-                    <div className="text-[10px] text-blue-700 font-semibold mt-1">
+                    <div id="create-project-view-shares-inputs-grid-7" className="text-[10px] text-blue-700 font-semibold mt-1">
                       {formatToman(Math.round((estimatedCostToman * govSharePct) / 100))}
                     </div>
                   </div>
 
-                  <div className="bg-amber-50/70 border border-amber-200 p-2.5 rounded-xl">
-                    <div className="flex items-center justify-between text-xs font-bold text-amber-900 mb-1">
+                  <div id="create-project-view-shares-inputs-grid-8" className="bg-amber-50/70 border border-amber-200 p-2.5 rounded-xl">
+                    <div id="create-project-view-shares-inputs-grid-9" className="flex items-center justify-between text-xs font-bold text-amber-900 mb-1">
                       <span>دهیاری / عوارض</span>
                       <span>{dehyariSharePct}٪</span>
                     </div>
@@ -2362,13 +2365,13 @@ export const CreateProjectView: React.FC = () => {
                       onChange={(e) => setDehyariSharePct(Number(e.target.value))}
                       className="w-full accent-amber-600 cursor-pointer"
                     />
-                    <div className="text-[10px] text-amber-700 font-semibold mt-1">
+                    <div id="create-project-view-shares-inputs-grid-10" className="text-[10px] text-amber-700 font-semibold mt-1">
                       {formatToman(Math.round((estimatedCostToman * dehyariSharePct) / 100))}
                     </div>
                   </div>
 
-                  <div className="bg-purple-50/70 border border-purple-200 p-2.5 rounded-xl">
-                    <div className="flex items-center justify-between text-xs font-bold text-purple-900 mb-1">
+                  <div id="create-project-view-shares-inputs-grid-11" className="bg-purple-50/70 border border-purple-200 p-2.5 rounded-xl">
+                    <div id="create-project-view-shares-inputs-grid-12" className="flex items-center justify-between text-xs font-bold text-purple-900 mb-1">
                       <span>وام / تبصره ۲</span>
                       <span>{bankSharePct}٪</span>
                     </div>
@@ -2380,13 +2383,13 @@ export const CreateProjectView: React.FC = () => {
                       onChange={(e) => setBankSharePct(Number(e.target.value))}
                       className="w-full accent-purple-600 cursor-pointer"
                     />
-                    <div className="text-[10px] text-purple-700 font-semibold mt-1">
+                    <div id="create-project-view-shares-inputs-grid-13" className="text-[10px] text-purple-700 font-semibold mt-1">
                       {formatToman(Math.round((estimatedCostToman * bankSharePct) / 100))}
                     </div>
                   </div>
 
-                  <div className="bg-rose-50/70 border border-rose-200 p-2.5 rounded-xl">
-                    <div className="flex items-center justify-between text-xs font-bold text-rose-900 mb-1">
+                  <div id="create-project-view-shares-inputs-grid-14" className="bg-rose-50/70 border border-rose-200 p-2.5 rounded-xl">
+                    <div id="create-project-view-shares-inputs-grid-15" className="flex items-center justify-between text-xs font-bold text-rose-900 mb-1">
                       <span>خیرین / مردمی</span>
                       <span>{charitySharePct}٪</span>
                     </div>
@@ -2398,7 +2401,7 @@ export const CreateProjectView: React.FC = () => {
                       onChange={(e) => setCharitySharePct(Number(e.target.value))}
                       className="w-full accent-rose-600 cursor-pointer"
                     />
-                    <div className="text-[10px] text-rose-700 font-semibold mt-1">
+                    <div id="create-project-view-shares-inputs-grid-16" className="text-[10px] text-rose-700 font-semibold mt-1">
                       {formatToman(Math.round((estimatedCostToman * charitySharePct) / 100))}
                     </div>
                   </div>
@@ -2407,13 +2410,13 @@ export const CreateProjectView: React.FC = () => {
             </div>
 
             {/* Section 5: Demographics, Beneficiaries & Geography */}
-            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-cyan-50 text-cyan-600 flex items-center justify-center font-bold text-sm">
+            <div id="create-project-view-section-5-demographics" className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+              <div id="create-project-view-section-5-demographics-2" className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div id="create-project-view-section-5-demographics-3" className="flex items-center gap-2">
+                  <div id="create-project-view-section-5-demographics-4" className="w-8 h-8 rounded-lg bg-cyan-50 text-cyan-600 flex items-center justify-center font-bold text-sm">
                     ۵
                   </div>
-                  <div>
+                  <div id="create-project-view-section-5-demographics-5">
                     <h2 className="text-sm font-bold text-slate-900">موقعیت مکانی، افراد بهره‌بردار و جامعه هدف</h2>
                     <p className="text-xs text-slate-500">
                       پیوند با تب جمعیت: تعیین بخش جغرافیایی، تعداد ذینفعان مستقیم و اقشار آسیب‌پذیر برخوردار
@@ -2423,9 +2426,9 @@ export const CreateProjectView: React.FC = () => {
                 <Users className="w-5 h-5 text-cyan-500" />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
+              <div id="create-project-view-section-5-demographics-6" className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div id="create-project-view-section-5-demographics-7">
+                  <div id="create-project-view-section-5-demographics-8" className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-bold text-slate-700">بخش هدف در رفسنجان</label>
                     {smartInference.hasSignal && smartInference.inferredDistrict && district !== smartInference.inferredDistrict && (
                       <button
@@ -2451,7 +2454,7 @@ export const CreateProjectView: React.FC = () => {
                   </select>
                 </div>
 
-                <div>
+                <div id="create-project-view-section-5-demographics-9">
                   <label className="block text-xs font-bold text-slate-700 mb-1">محدوده یا نقطه اجرایی دقیق</label>
                   <input
                     type="text"
@@ -2462,8 +2465,8 @@ export const CreateProjectView: React.FC = () => {
                   />
                 </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-1">
+                <div id="create-project-view-section-5-demographics-10">
+                  <div id="create-project-view-section-5-demographics-11" className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-bold text-slate-700">
                       تعداد افراد استفاده‌کننده مستقیم <span className="text-rose-500">*</span>
                     </label>
@@ -2487,7 +2490,7 @@ export const CreateProjectView: React.FC = () => {
                     className="w-full text-xs font-bold bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
                   />
                   {smartInference.hasSignal && smartInference.suggestedBeneficiariesReason && (
-                    <div className="text-[10px] text-cyan-800 bg-cyan-50/70 border border-cyan-100 rounded-lg px-2 py-1 mt-1.5 flex items-center justify-between">
+                    <div id="create-project-view-section-5-demographics-12" className="text-[10px] text-cyan-800 bg-cyan-50/70 border border-cyan-100 rounded-lg px-2 py-1 mt-1.5 flex items-center justify-between">
                       <span className="truncate">تحلیل: {smartInference.suggestedBeneficiariesReason}</span>
                       <button
                         type="button"
@@ -2499,7 +2502,7 @@ export const CreateProjectView: React.FC = () => {
                     </div>
                   )}
                   {/* Demographic Quick Chips */}
-                  <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                  <div id="create-project-view-demographic-quick-chips" className="flex items-center gap-1 mt-1.5 flex-wrap">
                     <span className="text-[10px] text-slate-400">گزینه‌ها:</span>
                     <button
                       type="button"
@@ -2528,7 +2531,7 @@ export const CreateProjectView: React.FC = () => {
                       </button>
                     )}
                   </div>
-                  <div className="flex items-center justify-between text-[11px] text-slate-500 mt-2 pt-1 border-t border-slate-100">
+                  <div id="create-project-view-demographic-quick-chips-2" className="flex items-center justify-between text-[11px] text-slate-500 mt-2 pt-1 border-t border-slate-100">
                     <span>هزینه سرانه هر نفر:</span>
                     <span className="font-bold text-blue-700">{formatToman(costPerBeneficiary)}</span>
                   </div>
@@ -2536,8 +2539,8 @@ export const CreateProjectView: React.FC = () => {
               </div>
 
               {/* Target Beneficiary Groups Checkboxes */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
+              <div id="create-project-view-target-beneficiary-groups">
+                <div id="create-project-view-target-beneficiary-groups-2" className="flex items-center justify-between mb-2">
                   <label className="block text-xs font-bold text-slate-700">
                     اقشار و گروه‌های هدف تحت پوشش طرح (از آمار جمعیتی رفسنجان):
                   </label>
@@ -2552,7 +2555,7 @@ export const CreateProjectView: React.FC = () => {
                     </button>
                   )}
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
+                <div id="create-project-view-target-beneficiary-groups-3" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
                   {BENEFICIARY_OPTIONS.map((opt) => {
                     const isChecked = selectedBeneficiaryGroups.includes(opt);
                     return (
@@ -2567,6 +2570,7 @@ export const CreateProjectView: React.FC = () => {
                         }`}
                       >
                         <div
+                          id={`create-project-view-target-beneficiary-groups-4-${opt}`}
                           className={`w-4 h-4 rounded mt-0.5 flex items-center justify-center shrink-0 ${
                             isChecked ? 'bg-cyan-600 text-white' : 'border border-slate-300 bg-white'
                           }`}
@@ -2582,13 +2586,13 @@ export const CreateProjectView: React.FC = () => {
             </div>
 
             {/* Section 6: Execution & Contracting Partner */}
-            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-sm">
+            <div id="create-project-view-section-6-execution-contracting" className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+              <div id="create-project-view-section-6-execution-contracting-2" className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div id="create-project-view-section-6-execution-contracting-3" className="flex items-center gap-2">
+                  <div id="create-project-view-section-6-execution-contracting-4" className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-sm">
                     ۶
                   </div>
-                  <div>
+                  <div id="create-project-view-section-6-execution-contracting-5">
                     <h2 className="text-sm font-bold text-slate-900">تعیین دستگاه مجری و پیمانکار واجد صلاحیت</h2>
                     <p className="text-xs text-slate-500">
                       اتصال به تب مجریان طرح و پیمانکاران دارای رتبه‌بندی تاییدشده در شهرستان
@@ -2598,9 +2602,9 @@ export const CreateProjectView: React.FC = () => {
                 <HardHat className="w-5 h-5 text-amber-500" />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
+              <div id="create-project-view-section-6-execution-contracting-6" className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div id="create-project-view-section-6-execution-contracting-7">
+                  <div id="create-project-view-section-6-execution-contracting-8" className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-bold text-slate-700">
                       دستگاه مجری عملیات طرح (تب مجریان) <span className="text-rose-500">*</span>
                     </label>
@@ -2627,14 +2631,14 @@ export const CreateProjectView: React.FC = () => {
                     ))}
                   </select>
                   {selectedExecutor && (
-                    <div className="mt-1 text-[11px] text-slate-500">
+                    <div id="create-project-view-section-6-execution-contracting-9" className="mt-1 text-[11px] text-slate-500">
                       مدیرمسئول: {selectedExecutor.managingDirector} | تماس: {selectedExecutor.contactPhone}
                     </div>
                   )}
                 </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-1">
+                <div id="create-project-view-section-6-execution-contracting-10">
+                  <div id="create-project-view-section-6-execution-contracting-11" className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-bold text-slate-700">
                       پیمانکار اجرایی ذیصلاح (تب پیمانکاران)
                     </label>
@@ -2662,7 +2666,7 @@ export const CreateProjectView: React.FC = () => {
                     ))}
                   </select>
                   {selectedContractor && (
-                    <div className="mt-1 text-[11px] text-slate-500">
+                    <div id="create-project-view-section-6-execution-contracting-12" className="mt-1 text-[11px] text-slate-500">
                       مدیرعامل: {selectedContractor.ceoName} | امتیاز عملکرد: {selectedContractor.performanceScore} از ۱۰۰
                     </div>
                   )}
@@ -2671,15 +2675,15 @@ export const CreateProjectView: React.FC = () => {
             </div>
 
             {/* Submit Action Bar */}
-            <div className="bg-slate-900 text-white rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
-              <div>
-                <div className="text-xs font-semibold text-slate-400">اعتبارسنجی نهایی و ثبت در تمام ماژول‌ها</div>
-                <div className="text-sm font-bold text-white mt-0.5">
+            <div id="create-project-view-submit-action-bar" className="bg-slate-900 text-white rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+              <div id="create-project-view-submit-action-bar-2">
+                <div id="create-project-view-submit-action-bar-3" className="text-xs font-semibold text-slate-400">اعتبارسنجی نهایی و ثبت در تمام ماژول‌ها</div>
+                <div id="create-project-view-submit-action-bar-4" className="text-sm font-bold text-white mt-0.5">
                   ارزش کل طرح: {formatToman(estimatedCostToman)} | بهره‌برداران: {formatNumber(beneficiariesCount)} نفر
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div id="create-project-view-submit-action-bar-5" className="flex items-center gap-3 w-full sm:w-auto">
                 <button
                   type="button"
                   onClick={handleResetForm}
@@ -2705,16 +2709,17 @@ export const CreateProjectView: React.FC = () => {
         </div>
 
         {/* Live Project Passport Column (4 Columns) */}
-        <div className="lg:col-span-4 space-y-6">
+        <div id="create-project-view-live-project-passport-column-4" className="lg:col-span-4 space-y-6">
           {/* Anti-Overlap Intelligence Card */}
           <div
+            id="create-project-view-anti-overlap-intelligence-card"
             className={`rounded-2xl p-5 border shadow-sm transition-all ${
               potentialDuplicates.length > 0
                 ? 'bg-amber-50 border-amber-300 text-amber-950'
                 : 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
             }`}
           >
-            <div className="flex items-center gap-2 mb-2">
+            <div id="create-project-view-anti-overlap-intelligence-card-2" className="flex items-center gap-2 mb-2">
               {potentialDuplicates.length > 0 ? (
                 <>
                   <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
@@ -2729,13 +2734,13 @@ export const CreateProjectView: React.FC = () => {
             </div>
 
             {potentialDuplicates.length > 0 ? (
-              <div className="text-xs space-y-2">
+              <div id="create-project-view-anti-overlap-intelligence-card-3" className="text-xs space-y-2">
                 <p className="text-amber-800 leading-relaxed">
                   سیستم متوجه شد طرح دیگری با بحران یا موقعیت مکانی مشابه در حال پیگیری است:
                 </p>
-                <div className="bg-white/80 p-2.5 rounded-xl border border-amber-200 text-slate-800">
-                  <div className="font-bold text-[11px] text-slate-900">{potentialDuplicates[0].title}</div>
-                  <div className="text-[10px] text-slate-500 mt-1">
+                <div id="create-project-view-anti-overlap-intelligence-card-4" className="bg-white/80 p-2.5 rounded-xl border border-amber-200 text-slate-800">
+                  <div id="create-project-view-anti-overlap-intelligence-card-5" className="font-bold text-[11px] text-slate-900">{potentialDuplicates[0].title}</div>
+                  <div id="create-project-view-anti-overlap-intelligence-card-6" className="text-[10px] text-slate-500 mt-1">
                     متولی: {potentialDuplicates[0].departmentName} | کد: {potentialDuplicates[0].code}
                   </div>
                 </div>
@@ -2751,9 +2756,9 @@ export const CreateProjectView: React.FC = () => {
           </div>
 
           {/* Live Passport Card */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden sticky top-6">
-            <div className="bg-gradient-to-r from-slate-900 to-indigo-950 p-4 text-white">
-              <div className="flex items-center justify-between text-[11px] text-slate-300 mb-1">
+          <div id="create-project-view-live-passport-card" className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden sticky top-6">
+            <div id="create-project-view-live-passport-card-2" className="bg-gradient-to-r from-slate-900 to-indigo-950 p-4 text-white">
+              <div id="create-project-view-live-passport-card-3" className="flex items-center justify-between text-[11px] text-slate-300 mb-1">
                 <span>پیش‌نمایش زنده شناسنامه پروژه</span>
                 <span className="font-mono bg-white/10 px-2 py-0.5 rounded text-indigo-200">{code}</span>
               </div>
@@ -2762,32 +2767,32 @@ export const CreateProjectView: React.FC = () => {
               </h3>
             </div>
 
-            <div className="p-4 space-y-4 text-xs">
+            <div id="create-project-view-live-passport-card-4" className="p-4 space-y-4 text-xs">
               {/* Core Attributes */}
-              <div className="space-y-2 border-b border-slate-100 pb-3">
-                <div className="flex items-center justify-between">
+              <div id="create-project-view-core-attributes" className="space-y-2 border-b border-slate-100 pb-3">
+                <div id="create-project-view-core-attributes-2" className="flex items-center justify-between">
                   <span className="text-slate-500">دستگاه متولی اصلی:</span>
                   <span className="font-bold text-slate-800 text-left">{primaryDept?.name || '-'}</span>
                 </div>
-                <div className="flex items-center justify-between">
+                <div id="create-project-view-core-attributes-3" className="flex items-center justify-between">
                   <span className="text-slate-500">اداره متقاضی:</span>
                   <span className="font-medium text-slate-700 text-left">{requestingDept?.name || '-'}</span>
                 </div>
                 {isMultiDept && (
-                  <div className="flex items-center justify-between">
+                  <div id="create-project-view-core-attributes-4" className="flex items-center justify-between">
                     <span className="text-slate-500">مشارکت بین‌دستگاهی:</span>
                     <span className="font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
                       {contributingDepts.length} اداره همکار
                     </span>
                   </div>
                 )}
-                <div className="flex items-center justify-between">
+                <div id="create-project-view-core-attributes-5" className="flex items-center justify-between">
                   <span className="text-slate-500">اولویت استراتژیک:</span>
                   <span className="font-medium text-purple-700 text-left line-clamp-1 max-w-[180px]">
                     {selectedPriority?.title || '-'}
                   </span>
                 </div>
-                <div className="flex items-center justify-between">
+                <div id="create-project-view-core-attributes-6" className="flex items-center justify-between">
                   <span className="text-slate-500">کانون بحران:</span>
                   <span className="font-medium text-rose-700 text-left line-clamp-1 max-w-[180px]">
                     {selectedCrisis?.title || '-'}
@@ -2796,32 +2801,32 @@ export const CreateProjectView: React.FC = () => {
               </div>
 
               {/* Budget Composition Breakdown */}
-              <div className="space-y-2 border-b border-slate-100 pb-3">
-                <div className="flex items-center justify-between">
+              <div id="create-project-view-budget-composition-breakdown" className="space-y-2 border-b border-slate-100 pb-3">
+                <div id="create-project-view-budget-composition-breakdown-2" className="flex items-center justify-between">
                   <span className="text-slate-500 font-bold">برآورد کل بودجه:</span>
                   <span className="font-black text-slate-900 text-sm">{formatToman(estimatedCostToman)}</span>
                 </div>
-                <div className="space-y-1 text-[11px] pt-1">
-                  <div className="flex items-center justify-between text-emerald-800">
+                <div id="create-project-view-budget-composition-breakdown-3" className="space-y-1 text-[11px] pt-1">
+                  <div id="create-project-view-budget-composition-breakdown-4" className="flex items-center justify-between text-emerald-800">
                     <span>سهم مسئولیت اجتماعی (CSR مس):</span>
                     <span className="font-bold">{csrSharePct}٪</span>
                   </div>
-                  <div className="flex items-center justify-between text-blue-800">
+                  <div id="create-project-view-budget-composition-breakdown-5" className="flex items-center justify-between text-blue-800">
                     <span>سهم بودجه دولتی:</span>
                     <span className="font-bold">{govSharePct}٪</span>
                   </div>
-                  <div className="flex items-center justify-between text-amber-800">
+                  <div id="create-project-view-budget-composition-breakdown-6" className="flex items-center justify-between text-amber-800">
                     <span>سهم دهیاری / عوارض آلایندگی:</span>
                     <span className="font-bold">{dehyariSharePct}٪</span>
                   </div>
                   {bankSharePct > 0 && (
-                    <div className="flex items-center justify-between text-purple-800">
+                    <div id="create-project-view-budget-composition-breakdown-7" className="flex items-center justify-between text-purple-800">
                       <span>تسهیلات بانکی و تبصره ۲:</span>
                       <span className="font-bold">{bankSharePct}٪</span>
                     </div>
                   )}
                   {charitySharePct > 0 && (
-                    <div className="flex items-center justify-between text-rose-800">
+                    <div id="create-project-view-budget-composition-breakdown-8" className="flex items-center justify-between text-rose-800">
                       <span>مشارکت خیرین:</span>
                       <span className="font-bold">{charitySharePct}٪</span>
                     </div>
@@ -2830,16 +2835,16 @@ export const CreateProjectView: React.FC = () => {
               </div>
 
               {/* Demographics & Per Capita */}
-              <div className="space-y-2 border-b border-slate-100 pb-3">
-                <div className="flex items-center justify-between">
+              <div id="create-project-view-demographics-per-capita" className="space-y-2 border-b border-slate-100 pb-3">
+                <div id="create-project-view-demographics-per-capita-2" className="flex items-center justify-between">
                   <span className="text-slate-500">محدوده مکانی:</span>
                   <span className="font-semibold text-slate-800">{district}</span>
                 </div>
-                <div className="flex items-center justify-between">
+                <div id="create-project-view-demographics-per-capita-3" className="flex items-center justify-between">
                   <span className="text-slate-500">جمعیت بهره‌بردار مستقیم:</span>
                   <span className="font-bold text-slate-800">{formatNumber(beneficiariesCount)} نفر</span>
                 </div>
-                <div className="flex items-center justify-between">
+                <div id="create-project-view-demographics-per-capita-4" className="flex items-center justify-between">
                   <span className="text-slate-500">هزینه سرانه هر نفر:</span>
                   <span className="font-black text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
                     {formatToman(costPerBeneficiary)}
@@ -2848,12 +2853,12 @@ export const CreateProjectView: React.FC = () => {
               </div>
 
               {/* Implementation Partner */}
-              <div className="space-y-1 text-[11px]">
-                <div className="flex items-center justify-between">
+              <div id="create-project-view-implementation-partner" className="space-y-1 text-[11px]">
+                <div id="create-project-view-implementation-partner-2" className="flex items-center justify-between">
                   <span className="text-slate-500">دستگاه مجری:</span>
                   <span className="font-semibold text-slate-800">{selectedExecutor?.name || '-'}</span>
                 </div>
-                <div className="flex items-center justify-between">
+                <div id="create-project-view-implementation-partner-3" className="flex items-center justify-between">
                   <span className="text-slate-500">پیمانکار ذیصلاح:</span>
                   <span className="font-semibold text-slate-800">
                     {selectedContractor?.companyName || 'امانی'}
@@ -2866,9 +2871,9 @@ export const CreateProjectView: React.FC = () => {
       </div>
 
       {/* Connected Projects Registry Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-          <div>
+      <div id="create-project-view-connected-projects-registry" className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+        <div id="create-project-view-connected-projects-registry-2" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+          <div id="create-project-view-connected-projects-registry-3">
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
               <Layers className="w-4 h-4 text-blue-600" />
               پروژه‌های ثبت‌شده در سامانه و ارتباط متقابل با تب‌ها ({projects.length} پروژه)
@@ -2886,7 +2891,7 @@ export const CreateProjectView: React.FC = () => {
           </button>
         </div>
 
-        <div className="overflow-x-auto">
+        <div id="create-project-view-connected-projects-registry-4" className="overflow-x-auto">
           <table className="w-full text-xs text-right border-collapse">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-600">
@@ -2903,11 +2908,11 @@ export const CreateProjectView: React.FC = () => {
               {projects.slice(0, 6).map((proj) => (
                 <tr key={proj.id} className="hover:bg-slate-50/80 transition-colors">
                   <td className="p-3">
-                    <div className="font-bold text-slate-900">{proj.title}</div>
-                    <div className="text-[11px] text-slate-400 font-mono mt-0.5">{proj.code}</div>
+                    <div id={`create-project-view-connected-projects-registry-5-${proj.id}`} className="font-bold text-slate-900">{proj.title}</div>
+                    <div id={`create-project-view-connected-projects-registry-6-${proj.id}`} className="text-[11px] text-slate-400 font-mono mt-0.5">{proj.code}</div>
                   </td>
                   <td className="p-3">
-                    <div className="font-semibold text-slate-800">{proj.departmentName}</div>
+                    <div id={`create-project-view-connected-projects-registry-7-${proj.id}`} className="font-semibold text-slate-800">{proj.departmentName}</div>
                     {proj.isMultiDepartment && (
                       <span className="inline-block mt-0.5 text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">
                         مشترک بین‌دستگاهی
@@ -2915,15 +2920,15 @@ export const CreateProjectView: React.FC = () => {
                     )}
                   </td>
                   <td className="p-3">
-                    <div className="flex items-center gap-1 text-[11px]">
+                    <div id={`create-project-view-connected-projects-registry-8-${proj.id}`} className="flex items-center gap-1 text-[11px]">
                       <span className="text-emerald-700 font-bold">CSR: {proj.csrSharePercentage || 0}٪</span>
                       <span className="text-slate-300">|</span>
                       <span className="text-blue-700 font-bold">دولت: {proj.governmentSharePercentage || 0}٪</span>
                     </div>
                   </td>
                   <td className="p-3">
-                    <div className="text-slate-800 font-medium">{proj.district}</div>
-                    <div className="text-[11px] text-slate-500 font-semibold">
+                    <div id={`create-project-view-connected-projects-registry-9-${proj.id}`} className="text-slate-800 font-medium">{proj.district}</div>
+                    <div id={`create-project-view-connected-projects-registry-10-${proj.id}`} className="text-[11px] text-slate-500 font-semibold">
                       {formatNumber(proj.beneficiariesCount)} نفر
                     </div>
                   </td>

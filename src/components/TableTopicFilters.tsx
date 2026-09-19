@@ -182,18 +182,18 @@ export const TableTopicFilters: React.FC<TableTopicFiltersProps> = ({
   });
 
   return (
-    <div className="relative w-full" ref={dropdownRef}>
+    <div id="table-topic-filters-root" className="relative w-full" ref={dropdownRef}>
       {/* Dropdown Header Trigger */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-slate-900 text-white p-3 rounded-xl border border-slate-800 shadow-md">
+      <div id="table-topic-filters-dropdown-header-trigger" className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-slate-900 text-white p-3 rounded-xl border border-slate-800 shadow-md">
         
         {/* Left side label & Trigger Button */}
-        <div className="flex items-center gap-2.5 flex-1">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 flex items-center justify-center text-xs shrink-0">
+        <div id="table-topic-filters-left-side-label-trigger-button" className="flex items-center gap-2.5 flex-1">
+          <div id="table-topic-filters-left-side-label-trigger-button-2" className="w-8 h-8 rounded-lg bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 flex items-center justify-center text-xs shrink-0">
             <Filter className="w-4 h-4" />
           </div>
           
-          <div className="flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
+          <div id="table-topic-filters-left-side-label-trigger-button-3" className="flex-1">
+            <div id="table-topic-filters-left-side-label-trigger-button-4" className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-black text-slate-100">
                 فیلتر موضوعی آسیب‌ها و نیازهای منطقه:
               </span>
@@ -203,9 +203,9 @@ export const TableTopicFilters: React.FC<TableTopicFiltersProps> = ({
             </div>
             
             {/* Active selection summary */}
-            <div className="text-xs mt-1 flex items-center gap-2">
+            <div id="table-topic-filters-active-selection-summary" className="text-xs mt-1 flex items-center gap-2">
               {activeTopic ? (
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-indigo-600/60 to-blue-600/60 border border-indigo-400/40 text-indigo-100 font-bold text-[11px]">
+                <div id="table-topic-filters-active-selection-summary-2" className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-indigo-600/60 to-blue-600/60 border border-indigo-400/40 text-indigo-100 font-bold text-[11px]">
                   <span>{activeTopic.emoji}</span>
                   <span>{activeTopic.label}</span>
                   <span className="text-[10px] text-indigo-300 font-mono">
@@ -223,7 +223,7 @@ export const TableTopicFilters: React.FC<TableTopicFiltersProps> = ({
         </div>
 
         {/* Dropdown Action Buttons */}
-        <div className="flex items-center gap-2 self-end sm:self-auto">
+        <div id="table-topic-filters-dropdown-action-buttons" className="flex items-center gap-2 self-end sm:self-auto">
           {selectedTopicId && (
             <button
               type="button"
@@ -258,8 +258,8 @@ export const TableTopicFilters: React.FC<TableTopicFiltersProps> = ({
 
       {/* Active Filter Operational Description Banner (when closed but filter selected) */}
       {!isOpen && activeTopic && (
-        <div className="mt-1.5 p-2.5 rounded-lg bg-indigo-950/70 border border-indigo-800/60 text-[11px] text-indigo-200 flex items-center justify-between shadow-xs">
-          <div className="flex items-center gap-2">
+        <div id="table-topic-filters-active-filter-operational" className="mt-1.5 p-2.5 rounded-lg bg-indigo-950/70 border border-indigo-800/60 text-[11px] text-indigo-200 flex items-center justify-between shadow-xs">
+          <div id="table-topic-filters-active-filter-operational-2" className="flex items-center gap-2">
             <span className="text-base">{activeTopic.emoji}</span>
             <span><strong>تمرکز عملیاتی فیلتر فعال:</strong> {activeTopic.description}</span>
           </div>
@@ -271,11 +271,11 @@ export const TableTopicFilters: React.FC<TableTopicFiltersProps> = ({
 
       {/* Collapsible / Dropdown Menu Container */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900 text-white rounded-xl border border-slate-700 shadow-2xl z-50 p-3 space-y-3 animate-in fade-in slide-in-from-top-2 duration-150">
+        <div id="table-topic-filters-collapsible-dropdown-menu" className="absolute top-full left-0 right-0 mt-2 bg-slate-900 text-white rounded-xl border border-slate-700 shadow-2xl z-50 p-3 space-y-3 animate-in fade-in slide-in-from-top-2 duration-150">
           
           {/* Dropdown Header with Search */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
-            <div className="flex items-center gap-2">
+          <div id="table-topic-filters-dropdown-header-with-search" className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+            <div id="table-topic-filters-dropdown-header-with-search-2" className="flex items-center gap-2">
               <span className="text-xs font-bold text-slate-200">
                 انتخاب سرفصل آسیب برای فیلتر جدول:
               </span>
@@ -284,7 +284,7 @@ export const TableTopicFilters: React.FC<TableTopicFiltersProps> = ({
               </span>
             </div>
 
-            <div className="relative flex-1 max-w-xs">
+            <div id="table-topic-filters-dropdown-header-with-search-3" className="relative flex-1 max-w-xs">
               <input
                 type="text"
                 placeholder="جستجو در موضوعات و آسیب‌ها..."
@@ -298,7 +298,7 @@ export const TableTopicFilters: React.FC<TableTopicFiltersProps> = ({
           </div>
 
           {/* Quick "All Items" Option */}
-          <div>
+          <div id="table-topic-filters-quick-all-items-option">
             <button
               type="button"
               onClick={() => {
@@ -311,11 +311,11 @@ export const TableTopicFilters: React.FC<TableTopicFiltersProps> = ({
                   : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-800 hover:text-white'
               }`}
             >
-              <div className="flex items-center gap-2">
+              <div id="table-topic-filters-quick-all-items-option-2" className="flex items-center gap-2">
                 <span className="text-base">🌐</span>
-                <div>
-                  <div className="text-xs font-extrabold">نمایش همه سرفصل‌ها و پروژه‌ها (بدون فیلتر)</div>
-                  <div className="text-[10px] text-slate-300 mt-0.5">
+                <div id="table-topic-filters-quick-all-items-option-3">
+                  <div id="table-topic-filters-quick-all-items-option-4" className="text-xs font-extrabold">نمایش همه سرفصل‌ها و پروژه‌ها (بدون فیلتر)</div>
+                  <div id="table-topic-filters-quick-all-items-option-5" className="text-[10px] text-slate-300 mt-0.5">
                     نمایش کامل تمامی کدهای تخصیص بودجه و اولویت‌های مصوب
                   </div>
                 </div>
@@ -325,7 +325,7 @@ export const TableTopicFilters: React.FC<TableTopicFiltersProps> = ({
           </div>
 
           {/* Grid List of Topics in the Dropdown */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-80 overflow-y-auto pr-1">
+          <div id="table-topic-filters-grid-list-of-topics-in-the" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-80 overflow-y-auto pr-1">
             {filteredTopics.map((topic) => {
               const isSelected = selectedTopicId === topic.id;
               return (
@@ -342,8 +342,8 @@ export const TableTopicFilters: React.FC<TableTopicFiltersProps> = ({
                       : 'bg-slate-800/90 text-slate-200 border-slate-700/80 hover:bg-slate-700 hover:border-slate-500'
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-1.5 w-full">
-                    <div className="flex items-center gap-2">
+                  <div id={`table-topic-filters-grid-list-of-topics-in-the-2-${topic.id}`} className="flex items-start justify-between gap-1.5 w-full">
+                    <div id={`table-topic-filters-grid-list-of-topics-in-the-3-${topic.id}`} className="flex items-center gap-2">
                       <span className="text-base shrink-0">{topic.emoji}</span>
                       <span className="text-xs font-bold leading-tight">{topic.label}</span>
                     </div>
@@ -362,7 +362,7 @@ export const TableTopicFilters: React.FC<TableTopicFiltersProps> = ({
                     {topic.description}
                   </p>
 
-                  <div className="mt-2 pt-1 border-t border-slate-700/50 flex items-center justify-between text-[9px]">
+                  <div id={`table-topic-filters-grid-list-of-topics-in-the-4-${topic.id}`} className="mt-2 pt-1 border-t border-slate-700/50 flex items-center justify-between text-[9px]">
                     <span className={isSelected ? 'text-indigo-200' : 'text-slate-400'}>
                       حوزه: {topic.category}
                     </span>
@@ -376,7 +376,7 @@ export const TableTopicFilters: React.FC<TableTopicFiltersProps> = ({
           </div>
 
           {/* Footer note inside dropdown */}
-          <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-[10px] text-slate-400">
+          <div id="table-topic-filters-footer-note-inside-dropdown" className="flex items-center justify-between pt-2 border-t border-slate-800 text-[10px] text-slate-400">
             <span>با انتخاب هر گزینه، جدول بر اساس سرفصل‌ها و کلمات کلیدی آن آسیب فیلتر می‌شود.</span>
             <button
               type="button"

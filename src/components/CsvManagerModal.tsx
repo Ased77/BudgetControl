@@ -63,16 +63,16 @@ export const CsvManagerModal: React.FC<CsvManagerModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 z-50 text-right dir-rtl">
-      <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
+    <div id="csv-manager-modal-root" className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 z-50 text-right dir-rtl">
+      <div id="csv-manager-modal-div-2" className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
         
         {/* Header */}
-        <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 p-5 text-white flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-blue-500/20 text-blue-400 rounded-xl border border-blue-500/30">
+        <div id="csv-manager-modal-header" className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 p-5 text-white flex items-center justify-between">
+          <div id="csv-manager-modal-header-2" className="flex items-center gap-3">
+            <div id="csv-manager-modal-header-3" className="p-2.5 bg-blue-500/20 text-blue-400 rounded-xl border border-blue-500/30">
               <FileSpreadsheet className="w-5 h-5" />
             </div>
-            <div>
+            <div id="csv-manager-modal-header-4">
               <h3 className="font-bold text-base text-slate-100">مدیریت فایل‌های CSV اولویت‌ها</h3>
               <p className="text-xs text-slate-400">دانلود نسخه‌های اولیه و پیشرفته یا ایمپورت فایل سفارشی</p>
             </div>
@@ -83,20 +83,20 @@ export const CsvManagerModal: React.FC<CsvManagerModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6 text-xs text-slate-700">
+        <div id="csv-manager-modal-content" className="p-6 space-y-6 text-xs text-slate-700">
           
           {/* Download CSV Section */}
-          <div className="space-y-3">
+          <div id="csv-manager-modal-download-csv-section" className="space-y-3">
             <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
               <Download className="w-4 h-4 text-blue-600" />
               دانلود فایل‌های پیش‌فرض CSV
             </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div id="csv-manager-modal-download-csv-section-2" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               
               {/* Basic CSV Card */}
-              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/70 flex flex-col justify-between space-y-3 hover:border-blue-300 transition-all">
-                <div>
-                  <div className="font-bold text-slate-900 text-xs mb-1">
+              <div id="csv-manager-modal-basic-csv-card" className="p-4 rounded-xl border border-slate-200 bg-slate-50/70 flex flex-col justify-between space-y-3 hover:border-blue-300 transition-all">
+                <div id="csv-manager-modal-basic-csv-card-2">
+                  <div id="csv-manager-modal-basic-csv-card-3" className="font-bold text-slate-900 text-xs mb-1">
                     فایل اولیه: <span className="font-mono text-blue-700">csr_priorities_fa.csv</span>
                   </div>
                   <p className="text-[11px] text-slate-500 leading-relaxed">
@@ -113,9 +113,9 @@ export const CsvManagerModal: React.FC<CsvManagerModalProps> = ({
               </div>
 
               {/* Extended CSV Card */}
-              <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/40 flex flex-col justify-between space-y-3 hover:border-blue-400 transition-all">
-                <div>
-                  <div className="font-bold text-slate-900 text-xs mb-1 flex items-center gap-1">
+              <div id="csv-manager-modal-extended-csv-card" className="p-4 rounded-xl border border-blue-200 bg-blue-50/40 flex flex-col justify-between space-y-3 hover:border-blue-400 transition-all">
+                <div id="csv-manager-modal-extended-csv-card-2">
+                  <div id="csv-manager-modal-extended-csv-card-3" className="font-bold text-slate-900 text-xs mb-1 flex items-center gap-1">
                     <Sliders className="w-3.5 h-3.5 text-blue-600" />
                     فایل پیشرفته: <span className="font-mono text-blue-700">csr_priorities_fa_extended.csv</span>
                   </div>
@@ -136,13 +136,14 @@ export const CsvManagerModal: React.FC<CsvManagerModalProps> = ({
           </div>
 
           {/* Import Drag & Drop Zone */}
-          <div className="space-y-3">
+          <div id="csv-manager-modal-import-drag-drop-zone" className="space-y-3">
             <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
               <Upload className="w-4 h-4 text-emerald-600" />
               بارگذاری / ایمپورت فایل CSV به سامانه
             </h4>
 
             <div
+              id="csv-manager-modal-import-drag-drop-zone-2"
               onDragOver={(e) => {
                 e.preventDefault();
                 setDragActive(true);
@@ -186,14 +187,14 @@ export const CsvManagerModal: React.FC<CsvManagerModalProps> = ({
             </div>
 
             {importSuccess && (
-              <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center gap-2 text-xs">
+              <div id="csv-manager-modal-import-drag-drop-zone-3" className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center gap-2 text-xs">
                 <Check className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span>{importSuccess}</span>
               </div>
             )}
 
             {importError && (
-              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl flex items-center gap-2 text-xs">
+              <div id="csv-manager-modal-import-drag-drop-zone-4" className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl flex items-center gap-2 text-xs">
                 <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
                 <span>{importError}</span>
               </div>
@@ -201,14 +202,14 @@ export const CsvManagerModal: React.FC<CsvManagerModalProps> = ({
           </div>
 
           {/* Guide Note */}
-          <div className="p-3.5 bg-slate-100 rounded-xl text-[11px] text-slate-600 leading-relaxed border border-slate-200">
+          <div id="csv-manager-modal-guide-note" className="p-3.5 bg-slate-100 rounded-xl text-[11px] text-slate-600 leading-relaxed border border-slate-200">
             <strong>راهنمای ایمپورت:</strong> ستون‌های پذیرفته شده عبارتند از <code className="text-blue-700">priority_id</code>، <code className="text-blue-700">title</code>، <code className="text-blue-700">default_percent</code>، <code className="text-blue-700">description</code>، <code className="text-blue-700">weight_factor</code>، <code className="text-blue-700">is_active</code>، <code className="text-blue-700">min_percent</code> و <code className="text-blue-700">max_percent</code>.
           </div>
 
         </div>
 
         {/* Footer */}
-        <div className="bg-slate-50 p-4 border-t border-slate-200 flex justify-end">
+        <div id="csv-manager-modal-footer" className="bg-slate-50 p-4 border-t border-slate-200 flex justify-end">
           <button
             onClick={onClose}
             className="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-xs transition-colors"

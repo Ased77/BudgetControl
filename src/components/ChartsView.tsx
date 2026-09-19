@@ -280,9 +280,9 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
     if (active && payload && payload.length) {
       const item = payload[0].payload;
       return (
-        <div className="bg-white/95 backdrop-blur-md p-3.5 rounded-xl border border-slate-300 shadow-xl text-right text-xs dir-rtl max-w-sm space-y-2.5 z-50">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-            <div className="flex items-center gap-2">
+        <div id="charts-view-root" className="bg-white/95 backdrop-blur-md p-3.5 rounded-xl border border-slate-300 shadow-xl text-right text-xs dir-rtl max-w-sm space-y-2.5 z-50">
+          <div id="charts-view-div-2" className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <div id="charts-view-div-3" className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full shrink-0 shadow-xs" style={{ backgroundColor: item.color }} />
               <span className="font-black text-slate-900 text-xs">{item.title}</span>
             </div>
@@ -291,20 +291,20 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-            <div>
+          <div id="charts-view-div-4" className="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+            <div id="charts-view-div-5">
               <span className="text-slate-500 block text-[10px]">نرخ محرومیت محلی:</span>
               <span className="font-extrabold text-rose-700 dir-rtl font-mono text-sm">
                 {toPersianDigits(item.deprivationIndex)}٪
               </span>
             </div>
-            <div>
+            <div id="charts-view-div-6">
               <span className="text-slate-500 block text-[10px]">میانگین کشور / ضریب LQ:</span>
               <span className="font-bold text-slate-700 dir-rtl font-mono">
                 {toPersianDigits(item.nationalSeverity)}٪ (LQ: {toPersianDigits(item.locationQuotient)})
               </span>
             </div>
-            <div>
+            <div id="charts-view-div-7">
               <span className="text-slate-500 block text-[10px]">
                 {yAxisMetric === 'CURRENT' ? 'سهم بودجه کنونی:' : 'سهم پیشنهادی AI:'}
               </span>
@@ -312,7 +312,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
                 {toPersianDigits(item.activePct)}٪
               </span>
             </div>
-            <div>
+            <div id="charts-view-div-8">
               <span className="text-slate-500 block text-[10px]">مبلغ بودجه مصوب:</span>
               <span className="font-black text-emerald-700 dir-rtl text-xs">
                 {formatCurrency(item.activeBudgetToman, 'TOMAN', true)}
@@ -320,15 +320,15 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
             </div>
           </div>
 
-          <div className="pt-1.5 border-t border-slate-100 space-y-1">
-            <div className="flex items-center gap-1.5">
+          <div id="charts-view-div-9" className="pt-1.5 border-t border-slate-100 space-y-1">
+            <div id="charts-view-div-10" className="flex items-center gap-1.5">
               <span className="text-[10px] font-bold text-slate-500">ماتریس انطباق:</span>
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${item.quadrantBadgeClass}`}>
                 {item.quadrantLabel}
               </span>
             </div>
             {item.isHotspot && (
-              <div className="flex items-center gap-1.5 text-[10px] text-rose-700 font-bold bg-rose-50 border border-rose-200 px-2 py-1 rounded-md">
+              <div id="charts-view-div-11" className="flex items-center gap-1.5 text-[10px] text-rose-700 font-bold bg-rose-50 border border-rose-200 px-2 py-1 rounded-md">
                 <Flame className="w-3.5 h-3.5 text-rose-500 shrink-0" />
                 <span>کانون بحران حاد منطقه رفسنجان (نیازمند اولویت ۱ بودجه)</span>
               </div>
@@ -344,21 +344,21 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div id="charts-view-div-12" className="space-y-6">
 
       {/* ========================================================================= */}
       {/* 1. FEATURED ANALYTICAL BUBBLE CHART: DEPRIVATION INDEX VS BUDGET ALLOCATION */}
       {/* ========================================================================= */}
-      <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
+      <div id="charts-view-div-13" className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
         
         {/* Header & Controls Toolbar */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-blue-600 text-white flex items-center justify-center shadow-xs">
+        <div id="charts-view-header-controls-toolbar" className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div id="charts-view-header-controls-toolbar-2">
+            <div id="charts-view-header-controls-toolbar-3" className="flex items-center gap-2 flex-wrap">
+              <div id="charts-view-header-controls-toolbar-4" className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-blue-600 text-white flex items-center justify-center shadow-xs">
                 <CircleDot className="w-4 h-4 text-cyan-200" />
               </div>
-              <div>
+              <div id="charts-view-header-controls-toolbar-5">
                 <h3 className="font-black text-slate-900 text-base">
                   نمودار حبابی ماتریس محرومیت و تخصیص بودجه (Bubble Chart)
                 </h3>
@@ -370,9 +370,9 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
           </div>
 
           {/* Interactive Toggle Controls */}
-          <div className="flex items-center gap-2 flex-wrap">
+          <div id="charts-view-interactive-toggle-controls" className="flex items-center gap-2 flex-wrap">
             {/* Y-Axis Metric Switcher */}
-            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
+            <div id="charts-view-y-axis-metric-switcher" className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
               <button
                 type="button"
                 onClick={() => setYAxisMetric('CURRENT')}
@@ -399,7 +399,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
             </div>
 
             {/* Quick Filter Selector */}
-            <div className="flex items-center gap-1 text-xs">
+            <div id="charts-view-quick-filter-selector" className="flex items-center gap-1 text-xs">
               <button
                 type="button"
                 onClick={() => setBubbleFilter('ALL')}
@@ -443,9 +443,9 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
         </div>
 
         {/* 4 Quadrants Summary KPI Badges */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
-          <div className="p-2.5 rounded-xl border border-emerald-200 bg-emerald-50/70 flex items-center justify-between">
-            <div>
+        <div id="charts-view-4-quadrants-summary-kpi-badges" className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+          <div id="charts-view-4-quadrants-summary-kpi-badges-2" className="p-2.5 rounded-xl border border-emerald-200 bg-emerald-50/70 flex items-center justify-between">
+            <div id="charts-view-4-quadrants-summary-kpi-badges-3">
               <span className="text-[10px] font-bold text-emerald-900 block">پوشش بهینه کانون بحران</span>
               <span className="text-[9px] text-emerald-700">آسیب بالا + بودجه مکفی (≥۹٪)</span>
             </div>
@@ -454,8 +454,8 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
             </span>
           </div>
 
-          <div className="p-2.5 rounded-xl border border-rose-200 bg-rose-50/70 flex items-center justify-between">
-            <div>
+          <div id="charts-view-4-quadrants-summary-kpi-badges-4" className="p-2.5 rounded-xl border border-rose-200 bg-rose-50/70 flex items-center justify-between">
+            <div id="charts-view-4-quadrants-summary-kpi-badges-5">
               <span className="text-[10px] font-bold text-rose-900 block flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3 text-rose-600" />
                 هشدار کسری بودجه
@@ -467,8 +467,8 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
             </span>
           </div>
 
-          <div className="p-2.5 rounded-xl border border-blue-200 bg-blue-50/70 flex items-center justify-between">
-            <div>
+          <div id="charts-view-4-quadrants-summary-kpi-badges-6" className="p-2.5 rounded-xl border border-blue-200 bg-blue-50/70 flex items-center justify-between">
+            <div id="charts-view-4-quadrants-summary-kpi-badges-7">
               <span className="text-[10px] font-bold text-blue-900 block">سرمایه‌گذاری پیشگیرانه</span>
               <span className="text-[9px] text-blue-700">آسیب کنترل‌شده + بودجه بالا</span>
             </div>
@@ -477,8 +477,8 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
             </span>
           </div>
 
-          <div className="p-2.5 rounded-xl border border-slate-200 bg-slate-50/70 flex items-center justify-between">
-            <div>
+          <div id="charts-view-4-quadrants-summary-kpi-badges-8" className="p-2.5 rounded-xl border border-slate-200 bg-slate-50/70 flex items-center justify-between">
+            <div id="charts-view-4-quadrants-summary-kpi-badges-9">
               <span className="text-[10px] font-bold text-slate-800 block">مدیریت متعادل و پایدار</span>
               <span className="text-[9px] text-slate-600">آسیب عادی + بودجه متناسب</span>
             </div>
@@ -489,13 +489,13 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
         </div>
 
         {/* Live Synchronization Status & Quick Adjuster Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-xl bg-gradient-to-r from-emerald-50/90 via-indigo-50/70 to-slate-50 border border-emerald-200/80 text-xs">
-          <div className="flex items-center gap-2.5 flex-wrap">
+        <div id="charts-view-live-synchronization-status" className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-xl bg-gradient-to-r from-emerald-50/90 via-indigo-50/70 to-slate-50 border border-emerald-200/80 text-xs">
+          <div id="charts-view-live-synchronization-status-2" className="flex items-center gap-2.5 flex-wrap">
             <span className="relative flex h-3 w-3">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
             </span>
-            <div className="flex items-center gap-1.5">
+            <div id="charts-view-live-synchronization-status-3" className="flex items-center gap-1.5">
               <span className="font-black text-emerald-950">همگام‌سازی زنده فعال:</span>
               <span className="text-slate-600 font-medium">
                 {syncNotice || 'اتصال بلادرنگ به تخصیص بودجه داشبورد برقرار است. تغییر درصدها، اندازه و ارتفاع حباب‌ها را متحرک می‌کند.'}
@@ -508,7 +508,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
             )}
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
+          <div id="charts-view-live-synchronization-status-4" className="flex items-center gap-2 flex-wrap">
             {/* Replay Animation */}
             <button
               type="button"
@@ -554,9 +554,9 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
 
         {/* Collapsible Live Budget Allocation Quick Adjuster Tray */}
         {showLiveAdjuster && onPercentageChange && (
-          <div className="p-4 rounded-xl bg-slate-50 border border-indigo-200 space-y-3 animate-in fade-in zoom-in-95 duration-200 text-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200">
-              <div className="flex items-center gap-2">
+          <div id="charts-view-collapsible-live-budget" className="p-4 rounded-xl bg-slate-50 border border-indigo-200 space-y-3 animate-in fade-in zoom-in-95 duration-200 text-xs">
+            <div id="charts-view-collapsible-live-budget-2" className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200">
+              <div id="charts-view-collapsible-live-budget-3" className="flex items-center gap-2">
                 <Zap className="w-4 h-4 text-amber-500" />
                 <span className="font-black text-slate-800">
                   شبیه‌ساز و کنترل زنده بودجه (Live Budget Slider Dock)
@@ -565,7 +565,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
                   با تغییر هر اسلایدر، حباب مربوطه در نمودار زیر بلافاصله به بالا/پایین حرکت کرده و اندازه‌اش تغییر می‌کند.
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 flex-wrap">
+              <div id="charts-view-collapsible-live-budget-4" className="flex items-center gap-1.5 flex-wrap">
                 {onAutoRebalance && (
                   <button
                     type="button"
@@ -600,7 +600,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
             </div>
 
             {/* Sliders Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div id="charts-view-sliders-grid" className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {priorities.map((p) => {
                 const currentVal = currentPercentages[p.id] ?? p.defaultPercentage;
                 const recVal = recommendations.scores[p.id] ?? p.defaultPercentage;
@@ -609,6 +609,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
 
                 return (
                   <div
+                    id={`charts-view-sliders-grid-2-${p.id}`}
                     key={`adjuster-${p.id}`}
                     className={`p-2.5 rounded-lg border transition-all ${
                       isRecentlyChanged
@@ -618,8 +619,8 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
                         : 'bg-white border-slate-200 hover:border-slate-300'
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-1.5 truncate">
+                    <div id={`charts-view-sliders-grid-3-${p.id}`} className="flex items-center justify-between mb-1.5">
+                      <div id={`charts-view-sliders-grid-4-${p.id}`} className="flex items-center gap-1.5 truncate">
                         <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: bubbleInfo?.color || '#6366f1' }} />
                         <span className="font-bold text-slate-900 truncate" title={p.title}>
                           کد {toPersianDigits(p.code)} - {p.title}
@@ -630,7 +631,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div id={`charts-view-sliders-grid-5-${p.id}`} className="flex items-center gap-2">
                       <input
                         type="range"
                         min="0"
@@ -642,7 +643,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
                       />
                     </div>
 
-                    <div className="flex items-center justify-between text-[10px] text-slate-400 mt-1 font-mono">
+                    <div id={`charts-view-sliders-grid-6-${p.id}`} className="flex items-center justify-between text-[10px] text-slate-400 mt-1 font-mono">
                       <span>شدت آسیب: {toPersianDigits(bubbleInfo?.deprivationIndex || 0)}٪</span>
                       <span>پیشنهاد AI: {toPersianDigits(recVal)}٪</span>
                     </div>
@@ -654,7 +655,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
         )}
 
         {/* Main Scatter / Bubble Chart Canvas */}
-        <div className="h-96 w-full relative">
+        <div id="charts-view-main-scatter-bubble-chart-canvas" className="h-96 w-full relative">
           <ResponsiveContainer width="100%" height="100%">
             <ScatterChart margin={{ top: 25, right: 30, bottom: 40, left: 20 }}>
               <CartesianGrid strokeDasharray="3 3" vertical stroke="#f1f5f9" />
@@ -847,18 +848,18 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
         </div>
 
         {/* Visual Map Legend & Notes */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 text-[11px] text-slate-500 border-t border-slate-100">
-          <div className="flex items-center gap-4 flex-wrap">
+        <div id="charts-view-visual-map-legend-notes" className="flex flex-wrap items-center justify-between gap-3 pt-2 text-[11px] text-slate-500 border-t border-slate-100">
+          <div id="charts-view-visual-map-legend-notes-2" className="flex items-center gap-4 flex-wrap">
             <span className="font-bold text-slate-700">راهنمای بصری حباب‌ها:</span>
-            <div className="flex items-center gap-1.5">
+            <div id="charts-view-visual-map-legend-notes-3" className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-full bg-rose-600 inline-block shadow-xs" />
               <span>کانون بحران محلی پیرامونی</span>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div id="charts-view-visual-map-legend-notes-4" className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-full bg-purple-600 inline-block shadow-xs" />
               <span>فراگیری بحرانی همه‌جانبه</span>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div id="charts-view-visual-map-legend-notes-5" className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-slate-400 inline-block" />
               <span className="w-4 h-4 rounded-full bg-slate-400 inline-block" />
               <span>قطر حباب = حجم ریالی بودجه مصوب</span>
@@ -872,9 +873,9 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
 
         {/* Drill-down Detail Inspector Box */}
         {activeSelectedBubble && (
-          <div className="p-4 rounded-xl bg-gradient-to-r from-slate-50 to-indigo-50/40 border border-indigo-200 text-right text-xs dir-rtl space-y-3 animate-in fade-in duration-200">
-            <div className="flex items-center justify-between border-b border-indigo-100 pb-2">
-              <div className="flex items-center gap-2">
+          <div id="charts-view-drill-down-detail-inspector-box" className="p-4 rounded-xl bg-gradient-to-r from-slate-50 to-indigo-50/40 border border-indigo-200 text-right text-xs dir-rtl space-y-3 animate-in fade-in duration-200">
+            <div id="charts-view-drill-down-detail-inspector-box-2" className="flex items-center justify-between border-b border-indigo-100 pb-2">
+              <div id="charts-view-drill-down-detail-inspector-box-3" className="flex items-center gap-2">
                 <span className="w-4 h-4 rounded-full shadow-xs" style={{ backgroundColor: activeSelectedBubble.color }} />
                 <span className="font-black text-slate-900 text-sm">
                   تحلیل تخصصی: کد {toPersianDigits(activeSelectedBubble.code)} - {activeSelectedBubble.title}
@@ -892,8 +893,8 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+            <div id="charts-view-drill-down-detail-inspector-box-4" className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div id="charts-view-drill-down-detail-inspector-box-5" className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
                 <span className="text-[10px] text-slate-500 block">شدت آسیب محلی رفسنجان</span>
                 <span className="text-base font-black text-rose-700 dir-rtl font-mono mt-0.5 block">
                   {toPersianDigits(activeSelectedBubble.deprivationIndex)}٪
@@ -903,9 +904,9 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
                 </span>
               </div>
 
-              <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+              <div id="charts-view-drill-down-detail-inspector-box-6" className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
                 <span className="text-[10px] text-slate-500 block">سهم بودجه و مقایسه</span>
-                <div className="flex items-baseline gap-2 mt-0.5">
+                <div id="charts-view-drill-down-detail-inspector-box-7" className="flex items-baseline gap-2 mt-0.5">
                   <span className="text-base font-black text-indigo-700 dir-rtl font-mono">
                     فعلی: {toPersianDigits(activeSelectedBubble.currentPct)}٪
                   </span>
@@ -918,7 +919,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
                 </span>
               </div>
 
-              <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs md:col-span-2">
+              <div id="charts-view-drill-down-detail-inspector-box-8" className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs md:col-span-2">
                 <span className="text-[10px] text-slate-500 block">موقعیت در ماتریس تصمیم‌گیری و توصیه اصلاحی</span>
                 <span className={`inline-block text-[10px] font-black px-2 py-0.5 rounded-md border mt-1 ${activeSelectedBubble.quadrantBadgeClass}`}>
                   {activeSelectedBubble.quadrantLabel}
@@ -936,10 +937,10 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
       {/* ========================================================================= */}
       {/* 2. 4-TIER STATISTICAL PREVALENCE MULTI-BAR CHART                          */}
       {/* ========================================================================= */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-2 border-b border-slate-100">
-          <div>
-            <div className="flex items-center gap-2">
+      <div id="charts-view-div-14" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs">
+        <div id="charts-view-div-15" className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-2 border-b border-slate-100">
+          <div id="charts-view-div-16">
+            <div id="charts-view-div-17" className="flex items-center gap-2">
               <Globe2 className="w-5 h-5 text-indigo-600" />
               <h3 className="font-bold text-slate-900 text-sm">
                 مقایسه تطبیقی فراگیری ۴ سطحی (کشوری vs استانی vs شهرستانی vs کانون محلی)
@@ -951,7 +952,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
           </div>
         </div>
 
-        <div className="h-80 w-full">
+        <div id="charts-view-div-18" className="h-80 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={prevalenceData} margin={{ top: 10, right: 10, left: 10, bottom: 40 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -983,17 +984,17 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
       {/* ========================================================================= */}
       {/* 3. SECONDARY CHARTS GRID: PIE, BAR & RADAR                                */}
       {/* ========================================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div id="charts-view-div-19" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Pie Chart: Percentage Distribution */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
+        <div id="charts-view-pie-chart-percentage" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs">
+          <div id="charts-view-pie-chart-percentage-2" className="flex items-center justify-between mb-4">
+            <div id="charts-view-pie-chart-percentage-3" className="flex items-center gap-2">
               <PieIcon className="w-5 h-5 text-blue-600" />
               <h3 className="font-bold text-slate-800 text-sm">نمودار دایره‌ای توزیع درصدی اولویت‌ها</h3>
             </div>
           </div>
-          <div className="h-72 w-full">
+          <div id="charts-view-pie-chart-percentage-4" className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -1026,14 +1027,14 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
         </div>
 
         {/* Bar Chart: Financial Allocation in Toman */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
+        <div id="charts-view-bar-chart-financial-allocation" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs">
+          <div id="charts-view-bar-chart-financial-allocation-2" className="flex items-center justify-between mb-4">
+            <div id="charts-view-bar-chart-financial-allocation-3" className="flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-emerald-600" />
               <h3 className="font-bold text-slate-800 text-sm">نمودار میله‌ای مبلغ تخصیص یافته (تومان)</h3>
             </div>
           </div>
-          <div className="h-72 w-full">
+          <div id="charts-view-bar-chart-financial-allocation-4" className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={pieData} margin={{ top: 10, right: 10, left: 10, bottom: 40 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -1059,9 +1060,9 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
         </div>
 
         {/* Radar Chart: Manual vs Smart AI Comparison */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs lg:col-span-2">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
+        <div id="charts-view-radar-chart-manual-vs-smart-ai" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs lg:col-span-2">
+          <div id="charts-view-radar-chart-manual-vs-smart-ai-2" className="flex items-center justify-between mb-2">
+            <div id="charts-view-radar-chart-manual-vs-smart-ai-3" className="flex items-center gap-2">
               <RadarIcon className="w-5 h-5 text-purple-600" />
               <h3 className="font-bold text-slate-800 text-sm">تطبیق راداری: تخصیص دستی در برابر پیشنهاد هوشمند AI</h3>
             </div>
@@ -1069,7 +1070,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
           <p className="text-xs text-slate-500 mb-4">
             مقایسه وزن‌های دستی کاربر با پیشنهاد الگوریتمی هوشمند بر اساس نیازسنجی محلی و نسبت‌سنجی آماری
           </p>
-          <div className="h-80 w-full">
+          <div id="charts-view-radar-chart-manual-vs-smart-ai-4" className="h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarData}>
                 <PolarGrid stroke="#e2e8f0" />

@@ -166,12 +166,12 @@ export const CrisesHarmsView: React.FC = () => {
   const underInterventionCount = useMemo(() => crisesHarms.filter((c) => c.status === 'UNDER_INTERVENTION').length, [crisesHarms]);
 
   return (
-    <div className="space-y-6">
+    <div id="crises-harms-view-root" className="space-y-6">
       {/* Header Banner (Light Theme) */}
-      <div className="bg-gradient-to-r from-rose-50/90 via-pink-50/70 to-slate-50 rounded-2xl p-6 text-slate-900 border border-rose-200/80 shadow-2xs relative overflow-hidden">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
+      <div id="crises-harms-view-header-banner-light-theme" className="bg-gradient-to-r from-rose-50/90 via-pink-50/70 to-slate-50 rounded-2xl p-6 text-slate-900 border border-rose-200/80 shadow-2xs relative overflow-hidden">
+        <div id="crises-harms-view-header-banner-light-theme-2" className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div id="crises-harms-view-header-banner-light-theme-3">
+            <div id="crises-harms-view-header-banner-light-theme-4" className="flex items-center gap-2 mb-2">
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-200 flex items-center gap-1">
                 <Flame className="w-3.5 h-3.5 text-rose-600" />
                 پایگاه داده آسیب‌ها، بحران‌ها و نیازهای واقعی
@@ -188,7 +188,7 @@ export const CrisesHarmsView: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-3 self-start md:self-auto">
+          <div id="crises-harms-view-header-banner-light-theme-5" className="flex items-center gap-3 self-start md:self-auto">
             {canManage && (
               <button
                 id="btn-add-crisis"
@@ -203,23 +203,23 @@ export const CrisesHarmsView: React.FC = () => {
         </div>
 
         {/* Aggregate KPI Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-rose-200/60">
-          <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
+        <div id="crises-harms-view-aggregate-kpi-strip" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-rose-200/60">
+          <div id="crises-harms-view-aggregate-kpi-strip-2" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">کل موارد ثبت‌شده</span>
             <span className="text-xl font-black text-slate-900 mt-0.5 block font-mono">{crisesHarms.length} مورد</span>
           </div>
-          <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
+          <div id="crises-harms-view-aggregate-kpi-strip-3" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">بحران‌های حاد و اضطراری</span>
             <span className="text-xl font-black text-rose-700 mt-0.5 block flex items-center gap-1 font-mono">
               <Flame className="w-4 h-4 text-rose-600" />
               {criticalCount} کانون بحرانی
             </span>
           </div>
-          <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
+          <div id="crises-harms-view-aggregate-kpi-strip-4" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">جمعیت تحت تأثیر مستقیم</span>
             <span className="text-xl font-black text-amber-700 mt-0.5 block font-mono">{formatNumber(totalAffected)} نفر</span>
           </div>
-          <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
+          <div id="crises-harms-view-aggregate-kpi-strip-5" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">طرح‌های در حال مداخله</span>
             <span className="text-xl font-black text-emerald-700 mt-0.5 block font-mono">{underInterventionCount} بحران</span>
           </div>
@@ -227,8 +227,8 @@ export const CrisesHarmsView: React.FC = () => {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
-        <div className="relative w-full md:w-80">
+      <div id="crises-harms-view-filter-and-search-bar" className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
+        <div id="crises-harms-view-filter-and-search-bar-2" className="relative w-full md:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-3" />
           <input
             type="text"
@@ -239,8 +239,8 @@ export const CrisesHarmsView: React.FC = () => {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+        <div id="crises-harms-view-filter-and-search-bar-3" className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <div id="crises-harms-view-filter-and-search-bar-4" className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
             <Filter className="w-3.5 h-3.5" />
             <span>سطح فوریت:</span>
           </div>
@@ -270,23 +270,24 @@ export const CrisesHarmsView: React.FC = () => {
       </div>
 
       {/* Crises Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div id="crises-harms-view-crises-grid" className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredCrises.map((item) => {
           const urgencyInfo = urgencyLabels[item.urgency];
           const matchedProjects = projects.filter((p) => p.crisisHarmId === item.id);
 
           return (
             <div
+              id={`crises-harms-view-crises-grid-2-${item.id}`}
               key={item.id}
               className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
             >
-              <div>
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
+              <div id={`crises-harms-view-crises-grid-3-${item.id}`}>
+                <div id={`crises-harms-view-crises-grid-4-${item.id}`} className="flex items-start justify-between gap-2 mb-3">
+                  <div id={`crises-harms-view-crises-grid-5-${item.id}`} className="flex items-center gap-2.5">
+                    <div id={`crises-harms-view-crises-grid-6-${item.id}`} className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
                       <AlertTriangle className="w-5 h-5" />
                     </div>
-                    <div>
+                    <div id={`crises-harms-view-crises-grid-7-${item.id}`}>
                       <span className="text-[10px] font-mono text-slate-400 tracking-wider block">{item.code}</span>
                       <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight">{item.title}</h3>
                     </div>
@@ -299,7 +300,7 @@ export const CrisesHarmsView: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-3">
+                <div id={`crises-harms-view-crises-grid-8-${item.id}`} className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-3">
                   <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                   <span>
                     {item.province} - {item.county} ({item.districtOrVillage})
@@ -307,15 +308,15 @@ export const CrisesHarmsView: React.FC = () => {
                 </div>
 
                 {/* Score & Affected Population */}
-                <div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 text-xs mb-3 border border-slate-100 dark:border-slate-800">
-                  <div>
+                <div id={`crises-harms-view-score-affected-population-${item.id}`} className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 text-xs mb-3 border border-slate-100 dark:border-slate-800">
+                  <div id={`crises-harms-view-score-affected-population-2-${item.id}`}>
                     <span className="text-slate-400 text-[11px] block">شاخص شدت محرومیت:</span>
                     <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 mt-0.5">
                       <Activity className="w-3.5 h-3.5 text-rose-500" />
                       {item.severityScore} از ۱۰۰
                     </span>
                   </div>
-                  <div>
+                  <div id={`crises-harms-view-score-affected-population-3-${item.id}`}>
                     <span className="text-slate-400 text-[11px] block">جمعیت متأثر:</span>
                     <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 mt-0.5">
                       <Users className="w-3.5 h-3.5 text-blue-500" />
@@ -325,12 +326,12 @@ export const CrisesHarmsView: React.FC = () => {
                 </div>
 
                 {/* Cause and Intervention */}
-                <div className="space-y-2 text-xs text-slate-600 dark:text-slate-300 mb-4">
-                  <div className="bg-amber-50/50 dark:bg-amber-950/20 rounded-lg p-2.5 border border-amber-200/50 dark:border-amber-900/40">
+                <div id={`crises-harms-view-cause-and-intervention-${item.id}`} className="space-y-2 text-xs text-slate-600 dark:text-slate-300 mb-4">
+                  <div id={`crises-harms-view-cause-and-intervention-2-${item.id}`} className="bg-amber-50/50 dark:bg-amber-950/20 rounded-lg p-2.5 border border-amber-200/50 dark:border-amber-900/40">
                     <span className="font-bold text-amber-900 dark:text-amber-300 block mb-0.5">ریشه و علت اصلی:</span>
                     <p className="text-slate-700 dark:text-slate-300 text-[11px] leading-relaxed">{item.primaryCause}</p>
                   </div>
-                  <div className="bg-emerald-50/50 dark:bg-emerald-950/20 rounded-lg p-2.5 border border-emerald-200/50 dark:border-emerald-900/40">
+                  <div id={`crises-harms-view-cause-and-intervention-3-${item.id}`} className="bg-emerald-50/50 dark:bg-emerald-950/20 rounded-lg p-2.5 border border-emerald-200/50 dark:border-emerald-900/40">
                     <span className="font-bold text-emerald-900 dark:text-emerald-300 block mb-0.5">مداخله و راهکار پیشنهادی:</span>
                     <p className="text-slate-700 dark:text-slate-300 text-[11px] leading-relaxed">{item.recommendedIntervention}</p>
                   </div>
@@ -338,8 +339,8 @@ export const CrisesHarmsView: React.FC = () => {
               </div>
 
               {/* Status & Actions */}
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
+              <div id={`crises-harms-view-status-actions-${item.id}`} className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                <div id={`crises-harms-view-status-actions-2-${item.id}`} className="flex items-center gap-2">
                   <span
                     className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${
                       item.status === 'UNDER_INTERVENTION'
@@ -368,7 +369,7 @@ export const CrisesHarmsView: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div id={`crises-harms-view-status-actions-3-${item.id}`} className="flex items-center gap-1">
                   <button
                     onClick={() => setActiveTab('PROJECTS')}
                     className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 font-bold px-2 py-1 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-colors"
@@ -404,9 +405,9 @@ export const CrisesHarmsView: React.FC = () => {
 
       {/* CRUD Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[90vh]">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-4">
+        <div id="crises-harms-view-crud-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div id="crises-harms-view-crud-modal-2" className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div id="crises-harms-view-crud-modal-3" className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-4">
               <h3 className="font-black text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-rose-500" />
                 {editingCrisis ? 'ویرایش مشخصات بحران / آسیب محلی' : 'ثبت بحران یا آسیب جدید در سامانه ملی'}
@@ -420,7 +421,7 @@ export const CrisesHarmsView: React.FC = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-              <div>
+              <div id="crises-harms-view-crud-modal-4">
                 <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">عنوان بحران یا آسیب *</label>
                 <input
                   type="text"
@@ -432,8 +433,8 @@ export const CrisesHarmsView: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div id="crises-harms-view-crud-modal-5" className="grid grid-cols-2 gap-3">
+                <div id="crises-harms-view-crud-modal-6">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">کد شناسایی بحران</label>
                   <input
                     type="text"
@@ -442,7 +443,7 @@ export const CrisesHarmsView: React.FC = () => {
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-rose-500 focus:outline-none font-mono"
                   />
                 </div>
-                <div>
+                <div id="crises-harms-view-crud-modal-7">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">سطح فوریت و اولویت</label>
                   <select
                     value={formUrgency}
@@ -457,8 +458,8 @@ export const CrisesHarmsView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div id="crises-harms-view-crud-modal-8" className="grid grid-cols-2 gap-3">
+                <div id="crises-harms-view-crud-modal-9">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">دسته آسیب / موضوع</label>
                   <input
                     type="text"
@@ -468,7 +469,7 @@ export const CrisesHarmsView: React.FC = () => {
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-rose-500 focus:outline-none"
                   />
                 </div>
-                <div>
+                <div id="crises-harms-view-crud-modal-10">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">محدوده / روستا / بخش</label>
                   <input
                     type="text"
@@ -480,8 +481,8 @@ export const CrisesHarmsView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div id="crises-harms-view-crud-modal-11" className="grid grid-cols-2 gap-3">
+                <div id="crises-harms-view-crud-modal-12">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">شاخص شدت محرومیت (۰-۱۰۰)</label>
                   <input
                     type="number"
@@ -492,7 +493,7 @@ export const CrisesHarmsView: React.FC = () => {
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-rose-500 focus:outline-none font-mono"
                   />
                 </div>
-                <div>
+                <div id="crises-harms-view-crud-modal-13">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">جمعیت تحت تأثیر مستقیم (نفر)</label>
                   <input
                     type="number"
@@ -504,7 +505,7 @@ export const CrisesHarmsView: React.FC = () => {
                 </div>
               </div>
 
-              <div>
+              <div id="crises-harms-view-crud-modal-14">
                 <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">ریشه و علت اصلی معضل</label>
                 <textarea
                   rows={2}
@@ -515,7 +516,7 @@ export const CrisesHarmsView: React.FC = () => {
                 />
               </div>
 
-              <div>
+              <div id="crises-harms-view-crud-modal-15">
                 <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">مداخله و پروژه پیشنهادی جهت حل مسئله</label>
                 <textarea
                   rows={2}
@@ -526,7 +527,7 @@ export const CrisesHarmsView: React.FC = () => {
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <div id="crises-harms-view-crud-modal-16" className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}

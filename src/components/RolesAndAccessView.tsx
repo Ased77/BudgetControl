@@ -92,12 +92,12 @@ export const RolesAndAccessView: React.FC = () => {
   }, [auditLogs, logSearch, selectedActionFilter]);
 
   return (
-    <div className="space-y-6">
+    <div id="roles-and-access-view-root" className="space-y-6">
       {/* Header Banner (Light Theme) */}
-      <div className="bg-gradient-to-r from-slate-100 via-indigo-50/70 to-slate-50 rounded-2xl p-6 text-slate-900 border border-indigo-200/80 shadow-2xs relative overflow-hidden">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
+      <div id="roles-and-access-view-header-banner-light-theme" className="bg-gradient-to-r from-slate-100 via-indigo-50/70 to-slate-50 rounded-2xl p-6 text-slate-900 border border-indigo-200/80 shadow-2xs relative overflow-hidden">
+        <div id="roles-and-access-view-header-banner-light-theme-2" className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div id="roles-and-access-view-header-banner-light-theme-3">
+            <div id="roles-and-access-view-header-banner-light-theme-4" className="flex items-center gap-2 mb-2">
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-200">
                 امنیت، حاکمیت داده و ردگیری تغییرات
               </span>
@@ -114,11 +114,11 @@ export const RolesAndAccessView: React.FC = () => {
           </div>
 
           {/* Active User Switcher */}
-          <div className="bg-white rounded-xl p-3 border border-slate-300 shadow-2xs flex items-center gap-3 self-start md:self-auto">
-            <div className="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-sm">
+          <div id="roles-and-access-view-active-user-switcher" className="bg-white rounded-xl p-3 border border-slate-300 shadow-2xs flex items-center gap-3 self-start md:self-auto">
+            <div id="roles-and-access-view-active-user-switcher-2" className="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-sm">
               <UserCheck className="w-5 h-5 text-white" />
             </div>
-            <div>
+            <div id="roles-and-access-view-active-user-switcher-3">
               <span className="text-[10px] text-slate-500 block font-semibold">کاربر فعال جاری (تست اختیارات):</span>
               <select
                 value={currentUser.id}
@@ -139,7 +139,7 @@ export const RolesAndAccessView: React.FC = () => {
         </div>
 
         {/* Sub-tab switcher */}
-        <div className="flex items-center gap-2 mt-6 pt-4 border-t border-indigo-200/60">
+        <div id="roles-and-access-view-sub-tab-switcher" className="flex items-center gap-2 mt-6 pt-4 border-t border-indigo-200/60">
           <button
             onClick={() => setActiveSubTab('ROLES_MATRIX')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -168,10 +168,10 @@ export const RolesAndAccessView: React.FC = () => {
 
       {/* Sub-tab 1: Permissions Matrix */}
       {activeSubTab === 'ROLES_MATRIX' && (
-        <div className="space-y-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-              <div>
+        <div id="roles-and-access-view-sub-tab-1-permissions-matrix" className="space-y-4">
+          <div id="roles-and-access-view-sub-tab-1-permissions-matrix-2" className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+            <div id="roles-and-access-view-sub-tab-1-permissions-matrix-3" className="p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <div id="roles-and-access-view-sub-tab-1-permissions-matrix-4">
                 <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">جدول کنترل دسترسی بر پایه نقش (RBAC)</h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   برای تغییر آنی مجوزهای هر نقش، مستقیماً روی خانه‌ها کلیک کنید.
@@ -182,7 +182,7 @@ export const RolesAndAccessView: React.FC = () => {
               </span>
             </div>
 
-            <div className="overflow-x-auto">
+            <div id="roles-and-access-view-sub-tab-1-permissions-matrix-5" className="overflow-x-auto">
               <table className="w-full text-right text-xs">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-850">
@@ -204,7 +204,7 @@ export const RolesAndAccessView: React.FC = () => {
                       }`}
                     >
                       <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-2">
+                        <div id={`roles-and-access-view-sub-tab-1-permissions-matrix-6-${rp.role}`} className="flex items-center gap-2">
                           <span className="font-bold text-slate-900 dark:text-slate-100">{rp.roleFa}</span>
                           {currentUser.role === rp.role && (
                             <span className="px-1.5 py-0.5 text-[10px] bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 rounded">
@@ -244,9 +244,9 @@ export const RolesAndAccessView: React.FC = () => {
 
       {/* Sub-tab 2: Audit Trail Logs */}
       {activeSubTab === 'AUDIT_LOGS' && (
-        <div className="space-y-4">
-          <div className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
-            <div className="relative w-full md:w-80">
+        <div id="roles-and-access-view-sub-tab-2-audit-trail-logs" className="space-y-4">
+          <div id="roles-and-access-view-sub-tab-2-audit-trail-logs-2" className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
+            <div id="roles-and-access-view-sub-tab-2-audit-trail-logs-3" className="relative w-full md:w-80">
               <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-3" />
               <input
                 type="text"
@@ -257,7 +257,7 @@ export const RolesAndAccessView: React.FC = () => {
               />
             </div>
 
-            <div className="flex items-center gap-2 w-full md:w-auto">
+            <div id="roles-and-access-view-sub-tab-2-audit-trail-logs-4" className="flex items-center gap-2 w-full md:w-auto">
               <span className="text-xs text-slate-500 dark:text-slate-400">نوع عملیات:</span>
               <select
                 value={selectedActionFilter}
@@ -276,8 +276,8 @@ export const RolesAndAccessView: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
+          <div id="roles-and-access-view-sub-tab-2-audit-trail-logs-5" className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+            <div id="roles-and-access-view-sub-tab-2-audit-trail-logs-6" className="overflow-x-auto">
               <table className="w-full text-right text-xs">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-850">
@@ -302,8 +302,8 @@ export const RolesAndAccessView: React.FC = () => {
                           {log.timestamp}
                         </td>
                         <td className="py-3.5 px-4">
-                          <div className="font-bold text-slate-900 dark:text-slate-100">{log.userName}</div>
-                          <div className="text-[10px] text-slate-400">{log.userRole}</div>
+                          <div id={`roles-and-access-view-sub-tab-2-audit-trail-logs-7-${log.id}`} className="font-bold text-slate-900 dark:text-slate-100">{log.userName}</div>
+                          <div id={`roles-and-access-view-sub-tab-2-audit-trail-logs-8-${log.id}`} className="text-[10px] text-slate-400">{log.userRole}</div>
                         </td>
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${actionInfo.badge}`}>
@@ -327,7 +327,7 @@ export const RolesAndAccessView: React.FC = () => {
             </div>
 
             {filteredLogs.length === 0 && (
-              <div className="p-8 text-center text-slate-400 text-xs">هیچ رویدادی با این مشخصات ثبت نشده است.</div>
+              <div id="roles-and-access-view-sub-tab-2-audit-trail-logs-9" className="p-8 text-center text-slate-400 text-xs">هیچ رویدادی با این مشخصات ثبت نشده است.</div>
             )}
           </div>
         </div>

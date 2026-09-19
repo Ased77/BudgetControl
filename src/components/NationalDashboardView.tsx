@@ -57,21 +57,21 @@ export const NationalDashboardView: React.FC = () => {
   );
 
   return (
-    <div className="space-y-6">
+    <div id="national-dashboard-view-root" className="space-y-6">
       {/* Hero Macro Strip (Light Theme) */}
-      <div className="bg-gradient-to-r from-blue-50/90 via-indigo-50/70 to-slate-50 rounded-3xl p-6 md:p-8 text-slate-900 border border-blue-200/80 shadow-sm relative overflow-hidden">
+      <div id="national-dashboard-view-hero-macro-strip-light-theme" className="bg-gradient-to-r from-blue-50/90 via-indigo-50/70 to-slate-50 rounded-3xl p-6 md:p-8 text-slate-900 border border-blue-200/80 shadow-sm relative overflow-hidden">
         {/* Subtle accent glow */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-400/10 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none" />
+        <div id="national-dashboard-view-subtle-accent-glow" className="absolute top-0 right-0 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+        <div id="national-dashboard-view-subtle-accent-glow-2" className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-400/10 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none" />
 
-        <div className="relative z-10">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-            <div className="flex items-center gap-2">
+        <div id="national-dashboard-view-subtle-accent-glow-3" className="relative z-10">
+          <div id="national-dashboard-view-subtle-accent-glow-4" className="flex flex-wrap items-center justify-between gap-3 mb-6">
+            <div id="national-dashboard-view-subtle-accent-glow-5" className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-xs font-bold text-slate-700">سامانه پایش هوشمند توسعه</span>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2.5">
+            <div id="national-dashboard-view-subtle-accent-glow-6" className="flex flex-wrap items-center gap-2.5">
               <button
                 onClick={handleApplySmartRecommendations}
                 className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2 rounded-xl font-bold text-xs shadow-xs transition-all hover:scale-105 active:scale-95"
@@ -91,9 +91,9 @@ export const NationalDashboardView: React.FC = () => {
           </div>
 
           {/* Primary Macro KPI Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 pt-4 border-t border-blue-200/60">
-            <div className="bg-white/90 rounded-2xl p-4 border border-slate-200 shadow-2xs">
-              <div className="flex items-center justify-between text-slate-500 text-xs mb-1 font-semibold">
+          <div id="national-dashboard-view-primary-macro-kpi-cards" className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 pt-4 border-t border-blue-200/60">
+            <div id="national-dashboard-view-primary-macro-kpi-cards-2" className="bg-white/90 rounded-2xl p-4 border border-slate-200 shadow-2xs">
+              <div id="national-dashboard-view-primary-macro-kpi-cards-3" className="flex items-center justify-between text-slate-500 text-xs mb-1 font-semibold">
                 <span>کل منابع مالی مصوب</span>
                 <Wallet className="w-4 h-4 text-emerald-600" />
               </div>
@@ -103,8 +103,8 @@ export const NationalDashboardView: React.FC = () => {
               <span className="text-[11px] text-slate-500 mt-1 block">از {budgetSources.length} منبع و سرفصل فعال</span>
             </div>
 
-            <div className="bg-white/90 rounded-2xl p-4 border border-slate-200 shadow-2xs">
-              <div className="flex items-center justify-between text-slate-500 text-xs mb-1 font-semibold">
+            <div id="national-dashboard-view-primary-macro-kpi-cards-4" className="bg-white/90 rounded-2xl p-4 border border-slate-200 shadow-2xs">
+              <div id="national-dashboard-view-primary-macro-kpi-cards-5" className="flex items-center justify-between text-slate-500 text-xs mb-1 font-semibold">
                 <span>پروژه‌های اجرایی فعال</span>
                 <FolderKanban className="w-4 h-4 text-blue-600" />
               </div>
@@ -117,13 +117,14 @@ export const NationalDashboardView: React.FC = () => {
             </div>
 
             <div
+              id="national-dashboard-view-primary-macro-kpi-cards-6"
               onClick={() => setActiveTab('POPULATION')}
               className="bg-white/90 hover:bg-cyan-50/50 rounded-2xl p-4 border border-slate-200 hover:border-cyan-300 shadow-2xs transition-all cursor-pointer group"
               title="کلیک برای مشاهده جزئیات در تب آمار جمعیت"
             >
-              <div className="flex items-center justify-between text-slate-500 text-xs mb-1 font-semibold">
+              <div id="national-dashboard-view-primary-macro-kpi-cards-7" className="flex items-center justify-between text-slate-500 text-xs mb-1 font-semibold">
                 <span className="group-hover:text-cyan-800 transition-colors">جمعیت محروم شناسایی‌شده</span>
-                <div className="flex items-center gap-1 text-[10px] text-cyan-600 font-bold bg-cyan-50 px-1.5 py-0.5 rounded-md border border-cyan-200">
+                <div id="national-dashboard-view-primary-macro-kpi-cards-8" className="flex items-center gap-1 text-[10px] text-cyan-600 font-bold bg-cyan-50 px-1.5 py-0.5 rounded-md border border-cyan-200">
                   <span>تب جمعیت</span>
                   <ArrowRight className="w-3 h-3 rotate-180" />
                 </div>
@@ -136,8 +137,8 @@ export const NationalDashboardView: React.FC = () => {
               </span>
             </div>
 
-            <div className="bg-white/90 rounded-2xl p-4 border border-slate-200 shadow-2xs">
-              <div className="flex items-center justify-between text-slate-500 text-xs mb-1 font-semibold">
+            <div id="national-dashboard-view-primary-macro-kpi-cards-9" className="bg-white/90 rounded-2xl p-4 border border-slate-200 shadow-2xs">
+              <div id="national-dashboard-view-primary-macro-kpi-cards-10" className="flex items-center justify-between text-slate-500 text-xs mb-1 font-semibold">
                 <span>صرفه‌جویی ضد موازی‌کاری</span>
                 <ShieldAlert className="w-4 h-4 text-amber-600" />
               </div>
@@ -154,12 +155,12 @@ export const NationalDashboardView: React.FC = () => {
       <DashboardPredictiveEngine />
 
       {/* Two-Column Grid: Multi-Source Budget Pipeline & Critical Crises */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div id="national-dashboard-view-two-column-grid-multi-source" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Card 1: Multi-Source Budget Pipeline */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
-              <div className="flex items-center gap-2">
+        <div id="national-dashboard-view-card-1-multi-source-budget" className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+          <div id="national-dashboard-view-card-1-multi-source-budget-2">
+            <div id="national-dashboard-view-card-1-multi-source-budget-3" className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
+              <div id="national-dashboard-view-card-1-multi-source-budget-4" className="flex items-center gap-2">
                 <Wallet className="w-5 h-5 text-emerald-500" />
                 <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">
                   تفکیک سرفصل‌های تأمین مالی (مسئولیت اجتماعی، دولتی، دهیاری)
@@ -174,7 +175,7 @@ export const NationalDashboardView: React.FC = () => {
               </button>
             </div>
 
-            <div className="space-y-3">
+            <div id="national-dashboard-view-card-1-multi-source-budget-5" className="space-y-3">
               {budgetSources.map((source) => {
                 const percent =
                   source.totalAmountToman > 0
@@ -183,21 +184,23 @@ export const NationalDashboardView: React.FC = () => {
 
                 return (
                   <div
+                    id={`national-dashboard-view-card-1-multi-source-budget-6-${source.id}`}
                     key={source.id}
                     className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-800 text-xs space-y-1.5"
                   >
-                    <div className="flex items-center justify-between font-bold">
+                    <div id={`national-dashboard-view-card-1-multi-source-budget-7-${source.id}`} className="flex items-center justify-between font-bold">
                       <span className="text-slate-900 dark:text-slate-100">{source.title}</span>
                       <span className="text-emerald-600 dark:text-emerald-400 font-mono">{formatToman(source.totalAmountToman)}</span>
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                    <div id={`national-dashboard-view-card-1-multi-source-budget-8-${source.id}`} className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
                       <span>{source.sponsorOrganization} ({source.sourceTypeFa})</span>
                       <span>مصرف: {percent}٪</span>
                     </div>
 
-                    <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                    <div id={`national-dashboard-view-card-1-multi-source-budget-9-${source.id}`} className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
                       <div
+                        id={`national-dashboard-view-card-1-multi-source-budget-10-${source.id}`}
                         className="h-full bg-emerald-500 rounded-full transition-all duration-500"
                         style={{ width: `${percent}%` }}
                       />
@@ -208,17 +211,17 @@ export const NationalDashboardView: React.FC = () => {
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
+          <div id="national-dashboard-view-card-1-multi-source-budget-11" className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
             <span>مجموع منابع قابل برنامه‌ریزی:</span>
             <span className="font-bold text-slate-900 dark:text-slate-100 font-mono">{formatToman(totalBudgetSources)}</span>
           </div>
         </div>
 
         {/* Card 2: Critical Crises Requiring Intervention */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
-              <div className="flex items-center gap-2">
+        <div id="national-dashboard-view-card-2-critical-crises" className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+          <div id="national-dashboard-view-card-2-critical-crises-2">
+            <div id="national-dashboard-view-card-2-critical-crises-3" className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
+              <div id="national-dashboard-view-card-2-critical-crises-4" className="flex items-center gap-2">
                 <Flame className="w-5 h-5 text-rose-500" />
                 <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">
                   کانون‌های بحرانی و آسیب‌های دارای فوریت بالا
@@ -233,13 +236,14 @@ export const NationalDashboardView: React.FC = () => {
               </button>
             </div>
 
-            <div className="space-y-3">
+            <div id="national-dashboard-view-card-2-critical-crises-5" className="space-y-3">
               {crisesHarms.slice(0, 4).map((crisis) => (
                 <div
+                  id={`national-dashboard-view-card-2-critical-crises-6-${crisis.id}`}
                   key={crisis.id}
                   className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-800 text-xs space-y-1.5"
                 >
-                  <div className="flex items-center justify-between">
+                  <div id={`national-dashboard-view-card-2-critical-crises-7-${crisis.id}`} className="flex items-center justify-between">
                     <span className="font-bold text-slate-900 dark:text-slate-100">{crisis.title}</span>
                     <span
                       className={`px-2 py-0.5 rounded text-[10px] font-bold ${
@@ -252,7 +256,7 @@ export const NationalDashboardView: React.FC = () => {
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                  <div id={`national-dashboard-view-card-2-critical-crises-8-${crisis.id}`} className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
                     <span>
                       {crisis.county} ({crisis.districtOrVillage})
                     </span>
@@ -265,7 +269,7 @@ export const NationalDashboardView: React.FC = () => {
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+          <div id="national-dashboard-view-card-2-critical-crises-9" className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
             <span className="text-slate-500">تعداد کانون‌های بحرانی حل‌نشده:</span>
             <span className="font-bold text-rose-600 dark:text-rose-400">{criticalCrisesCount} کانون فعال</span>
           </div>
@@ -273,7 +277,7 @@ export const NationalDashboardView: React.FC = () => {
       </div>
 
       {/* Quick Navigation Cards to All System Pillars */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div id="national-dashboard-view-quick-navigation-cards-to-all" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <button
           onClick={() => setActiveTab('DEPARTMENTS')}
           className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs hover:border-indigo-500 transition-all text-right group"

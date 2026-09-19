@@ -81,24 +81,24 @@ export const GlobalLocationSelector: React.FC<GlobalLocationSelectorProps> = ({
   };
 
   return (
-    <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-blue-950 text-white rounded-2xl p-4 shadow-xl border border-slate-700/80 mb-6 dir-rtl">
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+    <div id="global-location-selector-root" className="bg-gradient-to-r from-slate-900 via-slate-800 to-blue-950 text-white rounded-2xl p-4 shadow-xl border border-slate-700/80 mb-6 dir-rtl">
+      <div id="global-location-selector-div-2" className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
         
         {/* Title and 3 Cascading Location Selectors */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-1 flex-wrap">
+        <div id="global-location-selector-title-and-3-cascading-location" className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-1 flex-wrap">
           
-          <div className="flex items-center gap-2 shrink-0 border-l border-slate-700/80 pl-3">
-            <div className="p-2 bg-blue-500/20 text-blue-400 rounded-xl border border-blue-500/30">
+          <div id="global-location-selector-title-and-3-cascading-location-2" className="flex items-center gap-2 shrink-0 border-l border-slate-700/80 pl-3">
+            <div id="global-location-selector-title-and-3-cascading-location-3" className="p-2 bg-blue-500/20 text-blue-400 rounded-xl border border-blue-500/30">
               <Globe className="w-5 h-5" />
             </div>
-            <div>
-              <div className="font-extrabold text-xs text-slate-200">فیلتر جغرافیایی فعال</div>
-              <div className="text-[10px] text-blue-300">کنترل یکپارچه کل سامانه</div>
+            <div id="global-location-selector-title-and-3-cascading-location-4">
+              <div id="global-location-selector-title-and-3-cascading-location-5" className="font-extrabold text-xs text-slate-200">فیلتر جغرافیایی فعال</div>
+              <div id="global-location-selector-title-and-3-cascading-location-6" className="text-[10px] text-blue-300">کنترل یکپارچه کل سامانه</div>
             </div>
           </div>
 
           {/* Province Dropdown */}
-          <div className="flex flex-col text-right">
+          <div id="global-location-selector-province-dropdown" className="flex flex-col text-right">
             <label className="text-[10px] text-slate-300 font-bold mb-1 mr-1">استان هدف</label>
             <select
               value={selectedLocation.province}
@@ -114,7 +114,7 @@ export const GlobalLocationSelector: React.FC<GlobalLocationSelectorProps> = ({
           </div>
 
           {/* County Dropdown */}
-          <div className="flex flex-col text-right">
+          <div id="global-location-selector-county-dropdown" className="flex flex-col text-right">
             <label className="text-[10px] text-slate-300 font-bold mb-1 mr-1">شهرستان</label>
             <select
               value={selectedLocation.county}
@@ -130,7 +130,7 @@ export const GlobalLocationSelector: React.FC<GlobalLocationSelectorProps> = ({
           </div>
 
           {/* District / City Dropdown */}
-          <div className="flex flex-col text-right">
+          <div id="global-location-selector-district-city-dropdown" className="flex flex-col text-right">
             <label className="text-[10px] text-slate-300 font-bold mb-1 mr-1">شهر / بخش / منطقه هدف</label>
             <select
               value={selectedLocation.id}
@@ -148,20 +148,20 @@ export const GlobalLocationSelector: React.FC<GlobalLocationSelectorProps> = ({
         </div>
 
         {/* Real-time Indicator Badges & Smart Action Button */}
-        <div className="flex items-center gap-3 shrink-0 flex-wrap justify-between lg:justify-end border-t lg:border-t-0 border-slate-700/60 pt-3 lg:pt-0">
+        <div id="global-location-selector-real-time-indicator-badges" className="flex items-center gap-3 shrink-0 flex-wrap justify-between lg:justify-end border-t lg:border-t-0 border-slate-700/60 pt-3 lg:pt-0">
           
           {/* Population Badge */}
-          <div className="bg-slate-800/80 border border-slate-700/80 px-3 py-1.5 rounded-xl text-right">
-            <div className="text-[10px] text-slate-400">جمعیت تحت پوشش</div>
-            <div className="text-xs font-bold text-slate-200">
+          <div id="global-location-selector-population-badge" className="bg-slate-800/80 border border-slate-700/80 px-3 py-1.5 rounded-xl text-right">
+            <div id="global-location-selector-population-badge-2" className="text-[10px] text-slate-400">جمعیت تحت پوشش</div>
+            <div id="global-location-selector-population-badge-3" className="text-xs font-bold text-slate-200">
               {toPersianDigits(selectedLocation.population.toLocaleString('fa-IR'))} نفر
             </div>
           </div>
 
           {/* Vulnerability Index Badge */}
-          <div className="bg-slate-800/80 border border-slate-700/80 px-3 py-1.5 rounded-xl text-right">
-            <div className="text-[10px] text-slate-400">آسیب‌پذیری منطقه</div>
-            <div className="text-xs font-extrabold text-amber-400 flex items-center gap-1">
+          <div id="global-location-selector-vulnerability-index-badge" className="bg-slate-800/80 border border-slate-700/80 px-3 py-1.5 rounded-xl text-right">
+            <div id="global-location-selector-vulnerability-index-badge-2" className="text-[10px] text-slate-400">آسیب‌پذیری منطقه</div>
+            <div id="global-location-selector-vulnerability-index-badge-3" className="text-xs font-extrabold text-amber-400 flex items-center gap-1">
               <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
               <span>{toPersianDigits(vulnerabilityIndex)} از ۱۰۰</span>
             </div>
