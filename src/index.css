@@ -66,3 +66,24 @@ body {
   background-color: #f8fafc;
   color: #0f172a;
 }
+
+/* -------------------------------------------------------------------------
+   Fixed desktop canvas.
+   From the `lg` breakpoint up — the same point where the sidebar stops being
+   an off-canvas drawer and becomes a static column — the document is locked to
+   one width, so the 288px sidebar plus the dense charts/tables always lay out
+   at identical proportions instead of reflowing as the window is dragged.
+   Windows narrower than the canvas scroll horizontally rather than squashing
+   columns; phones and tablets keep the fluid layout.
+   Change the canvas size here only — nothing else depends on the number.
+   ------------------------------------------------------------------------- */
+:root {
+  --app-canvas-width: 1440px;
+}
+
+@media (min-width: 1024px) {
+  body {
+    width: var(--app-canvas-width);
+    margin-inline: auto;
+  }
+}
