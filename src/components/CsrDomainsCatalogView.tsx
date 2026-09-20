@@ -21,6 +21,8 @@ import {
 import { useAppContext } from '../context/AppContext';
 import { CsrPriority } from '../types';
 import { toPersianDigits, formatCurrency } from '../utils/numberUtils';
+import { useConfirmDelete } from './ConfirmDeleteModal';
+import { useOutsideClick } from '../hooks/useOutsideClick';
 
 export const CsrDomainsCatalogView: React.FC = () => {
   const { 
@@ -48,6 +50,7 @@ export const CsrDomainsCatalogView: React.FC = () => {
     [priorities[0]?.id || 'p1']: true
   });
 
+  const { confirmDelete, modal: deleteConfirmModal } = useConfirmDelete();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
@@ -78,6 +81,17 @@ export const CsrDomainsCatalogView: React.FC = () => {
   const [projCostToman, setProjCostToman] = useState(2_500_000_000);
   const [projExecutor, setProjExecutor] = useState('');
   const [projBeneficiaries, setProjBeneficiaries] = useState(1500);
+
+  // Modal refs — clicking the dimmed backdrop closes each modal.
+  const subItemModalRef = useRef<HTMLDivElement>(null);
+  const addDomainModalRef = useRef<HTMLDivElement>(null);
+  const convertModalRef = useRef<HTMLDivElement>(null);
+  useOutsideClick(subItemModalRef, () => {
+    setShowAddSubItemModal(false);
+    setTargetDomainForSubItem(null);
+  });
+  useOutsideClick(addDomainModalRef, () => setShowAddDomainModal(false));
+  useOutsideClick(convertModalRef, () => setProjectSubItem(null));
 
   // Find currently active domain
   const activeDomain = useMemo(() => {
@@ -527,7 +541,11 @@ export const CsrDomainsCatalogView: React.FC = () => {
                               تبدیل به پروژه
                             </button>
                             <button
-                              onClick={() => handleDeleteSubItem(domain.id, sIdx)}
+                              onClick={() =>
+                                confirmDelete(`آیا از حذف اقدام «${sub}» مطمئن هستید؟ این عملیات قابل بازگشت نیست.`, () =>
+                                  handleDeleteSubItem(domain.id, sIdx)
+                                )
+                              }
                               className="p-1 text-slate-400 hover:text-rose-600 rounded-md"
                               title="حذف"
                             >
@@ -719,7 +737,11 @@ export const CsrDomainsCatalogView: React.FC = () => {
                           </button>
 
                           <button
-                            onClick={() => handleDeleteSubItem(activeDomain.id, originalIndex)}
+                            onClick={() =>
+                              confirmDelete(`آیا از حذف اقدام «${subItem}» مطمئن هستید؟ این عملیات قابل بازگشت نیست.`, () =>
+                                handleDeleteSubItem(activeDomain.id, originalIndex)
+                              )
+                            }
                             className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
                             title="حذف این اقدام"
                           >
@@ -739,7 +761,7 @@ export const CsrDomainsCatalogView: React.FC = () => {
       {/* Modal: Add Sub-Item */}
       {showAddSubItemModal && (
         <div id="csr-domains-catalog-view-modal-add-sub-item" className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div id="csr-domains-catalog-view-modal-add-sub-item-2" className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
+          <div id="csr-domains-catalog-view-modal-add-sub-item-2" ref={subItemModalRef} className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
             <div id="csr-domains-catalog-view-modal-add-sub-item-3" className="flex items-center justify-between pb-4 border-b border-slate-100">
               <div id="csr-domains-catalog-view-modal-add-sub-item-4" className="flex items-center gap-2">
                 <span className="p-2 rounded-xl bg-emerald-100 text-emerald-700">
@@ -816,7 +838,7 @@ export const CsrDomainsCatalogView: React.FC = () => {
       {/* Modal: Add New Main CSR Domain */}
       {showAddDomainModal && (
         <div id="csr-domains-catalog-view-modal-add-new-main-csr-domain" className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div id="csr-domains-catalog-view-modal-add-new-main-csr-domain-2" className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
+          <div id="csr-domains-catalog-view-modal-add-new-main-csr-domain-2" ref={addDomainModalRef} className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
             <div id="csr-domains-catalog-view-modal-add-new-main-csr-domain-3" className="flex items-center justify-between pb-4 border-b border-slate-100">
               <div id="csr-domains-catalog-view-modal-add-new-main-csr-domain-4" className="flex items-center gap-2">
                 <span className="p-2 rounded-xl bg-indigo-100 text-indigo-700">
@@ -919,7 +941,7 @@ export const CsrDomainsCatalogView: React.FC = () => {
       {/* Modal: Convert Sub-Item directly to Executive Project */}
       {projectSubItem && (
         <div id="csr-domains-catalog-view-modal-convert-sub-item-directly" className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div id="csr-domains-catalog-view-modal-convert-sub-item-directly-2" className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
+          <div id="csr-domains-catalog-view-modal-convert-sub-item-directly-2" ref={convertModalRef} className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
             <div id="csr-domains-catalog-view-modal-convert-sub-item-directly-3" className="flex items-center justify-between pb-4 border-b border-slate-100">
               <div id="csr-domains-catalog-view-modal-convert-sub-item-directly-4" className="flex items-center gap-2">
                 <span className="p-2 rounded-xl bg-indigo-100 text-indigo-700">
@@ -1035,6 +1057,7 @@ export const CsrDomainsCatalogView: React.FC = () => {
           </div>
         </div>
       )}
+      {deleteConfirmModal}
     </div>
   );
 };

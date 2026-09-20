@@ -1,7 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { CsrPriority } from '../types';
-import { formatToman, roundPercentage } from '../utils/numberUtils';
+import { formatToman, roundPercentage, toPersianDigits } from '../utils/numberUtils';
+import { useConfirmDelete } from './ConfirmDeleteModal';
+import { useOutsideClick } from '../hooks/useOutsideClick';
 import {
   ListChecks,
   Plus,
@@ -43,7 +45,7 @@ export const PrioritiesView: React.FC = () => {
     handleAddSubItem,
     handleDeleteSubItem,
     currentUser,
-    rolesPermissions,
+    getUserPermissions,
   } = useAppContext();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -51,7 +53,10 @@ export const PrioritiesView: React.FC = () => {
   const [expandedSubItemId, setExpandedSubItemId] = useState<string | null>(null);
   const [newSubItemText, setNewSubItemText] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+  useOutsideClick(modalRef, () => setIsModalOpen(false));
   const [editingPriority, setEditingPriority] = useState<CsrPriority | null>(null);
+  const { confirmDelete, modal: deleteConfirmModal } = useConfirmDelete();
 
   // Form State
   const [formTitle, setFormTitle] = useState('');
@@ -59,8 +64,8 @@ export const PrioritiesView: React.FC = () => {
   const [formDescription, setFormDescription] = useState('');
   const [formDefaultPct, setFormDefaultPct] = useState<number>(10);
 
-  const userPerm = rolesPermissions.find((r) => r.role === currentUser.role);
-  const canEdit = userPerm ? userPerm.canEditPriorities : currentUser.role === 'ADMIN';
+  const userPerm = getUserPermissions(currentUser);
+  const canEdit = userPerm ? userPerm.canManagePriorities : currentUser.role === 'ADMIN';
 
   // Sum of percentages
   const currentSum = useMemo(() => {
@@ -202,12 +207,12 @@ export const PrioritiesView: React.FC = () => {
                   : 'bg-rose-100 text-rose-800 border border-rose-200 animate-pulse'
               }`}
             >
-              {currentSum}٪
+              {toPersianDigits(currentSum)}٪
             </span>
             {!isExact100 && (
               <span className="text-rose-700 font-medium text-[11px] flex items-center gap-1">
                 <AlertCircle className="w-3.5 h-3.5" />
-                {currentSum > 100 ? `${(currentSum - 100).toFixed(1)}٪ بیش از سقف!` : `${(100 - currentSum).toFixed(1)}٪ کمتر از کل`}
+                {currentSum > 100 ? `${toPersianDigits((currentSum - 100).toFixed(1))}٪ بیش از سقف!` : `${toPersianDigits((100 - currentSum).toFixed(1))}٪ کمتر از کل`}
               </span>
             )}
             {isExact100 && (
@@ -265,6 +270,14 @@ export const PrioritiesView: React.FC = () => {
           const allocatedToman = (orgConfig.totalBudget * currentPct) / 100;
           const aiRecPct = recommendations.scores[p.id] || 0;
           const isExpanded = expandedSubItemId === p.id;
+          const sliderMin = p.minPercent || 1;
+          const sliderMax = p.maxPercent || 60;
+          // Filled share of the track between this priority's min/max bounds
+          // (clamped, since smart rebalancing can push a value past the max).
+          const fillPct =
+            sliderMax > sliderMin
+              ? Math.min(100, Math.max(0, ((currentPct - sliderMin) / (sliderMax - sliderMin)) * 100))
+              : 0;
 
           return (
             <div
@@ -310,38 +323,74 @@ export const PrioritiesView: React.FC = () => {
                 <p className="text-xs text-slate-600 dark:text-slate-400 mb-3 leading-relaxed">{p.description}</p>
 
                 {/* Slider and Percentage Display */}
-                <div id={`priorities-view-slider-and-percentage-display-${p.id}`} className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800/80 mb-3 space-y-2">
-                  <div id={`priorities-view-slider-and-percentage-display-2-${p.id}`} className="flex items-center justify-between text-xs">
-                    <span className="text-slate-500 dark:text-slate-400">درصد تخصیص فعلی:</span>
+                <div id={`priorities-view-slider-and-percentage-display-${p.id}`} className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3.5 border border-slate-100 dark:border-slate-800/80 mb-3 space-y-3">
+                  <div id={`priorities-view-slider-and-percentage-display-2-${p.id}`} className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">درصد تخصیص فعلی</span>
                     <div id={`priorities-view-slider-and-percentage-display-3-${p.id}`} className="flex items-center gap-2">
                       {aiRecPct > 0 && (
-                        <span className="text-[10px] text-purple-600 dark:text-purple-400 font-mono">
-                          (پیشنهاد AI: {aiRecPct}٪)
+                        <button
+                          id={`priorities-view-slider-and-percentage-display-6-${p.id}`}
+                          onClick={() => handlePercentageChange(p.id, aiRecPct)}
+                          disabled={isLocked}
+                          title={
+                            currentPct === aiRecPct
+                              ? 'این اولویت با پیشنهاد هوشمند AI هم‌خوان است'
+                              : 'اعمال پیشنهاد هوشمند AI برای این اولویت'
+                          }
+                          className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border transition-colors ${
+                            currentPct === aiRecPct
+                              ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 cursor-default'
+                              : 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/60'
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        >
+                          {currentPct === aiRecPct ? (
+                            <CheckCircle2 className="w-3 h-3" />
+                          ) : (
+                            <Sparkles className="w-3 h-3" />
+                          )}
+                          <span>{currentPct === aiRecPct ? 'هم‌خوان با AI' : `اعمال پیشنهاد AI (${toPersianDigits(aiRecPct)}٪)`}</span>
+                        </button>
+                      )}
+                      {isLocked && (
+                        <span
+                          id={`priorities-view-slider-and-percentage-display-7-${p.id}`}
+                          className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                        >
+                          <Lock className="w-3 h-3" />
+                          <span>قفل شده</span>
                         </span>
                       )}
-                      <span className="font-black text-sm font-mono text-purple-700 dark:text-purple-300">
-                        {currentPct}٪
+                      <span className="font-black text-lg font-mono text-purple-700 dark:text-purple-300">
+                        {toPersianDigits(currentPct)}٪
                       </span>
                     </div>
                   </div>
 
-                  <input
-                    type="range"
-                    min={p.minPercent || 1}
-                    max={p.maxPercent || 60}
-                    step="0.5"
-                    disabled={isLocked}
-                    value={currentPct}
-                    onChange={(e) => handlePercentageChange(p.id, parseFloat(e.target.value))}
-                    className="w-full accent-purple-600 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer disabled:opacity-50"
-                  />
+                  <div id={`priorities-view-slider-and-percentage-display-5-${p.id}`}>
+                    <input
+                      type="range"
+                      min={sliderMin}
+                      max={sliderMax}
+                      step="0.5"
+                      disabled={isLocked}
+                      value={currentPct}
+                      onChange={(e) => handlePercentageChange(p.id, parseFloat(e.target.value))}
+                      style={{ '--range-fill': `${fillPct}%` } as React.CSSProperties}
+                      aria-label={`درصد تخصیص ${p.title}`}
+                      className="priority-range w-full"
+                    />
+                    <div className="flex items-center justify-between mt-1 text-[9px] font-mono text-slate-400 dark:text-slate-500">
+                      <span>حداقل: {toPersianDigits(sliderMin)}٪</span>
+                      <span>حداکثر: {toPersianDigits(sliderMax)}٪</span>
+                    </div>
+                  </div>
 
-                  <div id={`priorities-view-slider-and-percentage-display-4-${p.id}`} className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/60 dark:border-slate-700/50">
-                    <span className="text-slate-400 text-[11px] flex items-center gap-1">
+                  <div id={`priorities-view-slider-and-percentage-display-4-${p.id}`} className="flex items-center justify-between text-xs pt-2 border-t border-slate-200/60 dark:border-slate-700/50">
+                    <span className="text-slate-400 dark:text-slate-500 text-[11px] flex items-center gap-1">
                       <Coins className="w-3 h-3 text-purple-500" />
                       بودجه متناظر ریالی:
                     </span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200 text-xs">
+                    <span className="font-bold text-slate-800 dark:text-slate-200 text-xs font-mono">
                       {formatToman(allocatedToman)}
                     </span>
                   </div>
@@ -355,7 +404,7 @@ export const PrioritiesView: React.FC = () => {
                   >
                     <span className="flex items-center gap-1.5 font-medium">
                       <FolderTree className="w-3.5 h-3.5 text-purple-500" />
-                      زیرمجموعه‌ها و اقدامات فرعی ({p.subItems?.length || 0})
+                      زیرمجموعه‌ها و اقدامات فرعی ({toPersianDigits(p.subItems?.length || 0)})
                     </span>
                     {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                   </button>
@@ -373,7 +422,11 @@ export const PrioritiesView: React.FC = () => {
                               <span className="text-slate-700 dark:text-slate-300">{sub}</span>
                               {canEdit && (
                                 <button
-                                  onClick={() => handleDeleteSubItem(p.id, idx)}
+                                  onClick={() =>
+                                    confirmDelete(`آیا از حذف زیرمجموعه «${sub}» مطمئن هستید؟ این عملیات قابل بازگشت نیست.`, () =>
+                                      handleDeleteSubItem(p.id, idx)
+                                    )
+                                  }
                                   className="text-slate-400 hover:text-rose-500 p-0.5"
                                   title="حذف زیرمجموعه"
                                 >
@@ -425,13 +478,17 @@ export const PrioritiesView: React.FC = () => {
                   >
                     <Edit className="w-3.5 h-3.5" />
                   </button>
-                  <button
-                    onClick={() => handleDeletePriority(p.id)}
-                    className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                    title="حذف اولویت"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                    <button
+                      onClick={() =>
+                        confirmDelete(`آیا از حذف اولویت «${p.title}» مطمئن هستید؟ این عملیات قابل بازگشت نیست.`, () =>
+                          handleDeletePriority(p.id)
+                        )
+                      }
+                      className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                      title="حذف اولویت"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                 </div>
               )}
             </div>
@@ -442,7 +499,7 @@ export const PrioritiesView: React.FC = () => {
       {/* CRUD Modal */}
       {isModalOpen && (
         <div id="priorities-view-crud-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div id="priorities-view-crud-modal-2" className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[90vh]">
+          <div id="priorities-view-crud-modal-2" ref={modalRef} className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[90vh]">
             <div id="priorities-view-crud-modal-3" className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-4">
               <h3 className="font-black text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <Target className="w-5 h-5 text-purple-500" />
@@ -524,6 +581,8 @@ export const PrioritiesView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {deleteConfirmModal}
     </div>
   );
 };

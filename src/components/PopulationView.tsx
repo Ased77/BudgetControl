@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { formatNumber } from '../utils/numberUtils';
+import { formatNumber, toPersianDigits } from '../utils/numberUtils';
 import {
   Users,
   Baby,
@@ -193,7 +193,7 @@ export const PopulationView: React.FC = () => {
               {formatNumber(totalDeprivedVulnerable)} نفر
             </span>
             <span className="text-[11px] text-rose-700 mt-1 font-bold block">
-              {deprivedPercentage}٪ از جمعیت کل شهرستان
+              {toPersianDigits(deprivedPercentage)}٪ از جمعیت کل شهرستان
             </span>
           </div>
         </div>
@@ -279,7 +279,7 @@ export const PopulationView: React.FC = () => {
                       <span className="font-bold text-slate-800">{district.name}</span>
                       <div id={`population-view-population-distribution-by-7-${district.id}`} className="flex items-center gap-2 font-mono">
                         <span className="text-slate-900 font-bold">{formatNumber(district.population)} نفر</span>
-                        <span className="text-slate-400">({sharePercent}٪)</span>
+                        <span className="text-slate-400">({toPersianDigits(sharePercent)}٪)</span>
                       </div>
                     </div>
                     <div id={`population-view-population-distribution-by-8-${district.id}`} className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden flex">
@@ -292,7 +292,7 @@ export const PopulationView: React.FC = () => {
                     <div id={`population-view-population-distribution-by-10-${district.id}`} className="flex items-center justify-between text-[11px] text-slate-500">
                       <span>{district.urbanShare}</span>
                       <span className="text-rose-600 font-medium">
-                        محرومیت: {formatNumber(district.deprivedCount)} نفر ({district.deprivedRate}٪)
+                        محرومیت: {formatNumber(district.deprivedCount)} نفر ({toPersianDigits(district.deprivedRate)}٪)
                       </span>
                     </div>
                   </div>
@@ -379,10 +379,10 @@ export const PopulationView: React.FC = () => {
                     <td className="p-3.5 font-mono font-bold text-rose-700">{formatNumber(d.deprivedCount)}</td>
                     <td className="p-3.5 font-mono font-black text-rose-700">
                       <span className="px-2 py-0.5 rounded-md bg-rose-50 border border-rose-200">
-                        {d.deprivedRate}٪
+                        {toPersianDigits(d.deprivedRate)}٪
                       </span>
                     </td>
-                    <td className="p-3.5 font-mono text-slate-600">{d.villagesCount} آبادی</td>
+                    <td className="p-3.5 font-mono text-slate-600">{toPersianDigits(d.villagesCount)} آبادی</td>
                     <td className="p-3.5 text-slate-600 max-w-xs">{d.mainChallenge}</td>
                     <td className="p-3.5">
                       <button
@@ -434,7 +434,7 @@ export const PopulationView: React.FC = () => {
                         <h4 className="font-bold text-slate-900 text-sm">{item.title}</h4>
                       </div>
                       <span className="text-xs font-bold font-mono text-slate-700 bg-white px-2 py-0.5 rounded-md border border-slate-200">
-                        {item.coverageShare}٪
+                        {toPersianDigits(item.coverageShare)}٪
                       </span>
                     </div>
 
@@ -482,7 +482,7 @@ export const PopulationView: React.FC = () => {
                   <div id={`population-view-sub-tab-4-age-cohorts-and-7-${index}`} className="flex items-center gap-3 font-mono">
                     <span className="font-black text-slate-900">{formatNumber(cohort.count)} نفر</span>
                     <span className="font-bold text-blue-700 bg-blue-100/70 px-2 py-0.5 rounded-md">
-                      {cohort.percent}٪
+                      {toPersianDigits(cohort.percent)}٪
                     </span>
                   </div>
                 </div>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { LocationData, LocalIndicators } from '../types';
 import { toPersianDigits } from '../utils/numberUtils';
 import {
@@ -17,7 +17,10 @@ import {
   CheckCircle2,
   Sparkles,
   HelpCircle,
-  Scale
+  Scale,
+  X,
+  ChevronDown,
+  Check
 } from 'lucide-react';
 
 export interface SocialHarmIndicatorDef {
@@ -271,6 +274,14 @@ export const SOCIAL_HARM_BENCHMARKS: SocialHarmIndicatorDef[] = [
   },
 ];
 
+const CATEGORY_OPTIONS: { id: string; label: string }[] = [
+  { id: 'ALL', label: 'همه شاخص‌ها (۱۰ معیار)' },
+  { id: 'HARMS_CRIMES', label: '🛡️ اعتیاد، الکل و جرایم' },
+  { id: 'POVERTY_FAMILY', label: '👨‍👩‍👧 فقر، طلاق و جمعیت' },
+  { id: 'INFRA_HEALTH', label: '🏥 درمان، راه‌ها و آموزش' },
+  { id: 'ENVIRONMENT_RISK', label: '🌳 محیط‌زیست و بحران' },
+];
+
 interface ComparativeHarmsTableProps {
   currentLocation: LocationData;
   allLocations?: LocationData[];
@@ -286,6 +297,18 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
   const [comparisonTarget, setComparisonTarget] = useState<'BOTH' | 'NATIONAL' | 'PROVINCE'>('BOTH');
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [searchFilter, setSearchFilter] = useState<string>('');
+  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onMouseDown = (e: MouseEvent) => {
+      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(e.target as Node)) {
+        setCategoryDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onMouseDown);
+    return () => document.removeEventListener('mousedown', onMouseDown);
+  }, []);
 
   // Current province
   const currentProvince = currentLocation.province;
@@ -326,6 +349,41 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
       totalIndicators: SOCIAL_HARM_BENCHMARKS.length,
     };
   }, [currentLocation]);
+
+  // Category drilldown (opens when a specific harm domain is picked from the pills)
+  const categoryDrilldown = useMemo(() => {
+    if (selectedCategory === 'ALL') return null;
+
+    const items = SOCIAL_HARM_BENCHMARKS.filter((item) => item.category === selectedCategory);
+    if (items.length === 0) return null;
+
+    const rows = items.map((item) => {
+      const localVal = currentLocation.indicators[item.key] ?? 0;
+      const provVal = item.provinceAvgs[currentProvince] ?? item.nationalAvg * 1.1;
+      const natVal = item.nationalAvg;
+      const lq = natVal > 0 ? localVal / natVal : 1;
+      const isHotspot = localVal >= item.criticalThreshold || lq >= 1.35;
+      const isWorseThanNat = localVal > natVal;
+      const scaleMax = Math.max(localVal, provVal, natVal, item.criticalThreshold) * 1.15;
+      return { item, localVal, provVal, natVal, lq, isHotspot, isWorseThanNat, scaleMax };
+    });
+
+    const hotspots = rows.filter((r) => r.isHotspot).length;
+    const warnings = rows.filter((r) => !r.isHotspot && r.isWorseThanNat).length;
+    const stable = rows.length - hotspots - warnings;
+    const avgLq = rows.reduce((sum, r) => sum + r.lq, 0) / rows.length;
+    const worst = rows.reduce((a, b) => (b.lq > a.lq ? b : a));
+
+    return {
+      title: items[0].categoryTitle,
+      rows,
+      hotspots,
+      warnings,
+      stable,
+      avgLq,
+      worst,
+    };
+  }, [selectedCategory, currentLocation, currentProvince]);
 
   return (
     <div id="comparative-harms-table-root" className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-right dir-rtl space-y-4 p-4 sm:p-6">
@@ -408,32 +466,55 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
       {/* Filter and Control Bars */}
       <div id="comparative-harms-table-filter-and-control-bars" className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-50/80 p-3 rounded-xl border border-slate-200">
         
-        {/* Category Pills */}
+        {/* Category Dropdown */}
         <div id="comparative-harms-table-category-pills" className="flex items-center gap-1.5 flex-wrap">
           <span className="text-xs font-bold text-slate-500 flex items-center gap-1 shrink-0 ml-1">
             <Filter className="w-3.5 h-3.5" />
             حوزه آسیب:
           </span>
-          {[
-            { id: 'ALL', label: 'همه شاخص‌ها (۱۰ معیار)' },
-            { id: 'HARMS_CRIMES', label: '🛡️ اعتیاد، الکل و جرایم' },
-            { id: 'POVERTY_FAMILY', label: '👨‍👩‍👧 فقر، طلاق و جمعیت' },
-            { id: 'INFRA_HEALTH', label: '🏥 درمان، راه‌ها و آموزش' },
-            { id: 'ENVIRONMENT_RISK', label: '🌳 محیط‌زیست و بحران' },
-          ].map((cat) => (
+          <div ref={categoryDropdownRef} className="relative">
             <button
-              key={cat.id}
               type="button"
-              onClick={() => setSelectedCategory(cat.id)}
-              className={`text-xs font-bold px-3 py-1 rounded-lg border transition-all ${
-                selectedCategory === cat.id
+              onClick={() => setCategoryDropdownOpen((open) => !open)}
+              className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border transition-all ${
+                categoryDropdownOpen
                   ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
                   : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
               }`}
             >
-              {cat.label}
+              {CATEGORY_OPTIONS.find((c) => c.id === selectedCategory)?.label}
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${categoryDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
-          ))}
+            {categoryDropdownOpen && (
+              <div className="absolute top-full right-0 mt-2 w-60 bg-white rounded-xl border border-slate-200 shadow-2xl z-40 p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
+                {CATEGORY_OPTIONS.map((cat) => {
+                  const isSelected = selectedCategory === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedCategory(cat.id);
+                        setCategoryDropdownOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between gap-2 text-xs font-bold px-3 py-2 rounded-lg transition-colors text-right ${
+                        isSelected ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      <span>{cat.label}</span>
+                      {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          {selectedCategory === 'ALL' && (
+            <span className="text-[10px] text-indigo-500 font-medium flex items-center gap-1 ml-1">
+              <Info className="w-3 h-3" />
+              انتخاب هر حوزه، دریل‌داون تحلیلی آن را باز می‌کند
+            </span>
+          )}
         </div>
 
         {/* Search & Compare Scope Buttons */}
@@ -479,6 +560,181 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
           />
         </div>
       </div>
+
+      {/* Category Drilldown Panel (drill-down of the selected harm domain) */}
+      {categoryDrilldown && (
+        <div id="comparative-harms-table-category-drilldown-panel" className="rounded-xl border border-indigo-200 bg-gradient-to-l from-slate-50 to-indigo-50/40 p-4 space-y-3 animate-in fade-in duration-200">
+          {/* Drilldown Header */}
+          <div id="comparative-harms-table-category-drilldown-panel-2" className="flex items-center justify-between border-b border-indigo-100 pb-2.5">
+            <div id="comparative-harms-table-category-drilldown-panel-3" className="flex items-center gap-2">
+              <ArrowUpDown className="w-4 h-4 text-indigo-600 shrink-0" />
+              <strong className="text-xs font-black text-slate-800">
+                دریل‌داون تحلیلی حوزه «{categoryDrilldown.title}»
+              </strong>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700">
+                {toPersianDigits(categoryDrilldown.rows.length)} شاخص
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSelectedCategory('ALL')}
+              title="بازگشت به همه شاخص‌ها"
+              className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-white transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Drilldown Summary Tiles */}
+          <div id="comparative-harms-table-category-drilldown-panel-4" className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+            <div id="comparative-harms-table-category-drilldown-panel-5" className="bg-white p-2.5 rounded-lg border border-rose-200">
+              <span className="text-[10px] text-slate-500 block">کانون بحران</span>
+              <span className="text-sm font-black text-rose-700 flex items-center gap-1 mt-0.5">
+                <Flame className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                {toPersianDigits(categoryDrilldown.hotspots)} شاخص
+              </span>
+            </div>
+
+            <div id="comparative-harms-table-category-drilldown-panel-6" className="bg-white p-2.5 rounded-lg border border-amber-200">
+              <span className="text-[10px] text-slate-500 block">هشدار آسیب</span>
+              <span className="text-sm font-black text-amber-700 flex items-center gap-1 mt-0.5">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                {toPersianDigits(categoryDrilldown.warnings)} شاخص
+              </span>
+            </div>
+
+            <div id="comparative-harms-table-category-drilldown-panel-7" className="bg-white p-2.5 rounded-lg border border-emerald-200">
+              <span className="text-[10px] text-slate-500 block">پایدار / عادی</span>
+              <span className="text-sm font-black text-emerald-700 flex items-center gap-1 mt-0.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                {toPersianDigits(categoryDrilldown.stable)} شاخص
+              </span>
+            </div>
+
+            <div id="comparative-harms-table-category-drilldown-panel-8" className="bg-white p-2.5 rounded-lg border border-indigo-200">
+              <span className="text-[10px] text-slate-500 block">میانگین ضریب LQ حوزه</span>
+              <span className="text-sm font-black text-indigo-700 flex items-center gap-1 mt-0.5">
+                <TrendingUp className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                {toPersianDigits(categoryDrilldown.avgLq.toFixed(2))} برابر
+              </span>
+            </div>
+
+            <div id="comparative-harms-table-category-drilldown-panel-9" className="bg-white p-2.5 rounded-lg border border-rose-300 col-span-2 sm:col-span-3 md:col-span-1">
+              <span className="text-[10px] text-slate-500 block">بحرانی‌ترین شاخص حوزه</span>
+              <span className="text-[11px] font-extrabold text-slate-800 block truncate mt-0.5" title={categoryDrilldown.worst.item.title}>
+                {categoryDrilldown.worst.item.title}
+              </span>
+              <span className="text-[10px] font-black text-rose-600">
+                LQ {toPersianDigits(categoryDrilldown.worst.lq.toFixed(2))}
+              </span>
+            </div>
+          </div>
+
+          {/* Drilldown Comparison Bars (Local vs Province vs National) */}
+          <div id="comparative-harms-table-category-drilldown-panel-10" className="bg-white rounded-lg border border-slate-200 divide-y divide-slate-100">
+            {categoryDrilldown.rows.map((row) => {
+              const showProv = comparisonTarget !== 'NATIONAL';
+              const showNat = comparisonTarget !== 'PROVINCE';
+              return (
+                <div
+                  key={row.item.key}
+                  id={`comparative-harms-table-category-drilldown-row-${row.item.key}`}
+                  className="p-2.5 grid grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)_auto] gap-2.5 items-center"
+                >
+                  {/* Indicator identity */}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      {row.isHotspot ? (
+                        <Flame className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                      ) : row.isWorseThanNat ? (
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                      ) : (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                      )}
+                      <span className="text-[11px] font-bold text-slate-800 truncate">{row.item.title}</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">
+                      آستانه هشدار: {toPersianDigits(row.item.criticalThreshold)} {row.item.unit}
+                    </div>
+                  </div>
+
+                  {/* Normalized comparison bars */}
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-14 text-[9px] font-bold text-rose-600 shrink-0">منطقه جاری</span>
+                      <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-l from-rose-500 to-rose-600"
+                          style={{ width: `${Math.min(100, (row.localVal / row.scaleMax) * 100)}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] font-black text-rose-700 font-mono w-10 text-left shrink-0">
+                        {toPersianDigits(row.localVal)}
+                      </span>
+                    </div>
+
+                    {showProv && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-14 text-[9px] font-bold text-indigo-600 shrink-0">استان {currentProvince}</span>
+                        <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-indigo-400"
+                            style={{ width: `${Math.min(100, (row.provVal / row.scaleMax) * 100)}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] font-bold text-indigo-700 font-mono w-10 text-left shrink-0">
+                          {toPersianDigits(row.provVal)}
+                        </span>
+                      </div>
+                    )}
+
+                    {showNat && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-14 text-[9px] font-bold text-slate-500 shrink-0">میانگین کشور</span>
+                        <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-slate-400"
+                            style={{ width: `${Math.min(100, (row.natVal / row.scaleMax) * 100)}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-600 font-mono w-10 text-left shrink-0">
+                          {toPersianDigits(row.natVal)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* LQ badge */}
+                  <div className="justify-self-start lg:justify-self-center">
+                    <span
+                      className={`inline-flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-md border ${
+                        row.isWorseThanNat
+                          ? 'bg-rose-50 text-rose-700 border-rose-200'
+                          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      }`}
+                    >
+                      {row.isWorseThanNat ? (
+                        <TrendingUp className="w-3 h-3" />
+                      ) : (
+                        <TrendingDown className="w-3 h-3" />
+                      )}
+                      LQ {toPersianDigits(row.lq.toFixed(2))}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Drilldown Footer Note */}
+          <div id="comparative-harms-table-category-drilldown-panel-11" className="flex items-center gap-1.5 text-[10px] text-slate-500">
+            <Info className="w-3 h-3 text-indigo-400 shrink-0" />
+            <span>
+              نوارها بر حداکثر مقادیر هر شاخص (منطقه / استان / کشور / آستانه هشدار) نرمال‌سازی شده‌اند؛ طول بیشتر نوار منطقه یعنی شدت بالاتر آسیب در مقایسه با مبنای رسمی.
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Main Comparative Table */}
       <div id="comparative-harms-table-main-comparative-table" className="overflow-x-auto border border-slate-200 rounded-xl">

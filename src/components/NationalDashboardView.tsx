@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { formatToman, formatNumber } from '../utils/numberUtils';
+import { formatToman, formatNumber, toPersianDigits } from '../utils/numberUtils';
 import { DashboardPredictiveEngine } from './DashboardPredictiveEngine';
 import {
   ShieldAlert,
@@ -100,7 +100,7 @@ export const NationalDashboardView: React.FC = () => {
               <span className="text-xl md:text-2xl font-black text-emerald-700 block font-mono">
                 {formatToman(totalBudgetSources)}
               </span>
-              <span className="text-[11px] text-slate-500 mt-1 block">از {budgetSources.length} منبع و سرفصل فعال</span>
+              <span className="text-[11px] text-slate-500 mt-1 block">از {toPersianDigits(budgetSources.length)} منبع و سرفصل فعال</span>
             </div>
 
             <div id="national-dashboard-view-primary-macro-kpi-cards-4" className="bg-white/90 rounded-2xl p-4 border border-slate-200 shadow-2xs">
@@ -109,7 +109,7 @@ export const NationalDashboardView: React.FC = () => {
                 <FolderKanban className="w-4 h-4 text-blue-600" />
               </div>
               <span className="text-xl md:text-2xl font-black text-slate-900 block font-mono">
-                {projects.length} پروژه
+                {toPersianDigits(projects.length)} پروژه
               </span>
               <span className="text-[11px] text-blue-700 mt-1 block font-mono font-medium">
                 ارزش: {formatToman(totalAllocatedToProjects)}
@@ -133,7 +133,7 @@ export const NationalDashboardView: React.FC = () => {
                 {formatNumber(selectedLocation.indicators.vulnerableGroupsPopulation)} نفر
               </span>
               <span className="text-[11px] text-slate-500 mt-1 block">
-                از {formatNumber(selectedLocation.population)} نفر ({((selectedLocation.indicators.vulnerableGroupsPopulation / selectedLocation.population) * 100).toFixed(1)}٪ جمعیت کل)
+                از {formatNumber(selectedLocation.population)} نفر ({toPersianDigits(((selectedLocation.indicators.vulnerableGroupsPopulation / selectedLocation.population) * 100).toFixed(1))}٪ جمعیت کل)
               </span>
             </div>
 
@@ -195,7 +195,7 @@ export const NationalDashboardView: React.FC = () => {
 
                     <div id={`national-dashboard-view-card-1-multi-source-budget-8-${source.id}`} className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
                       <span>{source.sponsorOrganization} ({source.sourceTypeFa})</span>
-                      <span>مصرف: {percent}٪</span>
+                      <span>مصرف: {toPersianDigits(percent)}٪</span>
                     </div>
 
                     <div id={`national-dashboard-view-card-1-multi-source-budget-9-${source.id}`} className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
@@ -271,7 +271,7 @@ export const NationalDashboardView: React.FC = () => {
 
           <div id="national-dashboard-view-card-2-critical-crises-9" className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
             <span className="text-slate-500">تعداد کانون‌های بحرانی حل‌نشده:</span>
-            <span className="font-bold text-rose-600 dark:text-rose-400">{criticalCrisesCount} کانون فعال</span>
+            <span className="font-bold text-rose-600 dark:text-rose-400">{toPersianDigits(criticalCrisesCount)} کانون فعال</span>
           </div>
         </div>
       </div>
@@ -284,7 +284,7 @@ export const NationalDashboardView: React.FC = () => {
         >
           <Building2 className="w-5 h-5 text-indigo-500 mb-2 group-hover:scale-110 transition-transform" />
           <span className="font-bold text-xs text-slate-900 dark:text-slate-100 block">نهادها و ادارات</span>
-          <span className="text-[11px] text-slate-400 mt-0.5 block">{departments.length} متولی</span>
+          <span className="text-[11px] text-slate-400 mt-0.5 block">{toPersianDigits(departments.length)} متولی</span>
         </button>
 
         <button
@@ -293,7 +293,7 @@ export const NationalDashboardView: React.FC = () => {
         >
           <Wallet className="w-5 h-5 text-emerald-500 mb-2 group-hover:scale-110 transition-transform" />
           <span className="font-bold text-xs text-slate-900 dark:text-slate-100 block">منابع و بودجه</span>
-          <span className="text-[11px] text-slate-400 mt-0.5 block">{budgetSources.length} سرفصل مالی</span>
+          <span className="text-[11px] text-slate-400 mt-0.5 block">{toPersianDigits(budgetSources.length)} سرفصل مالی</span>
         </button>
 
         <button
@@ -302,7 +302,7 @@ export const NationalDashboardView: React.FC = () => {
         >
           <Users2 className="w-5 h-5 text-cyan-500 mb-2 group-hover:scale-110 transition-transform" />
           <span className="font-bold text-xs text-slate-900 dark:text-slate-100 block">مجریان طرح‌ها</span>
-          <span className="text-[11px] text-slate-400 mt-0.5 block">{executors.length} نهاد مجری</span>
+          <span className="text-[11px] text-slate-400 mt-0.5 block">{toPersianDigits(executors.length)} نهاد مجری</span>
         </button>
 
         <button
@@ -311,7 +311,7 @@ export const NationalDashboardView: React.FC = () => {
         >
           <HardHat className="w-5 h-5 text-amber-500 mb-2 group-hover:scale-110 transition-transform" />
           <span className="font-bold text-xs text-slate-900 dark:text-slate-100 block">پیمانکاران ذیصلاح</span>
-          <span className="text-[11px] text-slate-400 mt-0.5 block">{contractors.length} شرکت معتبر</span>
+          <span className="text-[11px] text-slate-400 mt-0.5 block">{toPersianDigits(contractors.length)} شرکت معتبر</span>
         </button>
 
         <button
@@ -320,7 +320,7 @@ export const NationalDashboardView: React.FC = () => {
         >
           <Scale className="w-5 h-5 text-purple-500 mb-2 group-hover:scale-110 transition-transform" />
           <span className="font-bold text-xs text-slate-900 dark:text-slate-100 block">اولویت‌های توسعه</span>
-          <span className="text-[11px] text-slate-400 mt-0.5 block">{priorities.length} سرفصل اولویت</span>
+          <span className="text-[11px] text-slate-400 mt-0.5 block">{toPersianDigits(priorities.length)} سرفصل اولویت</span>
         </button>
 
         <button
@@ -329,7 +329,7 @@ export const NationalDashboardView: React.FC = () => {
         >
           <Flame className="w-5 h-5 text-rose-500 mb-2 group-hover:scale-110 transition-transform" />
           <span className="font-bold text-xs text-slate-900 dark:text-slate-100 block">آسیب‌ها و بحران‌ها</span>
-          <span className="text-[11px] text-slate-400 mt-0.5 block">{crisesHarms.length} مورد ثبت‌شده</span>
+          <span className="text-[11px] text-slate-400 mt-0.5 block">{toPersianDigits(crisesHarms.length)} مورد ثبت‌شده</span>
         </button>
       </div>
     </div>

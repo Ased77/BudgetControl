@@ -224,13 +224,13 @@ router.post('/api/calculate', (req, res) => {
         </p>
 
         <div id="architecture-docs-view-4-smart-recommendation-formula-2" className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs font-mono text-slate-800 dir-ltr">
-          <div id="architecture-docs-view-4-smart-recommendation-formula-3">S_1 (آسیب‌های اجتماعی) = 0.5 * SocialHarms + 0.3 * PovertyRate + 0.2 * DropOutRate</div>
-          <div id="architecture-docs-view-4-smart-recommendation-formula-4">S_2 (حاشیه‌نشینی) = 0.55 * Marginalization + 0.25 * PovertyRate + 0.20 * InfrastructureDeficit</div>
-          <div id="architecture-docs-view-4-smart-recommendation-formula-5">S_3 (آموزش) = 0.50 * DropOutRate + 0.30 * PovertyRate + 0.20 * CulturalDeficit</div>
-          <div id="architecture-docs-view-4-smart-recommendation-formula-6">S_4 (بهداشت) = 0.45 * HealthAccessDeficit + 0.35 * EnvironmentalRisk + 0.20 * VulnerablePopNorm</div>
+          <div id="architecture-docs-view-4-smart-recommendation-formula-3">S_1 (آسیب‌های اجتماعی) = ۰.۵ * SocialHarms + ۰.۳ * PovertyRate + ۰.۲ * DropOutRate</div>
+          <div id="architecture-docs-view-4-smart-recommendation-formula-4">S_2 (حاشیه‌نشینی) = ۰.۵۵ * Marginalization + ۰.۲۵ * PovertyRate + ۰.۲۰ * InfrastructureDeficit</div>
+          <div id="architecture-docs-view-4-smart-recommendation-formula-5">S_3 (آموزش) = ۰.۵۰ * DropOutRate + ۰.۳۰ * PovertyRate + ۰.۲۰ * CulturalDeficit</div>
+          <div id="architecture-docs-view-4-smart-recommendation-formula-6">S_4 (بهداشت) = ۰.۴۵ * HealthAccessDeficit + ۰.۳۵ * EnvironmentalRisk + ۰.۲۰ * VulnerablePopNorm</div>
           <div id="architecture-docs-view-4-smart-recommendation-formula-7">...</div>
           <div id="architecture-docs-view-4-smart-recommendation-formula-8" className="pt-2 text-purple-700 font-bold border-t border-slate-200">
-            Normalized_Percentage_P = ( S_P / SUM(S_1 ... S_N) ) * 100
+            Normalized_Percentage_P = ( S_P / SUM(S_1 ... S_N) ) * ۱۰۰
           </div>
         </div>
       </div>

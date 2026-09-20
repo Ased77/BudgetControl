@@ -5,6 +5,7 @@
  */
 
 import { ExecutiveProject, CrisisHarmItem, BudgetSource, AntiDuplicationAlert } from '../types';
+import { toPersianDigits } from './numberUtils';
 
 export interface OptimizationMetrics {
   totalProjects: number;
@@ -84,7 +85,7 @@ export function analyzeProjectDuplicatesAndEfficiency(
     // مثلاً بیش از ۵۰ میلیون تومان به ازای هر نفر برای یک پروژه عمومی یا کمتر از ۳۰ نفر برای پروژه‌ای میلیاردی
     else if (costPerBeneficiary > 40_000_000 && project.estimatedCostToman > 500_000_000 && beneficiaries < 100) {
       status = 'INEFFICIENT_PER_CAPITA';
-      warningReason = `عدم تناسب جمعیتی: هزینه بسیار سنگین (${(project.estimatedCostToman / 1_000_000_000).toFixed(1)} میلیارد تومان) صرفاً برای ${beneficiaries} نفر بهره‌بردار (سرانه بیش از ${(costPerBeneficiary / 1_000_000).toFixed(1)} میلیون تومان به ازای هر نفر).`;
+      warningReason = `عدم تناسب جمعیتی: هزینه بسیار سنگین (${toPersianDigits((project.estimatedCostToman / 1_000_000_000).toFixed(1))} میلیارد تومان) صرفاً برای ${toPersianDigits(beneficiaries)} نفر بهره‌بردار (سرانه بیش از ${toPersianDigits((costPerBeneficiary / 1_000_000).toFixed(1))} میلیون تومان به ازای هر نفر).`;
       inefficientCount++;
 
       alerts.push({

@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { CsrPriority, SmartRecommendationResult, UserRole } from '../types';
+import { useOutsideClick } from '../hooks/useOutsideClick';
 import { formatCurrency, formatNumber, formatLargeBudgetPersian, roundPercentage, toPersianDigits } from '../utils/numberUtils';
 import { 
   Lock, Unlock, Sparkles, RefreshCw, RotateCcw, Plus, ShieldAlert, Home, GraduationCap, 
@@ -65,6 +66,8 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
   onOpenProjects,
 }) => {
   const [showAddModal, setShowAddModal] = useState(false);
+  const addPriorityModalRef = useRef<HTMLDivElement>(null);
+  useOutsideClick(addPriorityModalRef, () => setShowAddModal(false));
   const [newTitle, setNewTitle] = useState('');
   const [newCategory, setNewCategory] = useState('عمران و خدمات');
   const [newDesc, setNewDesc] = useState('');
@@ -1231,7 +1234,7 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
                                     ? 'bg-rose-50 text-rose-800 border-rose-200'
                                     : 'bg-slate-100 text-slate-700 border-slate-200'
                               }`}
-                              title={`رتبه شدت آسیب در منطقه: ${priorityStat.rank} از ۱۱ سرفصل`}
+                              title={`رتبه شدت آسیب در منطقه: ${toPersianDigits(priorityStat.rank)} از ۱۱ سرفصل`}
                             >
                               <span>رتبه بحران:</span>
                               <strong className="font-mono">{toPersianDigits(priorityStat.rank)}</strong>
@@ -1567,7 +1570,7 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
       {/* Add Priority Modal */}
       {showAddModal && (
         <div id="priority-allocation-table-add-priority-modal" className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div id="priority-allocation-table-add-priority-modal-2" className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
+          <div id="priority-allocation-table-add-priority-modal-2" ref={addPriorityModalRef} className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
             <h3 className="text-base font-bold text-slate-900 mb-4">افزودن اولویت جدید مسئولیت اجتماعی</h3>
             <form onSubmit={handleAddSubmit} className="space-y-4 text-xs">
               <div id="priority-allocation-table-add-priority-modal-3">

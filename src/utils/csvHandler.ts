@@ -1,4 +1,5 @@
 import { CsrPriority } from '../types';
+import { toPersianDigits } from './numberUtils';
 
 /**
  * Generates standard basic CSV content for CSR Priorities
@@ -70,7 +71,7 @@ export function parseCsvPriorities(csvText: string, existingPriorities: CsrPrior
     if (!cols || cols.length === 0) continue;
 
     const code = codeIdx !== -1 && cols[codeIdx] ? parseInt(cols[codeIdx], 10) : i;
-    const title = titleIdx !== -1 && cols[titleIdx] ? cols[titleIdx].trim() : `اولویت ${i}`;
+    const title = titleIdx !== -1 && cols[titleIdx] ? cols[titleIdx].trim() : `اولویت ${toPersianDigits(i)}`;
     const defaultPercentage = defPctIdx !== -1 && cols[defPctIdx] ? parseFloat(cols[defPctIdx]) || 0 : 10;
     const description = descIdx !== -1 && cols[descIdx] ? cols[descIdx].trim() : '';
 

@@ -4,6 +4,7 @@
  */
 
 import { LocalIndicators, CsrPriority } from '../types';
+import { toPersianDigits } from './numberUtils';
 
 export interface IndicatorForecastItem {
   key: keyof LocalIndicators;
@@ -195,13 +196,13 @@ export function calculatePredictiveForecast(
     else if (improvementPercentage >= 6) impactLevel = 'MODERATE';
 
     // Narrative rationale per indicator
-    let explanation = `تخصیص budget قابل توجه موجب تخمین بهبود ${improvementPercentage.toFixed(1)}٪ در این شاخص طی ۱۲ ماه آینده می‌شود.`;
+    let explanation = `تخصیص budget قابل توجه موجب تخمین بهبود ${toPersianDigits(improvementPercentage.toFixed(1))}٪ در این شاخص طی ۱۲ ماه آینده می‌شود.`;
     if (meta.key === 'povertyRate') {
-      explanation = `سرمایه‌گذاری روی معیشت و وام‌های خرد، تخمین خروج مستقیم ${Math.round(changeDelta * 120)} خانوار از خط فقر مطلق را نشان می‌دهد.`;
+      explanation = `سرمایه‌گذاری روی معیشت و وام‌های خرد، تخمین خروج مستقیم ${toPersianDigits(Math.round(changeDelta * 120))} خانوار از خط فقر مطلق را نشان می‌دهد.`;
     } else if (meta.key === 'unemploymentRate') {
-      explanation = `بر برنامه‌های بومی‌گزینی و مهارت‌آموزی، نرخ بیکاری را از ${currentValue}٪ به ${predictedValueNextYear}٪ کاهش خواهد داد.`;
+      explanation = `بر برنامه‌های بومی‌گزینی و مهارت‌آموزی، نرخ بیکاری را از ${toPersianDigits(currentValue)}٪ به ${toPersianDigits(predictedValueNextYear)}٪ کاهش خواهد داد.`;
     } else if (meta.key === 'infrastructureDeficit') {
-      explanation = `تکمیل پروژه‌های آبرسانی، بهسازی معابر و مدارس، کمبود زیرساخت را ${changeDelta.toFixed(1)} واحد ارتقا می‌دهد.`;
+      explanation = `تکمیل پروژه‌های آبرسانی، بهسازی معابر و مدارس، کمبود زیرساخت را ${toPersianDigits(changeDelta.toFixed(1))} واحد ارتقا می‌دهد.`;
     }
 
     forecasts.push({
@@ -232,7 +233,7 @@ export function calculatePredictiveForecast(
   const top1 = sortedByImprovement[0];
   const top2 = sortedByImprovement[1];
 
-  const executiveForecastNarrative = `بر اساس مدل پیش‌بینی الگوریتمی سال ۱۴۰۴، اجرای تخصیص فعلی بودجه (معادل ${Math.round(adjustedTotalBudget / 10_000_000_000) / 100} همت) منجر به بهبود میانگین ${overallRegionalImprovementPct} درصدی کل شاخص‌های توسعه محلی منطقه خواهد شد. بیشترین اثرگذاری مثبت متمرکز بر «${top1?.titleFa}» (با ${top1?.improvementPercentage}٪ بهبود) و «${top2?.titleFa}» (با ${top2?.improvementPercentage}٪ بهبود) پیش‌بینی گردیده و حدود ${jobsCreatedProjected.toLocaleString('fa-IR')} شغل پایدار بومی ایجاد خواهد شد.`;
+  const executiveForecastNarrative = `بر اساس مدل پیش‌بینی الگوریتمی سال ۱۴۰۴، اجرای تخصیص فعلی بودجه (معادل ${toPersianDigits(Math.round(adjustedTotalBudget / 10_000_000_000) / 100)} همت) منجر به بهبود میانگین ${toPersianDigits(overallRegionalImprovementPct)} درصدی کل شاخص‌های توسعه محلی منطقه خواهد شد. بیشترین اثرگذاری مثبت متمرکز بر «${top1?.titleFa}» (با ${toPersianDigits(top1?.improvementPercentage)}٪ بهبود) و «${top2?.titleFa}» (با ${toPersianDigits(top2?.improvementPercentage)}٪ بهبود) پیش‌بینی گردیده و حدود ${toPersianDigits(jobsCreatedProjected.toLocaleString('fa-IR'))} شغل پایدار بومی ایجاد خواهد شد.`;
 
   return {
     forecasts,

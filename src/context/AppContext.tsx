@@ -14,6 +14,8 @@ import {
   ProjectExecutor,
   Contractor,
   SystemRolePermission,
+  UserPermissionField,
+  UserPermissionOverride,
   AntiDuplicationAlert,
   AuditActionType,
   AdministrativeLevel,
@@ -33,10 +35,30 @@ import {
   INITIAL_ROLES_PERMISSIONS,
 } from '../data/initialData';
 import { calculateSmartRecommendations } from '../utils/recommendationEngine';
-import { roundPercentage } from '../utils/numberUtils';
+import { formatNumber, roundPercentage, toPersianDigits } from '../utils/numberUtils';
 import { analyzeProjectDuplicatesAndEfficiency, OptimizationMetrics } from '../utils/antiDuplicationEngine';
 
 const AUTH_STORAGE_KEY = 'csr.auth.userId';
+const TAB_STORAGE_KEY = 'csr.activeTab';
+
+// Every navigable workspace tab. Used to validate the persisted tab so a
+// stale/unknown stored value falls back to the dashboard instead of stranding
+// the app on a blank page.
+const VALID_TABS = [
+  'DASHBOARD',
+  'POPULATION',
+  'DEPARTMENTS',
+  'BUDGET_SOURCES',
+  'PRIORITIES',
+  'CRISES_HARMS',
+  'EXECUTORS',
+  'CONTRACTORS',
+  'CREATE_PROJECT',
+  'PROJECTS',
+  'CHARTS',
+  'LOCATIONS',
+  'ROLES_PERMISSIONS',
+];
 
 /** Persisted identity survives a refresh. Storage may be unavailable (private
  *  mode, quota, SSR), in which case the session simply stays in-memory. */
@@ -57,6 +79,27 @@ function persistUserId(userId: string | null) {
     }
   } catch {
     /* ignore — the gate still works for this session */
+  }
+}
+
+/** Persisted active tab survives a refresh, so reloading any page stays on
+ *  that page instead of redirecting home. */
+function readPersistedTab(): string | null {
+  try {
+    const tab = window.localStorage.getItem(TAB_STORAGE_KEY);
+    return VALID_TABS.includes(tab) ? tab : null;
+  } catch {
+    return null;
+  }
+}
+
+function persistTab(tab: string) {
+  try {
+    if (VALID_TABS.includes(tab)) {
+      window.localStorage.setItem(TAB_STORAGE_KEY, tab);
+    }
+  } catch {
+    /* ignore — the tab still works for this session */
   }
 }
 
@@ -141,7 +184,8 @@ interface AppContextType {
   handleDeleteContractor: (contractorId: string) => void;
 
   // Permissions
-  handleTogglePermission: (role: UserProfile['role'], field: keyof SystemRolePermission) => void;
+  getUserPermissions: (user: UserProfile) => SystemRolePermission | undefined;
+  handleToggleUserPermission: (userId: string, field: UserPermissionField) => void;
 
   handleSaveOrgConfig: (updated: OrganizationConfig) => void;
   addAuditLog: (
@@ -173,6 +217,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [contractors, setContractors] = useState<Contractor[]>(INITIAL_CONTRACTORS);
   const [projects, setProjects] = useState<ExecutiveProject[]>(INITIAL_PROJECTS);
   const [rolesPermissions, setRolesPermissions] = useState<SystemRolePermission[]>(INITIAL_ROLES_PERMISSIONS);
+  // Individual per-user permission overrides, keyed by user id. Only the
+  // changed flags are stored; everything else inherits the role default.
+  const [userPermissionOverrides, setUserPermissionOverrides] = useState<Record<string, UserPermissionOverride>>({});
   const [users] = useState<UserProfile[]>(INITIAL_USERS);
   const [currentUser, setCurrentUser] = useState<UserProfile>(() => {
     const persistedId = readPersistedUserId();
@@ -181,7 +228,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() =>
     INITIAL_USERS.some((u) => u.id === readPersistedUserId())
   );
-  const [activeTab, setActiveTab] = useState<string>('DASHBOARD');
+  const [activeTab, setActiveTabState] = useState<string>(() => readPersistedTab() ?? 'DASHBOARD');
+  const setActiveTab = (tab: string) => {
+    setActiveTabState(tab);
+    persistTab(tab);
+  };
 
   // Initial Percentages state mapped directly from smart recommendations for active location
   const [currentPercentages, setCurrentPercentages] = useState<Record<string, number>>(() => {
@@ -348,8 +399,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addAuditLog(
         'PERCENTAGE_CHANGE',
         prioObj.title,
-        `${currentPercentages[priorityId] || 0}٪`,
-        `${newValue}٪`,
+        `${toPersianDigits(currentPercentages[priorityId] || 0)}٪`,
+        `${toPersianDigits(newValue)}٪`,
         'تنظیم درصد تخصیص اولویت در الگوریتم'
       );
     }
@@ -432,7 +483,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     setPriorities((prev) => [...prev, newPriority]);
     setCurrentPercentages((prev) => ({ ...prev, [newId]: defaultPct }));
-    addAuditLog('PRIORITY_ADD', title, 'عدم وجود', `${defaultPct}٪`, 'افزودن اولویت توسعه جدید');
+    addAuditLog('PRIORITY_ADD', title, 'عدم وجود', `${toPersianDigits(defaultPct)}٪`, 'افزودن اولویت توسعه جدید');
   };
 
   const handleUpdatePriority = (updated: CsrPriority) => {
@@ -458,7 +509,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       newPctMap[p.id] = p.defaultPercentage;
     });
     setCurrentPercentages(newPctMap);
-    addAuditLog('PRIORITY_ADD', 'ایمپورت داده‌ها', '-', `${imported.length} اولویت`, 'بارگذاری اولویت‌ها');
+    addAuditLog('PRIORITY_ADD', 'ایمپورت داده‌ها', '-', `${toPersianDigits(imported.length)} اولویت`, 'بارگذاری اولویت‌ها');
   };
 
   const handleAddSubItem = (priorityId: string, subItemTitle: string) => {
@@ -502,7 +553,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       antiOverlapStatus: 'CLEAR',
     };
     setProjects((prev) => [proj, ...prev]);
-    addAuditLog('PROJECT_ADD', newP.title, 'تعریف اولیه', `${(newP.estimatedCostToman / 1_000_000_000).toFixed(1)} میلیارد تومان`, `ثبت پروژه توسط ${newP.departmentName}`);
+    addAuditLog('PROJECT_ADD', newP.title, 'تعریف اولیه', `${toPersianDigits((newP.estimatedCostToman / 1_000_000_000).toFixed(1))} میلیارد تومان`, `ثبت پروژه توسط ${newP.departmentName}`);
   };
 
   const handleUpdateProject = (updated: ExecutiveProject) => {
@@ -510,7 +561,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const costPer = Math.round(updated.estimatedCostToman / beneficiaries);
     const finalized = { ...updated, costPerBeneficiaryToman: costPer };
     setProjects((prev) => prev.map((p) => (p.id === finalized.id ? finalized : p)));
-    addAuditLog('PROJECT_EDIT', updated.title, 'ویرایش', `${updated.progressPercentage}٪ پیشرفت`, 'به‌روزرسانی اطلاعات پروژه');
+    addAuditLog('PROJECT_EDIT', updated.title, 'ویرایش', `${toPersianDigits(updated.progressPercentage)}٪ پیشرفت`, 'به‌روزرسانی اطلاعات پروژه');
   };
 
   const handleDeleteProject = (projectId: string) => {
@@ -536,7 +587,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const handleUpdateDepartment = (dept: Department) => {
     setDepartments((prev) => prev.map((d) => (d.id === dept.id ? dept : d)));
-    addAuditLog('DEPARTMENT_EDIT', dept.name, 'ویرایش', `${(dept.allocatedBudgetToman / 1_000_000_000).toFixed(0)} م.ت`, 'ویرایش مشخصات نهاد');
+    addAuditLog('DEPARTMENT_EDIT', dept.name, 'ویرایش', `${toPersianDigits((dept.allocatedBudgetToman / 1_000_000_000).toFixed(0))} م.ت`, 'ویرایش مشخصات نهاد');
   };
 
   const handleDeleteDepartment = (departmentId: string) => {
@@ -549,12 +600,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const handleAddBudgetSource = (source: Omit<BudgetSource, 'id'>) => {
     const newSrc: BudgetSource = { ...source, id: `src-${Date.now()}` };
     setBudgetSources((prev) => [...prev, newSrc]);
-    addAuditLog('BUDGET_SOURCE_ADD', source.title, 'سرفصل جدید', `${(source.totalAmountToman / 1_000_000_000).toFixed(0)} م.ت`, `تعریف منبع بودجه جدید (${source.sourceTypeFa})`);
+    addAuditLog('BUDGET_SOURCE_ADD', source.title, 'سرفصل جدید', `${toPersianDigits((source.totalAmountToman / 1_000_000_000).toFixed(0))} م.ت`, `تعریف منبع بودجه جدید (${source.sourceTypeFa})`);
   };
 
   const handleUpdateBudgetSource = (source: BudgetSource) => {
     setBudgetSources((prev) => prev.map((s) => (s.id === source.id ? source : s)));
-    addAuditLog('BUDGET_SOURCE_EDIT', source.title, 'ویرایش', `${(source.totalAmountToman / 1_000_000_000).toFixed(0)} م.ت`, 'به‌روزرسانی منبع مالی');
+    addAuditLog('BUDGET_SOURCE_EDIT', source.title, 'ویرایش', `${toPersianDigits((source.totalAmountToman / 1_000_000_000).toFixed(0))} م.ت`, 'به‌روزرسانی منبع مالی');
   };
 
   const handleDeleteBudgetSource = (sourceId: string) => {
@@ -608,7 +659,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const handleUpdateContractor = (contractor: Contractor) => {
     setContractors((prev) => prev.map((c) => (c.id === contractor.id ? contractor : c)));
-    addAuditLog('CONTRACTOR_EDIT', contractor.companyName, 'ویرایش', `${contractor.performanceScore} امتیاز`, 'ویرایش مشخصات پیمانکار');
+    addAuditLog('CONTRACTOR_EDIT', contractor.companyName, 'ویرایش', `${toPersianDigits(contractor.performanceScore)} امتیاز`, 'ویرایش مشخصات پیمانکار');
   };
 
   const handleDeleteContractor = (contractorId: string) => {
@@ -617,22 +668,44 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addAuditLog('CONTRACTOR_DELETE', cnt?.companyName, 'موجود', 'حذف شده', 'حذف پیمانکار');
   };
 
-  // Toggle permission field for a role
-  const handleTogglePermission = (role: UserProfile['role'], field: keyof SystemRolePermission) => {
-    setRolesPermissions((prev) =>
-      prev.map((r) => {
-        if (r.role === role && typeof r[field] === 'boolean') {
-          return { ...r, [field]: !r[field] };
+  // Effective permissions of an individual user: the role default with that
+  // user's stored per-user overrides layered on top.
+  const getUserPermissions = (user: UserProfile): SystemRolePermission | undefined => {
+    const base = rolesPermissions.find((r) => r.role === user.role);
+    if (!base) return undefined;
+    const overrides = userPermissionOverrides[user.id];
+    return overrides ? { ...base, ...overrides } : base;
+  };
+
+  // Toggle one permission flag for a single user only. Other users — even
+  // those sharing the same role — are never affected.
+  const handleToggleUserPermission = (userId: string, field: UserPermissionField) => {
+    const user = users.find((u) => u.id === userId);
+    if (!user) return;
+    setUserPermissionOverrides((prev) => {
+      const base = rolesPermissions.find((r) => r.role === user.role);
+      const effective = prev[userId]?.[field] ?? base?.[field] ?? false;
+      const nextValue = !effective;
+      const nextOverride: UserPermissionOverride = { ...(prev[userId] ?? {}), [field]: nextValue };
+
+      // A value equal to the role default needs no override entry, so drop it.
+      if (base && nextValue === base[field]) {
+        const rest: UserPermissionOverride = { ...nextOverride };
+        delete rest[field];
+        if (Object.keys(rest).length === 0) {
+          const { [userId]: _removed, ...restUsers } = prev;
+          return restUsers;
         }
-        return r;
-      })
-    );
+        return { ...prev, [userId]: rest };
+      }
+      return { ...prev, [userId]: nextOverride };
+    });
   };
 
   // Save Org Config
   const handleSaveOrgConfig = (updated: OrganizationConfig) => {
     setOrgConfig(updated);
-    addAuditLog('BUDGET_UPDATE', 'مشخصات سامانه ملی', 'ویرایش شده', `${updated.totalBudget} تومان`, 'به‌روزرسانی مشخصات و تنظیمات کلان');
+    addAuditLog('BUDGET_UPDATE', 'مشخصات سامانه ملی', 'ویرایش شده', `${formatNumber(updated.totalBudget)} تومان`, 'به‌روزرسانی مشخصات و تنظیمات کلان');
   };
 
   const value: AppContextType = {
@@ -695,7 +768,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     handleAddContractor,
     handleUpdateContractor,
     handleDeleteContractor,
-    handleTogglePermission,
+    getUserPermissions,
+    handleToggleUserPermission,
     handleSaveOrgConfig,
     addAuditLog,
   };

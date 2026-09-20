@@ -1,6 +1,7 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { UserProfile, UserRole, SystemRolePermission, AuditActionType } from '../types';
+import { UserProfile, UserPermissionField, AuditActionType } from '../types';
+import { useOutsideClick } from '../hooks/useOutsideClick';
 import {
   ShieldCheck,
   KeyRound,
@@ -22,7 +23,8 @@ import {
 export const RolesAndAccessView: React.FC = () => {
   const {
     rolesPermissions,
-    handleTogglePermission,
+    getUserPermissions,
+    handleToggleUserPermission,
     auditLogs,
     users,
     currentUser,
@@ -34,6 +36,16 @@ export const RolesAndAccessView: React.FC = () => {
   const [selectedActionFilter, setSelectedActionFilter] = useState<string>('ALL');
   // User whose role access is being edited in the modal (null = modal closed).
   const [permissionTargetUser, setPermissionTargetUser] = useState<UserProfile | null>(null);
+  const permissionsModalRef = useRef<HTMLDivElement>(null);
+  useOutsideClick(permissionsModalRef, () => setPermissionTargetUser(null));
+
+  // Roster pagination — 20 users per page.
+  const [userPage, setUserPage] = useState(0);
+  const userPageSize = 20;
+  const userTotalPages = Math.max(1, Math.ceil(users.length / userPageSize));
+  const pagedUsers = users.slice(userPage * userPageSize, userPage * userPageSize + userPageSize);
+  const userPageStart = userPage * userPageSize + 1;
+  const userPageEnd = Math.min(users.length, (userPage + 1) * userPageSize);
 
   // Escape closes the permissions modal, matching the location filter dialog.
   useEffect(() => {
@@ -45,8 +57,15 @@ export const RolesAndAccessView: React.FC = () => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [permissionTargetUser]);
 
+  // Effective (role default + individual overrides) permissions of the user
+  // currently being edited in the modal.
+  const permissionTargetEffective = permissionTargetUser ? getUserPermissions(permissionTargetUser) : undefined;
+  const permissionTargetRoleBase = permissionTargetUser
+    ? rolesPermissions.find((r) => r.role === permissionTargetUser.role)
+    : undefined;
+
   // Permission columns
-  const permissionCols: Array<{ key: keyof SystemRolePermission; label: string }> = [
+  const permissionCols: Array<{ key: UserPermissionField; label: string }> = [
     { key: 'canManagePriorities', label: 'تنظیم اولویت‌ها' },
     { key: 'canManageBudget', label: 'تخصیص و منابع بودجه' },
     { key: 'canApproveProjects', label: 'تصویب و ثبت پروژه' },
@@ -154,186 +173,87 @@ export const RolesAndAccessView: React.FC = () => {
         </div>
       </div>
 
-      {/* Active User Roster — activate a persona, or edit a role's access */}
-      <div id="roles-and-access-view-active-user-switcher" className="bg-white rounded-xl p-3 border border-slate-300 shadow-2xs flex flex-col gap-2.5 self-start md:self-auto w-full md:w-96">
-        <div id="roles-and-access-view-active-user-switcher-2" className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-sm shrink-0">
-            <UserCheck className="w-5 h-5 text-white" />
-          </div>
-          <div id="roles-and-access-view-active-user-switcher-3" className="min-w-0">
-            <span className="text-[10px] text-slate-500 block font-semibold">کاربران سازمانی (فعال‌سازی کاربر یا ویرایش دسترسی):</span>
-            <span className="text-xs font-bold text-slate-900 block truncate">
-              کاربر فعال جاری: {currentUser.name} — {currentUser.roleFa}
-            </span>
-          </div>
-        </div>
-
-        <div id="roles-and-access-view-active-user-switcher-4" className="max-h-56 overflow-y-auto border border-slate-200 rounded-lg divide-y divide-slate-100">
-          {users.map((u) => {
-            const isActiveUser = u.id === currentUser.id;
-
-            return (
-              <div
-                key={u.id}
-                id={`roles-and-access-view-active-user-switcher-5-${u.id}`}
-                className={`flex items-center gap-2 p-2 ${isActiveUser ? 'bg-indigo-50/60' : ''}`}
-              >
-                <button
-                  id={`roles-and-access-view-active-user-switcher-6-${u.id}`}
-                  onClick={() => setCurrentUser(u)}
-                  title={`فعال‌سازی ${u.name} به عنوان کاربر جاری`}
-                  className="flex-1 min-w-0 text-right"
-                >
-                  <span className="block text-[11px] font-bold text-slate-900 truncate">{u.name}</span>
-                  <span className="block text-[10px] text-slate-500 truncate">
-                    {u.roleFa} — {u.organization}
-                  </span>
-                </button>
-
-                {isActiveUser && (
-                  <span className="px-1.5 py-0.5 text-[9px] rounded bg-indigo-600 text-white font-bold shrink-0">
-                    فعال
-                  </span>
-                )}
-
-                <button
-                  id={`roles-and-access-view-active-user-switcher-7-${u.id}`}
-                  onClick={() => setPermissionTargetUser(u)}
-                  title={`ویرایش دسترسی‌های نقش ${u.roleFa}`}
-                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-100 hover:bg-indigo-100 text-slate-700 hover:text-indigo-800 border border-slate-200 shrink-0 transition-colors"
-                >
-                  <KeyRound className="w-3 h-3" />
-                  <span>ویرایش دسترسی</span>
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Sub-tab 1: Permissions Matrix */}
-      {/* Sub-tab 1: Permissions Matrix — inline in its tab, or as the per-user modal */}
-      {(activeSubTab === 'ROLES_MATRIX' || permissionTargetUser) && (
-        <div
-          id="roles-and-access-view-sub-tab-1-permissions-matrix"
-          className={
-            permissionTargetUser
-              ? 'fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 dir-rtl'
-              : 'space-y-4'
-          }
-        >
-          <div
-            id="roles-and-access-view-sub-tab-1-permissions-matrix-2"
-            role={permissionTargetUser ? 'dialog' : undefined}
-            aria-modal={permissionTargetUser ? true : undefined}
-            aria-labelledby={
-              permissionTargetUser ? 'roles-and-access-view-permissions-modal-title' : undefined
-            }
-            className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden ${
-              permissionTargetUser ? 'w-full max-w-6xl shadow-2xl' : ''
-            }`}
-          >
-            {permissionTargetUser && (
-              <div id="roles-and-access-view-permissions-modal-header" className="p-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-start justify-between gap-4">
-                <div id="roles-and-access-view-permissions-modal-header-2">
-                  <h3 id="roles-and-access-view-permissions-modal-title" className="font-black text-sm flex items-center gap-2">
-                    <KeyRound className="w-4 h-4 text-indigo-300" />
-                    ویرایش دسترسی‌های {permissionTargetUser.name}
-                  </h3>
-                  <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">
-                    مجوزها بر پایه نقش سازمانی اعمال می‌شوند؛ ردیف نقش «{permissionTargetUser.roleFa}» در ماتریس برجسته شده است.
-                  </p>
-                </div>
-                <button
-                  id="roles-and-access-view-permissions-modal-close-button"
-                  onClick={() => setPermissionTargetUser(null)}
-                  title="بستن پنجره ویرایش دسترسی"
-                  aria-label="بستن"
-                  className="p-1.5 hover:bg-white/10 rounded-lg text-slate-300 hover:text-white transition-colors shrink-0"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            )}
-            <div id="roles-and-access-view-sub-tab-1-permissions-matrix-3" className="p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-              <div id="roles-and-access-view-sub-tab-1-permissions-matrix-4">
-                <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">جدول کنترل دسترسی بر پایه نقش (RBAC)</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  برای تغییر آنی مجوزهای هر نقش، مستقیماً روی خانه‌ها کلیک کنید.
-                </p>
-              </div>
-              <span className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">
-                نقش فعلی شما: {currentUser.roleFa}
+      {/* Sub-tab 1: Users Roster — full-width section with paginated users */}
+      {activeSubTab === 'ROLES_MATRIX' && (
+        <div id="roles-and-access-view-active-user-switcher" className="bg-white rounded-xl p-4 border border-slate-300 shadow-2xs flex flex-col gap-3 w-full">
+          <div id="roles-and-access-view-active-user-switcher-2" className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-sm shrink-0">
+              <UserCheck className="w-5 h-5 text-white" />
+            </div>
+            <div id="roles-and-access-view-active-user-switcher-3" className="min-w-0">
+              <span className="text-[10px] text-slate-500 block font-semibold">کاربران سازمانی (فعال‌سازی کاربر یا ویرایش دسترسی):</span>
+              <span className="text-xs font-bold text-slate-900 block truncate">
+                کاربر فعال جاری: {currentUser.name} — {currentUser.roleFa}
               </span>
             </div>
+          </div>
 
-            <div
-              id="roles-and-access-view-sub-tab-1-permissions-matrix-5"
-              className={permissionTargetUser ? 'overflow-auto max-h-[70vh]' : 'overflow-x-auto'}
-            >
-              <table className="w-full text-right text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-850">
-                    <th className="py-3 px-4 font-bold">عنوان نقش سازمانی</th>
-                    <th className="py-3 px-4 font-bold">حوزه اختیارات</th>
-                    {permissionCols.map((col) => (
-                      <th key={col.key} className="py-3 px-3 font-bold text-center">
-                        {col.label}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {rolesPermissions.map((rp) => (
-                    <tr
-                      key={rp.role}
-                      className={`hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors ${
-                        permissionTargetUser?.role === rp.role
-                          ? 'bg-indigo-50/70 dark:bg-indigo-950/30 ring-1 ring-inset ring-indigo-300 font-semibold'
-                          : currentUser.role === rp.role
-                          ? 'bg-indigo-50/30 dark:bg-indigo-950/20 font-semibold'
-                          : ''
-                      }`}
-                    >
-                      <td className="py-3.5 px-4">
-                        <div id={`roles-and-access-view-sub-tab-1-permissions-matrix-6-${rp.role}`} className="flex items-center gap-2">
-                          <span className="font-bold text-slate-900 dark:text-slate-100">{rp.roleFa}</span>
-                          {currentUser.role === rp.role && (
-                            <span className="px-1.5 py-0.5 text-[10px] bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 rounded">
-                              شما
-                            </span>
-                          )}
-                          {permissionTargetUser?.role === rp.role && (
-                            <span className="px-1.5 py-0.5 text-[10px] bg-indigo-600 text-white rounded">
-                              کاربر هدف
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 text-[11px]">{rp.description}</td>
+          <div id="roles-and-access-view-active-user-switcher-4" className="border border-slate-200 rounded-lg divide-y divide-slate-100">
+            {pagedUsers.map((u) => {
+              const isActiveUser = u.id === currentUser.id;
 
-                      {permissionCols.map((col) => {
-                        const isGranted = Boolean(rp[col.key]);
-                        return (
-                          <td key={col.key} className="py-3.5 px-3 text-center">
-                            <button
-                              onClick={() => handleTogglePermission(rp.role, col.key)}
-                              className={`w-7 h-7 rounded-lg inline-flex items-center justify-center transition-all ${
-                                isGranted
-                                  ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800'
-                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700'
-                              }`}
-                              title={`${isGranted ? 'سلب مجوز' : 'اعطای مجوز'} ${col.label}`}
-                            >
-                              {isGranted ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
-                            </button>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              return (
+                <div
+                  key={u.id}
+                  id={`roles-and-access-view-active-user-switcher-5-${u.id}`}
+                  className={`flex items-center gap-2 p-2 ${isActiveUser ? 'bg-indigo-50/60' : ''}`}
+                >
+                  <button
+                    id={`roles-and-access-view-active-user-switcher-6-${u.id}`}
+                    onClick={() => setCurrentUser(u)}
+                    title={`فعال‌سازی ${u.name} به عنوان کاربر جاری`}
+                    className="flex-1 min-w-0 text-right"
+                  >
+                    <span className="block text-[11px] font-bold text-slate-900 truncate">{u.name}</span>
+                    <span className="block text-[10px] text-slate-500 truncate">
+                      {u.roleFa} — {u.organization}
+                    </span>
+                  </button>
+
+                  {isActiveUser && (
+                    <span className="px-1.5 py-0.5 text-[9px] rounded bg-indigo-600 text-white font-bold shrink-0">
+                      فعال
+                    </span>
+                  )}
+
+                  <button
+                    id={`roles-and-access-view-active-user-switcher-7-${u.id}`}
+                    onClick={() => setPermissionTargetUser(u)}
+                    title={`ویرایش دسترسی‌های اختصاصی ${u.name}`}
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-100 hover:bg-indigo-100 text-slate-700 hover:text-indigo-800 border border-slate-200 shrink-0 transition-colors"
+                  >
+                    <KeyRound className="w-3 h-3" />
+                    <span>ویرایش دسترسی</span>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+
+          <div id="roles-and-access-view-active-user-switcher-8" className="flex items-center justify-between gap-2 border-t border-slate-100 pt-2.5">
+            <span id="roles-and-access-view-active-user-switcher-9" className="text-[10px] text-slate-500">
+              نمایش {userPageStart.toLocaleString('fa-IR')} تا {userPageEnd.toLocaleString('fa-IR')} از {users.length.toLocaleString('fa-IR')} کاربر
+            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                id="roles-and-access-view-active-user-switcher-10"
+                onClick={() => setUserPage((p) => Math.max(0, p - 1))}
+                disabled={userPage === 0}
+                className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-100 hover:bg-indigo-100 text-slate-700 hover:text-indigo-800 border border-slate-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                قبلی
+              </button>
+              <span id="roles-and-access-view-active-user-switcher-11" className="text-[10px] font-bold text-slate-600">
+                صفحه {(userPage + 1).toLocaleString('fa-IR')} از {userTotalPages.toLocaleString('fa-IR')}
+              </span>
+              <button
+                id="roles-and-access-view-active-user-switcher-12"
+                onClick={() => setUserPage((p) => Math.min(userTotalPages - 1, p + 1))}
+                disabled={userPage >= userTotalPages - 1}
+                className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-100 hover:bg-indigo-100 text-slate-700 hover:text-indigo-800 border border-slate-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                بعدی
+              </button>
             </div>
           </div>
         </div>
@@ -426,6 +346,124 @@ export const RolesAndAccessView: React.FC = () => {
             {filteredLogs.length === 0 && (
               <div id="roles-and-access-view-sub-tab-2-audit-trail-logs-9" className="p-8 text-center text-slate-400 text-xs">هیچ رویدادی با این مشخصات ثبت نشده است.</div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Per-user permission editor modal (standalone overlay). Permissions are
+          stored for the individual user and never affect other users of the
+          same role. */}
+      {permissionTargetUser && (
+        <div id="roles-and-access-view-permissions-modal" className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 dir-rtl">
+          <div
+            id="roles-and-access-view-permissions-modal-2"
+            ref={permissionsModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="roles-and-access-view-permissions-modal-title"
+            className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden w-full max-w-2xl"
+          >
+            <div id="roles-and-access-view-permissions-modal-header" className="p-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-start justify-between gap-4">
+              <div id="roles-and-access-view-permissions-modal-header-2">
+                <h3 id="roles-and-access-view-permissions-modal-title" className="font-black text-sm flex items-center gap-2">
+                  <KeyRound className="w-4 h-4 text-indigo-300" />
+                  ویرایش دسترسی‌های {permissionTargetUser.name}
+                </h3>
+                <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">
+                  مجوزها به‌صورت اختصاصی برای این کاربر ذخیره می‌شوند؛ تغییرات هیچ‌کدام از کاربران هم‌نقش او را تحت تأثیر قرار نمی‌دهند.
+                </p>
+              </div>
+              <button
+                id="roles-and-access-view-permissions-modal-close-button"
+                onClick={() => setPermissionTargetUser(null)}
+                title="بستن پنجره ویرایش دسترسی"
+                aria-label="بستن"
+                className="p-1.5 hover:bg-white/10 rounded-lg text-slate-300 hover:text-white transition-colors shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div id="roles-and-access-view-permissions-modal-3" className="p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <div id="roles-and-access-view-permissions-modal-4">
+                <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">دسترسی‌های اختصاصی کاربر</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  روی هر مجوز کلیک کنید تا فقط برای «{permissionTargetUser.name}» اعمال شود؛ مقادیر تغییرنیافته پیش‌فرض نقش «{permissionTargetUser.roleFa}» را به ارث می‌برند.
+                </p>
+              </div>
+              <span className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">
+                نقش فعلی شما: {currentUser.roleFa}
+              </span>
+            </div>
+
+            <div id="roles-and-access-view-permissions-modal-5" className="overflow-auto max-h-[70vh]">
+              <div id="roles-and-access-view-permissions-modal-6" className="p-4 flex items-center gap-3 border-b border-slate-100 dark:border-slate-800">
+                <img
+                  src={permissionTargetUser.avatar}
+                  alt={permissionTargetUser.name}
+                  className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+                />
+                <div className="min-w-0">
+                  <div id="roles-and-access-view-permissions-modal-7" className="font-bold text-xs text-slate-900 dark:text-slate-100 truncate">
+                    {permissionTargetUser.name}
+                  </div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                    {permissionTargetUser.roleFa} — {permissionTargetUser.organization}
+                  </div>
+                </div>
+              </div>
+
+              <table className="w-full text-right text-xs">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-850">
+                    <th className="py-3 px-4 font-bold">حوزه اختیارات</th>
+                    <th className="py-3 px-4 font-bold">مبنای اعمال</th>
+                    <th className="py-3 px-4 font-bold text-center">وضعیت مجوز</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {permissionCols.map((col) => {
+                    const isGranted = Boolean(permissionTargetEffective?.[col.key]);
+                    const isIndividualOverride =
+                      Boolean(
+                        permissionTargetEffective &&
+                          permissionTargetRoleBase &&
+                          permissionTargetEffective[col.key] !== permissionTargetRoleBase[col.key]
+                      );
+                    return (
+                      <tr key={col.key} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                        <td className="py-3 px-4 font-bold text-slate-900 dark:text-slate-100">{col.label}</td>
+                        <td className="py-3 px-4">
+                          <span
+                            id={`roles-and-access-view-permissions-modal-8-${col.key}`}
+                            className={`px-1.5 py-0.5 text-[10px] rounded font-bold ${
+                              isIndividualOverride
+                                ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'
+                                : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                            }`}
+                          >
+                            {isIndividualOverride ? 'اختصاصی این کاربر' : 'پیش‌فرض نقش'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <button
+                            id={`roles-and-access-view-permissions-modal-9-${col.key}`}
+                            onClick={() => handleToggleUserPermission(permissionTargetUser.id, col.key)}
+                            className={`w-7 h-7 rounded-lg inline-flex items-center justify-center transition-all ${
+                              isGranted
+                                ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700'
+                            }`}
+                            title={`${isGranted ? 'سلب مجوز' : 'اعطای مجوز'} ${col.label} برای ${permissionTargetUser.name}`}
+                          >
+                            {isGranted ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}

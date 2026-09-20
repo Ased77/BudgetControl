@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { BudgetSource, BudgetSourceType } from '../types';
+import { useOutsideClick } from '../hooks/useOutsideClick';
 import {
   Wallet,
   Plus,
@@ -17,7 +18,8 @@ import {
   X,
   Layers,
 } from 'lucide-react';
-import { formatToman } from '../utils/numberUtils';
+import { formatToman, toPersianDigits } from '../utils/numberUtils';
+import { useConfirmDelete } from './ConfirmDeleteModal';
 
 export const BudgetSourcesView: React.FC = () => {
   const {
@@ -27,13 +29,16 @@ export const BudgetSourcesView: React.FC = () => {
     handleUpdateBudgetSource,
     handleDeleteBudgetSource,
     currentUser,
-    rolesPermissions,
+    getUserPermissions,
   } = useAppContext();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<string>('ALL');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+  useOutsideClick(modalRef, () => setIsModalOpen(false));
   const [editingSource, setEditingSource] = useState<BudgetSource | null>(null);
+  const { confirmDelete, modal: deleteConfirmModal } = useConfirmDelete();
 
   // Form state
   const [formTitle, setFormTitle] = useState('');
@@ -48,7 +53,7 @@ export const BudgetSourcesView: React.FC = () => {
   const [formNote, setFormNote] = useState('');
   const [formStatus, setFormStatus] = useState<BudgetSource['status']>('ACTIVE');
 
-  const userPerm = rolesPermissions.find((r) => r.role === currentUser.role);
+  const userPerm = getUserPermissions(currentUser);
   const canManage = userPerm ? userPerm.canManageBudget : currentUser.role === 'ADMIN';
 
   const typeLabels: Record<BudgetSourceType, string> = {
@@ -205,7 +210,7 @@ export const BudgetSourcesView: React.FC = () => {
           </div>
           <div id="budget-sources-view-aggregate-kpi-strip-5" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">درصد پوشش تعهدات</span>
-            <span className="text-xl font-black text-slate-900 mt-0.5 block font-mono">{allocationRate}٪</span>
+            <span className="text-xl font-black text-slate-900 mt-0.5 block font-mono">{toPersianDigits(allocationRate)}٪</span>
           </div>
         </div>
       </div>
@@ -330,7 +335,7 @@ export const BudgetSourcesView: React.FC = () => {
                   </div>
                   <div id={`budget-sources-view-amounts-breakdown-7-${source.id}`} className="flex justify-between items-center text-[10px] text-slate-400">
                     <span>نرخ تعهد و تخصیص</span>
-                    <span className="font-bold text-slate-700 dark:text-slate-300">{usagePercent}٪</span>
+                    <span className="font-bold text-slate-700 dark:text-slate-300">{toPersianDigits(usagePercent)}٪</span>
                   </div>
                 </div>
               </div>
@@ -339,7 +344,7 @@ export const BudgetSourcesView: React.FC = () => {
               <div id={`budget-sources-view-footer-${source.id}`} className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
                 <div id={`budget-sources-view-footer-2-${source.id}`} className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
                   <Layers className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>{linkedProjects.length} پروژه تأمین‌شده</span>
+                  <span>{toPersianDigits(linkedProjects.length)} پروژه تأمین‌شده</span>
                 </div>
 
                 {canManage && (
@@ -352,7 +357,11 @@ export const BudgetSourcesView: React.FC = () => {
                       <Edit className="w-3.5 h-3.5" />
                     </button>
                     <button
-                      onClick={() => handleDeleteBudgetSource(source.id)}
+                      onClick={() =>
+                        confirmDelete(`آیا از حذف منبع بودجه «${source.title}» مطمئن هستید؟ این عملیات قابل بازگشت نیست.`, () =>
+                          handleDeleteBudgetSource(source.id)
+                        )
+                      }
                       className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
                       title="حذف منبع"
                     >
@@ -369,7 +378,7 @@ export const BudgetSourcesView: React.FC = () => {
       {/* CRUD Modal */}
       {isModalOpen && (
         <div id="budget-sources-view-crud-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div id="budget-sources-view-crud-modal-2" className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[90vh]">
+          <div id="budget-sources-view-crud-modal-2" ref={modalRef} className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[90vh]">
             <div id="budget-sources-view-crud-modal-3" className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-4">
               <h3 className="font-black text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <Wallet className="w-5 h-5 text-emerald-500" />
@@ -516,6 +525,8 @@ export const BudgetSourcesView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {deleteConfirmModal}
     </div>
   );
 };

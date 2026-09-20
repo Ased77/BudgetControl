@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { CsrPriority } from '../types';
 import { generateBasicCsv, generateExtendedCsv, downloadCsvFile, parseCsvPriorities } from '../utils/csvHandler';
+import { toPersianDigits } from '../utils/numberUtils';
+import { useOutsideClick } from '../hooks/useOutsideClick';
 import { FileSpreadsheet, Download, Upload, Check, AlertCircle, X, Shield, Sliders } from 'lucide-react';
 
 interface CsvManagerModalProps {
@@ -17,6 +19,9 @@ export const CsvManagerModal: React.FC<CsvManagerModalProps> = ({
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
+
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useOutsideClick(dialogRef, onClose);
 
   const handleDownloadBasic = () => {
     const csvContent = generateBasicCsv(priorities);
@@ -53,7 +58,7 @@ export const CsvManagerModal: React.FC<CsvManagerModalProps> = ({
         }
 
         onImportPriorities(parsed);
-        setImportSuccess(`با موفقیت تعداد ${parsed.length} اولویت مسئولیت اجتماعی بارگذاری و به‌روزرسانی شد.`);
+        setImportSuccess(`با موفقیت تعداد ${toPersianDigits(parsed.length)} اولویت مسئولیت اجتماعی بارگذاری و به‌روزرسانی شد.`);
       } catch (err) {
         console.error(err);
         setImportError('خطا در خواندن و پردازش فایل CSV.');
@@ -64,7 +69,7 @@ export const CsvManagerModal: React.FC<CsvManagerModalProps> = ({
 
   return (
     <div id="csv-manager-modal-root" className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 z-50 text-right dir-rtl">
-      <div id="csv-manager-modal-div-2" className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
+      <div id="csv-manager-modal-div-2" ref={dialogRef} className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
         
         {/* Header */}
         <div id="csv-manager-modal-header" className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 p-5 text-white flex items-center justify-between">

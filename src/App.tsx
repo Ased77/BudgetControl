@@ -84,6 +84,7 @@ function AppContent() {
   const [showLocationDrawer, setShowLocationDrawer] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const exportDropdownRef = useRef<HTMLDivElement>(null);
+  const mainWorkspaceRef = useRef<HTMLDivElement>(null);
 
   // Close export dropdown on outside click
   useEffect(() => {
@@ -106,6 +107,11 @@ function AppContent() {
     }
   }, [activeTab]);
 
+  // Reset workspace scroll to top on every tab change
+  useEffect(() => {
+    mainWorkspaceRef.current?.scrollTo({ top: 0 });
+  }, [activeTab]);
+
   // Exports
   const handleExportPdf = () => {
     triggerPrintPdf(orgConfig, priorities, currentPercentages, selectedLocation.indicators, recommendations.summaryRationale);
@@ -119,19 +125,19 @@ function AppContent() {
 
   // Navigation Items
   const navItems = [
-    { id: 'DASHBOARD', label: 'داشبورد ملی و رادار', icon: LayoutDashboard, count: null, color: 'text-indigo-400' },
-    { id: 'POPULATION', label: 'آمار جمعیت و دموگرافی', icon: Users, count: '۳۱۵هزار', color: 'text-cyan-600' },
-    { id: 'DEPARTMENTS', label: 'ادارات و دستگاه‌های متولی', icon: Building2, count: departments.length, color: 'text-blue-600' },
-    { id: 'BUDGET_SOURCES', label: 'منابع و سرفصل‌های بودجه', icon: Wallet, count: budgetSources.length, color: 'text-emerald-600' },
-    { id: 'PRIORITIES', label: 'اولویت‌های توسعه و ضرایب', icon: Scale, count: priorities.length, color: 'text-purple-600' },
-    { id: 'CRISES_HARMS', label: 'کانون‌های آسیب و بحران', icon: Flame, count: crisesHarms.length, color: 'text-rose-600' },
-    { id: 'EXECUTORS', label: 'دستگاه‌های مجری طرح', icon: Users2, count: executors.length, color: 'text-cyan-600' },
-    { id: 'CONTRACTORS', label: 'پیمانکاران ذیصلاح', icon: HardHat, count: contractors.length, color: 'text-amber-600' },
-    { id: 'CREATE_PROJECT', label: 'تعریف و ثبت هوشمند پروژه', icon: FolderPlus, count: 'جدید', color: 'text-indigo-600' },
-    { id: 'PROJECTS', label: 'رصد پروژه‌ها و موازی‌کاری', icon: FolderKanban, count: projects.length, color: 'text-blue-600', badgeAlert: antiDuplicationAlerts.length > 0 },
-    { id: 'CHARTS', label: 'نمودار حبابی و تحلیل بصری', icon: BarChart3, count: null, color: 'text-indigo-600' },
-    { id: 'LOCATIONS', label: 'شاخص‌های مکانی و محرومیت', icon: MapPin, count: null, color: 'text-emerald-600' },
-    { id: 'ROLES_PERMISSIONS', label: 'نقش‌ها، دسترسی و لاگ‌ها', icon: ShieldCheck, count: auditLogs.length, color: 'text-slate-600' },
+    { id: 'DASHBOARD', label: 'داشبورد', icon: LayoutDashboard, count: null, color: 'text-indigo-400' },
+    { id: 'POPULATION', label: 'جمعیت', icon: Users, count: '۳۱۵هزار', color: 'text-cyan-600' },
+    { id: 'DEPARTMENTS', label: 'ادارات', icon: Building2, count: departments.length, color: 'text-blue-600' },
+    { id: 'BUDGET_SOURCES', label: 'منابع بودجه', icon: Wallet, count: budgetSources.length, color: 'text-emerald-600' },
+    { id: 'PRIORITIES', label: 'اولویت‌ها', icon: Scale, count: priorities.length, color: 'text-purple-600' },
+    { id: 'CRISES_HARMS', label: 'بحران‌ها', icon: Flame, count: crisesHarms.length, color: 'text-rose-600' },
+    { id: 'EXECUTORS', label: 'دستگاه‌های مجری', icon: Users2, count: executors.length, color: 'text-cyan-600' },
+    { id: 'CONTRACTORS', label: 'پیمانکاران', icon: HardHat, count: contractors.length, color: 'text-amber-600' },
+    { id: 'CREATE_PROJECT', label: 'ثبت پروژه', icon: FolderPlus, count: 'جدید', color: 'text-indigo-600' },
+    { id: 'PROJECTS', label: 'پروژه‌ها', icon: FolderKanban, count: projects.length, color: 'text-blue-600', badgeAlert: antiDuplicationAlerts.length > 0 },
+    { id: 'CHARTS', label: 'نمودارها', icon: BarChart3, count: null, color: 'text-indigo-600' },
+    { id: 'LOCATIONS', label: 'شاخص‌های مکانی', icon: MapPin, count: null, color: 'text-emerald-600' },
+    { id: 'ROLES_PERMISSIONS', label: 'نقش‌ها و دسترسی', icon: ShieldCheck, count: auditLogs.length, color: 'text-slate-600' },
   ];
 
   // Access gate — every hook above runs unconditionally, then signed-out users
@@ -169,42 +175,50 @@ function AppContent() {
           </div>
 
           {/* Quick Location & Anti-Overlap Alert Banner */}
-          <div id="app-quick-location-anti-overlap" className="p-3 bg-slate-50 border-b border-slate-100 shrink-0">
+          <div id="app-quick-location-anti-overlap" className="p-3 bg-slate-50 border-b border-slate-100 space-y-2 shrink-0">
             <button
               onClick={() => setShowLocationDrawer(!showLocationDrawer)}
-              className="w-full flex items-center justify-between p-2 rounded-xl bg-white hover:bg-slate-100 text-xs border border-slate-200 shadow-2xs transition-colors text-right"
+              className="w-full flex items-center gap-2.5 p-2 rounded-xl bg-white hover:bg-slate-50 text-xs border border-slate-200 hover:border-emerald-300 shadow-2xs transition-colors text-right group"
             >
-              <div id="app-quick-location-anti-overlap-2" className="flex items-center gap-2 truncate">
-                <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span className="truncate text-[11px] text-slate-700 font-semibold">
-                  {selectedLocation.province} - {selectedLocation.county}
+              <span className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 group-hover:bg-emerald-100 transition-colors">
+                <MapPin className="w-3.5 h-3.5" />
+              </span>
+              <span id="app-quick-location-anti-overlap-2" className="flex-1 min-w-0">
+                <span className="block text-[9px] font-bold text-slate-400">موقعیت فعال سامانه</span>
+                <span className="block text-[11px] font-bold text-slate-800 truncate">
+                  {selectedLocation.province} — {selectedLocation.county}
                 </span>
-              </div>
+              </span>
               <span className="text-[10px] font-bold text-blue-700 px-1.5 py-0.5 bg-blue-50 border border-blue-100 rounded-md shrink-0">
                 تغییر
               </span>
             </button>
 
             {antiDuplicationAlerts.length > 0 && (
-              <div
+              <button
                 id="app-quick-location-anti-overlap-3"
                 onClick={() => {
                   setActiveTab('PROJECTS');
                   setSidebarOpen(false);
                 }}
-                className="mt-2 p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] flex items-center justify-between cursor-pointer hover:bg-amber-100 transition-colors"
+                className="w-full p-2 rounded-xl bg-amber-50 border border-amber-200 hover:border-amber-300 text-amber-900 text-[11px] flex items-center justify-between transition-colors hover:bg-amber-100"
               >
                 <span className="flex items-center gap-1.5 font-bold">
-                  <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
-                  {antiDuplicationAlerts.length} هشدار موازی‌کاری
+                  <ShieldAlert className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span>هشدار موازی‌کاری</span>
                 </span>
-                <span className="text-[10px] font-mono text-amber-800 underline">مشاهده</span>
-              </div>
+                <span className="flex items-center gap-1.5 shrink-0">
+                  <span className="min-w-4.5 h-4.5 rounded-full bg-amber-500 text-white font-mono text-[9px] font-bold flex items-center justify-center px-1">
+                    {antiDuplicationAlerts.length}
+                  </span>
+                  <span className="text-[10px] font-bold text-amber-800">مشاهده</span>
+                </span>
+              </button>
             )}
           </div>
 
           {/* Nav List */}
-          <nav className="p-3 space-y-1 overflow-y-auto flex-1 text-xs">
+          <nav className="p-3 space-y-1 overflow-y-auto flex-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -223,23 +237,8 @@ function AppContent() {
                   }`}
                 >
                   <div id={`app-nav-list-${item.id}`} className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : item.color}`} />
-                    <span className="text-[12px]">{item.label}</span>
-                  </div>
-
-                  <div id={`app-nav-list-2-${item.id}`} className="flex items-center gap-1.5">
-                    {item.badgeAlert && (
-                      <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
-                    )}
-                    {item.count !== null && (
-                      <span
-                        className={`text-[10px] font-mono px-1.5 py-0.5 rounded-full ${
-                          isActive ? 'bg-blue-700 text-white' : 'bg-slate-100 text-slate-600'
-                        }`}
-                      >
-                        {item.count}
-                      </span>
-                    )}
+                    <Icon className={`w-6 h-6 ${isActive ? 'text-white' : item.color} shrink-0`} />
+                    <span className="text-sm">{item.label}</span>
                   </div>
                 </button>
               );
@@ -394,7 +393,7 @@ function AppContent() {
         )}
 
         {/* Scrollable Main Workspace */}
-        <div id="app-scrollable-main-workspace" className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+        <div id="app-scrollable-main-workspace" ref={mainWorkspaceRef} className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
           {activeTab === 'DASHBOARD' && <NationalDashboardView />}
 
           {activeTab === 'POPULATION' && <PopulationView />}

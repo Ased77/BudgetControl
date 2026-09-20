@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { OrganizationConfig, LocalIndicators, CsrPriority } from '../types';
+import { toPersianDigits } from '../utils/numberUtils';
+import { useOutsideClick } from '../hooks/useOutsideClick';
 import { Sparkles, Bot, Check, Copy, X, Loader2, FileText, Lightbulb } from 'lucide-react';
 
 interface AiAnalysisModalProps {
@@ -25,6 +27,9 @@ export const AiAnalysisModal: React.FC<AiAnalysisModalProps> = ({
     isAiGenerated?: boolean;
   } | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useOutsideClick(dialogRef, onClose);
 
   const generateReport = async () => {
     setLoading(true);
@@ -80,7 +85,7 @@ ${report.strategicAdvice}
 
   return (
     <div id="ai-analysis-modal-root" className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 z-50 text-right">
-      <div id="ai-analysis-modal-div-2" className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+      <div id="ai-analysis-modal-div-2" ref={dialogRef} className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
         
         {/* Header */}
         <div id="ai-analysis-modal-header" className="bg-gradient-to-r from-slate-900 to-indigo-950 p-5 text-white flex items-center justify-between">
@@ -107,7 +112,7 @@ ${report.strategicAdvice}
               <div id="ai-analysis-modal-body-3">
                 <h4 className="font-bold text-slate-900 text-sm">تولید گزارش کارشناسی خودکار با هوش مصنوعی</h4>
                 <p className="text-slate-500 mt-1 max-w-md mx-auto">
-                  هوش مصنوعی داده‌های مربوط به نرخ فقر ({indicators.povertyRate}٪)، حاشیه‌نشینی ({indicators.marginalizationRate}٪) و اعتبارات {orgConfig.name} را تحلیل کرده و گزارش رسمی تولید می‌کند.
+                  هوش مصنوعی داده‌های مربوط به نرخ فقر ({toPersianDigits(indicators.povertyRate)}٪)، حاشیه‌نشینی ({toPersianDigits(indicators.marginalizationRate)}٪) و اعتبارات {orgConfig.name} را تحلیل کرده و گزارش رسمی تولید می‌کند.
                 </p>
               </div>
               <button

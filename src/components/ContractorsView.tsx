@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Contractor, ContractorGrade } from '../types';
-import { formatToman } from '../utils/numberUtils';
+import { useOutsideClick } from '../hooks/useOutsideClick';
+import { formatToman, toPersianDigits } from '../utils/numberUtils';
 import {
   HardHat,
   Plus,
@@ -16,6 +17,7 @@ import {
   X,
   FileCheck2,
 } from 'lucide-react';
+import { useConfirmDelete } from './ConfirmDeleteModal';
 
 export const ContractorsView: React.FC = () => {
   const {
@@ -25,14 +27,17 @@ export const ContractorsView: React.FC = () => {
     handleUpdateContractor,
     handleDeleteContractor,
     currentUser,
-    rolesPermissions,
+    getUserPermissions,
   } = useAppContext();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGrade, setSelectedGrade] = useState<string>('ALL');
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>('ALL');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+  useOutsideClick(modalRef, () => setIsModalOpen(false));
   const [editingCnt, setEditingCnt] = useState<Contractor | null>(null);
+  const { confirmDelete, modal: deleteConfirmModal } = useConfirmDelete();
 
   // Form State
   const [formName, setFormName] = useState('');
@@ -46,7 +51,7 @@ export const ContractorsView: React.FC = () => {
   const [formRating, setFormRating] = useState<number>(4.5);
   const [formStatus, setFormStatus] = useState<'VERIFIED' | 'UNDER_EVALUATION' | 'SUSPENDED'>('VERIFIED');
 
-  const userPerm = rolesPermissions.find((r) => r.role === currentUser.role);
+  const userPerm = getUserPermissions(currentUser);
   const canManage = userPerm ? userPerm.canManageContractors : currentUser.role === 'ADMIN';
 
   const gradeLabels: Record<ContractorGrade, string> = {
@@ -188,7 +193,7 @@ export const ContractorsView: React.FC = () => {
         <div id="contractors-view-micro-kpi-strip" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-amber-200/60">
           <div id="contractors-view-micro-kpi-strip-2" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">پیمانکاران احراز صلاحیت شده</span>
-            <span className="text-xl font-black text-slate-900 mt-0.5 block font-mono">{contractors.length} شرکت</span>
+            <span className="text-xl font-black text-slate-900 mt-0.5 block font-mono">{toPersianDigits(contractors.length)} شرکت</span>
           </div>
           <div id="contractors-view-micro-kpi-strip-3" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">ارزش کل پیمان‌های فعال</span>
@@ -198,12 +203,12 @@ export const ContractorsView: React.FC = () => {
             <span className="text-xs text-slate-500 block">میانگین نمره ارزیابی کیفی</span>
             <span className="text-xl font-black text-emerald-700 mt-0.5 block flex items-center gap-1 font-mono">
               <Star className="w-4 h-4 fill-emerald-600 text-emerald-600" />
-              {avgScore} از ۱۰۰
+              {toPersianDigits(avgScore)} از ۱۰۰
             </span>
           </div>
           <div id="contractors-view-micro-kpi-strip-5" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">پیمانکاران بومی معتمد</span>
-            <span className="text-xl font-black text-blue-700 mt-0.5 block font-mono">{localVerifiedCount} شرکت بومی</span>
+            <span className="text-xl font-black text-blue-700 mt-0.5 block font-mono">{toPersianDigits(localVerifiedCount)} شرکت بومی</span>
           </div>
         </div>
       </div>
@@ -299,7 +304,7 @@ export const ContractorsView: React.FC = () => {
                 <div id={`contractors-view-capacity-and-contracts-${cnt.id}`} className="space-y-2 mb-4 text-xs">
                   <div id={`contractors-view-capacity-and-contracts-2-${cnt.id}`} className="flex items-center justify-between">
                     <span className="text-slate-500 dark:text-slate-400">ظرفیت آزاد پیمان:</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200">{cnt.freeCapacitySlots} پروژه</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200">{toPersianDigits(cnt.freeCapacitySlots)} پروژه</span>
                   </div>
                   <div id={`contractors-view-capacity-and-contracts-3-${cnt.id}`} className="flex items-center justify-between">
                     <span className="text-slate-500 dark:text-slate-400">مجموع قراردادهای فعال:</span>
@@ -312,13 +317,13 @@ export const ContractorsView: React.FC = () => {
               <div id={`contractors-view-footer-${cnt.id}`} className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
                 <div id={`contractors-view-footer-2-${cnt.id}`} className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
                   <FileCheck2 className="w-3.5 h-3.5 text-amber-500" />
-                  <span>{cntProjects.length} قرارداد فعال</span>
+                  <span>{toPersianDigits(cntProjects.length)} قرارداد فعال</span>
                 </div>
 
                 <div id={`contractors-view-footer-3-${cnt.id}`} className="flex items-center gap-1.5">
                   <div id={`contractors-view-footer-4-${cnt.id}`} className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-300 font-bold text-[11px] border border-emerald-200 dark:border-emerald-800/40">
                     <Star className="w-3 h-3 fill-emerald-500 text-emerald-500" />
-                    <span>{cnt.performanceScore}</span>
+                    <span>{toPersianDigits(cnt.performanceScore)}</span>
                   </div>
 
                   {canManage && (
@@ -331,7 +336,11 @@ export const ContractorsView: React.FC = () => {
                         <Edit className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => handleDeleteContractor(cnt.id)}
+                        onClick={() =>
+                          confirmDelete(`آیا از حذف پیمانکار «${cnt.companyName}» مطمئن هستید؟ این عملیات قابل بازگشت نیست.`, () =>
+                            handleDeleteContractor(cnt.id)
+                          )
+                        }
                         className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
                         title="حذف پیمانکار"
                       >
@@ -349,7 +358,7 @@ export const ContractorsView: React.FC = () => {
       {/* CRUD Modal */}
       {isModalOpen && (
         <div id="contractors-view-crud-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div id="contractors-view-crud-modal-2" className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[90vh]">
+          <div id="contractors-view-crud-modal-2" ref={modalRef} className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[90vh]">
             <div id="contractors-view-crud-modal-3" className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-4">
               <h3 className="font-black text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <HardHat className="w-5 h-5 text-amber-500" />
@@ -497,6 +506,7 @@ export const ContractorsView: React.FC = () => {
           </div>
         </div>
       )}
+      {deleteConfirmModal}
     </div>
   );
 };

@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { CrisisHarmItem, UrgencyLevel, AdministrativeLevel } from '../types';
+import { useOutsideClick } from '../hooks/useOutsideClick';
 import {
   AlertTriangle,
   Plus,
@@ -18,7 +19,8 @@ import {
   Layers,
   Activity,
 } from 'lucide-react';
-import { formatNumber } from '../utils/numberUtils';
+import { formatNumber, toPersianDigits } from '../utils/numberUtils';
+import { useConfirmDelete } from './ConfirmDeleteModal';
 
 export const CrisesHarmsView: React.FC = () => {
   const {
@@ -29,14 +31,17 @@ export const CrisesHarmsView: React.FC = () => {
     handleDeleteCrisisHarm,
     setActiveTab,
     currentUser,
-    rolesPermissions,
+    getUserPermissions,
   } = useAppContext();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUrgency, setSelectedUrgency] = useState<string>('ALL');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+  useOutsideClick(modalRef, () => setIsModalOpen(false));
   const [editingCrisis, setEditingCrisis] = useState<CrisisHarmItem | null>(null);
+  const { confirmDelete, modal: deleteConfirmModal } = useConfirmDelete();
 
   // Form State
   const [formTitle, setFormTitle] = useState('');
@@ -54,7 +59,7 @@ export const CrisesHarmsView: React.FC = () => {
   const [formStatus, setFormStatus] = useState<CrisisHarmItem['status']>('UNRESOLVED');
   const [formDeficitIndex, setFormDeficitIndex] = useState('');
 
-  const userPerm = rolesPermissions.find((r) => r.role === currentUser.role);
+  const userPerm = getUserPermissions(currentUser);
   const canManage = userPerm ? userPerm.canManageCrises : true;
 
   const urgencyLabels: Record<UrgencyLevel, { label: string; color: string; badge: string }> = {
@@ -206,13 +211,13 @@ export const CrisesHarmsView: React.FC = () => {
         <div id="crises-harms-view-aggregate-kpi-strip" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-rose-200/60">
           <div id="crises-harms-view-aggregate-kpi-strip-2" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">کل موارد ثبت‌شده</span>
-            <span className="text-xl font-black text-slate-900 mt-0.5 block font-mono">{crisesHarms.length} مورد</span>
+            <span className="text-xl font-black text-slate-900 mt-0.5 block font-mono">{toPersianDigits(crisesHarms.length)} مورد</span>
           </div>
           <div id="crises-harms-view-aggregate-kpi-strip-3" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">بحران‌های حاد و اضطراری</span>
             <span className="text-xl font-black text-rose-700 mt-0.5 block flex items-center gap-1 font-mono">
               <Flame className="w-4 h-4 text-rose-600" />
-              {criticalCount} کانون بحرانی
+              {toPersianDigits(criticalCount)} کانون بحرانی
             </span>
           </div>
           <div id="crises-harms-view-aggregate-kpi-strip-4" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
@@ -221,7 +226,7 @@ export const CrisesHarmsView: React.FC = () => {
           </div>
           <div id="crises-harms-view-aggregate-kpi-strip-5" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">طرح‌های در حال مداخله</span>
-            <span className="text-xl font-black text-emerald-700 mt-0.5 block font-mono">{underInterventionCount} بحران</span>
+            <span className="text-xl font-black text-emerald-700 mt-0.5 block font-mono">{toPersianDigits(underInterventionCount)} بحران</span>
           </div>
         </div>
       </div>
@@ -313,7 +318,7 @@ export const CrisesHarmsView: React.FC = () => {
                     <span className="text-slate-400 text-[11px] block">شاخص شدت محرومیت:</span>
                     <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 mt-0.5">
                       <Activity className="w-3.5 h-3.5 text-rose-500" />
-                      {item.severityScore} از ۱۰۰
+                      {toPersianDigits(item.severityScore)} از ۱۰۰
                     </span>
                   </div>
                   <div id={`crises-harms-view-score-affected-population-3-${item.id}`}>
@@ -388,7 +393,11 @@ export const CrisesHarmsView: React.FC = () => {
                         <Edit className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => handleDeleteCrisisHarm(item.id)}
+                        onClick={() =>
+                          confirmDelete(`آیا از حذف بحران «${item.title}» مطمئن هستید؟ این عملیات قابل بازگشت نیست.`, () =>
+                            handleDeleteCrisisHarm(item.id)
+                          )
+                        }
                         className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
                         title="حذف بحران"
                       >
@@ -406,7 +415,7 @@ export const CrisesHarmsView: React.FC = () => {
       {/* CRUD Modal */}
       {isModalOpen && (
         <div id="crises-harms-view-crud-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div id="crises-harms-view-crud-modal-2" className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[90vh]">
+          <div id="crises-harms-view-crud-modal-2" ref={modalRef} className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[90vh]">
             <div id="crises-harms-view-crud-modal-3" className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-4">
               <h3 className="font-black text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-rose-500" />
@@ -546,6 +555,7 @@ export const CrisesHarmsView: React.FC = () => {
           </div>
         </div>
       )}
+      {deleteConfirmModal}
     </div>
   );
 };

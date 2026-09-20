@@ -12,6 +12,7 @@ import {
   CrisisHarmItem,
   LocationData,
 } from '../types';
+import { toPersianDigits } from './numberUtils';
 
 export type ForecastScenario = 'BASE' | 'CRISIS_STRESS' | 'ACCELERATED_DEVELOPMENT';
 
@@ -173,13 +174,13 @@ export function runDashboardPredictiveAnalysis(
     }
 
     // Generate log-derived rationale
-    let logDerivedRationale = `ثبت ${logCount} لاگ مداخله و ${unresolvedCrisesCount} کانون فعال بحران در منطقه، تقاضای توسعه‌ای این بخش را برای سال آینده ${growthRatePct}٪ افزایش داده است.`;
+    let logDerivedRationale = `ثبت ${toPersianDigits(logCount)} لاگ مداخله و ${toPersianDigits(unresolvedCrisesCount)} کانون فعال بحران در منطقه، تقاضای توسعه‌ای این بخش را برای سال آینده ${toPersianDigits(growthRatePct)}٪ افزایش داده است.`;
     if (p.code === 1) {
-      logDerivedRationale = `انطباق با لاگ‌های هشدار تنش آبی کشکوئیه و نوق، نیاز مبرم به احداث مجتمع‌های آبرسانی تجمیعی و ارتقای بودجه به ${Math.round(projectedNeedNextYearToman / 1_000_000_000)} میلیارد تومان را نشان می‌دهد.`;
+      logDerivedRationale = `انطباق با لاگ‌های هشدار تنش آبی کشکوئیه و نوق، نیاز مبرم به احداث مجتمع‌های آبرسانی تجمیعی و ارتقای بودجه به ${toPersianDigits(Math.round(projectedNeedNextYearToman / 1_000_000_000))} میلیارد تومان را نشان می‌دهد.`;
     } else if (p.code === 4) {
-      logDerivedRationale = `به استناد لاگ‌های فوری اورژانس مسمومیت‌ها و کمبود تجهیزات درمانی رفسنجان، تخصیص بخش سلامت با جهش ${growthRatePct} درصدی باید به ${Math.round(projectedNeedNextYearToman / 1_000_000_000)} میلیارد تومان ارتقا یابد.`;
+      logDerivedRationale = `به استناد لاگ‌های فوری اورژانس مسمومیت‌ها و کمبود تجهیزات درمانی رفسنجان، تخصیص بخش سلامت با جهش ${toPersianDigits(growthRatePct)} درصدی باید به ${toPersianDigits(Math.round(projectedNeedNextYearToman / 1_000_000_000))} میلیارد تومان ارتقا یابد.`;
     } else if (p.code === 2) {
-      logDerivedRationale = `ثبت مطالبات اشتغال جوانان روستایی در لاگ‌های شورا و دهیاری‌ها، ضرورت افزایش تسهیلات خرد کارگاهی را تا سقف ${Math.round(projectedNeedNextYearToman / 1_000_000_000)} میلیارد تومان تبیین می‌کند.`;
+      logDerivedRationale = `ثبت مطالبات اشتغال جوانان روستایی در لاگ‌های شورا و دهیاری‌ها، ضرورت افزایش تسهیلات خرد کارگاهی را تا سقف ${toPersianDigits(Math.round(projectedNeedNextYearToman / 1_000_000_000))} میلیارد تومان تبیین می‌کند.`;
     }
 
     return {
@@ -295,7 +296,7 @@ export function runDashboardPredictiveAnalysis(
 
   const modelConfidencePct = Math.round(91.5 + Math.min(5.5, auditLogs.length * 0.6) * 10) / 10;
 
-  const executiveInsight = `بر اساس پایش هوشمند ${auditLogs.length} رویداد و لاگ ممیزی و تطبیق با ${projects.length} پروژه و ${crisesHarms.length} کانون بحران در منطقه ${selectedLocation.province} (${selectedLocation.county})، کل نیاز توسعه‌ای احتمالی برای سال ۱۴۰۴ معادل ${(projectedNextYearNeedToman / 1_000_000_000_000).toFixed(2)} همت (رشد ${forecastedTotalGrowthPct}٪) تخمین زده می‌شود. بالاترین شتاب افزایش تقاضا متوجه حوزه «${highestGrowthSector?.titleFa || 'آبرسانی و زیرساخت'}» با نرخ رشد برآوردی +${highestGrowthSector?.growthRatePct || 28}٪ است که ضرورت تجمیع منابع مالی چندگانه را پیش از پایان سال مالی جاری ایجاب می‌کند.`;
+  const executiveInsight = `بر اساس پایش هوشمند ${toPersianDigits(auditLogs.length)} رویداد و لاگ ممیزی و تطبیق با ${toPersianDigits(projects.length)} پروژه و ${toPersianDigits(crisesHarms.length)} کانون بحران در منطقه ${selectedLocation.province} (${selectedLocation.county})، کل نیاز توسعه‌ای احتمالی برای سال ۱۴۰۴ معادل ${toPersianDigits((projectedNextYearNeedToman / 1_000_000_000_000).toFixed(2))} همت (رشد ${toPersianDigits(forecastedTotalGrowthPct)}٪) تخمین زده می‌شود. بالاترین شتاب افزایش تقاضا متوجه حوزه «${highestGrowthSector?.titleFa || 'آبرسانی و زیرساخت'}» با نرخ رشد برآوردی +${toPersianDigits(highestGrowthSector?.growthRatePct || 28)}٪ است که ضرورت تجمیع منابع مالی چندگانه را پیش از پایان سال مالی جاری ایجاب می‌کند.`;
 
   return {
     timelineTrends,

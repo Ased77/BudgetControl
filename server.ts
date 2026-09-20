@@ -4,6 +4,7 @@ import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import { INITIAL_PRIORITIES, INITIAL_ORGANIZATION, INITIAL_LOCATIONS } from './src/data/initialData.js';
 import { calculateSmartRecommendations } from './src/utils/recommendationEngine.js';
+import { toPersianDigits } from './src/utils/numberUtils.js';
 
 async function startServer() {
   const app = express();
@@ -122,10 +123,10 @@ async function startServer() {
 اطلاعات ورودی:
 - بودجه کل CSR: ${totalBudgetToman.toLocaleString('fa-IR')} تومان
 - منطقه جغرافیایی: ${locationName}
-- نرخ فقر محلی: ${indicators?.povertyRate || 38}٪
-- نرخ حاشیه‌نشینی: ${indicators?.marginalizationRate || 42}٪
-- نرخ بیکاری: ${indicators?.unemploymentRate || 24}٪
-- شاخص آسیب‌های اجتماعی: ${indicators?.socialHarmsIndex || 70} از ۱۰۰
+- نرخ فقر محلی: ${toPersianDigits(indicators?.povertyRate || 38)}٪
+- نرخ حاشیه‌نشینی: ${toPersianDigits(indicators?.marginalizationRate || 42)}٪
+- نرخ بیکاری: ${toPersianDigits(indicators?.unemploymentRate || 24)}٪
+- شاخص آسیب‌های اجتماعی: ${toPersianDigits(indicators?.socialHarmsIndex || 70)} از ۱۰۰
 
 پاسخ را در قالب یک JSON معتبر با ساختار زیر برگردان (بدون هیچ مارک‌داون یا توضیح اضافه):
 {

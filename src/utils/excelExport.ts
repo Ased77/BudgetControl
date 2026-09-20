@@ -1,4 +1,5 @@
 import { CsrPriority, OrganizationConfig } from '../types';
+import { toPersianDigits } from './numberUtils';
 
 export function exportToCsv(
   orgConfig: OrganizationConfig,
@@ -14,7 +15,7 @@ export function exportToCsv(
   csvContent += `نام شرکت/نهاد,${orgConfig.name}\n`;
   csvContent += `نوع سازمان,${orgConfig.orgType}\n`;
   csvContent += `منطقه هدف,${orgConfig.province} - ${orgConfig.county} - ${orgConfig.district}\n`;
-  csvContent += `بودجه کل مصوب (تومان),${totalBudgetToman}\n`;
+  csvContent += `بودجه کل مصوب (تومان),${toPersianDigits(totalBudgetToman)}\n`;
   csvContent += `دوره مالی,${orgConfig.fiscalYear}\n`;
   csvContent += `تاریخ دریافت گزارش,${new Date().toLocaleDateString('fa-IR')}\n\n`;
 
@@ -34,10 +35,10 @@ export function exportToCsv(
     const cleanTitle = p.title.replace(/,/g, ' ');
     const cleanDesc = p.description.replace(/,/g, ' ');
 
-    csvContent += `${p.code},"${cleanTitle}",${p.category},${pct}%,${amountToman},${amountRial},"${cleanDesc}"\n`;
+    csvContent += `${p.code},"${cleanTitle}",${p.category},${toPersianDigits(pct)}٪,${toPersianDigits(amountToman)},${toPersianDigits(amountRial)},"${cleanDesc}"\n`;
   });
 
-  csvContent += `,,مجموع,${Math.round(totalPercent * 10) / 10}%,${totalAllocatedToman},${totalAllocatedToman * 10},"توزیع کامل بودجه"\n`;
+  csvContent += `,,مجموع,${toPersianDigits(Math.round(totalPercent * 10) / 10)}٪,${toPersianDigits(totalAllocatedToman)},${toPersianDigits(totalAllocatedToman * 10)},"توزیع کامل بودجه"\n`;
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);

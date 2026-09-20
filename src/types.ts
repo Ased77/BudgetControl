@@ -308,6 +308,22 @@ export interface SystemRolePermission {
   scopeLevel: AdministrativeLevel;
 }
 
+/** Boolean permission flags that can be overridden for an individual user. */
+export type UserPermissionField =
+  | 'canViewDashboard'
+  | 'canEditDepartments'
+  | 'canManageBudget'
+  | 'canManageCrises'
+  | 'canManagePriorities'
+  | 'canApproveProjects'
+  | 'canManageExecutors'
+  | 'canManageContractors'
+  | 'canExportReports'
+  | 'canAuditLogs';
+
+/** Per-user overrides layered on top of the role-default permissions. */
+export type UserPermissionOverride = Partial<Record<UserPermissionField, boolean>>;
+
 /* =========================================================================
    ۱۰. مدل لاگ‌های ممیزی و رویدادهای زنده (Audit Logs)
    ========================================================================= */

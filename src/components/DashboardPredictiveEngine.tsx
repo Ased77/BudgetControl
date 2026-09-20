@@ -146,7 +146,7 @@ export const DashboardPredictiveEngine: React.FC = () => {
               موتور تحلیل پیش‌بین تقاضای توسعه‌ای
             </span>
             <span className="text-xs text-slate-500 font-medium">
-              بر پایه تحلیل {summaryMetrics.totalLogInterventionsAnalyzed} لاگ ممیزی و بودجه‌های تخصیص‌یافته
+              بر پایه تحلیل {toPersianDigits(summaryMetrics.totalLogInterventionsAnalyzed)} لاگ ممیزی و بودجه‌های تخصیص‌یافته
             </span>
           </div>
 
@@ -312,10 +312,10 @@ export const DashboardPredictiveEngine: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="year" stroke="#64748b" tick={{ fontSize: 12, fill: '#64748b' }} />
                 <YAxis
-                  stroke="#64748b"
-                  tickFormatter={(val) => `${(val / 1_000_000_000_000).toFixed(1)} همت`}
-                  tick={{ fontSize: 11, fill: '#64748b' }}
-                />
+                   stroke="#64748b"
+                   tickFormatter={(val) => `${toPersianDigits((val / 1_000_000_000_000).toFixed(1))} همت`}
+                   tick={{ fontSize: 11, fill: '#64748b' }}
+                 />
                 <Tooltip content={<CustomChartTooltip />} />
                 <Legend
                   wrapperStyle={{ paddingTop: 10, fontSize: 12 }}
@@ -360,10 +360,10 @@ export const DashboardPredictiveEngine: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="year" stroke="#64748b" tick={{ fontSize: 12, fill: '#64748b' }} />
                 <YAxis
-                  stroke="#64748b"
-                  tickFormatter={(val) => `${(val / 1_000_000_000_000).toFixed(1)} همت`}
-                  tick={{ fontSize: 11, fill: '#64748b' }}
-                />
+                   stroke="#64748b"
+                   tickFormatter={(val) => `${toPersianDigits((val / 1_000_000_000_000).toFixed(1))} همت`}
+                   tick={{ fontSize: 11, fill: '#64748b' }}
+                 />
                 <Tooltip content={<CustomChartTooltip />} />
                 <Legend
                   wrapperStyle={{ paddingTop: 10, fontSize: 12 }}

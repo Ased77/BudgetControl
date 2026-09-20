@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { ProjectExecutor, ExecutorType } from '../types';
+import { useOutsideClick } from '../hooks/useOutsideClick';
 import {
   Users2,
   Plus,
@@ -14,6 +15,8 @@ import {
   X,
   FolderGit2,
 } from 'lucide-react';
+import { useConfirmDelete } from './ConfirmDeleteModal';
+import { toPersianDigits } from '../utils/numberUtils';
 
 export const ExecutorsView: React.FC = () => {
   const {
@@ -23,14 +26,17 @@ export const ExecutorsView: React.FC = () => {
     handleUpdateExecutor,
     handleDeleteExecutor,
     currentUser,
-    rolesPermissions,
+    getUserPermissions,
   } = useAppContext();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<string>('ALL');
   const [selectedCapacity, setSelectedCapacity] = useState<string>('ALL');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+  useOutsideClick(modalRef, () => setIsModalOpen(false));
   const [editingExec, setEditingExec] = useState<ProjectExecutor | null>(null);
+  const { confirmDelete, modal: deleteConfirmModal } = useConfirmDelete();
 
   // Form State
   const [formName, setFormName] = useState('');
@@ -42,7 +48,7 @@ export const ExecutorsView: React.FC = () => {
   const [formSuccessRate, setFormSuccessRate] = useState<number>(90);
   const [formCapacity, setFormCapacity] = useState<ProjectExecutor['capacityStatus']>('AVAILABLE');
 
-  const userPerm = rolesPermissions.find((r) => r.role === currentUser.role);
+  const userPerm = getUserPermissions(currentUser);
   const canManage = userPerm ? userPerm.canManageExecutors : currentUser.role === 'ADMIN';
 
   const typeLabels: Record<ExecutorType, string> = {
@@ -176,19 +182,19 @@ export const ExecutorsView: React.FC = () => {
         <div id="executors-view-micro-kpi-strip" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-cyan-200/60">
           <div id="executors-view-micro-kpi-strip-2" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">کل مجریان شناسنامه‌دار</span>
-            <span className="text-xl font-black text-slate-900 mt-0.5 block font-mono">{executors.length} نهاد</span>
+            <span className="text-xl font-black text-slate-900 mt-0.5 block font-mono">{toPersianDigits(executors.length)} نهاد</span>
           </div>
           <div id="executors-view-micro-kpi-strip-3" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">پروژه‌های با موفقیت تحویل‌شده</span>
-            <span className="text-xl font-black text-emerald-700 mt-0.5 block font-mono">{totalCompleted} پروژه</span>
+            <span className="text-xl font-black text-emerald-700 mt-0.5 block font-mono">{toPersianDigits(totalCompleted)} پروژه</span>
           </div>
           <div id="executors-view-micro-kpi-strip-4" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">میانگین نرخ موفقیت میدانی</span>
-            <span className="text-xl font-black text-cyan-700 mt-0.5 block font-mono">{avgSuccess}٪</span>
+            <span className="text-xl font-black text-cyan-700 mt-0.5 block font-mono">{toPersianDigits(avgSuccess)}٪</span>
           </div>
           <div id="executors-view-micro-kpi-strip-5" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">مجریان دارای ظرفیت آزاد</span>
-            <span className="text-xl font-black text-amber-700 mt-0.5 block font-mono">{availableCount} مجری</span>
+            <span className="text-xl font-black text-amber-700 mt-0.5 block font-mono">{toPersianDigits(availableCount)} مجری</span>
           </div>
         </div>
       </div>
@@ -216,7 +222,7 @@ export const ExecutorsView: React.FC = () => {
             onChange={(e) => setSelectedType(e.target.value)}
             className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-cyan-500"
           >
-            <option value="ALL">همه ساختارها ({executors.length})</option>
+            <option value="ALL">همه ساختارها ({toPersianDigits(executors.length)})</option>
             <option value="GOVERNMENTAL">دستگاه دولتی</option>
             <option value="JIHADI_FOUNDATION">قرارگاه جهادی</option>
             <option value="PUBLIC_COMMUNITY">شورای دهیاری و بخشداری</option>
@@ -305,7 +311,7 @@ export const ExecutorsView: React.FC = () => {
                   </div>
                   <div id={`executors-view-success-rate-operational-region-3-${exec.id}`} className="flex items-center justify-between text-xs">
                     <span className="text-slate-500 dark:text-slate-400">نرخ موفقیت پروژه‌ها:</span>
-                    <span className="font-bold text-cyan-600 dark:text-cyan-400">{exec.successRate}٪</span>
+                    <span className="font-bold text-cyan-600 dark:text-cyan-400">{toPersianDigits(exec.successRate)}٪</span>
                   </div>
 
                   <div id={`executors-view-success-rate-operational-region-4-${exec.id}`} className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
@@ -322,9 +328,9 @@ export const ExecutorsView: React.FC = () => {
               <div id={`executors-view-footer-${exec.id}`} className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
                 <div id={`executors-view-footer-2-${exec.id}`} className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
                   <FolderGit2 className="w-3.5 h-3.5 text-cyan-500" />
-                  <span>{execProjects.length} پروژه جاری</span>
+                  <span>{toPersianDigits(execProjects.length)} پروژه جاری</span>
                   <span className="text-slate-300 dark:text-slate-700">|</span>
-                  <span className="text-emerald-600 dark:text-emerald-400">{exec.completedProjectsCount} خاتمه‌یافته</span>
+                  <span className="text-emerald-600 dark:text-emerald-400">{toPersianDigits(exec.completedProjectsCount)} خاتمه‌یافته</span>
                 </div>
 
                 {canManage && (
@@ -337,7 +343,11 @@ export const ExecutorsView: React.FC = () => {
                       <Edit className="w-3.5 h-3.5" />
                     </button>
                     <button
-                      onClick={() => handleDeleteExecutor(exec.id)}
+                      onClick={() =>
+                        confirmDelete(`آیا از حذف مجری «${exec.name}» مطمئن هستید؟ این عملیات قابل بازگشت نیست.`, () =>
+                          handleDeleteExecutor(exec.id)
+                        )
+                      }
                       className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
                       title="حذف نهاد مجری"
                     >
@@ -354,7 +364,7 @@ export const ExecutorsView: React.FC = () => {
       {/* Modal */}
       {isModalOpen && (
         <div id="executors-view-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div id="executors-view-modal-2" className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[90vh]">
+          <div id="executors-view-modal-2" ref={modalRef} className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[90vh]">
             <div id="executors-view-modal-3" className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-4">
               <h3 className="font-black text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <Users2 className="w-5 h-5 text-cyan-500" />
@@ -488,6 +498,7 @@ export const ExecutorsView: React.FC = () => {
           </div>
         </div>
       )}
+      {deleteConfirmModal}
     </div>
   );
 };

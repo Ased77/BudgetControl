@@ -1,7 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { ExecutiveProject, ProjectStatus } from '../types';
-import { formatToman, formatNumber } from '../utils/numberUtils';
+import { formatToman, formatNumber, toPersianDigits } from '../utils/numberUtils';
+import { useConfirmDelete } from './ConfirmDeleteModal';
+import { useOutsideClick } from '../hooks/useOutsideClick';
 import {
   FolderKanban,
   Plus,
@@ -45,7 +47,7 @@ export const ProjectsView: React.FC = () => {
     handleDeleteProject,
     handleToggleProjectStatus,
     currentUser,
-    rolesPermissions,
+    getUserPermissions,
     setActiveTab,
   } = useAppContext();
 
@@ -55,7 +57,10 @@ export const ProjectsView: React.FC = () => {
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('ALL');
   const [selectedOverlapFilter, setSelectedOverlapFilter] = useState<string>('ALL');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+  useOutsideClick(modalRef, () => setIsModalOpen(false));
   const [editingProject, setEditingProject] = useState<ExecutiveProject | null>(null);
+  const { confirmDelete, modal: deleteConfirmModal } = useConfirmDelete();
 
   // Form State
   const [formTitle, setFormTitle] = useState('');
@@ -77,8 +82,8 @@ export const ProjectsView: React.FC = () => {
   const [formStatus, setFormStatus] = useState<ProjectStatus>('IN_PROGRESS');
   const [formDescription, setFormDescription] = useState('');
 
-  const userPerm = rolesPermissions.find((r) => r.role === currentUser.role);
-  const canManage = userPerm ? userPerm.canManageProjects : currentUser.role === 'ADMIN';
+  const userPerm = getUserPermissions(currentUser);
+  const canManage = userPerm ? userPerm.canApproveProjects : currentUser.role === 'ADMIN';
 
   // Live calculation of per-capita in the modal
   const computedPerCapita = useMemo(() => {
@@ -275,7 +280,7 @@ export const ProjectsView: React.FC = () => {
         <div id="projects-view-micro-kpi-strip" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-blue-200/60">
           <div id="projects-view-micro-kpi-strip-2" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">کل پروژه‌های ثبت‌شده</span>
-            <span className="text-xl font-black text-slate-900 mt-0.5 block font-mono">{projects.length} پروژه</span>
+            <span className="text-xl font-black text-slate-900 mt-0.5 block font-mono">{toPersianDigits(projects.length)} پروژه</span>
           </div>
           <div id="projects-view-micro-kpi-strip-3" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">ارزش کل اعتبارات پروژه‌ها</span>
@@ -289,7 +294,7 @@ export const ProjectsView: React.FC = () => {
             <span className="text-xs text-slate-500 block">پروژه‌های نیازمند بازنگری موازی‌کاری</span>
             <span className="text-xl font-black text-rose-700 mt-0.5 block flex items-center gap-1 font-mono">
               <ShieldAlert className="w-4 h-4 text-rose-600" />
-              {flaggedCount} مورد هشدار
+              {toPersianDigits(flaggedCount)} مورد هشدار
             </span>
           </div>
         </div>
@@ -302,7 +307,7 @@ export const ProjectsView: React.FC = () => {
             <div id="projects-view-anti-duplication-engine-alerts-3" className="flex items-center gap-2">
               <ShieldAlert className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
               <h3 className="font-black text-sm text-amber-900 dark:text-amber-200">
-                هشدارهای فعال موتور ضد موازی‌کاری و اتلاف بودجه ({antiDuplicationAlerts.length} مورد کشف شد)
+                هشدارهای فعال موتور ضد موازی‌کاری و اتلاف بودجه ({toPersianDigits(antiDuplicationAlerts.length)} مورد کشف شد)
               </h3>
             </div>
             <span className="text-xs text-amber-700 dark:text-amber-400 font-mono">
@@ -513,7 +518,7 @@ export const ProjectsView: React.FC = () => {
                 <div id={`projects-view-progress-bar-${proj.id}`} className="space-y-1 mb-4">
                   <div id={`projects-view-progress-bar-2-${proj.id}`} className="flex justify-between items-center text-[11px]">
                     <span className="text-slate-500 dark:text-slate-400">پیشرفت فیزیکی پروژه:</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200">{proj.progressPercentage}٪</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200">{toPersianDigits(proj.progressPercentage)}٪</span>
                   </div>
                   <div id={`projects-view-progress-bar-3-${proj.id}`} className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                     <div
@@ -571,7 +576,11 @@ export const ProjectsView: React.FC = () => {
                         <Edit className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => handleDeleteProject(proj.id)}
+                        onClick={() =>
+                          confirmDelete(`آیا از حذف پروژه «${proj.title}» مطمئن هستید؟ این عملیات قابل بازگشت نیست.`, () =>
+                            handleDeleteProject(proj.id)
+                          )
+                        }
                         className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
                         title="حذف پروژه"
                       >
@@ -589,7 +598,7 @@ export const ProjectsView: React.FC = () => {
       {/* CRUD Modal */}
       {isModalOpen && (
         <div id="projects-view-crud-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div id="projects-view-crud-modal-2" className="bg-white dark:bg-slate-900 rounded-2xl max-w-xl w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[92vh]">
+          <div id="projects-view-crud-modal-2" ref={modalRef} className="bg-white dark:bg-slate-900 rounded-2xl max-w-xl w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[92vh]">
             <div id="projects-view-crud-modal-3" className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-4">
               <h3 className="font-black text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <FolderKanban className="w-5 h-5 text-blue-500" />
@@ -809,6 +818,8 @@ export const ProjectsView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {deleteConfirmModal}
     </div>
   );
 };
