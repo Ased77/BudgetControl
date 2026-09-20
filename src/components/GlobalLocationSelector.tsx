@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { LocationData } from '../types';
 import { toPersianDigits } from '../utils/numberUtils';
-import { MapPin, Globe, Sparkles, Sliders, AlertTriangle, CheckCircle2, X } from 'lucide-react';
+import { MapPin, Globe, AlertTriangle, X } from 'lucide-react';
 import { useOutsideClick } from '../hooks/useOutsideClick';
 
 interface GlobalLocationSelectorProps {
@@ -10,9 +10,6 @@ interface GlobalLocationSelectorProps {
   onSelectLocation: (loc: LocationData) => void;
   vulnerabilityIndex: number;
   onClose: () => void;
-  onApplySmartRecommendations?: () => void;
-  onOpenIndicatorsTab?: () => void;
-  activeTab?: string;
 }
 
 /**
@@ -27,11 +24,7 @@ export const GlobalLocationSelector: React.FC<GlobalLocationSelectorProps> = ({
   onSelectLocation,
   vulnerabilityIndex,
   onClose,
-  onApplySmartRecommendations,
-  onOpenIndicatorsTab,
-  activeTab,
 }) => {
-  const [appliedSuccess, setAppliedSuccess] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
 
   // Escape closes the dialog, like any other modal surface.
@@ -46,13 +39,6 @@ export const GlobalLocationSelector: React.FC<GlobalLocationSelectorProps> = ({
   // Outside click closes the dialog, matching the export dropdown's behavior.
   useOutsideClick(dialogRef, onClose);
 
-  const handleApplyClick = () => {
-    if (onApplySmartRecommendations) {
-      onApplySmartRecommendations();
-      setAppliedSuccess(true);
-      setTimeout(() => setAppliedSuccess(false), 2500);
-    }
-  };
   // Extract unique provinces
   const provinces = useMemo(() => {
     return Array.from(new Set(locations.map((l) => l.province)));
@@ -186,7 +172,7 @@ export const GlobalLocationSelector: React.FC<GlobalLocationSelectorProps> = ({
               >
                 {availableDistricts.map((d) => (
                   <option key={d.id} value={d.id} className="bg-white text-slate-800 font-medium">
-                    {d.city} | {d.district}
+                    {d.city}
                   </option>
                 ))}
               </select>
@@ -212,6 +198,14 @@ export const GlobalLocationSelector: React.FC<GlobalLocationSelectorProps> = ({
               </div>
             </div>
 
+            {/* District Details Badge */}
+            <div id="global-location-selector-district-badge" className="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-right">
+              <div id="global-location-selector-district-badge-2" className="text-[10px] text-slate-500">شرح بخش / منطقه</div>
+              <div id="global-location-selector-district-badge-3" className="text-xs font-bold text-slate-800">
+                {selectedLocation.district}
+              </div>
+            </div>
+
             <div id="global-location-selector-active-scope" className="bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl text-right flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
               <span className="text-[11px] font-bold text-emerald-700">
@@ -222,50 +216,7 @@ export const GlobalLocationSelector: React.FC<GlobalLocationSelectorProps> = ({
         </div>
 
         {/* Footer actions */}
-        <div id="global-location-selector-footer" className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3 flex-wrap shrink-0">
-          <div id="global-location-selector-footer-2" className="flex items-center gap-2 flex-wrap">
-            {/* Smart AI Re-allocation trigger button */}
-            {onApplySmartRecommendations && (
-              <button
-                onClick={handleApplyClick}
-                className={`flex items-center gap-1.5 font-bold px-3.5 py-2 rounded-xl text-xs shadow-md transition-all active:scale-95 cursor-pointer ${
-                  appliedSuccess
-                    ? 'bg-emerald-600 text-white shadow-emerald-600/30 ring-2 ring-emerald-400'
-                    : 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-blue-600/30'
-                }`}
-                title="اعمال فرمول هوشمند وزن‌دهی تخصیص بودجه برای این لوکیشن"
-              >
-                {appliedSuccess ? (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-200 animate-bounce" />
-                    <span>با موفقیت روی جدول اعمال شد ✓</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 text-amber-300" />
-                    <span>محاسبه هوشمند تخصیص این منطقه</span>
-                  </>
-                )}
-              </button>
-            )}
-
-            {/* View indicators button */}
-            {onOpenIndicatorsTab && (
-              <button
-                onClick={onOpenIndicatorsTab}
-                className={`flex items-center gap-1 font-bold px-3 py-2 rounded-xl text-xs border transition-all active:scale-95 cursor-pointer ${
-                  activeTab === 'LOCATIONS'
-                    ? 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-600/30 ring-1 ring-emerald-400'
-                    : 'bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border-slate-300'
-                }`}
-                title="ویرایش دقیق ۱۱ شاخص محرومیت این منطقه"
-              >
-                <Sliders className="w-3.5 h-3.5 text-emerald-600" />
-                <span>ویرایش شاخص‌ها</span>
-              </button>
-            )}
-          </div>
-
+        <div id="global-location-selector-footer" className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end shrink-0">
           <button
             id="global-location-selector-confirm-button"
             onClick={onClose}

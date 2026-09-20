@@ -655,7 +655,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
         )}
 
         {/* Main Scatter / Bubble Chart Canvas */}
-        <div id="charts-view-main-scatter-bubble-chart-canvas" className="h-96 w-full relative">
+        <div id="charts-view-main-scatter-bubble-chart-canvas" className="h-[clamp(360px,55vh,540px)] w-full relative">
           <ResponsiveContainer width="100%" height="100%">
             <ScatterChart margin={{ top: 25, right: 30, bottom: 40, left: 20 }}>
               <CartesianGrid strokeDasharray="3 3" vertical stroke="#f1f5f9" />
@@ -952,7 +952,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
           </div>
         </div>
 
-        <div id="charts-view-div-18" className="h-80 w-full">
+        <div id="charts-view-div-18" className="h-[clamp(300px,50vh,460px)] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={prevalenceData} margin={{ top: 10, right: 10, left: 10, bottom: 40 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -994,7 +994,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
               <h3 className="font-bold text-slate-800 text-sm">نمودار دایره‌ای توزیع درصدی اولویت‌ها</h3>
             </div>
           </div>
-          <div id="charts-view-pie-chart-percentage-4" className="h-72 w-full">
+          <div id="charts-view-pie-chart-percentage-4" className="h-[clamp(280px,45vh,400px)] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -1034,7 +1034,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
               <h3 className="font-bold text-slate-800 text-sm">نمودار میله‌ای مبلغ تخصیص یافته (تومان)</h3>
             </div>
           </div>
-          <div id="charts-view-bar-chart-financial-allocation-4" className="h-72 w-full">
+          <div id="charts-view-bar-chart-financial-allocation-4" className="h-[clamp(280px,45vh,400px)] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={pieData} margin={{ top: 10, right: 10, left: 10, bottom: 40 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -1070,7 +1070,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
           <p className="text-xs text-slate-500 mb-4">
             مقایسه وزن‌های دستی کاربر با پیشنهاد الگوریتمی هوشمند بر اساس نیازسنجی محلی و نسبت‌سنجی آماری
           </p>
-          <div id="charts-view-radar-chart-manual-vs-smart-ai-4" className="h-80 w-full">
+          <div id="charts-view-radar-chart-manual-vs-smart-ai-4" className="h-[clamp(300px,50vh,460px)] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarData}>
                 <PolarGrid stroke="#e2e8f0" />

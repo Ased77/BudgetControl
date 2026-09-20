@@ -72,7 +72,6 @@ function AppContent() {
     setActiveTab,
     handleSelectLocation,
     handleUpdateIndicators,
-    handleApplySmartRecommendations,
     antiDuplicationAlerts,
     optimizationMetrics,
     addAuditLog,
@@ -383,12 +382,6 @@ function AppContent() {
             onSelectLocation={handleSelectLocation}
             onClose={() => setShowLocationDrawer(false)}
             vulnerabilityIndex={selectedLocation.indicators.overallVulnerabilityScore || 45}
-            onApplySmartRecommendations={handleApplySmartRecommendations}
-            onOpenIndicatorsTab={() => {
-              setActiveTab('LOCATIONS');
-              setShowLocationDrawer(false);
-            }}
-            activeTab={activeTab}
           />
         )}
 
