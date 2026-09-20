@@ -297,7 +297,7 @@ export const PrioritiesView: React.FC = () => {
                     </div>
                     <div id={`priorities-view-priorities-grid-7-${p.id}`}>
                       <span className="text-[10px] font-bold text-slate-400 block">اولویت کد #{p.code}</span>
-                      <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight">{p.title}</h3>
+                      <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight cursor-help" title={p.description}>{p.title}</h3>
                     </div>
                   </div>
 
@@ -319,8 +319,6 @@ export const PrioritiesView: React.FC = () => {
                     </span>
                   </div>
                 </div>
-
-                <p className="text-xs text-slate-600 dark:text-slate-400 mb-3 leading-relaxed">{p.description}</p>
 
                 {/* Slider and Percentage Display */}
                 <div id={`priorities-view-slider-and-percentage-display-${p.id}`} className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3.5 border border-slate-100 dark:border-slate-800/80 mb-3 space-y-3">

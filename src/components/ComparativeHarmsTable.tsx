@@ -790,7 +790,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                     {/* Indicator Title & Description */}
                     <td className="py-3 px-3">
                       <div id={`comparative-harms-table-indicator-title-description-${item.key}`} className="font-extrabold text-slate-900 flex items-center gap-1.5">
-                        <span>{item.title}</span>
+                        <span className="cursor-help" title={item.description}>{item.title}</span>
                         {isHotspot && (
                           <span className="text-[10px] font-black px-1.5 py-0.2 rounded bg-rose-100 text-rose-700 border border-rose-300 flex items-center gap-0.5">
                             <Flame className="w-3 h-3 text-rose-600" />
@@ -798,9 +798,6 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
-                        {item.description}
-                      </p>
                       <span className="text-[10px] text-slate-400 font-mono">
                         منبع: {item.source}
                       </span>

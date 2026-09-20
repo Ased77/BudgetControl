@@ -124,10 +124,7 @@ export const NationalDashboardView: React.FC = () => {
             >
               <div id="national-dashboard-view-primary-macro-kpi-cards-7" className="flex items-center justify-between text-slate-500 text-xs mb-1 font-semibold">
                 <span className="group-hover:text-cyan-800 transition-colors">جمعیت محروم شناسایی‌شده</span>
-                <div id="national-dashboard-view-primary-macro-kpi-cards-8" className="flex items-center gap-1 text-[10px] text-cyan-600 font-bold bg-cyan-50 px-1.5 py-0.5 rounded-md border border-cyan-200">
-                  <span>تب جمعیت</span>
-                  <ArrowRight className="w-3 h-3 rotate-180" />
-                </div>
+                <Users2 className="w-4 h-4 text-cyan-600" />
               </div>
               <span className="text-xl md:text-2xl font-black text-cyan-700 block font-mono">
                 {formatNumber(selectedLocation.indicators.vulnerableGroupsPopulation)} نفر

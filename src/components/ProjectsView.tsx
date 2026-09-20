@@ -442,7 +442,7 @@ export const ProjectsView: React.FC = () => {
                     </div>
                     <div id={`projects-view-projects-list-7-${proj.id}`}>
                       <span className="text-[10px] font-mono text-slate-400 tracking-wider block">{proj.code}</span>
-                      <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight">{proj.title}</h3>
+                      <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight cursor-help" title={proj.description}>{proj.title}</h3>
                     </div>
                   </div>
 
@@ -475,8 +475,6 @@ export const ProjectsView: React.FC = () => {
                     )}
                   </div>
                 </div>
-
-                <p className="text-xs text-slate-600 dark:text-slate-400 mb-3 leading-relaxed">{proj.description}</p>
 
                 {/* Meta Matrix: Department, Budget, Executor, Contractor */}
                 <div id={`projects-view-meta-matrix-department-budget-${proj.id}`} className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 text-xs mb-3 border border-slate-100 dark:border-slate-800">

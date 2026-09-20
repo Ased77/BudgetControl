@@ -299,6 +299,7 @@ export const CsrDomainsCatalogView: React.FC = () => {
               {/* Main Interactive Dropdown Button */}
               <button
                 type="button"
+                title={activeDomain?.description}
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="w-full flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100/80 border-2 border-indigo-500/30 hover:border-indigo-500 rounded-xl transition-all text-right shadow-xs group"
               >
@@ -315,9 +316,6 @@ export const CsrDomainsCatalogView: React.FC = () => {
                         {activeDomain?.category}
                       </span>
                     </div>
-                    <span className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
-                      {activeDomain?.description}
-                    </span>
                   </div>
                 </div>
 
@@ -363,6 +361,7 @@ export const CsrDomainsCatalogView: React.FC = () => {
                         <button
                           key={p.id}
                           type="button"
+                          title={p.description}
                           onClick={() => {
                             setSelectedDomainId(p.id);
                             setIsDropdownOpen(false);
@@ -388,9 +387,6 @@ export const CsrDomainsCatalogView: React.FC = () => {
                                   {p.category}
                                 </span>
                               </div>
-                              <span className="text-[10px] text-slate-500 line-clamp-1 mt-0.5">
-                                {p.description}
-                              </span>
                             </div>
                           </div>
 
@@ -460,6 +456,7 @@ export const CsrDomainsCatalogView: React.FC = () => {
                 {/* Accordion Header / Click to expand/collapse */}
                 <button
                   type="button"
+                  title={domain.description}
                   onClick={() => toggleAccordion(domain.id)}
                   className={`w-full p-4 text-right flex items-center justify-between transition-colors ${
                     isExpanded ? 'bg-indigo-50/70 border-b border-indigo-100' : 'hover:bg-slate-50'
@@ -478,9 +475,6 @@ export const CsrDomainsCatalogView: React.FC = () => {
                           {domain.category}
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
-                        {domain.description}
-                      </p>
                     </div>
                   </div>
 

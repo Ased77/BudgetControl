@@ -261,7 +261,9 @@ export const TableTopicFilters: React.FC<TableTopicFiltersProps> = ({
         <div id="table-topic-filters-active-filter-operational" className="mt-1.5 p-2.5 rounded-lg bg-indigo-950/70 border border-indigo-800/60 text-[11px] text-indigo-200 flex items-center justify-between shadow-xs">
           <div id="table-topic-filters-active-filter-operational-2" className="flex items-center gap-2">
             <span className="text-base">{activeTopic.emoji}</span>
-            <span><strong>تمرکز عملیاتی فیلتر فعال:</strong> {activeTopic.description}</span>
+            <span className="cursor-help" title={activeTopic.description}>
+              <strong>تمرکز عملیاتی فیلتر فعال:</strong> {activeTopic.label}
+            </span>
           </div>
           <span className="text-[10px] text-indigo-300 bg-indigo-900/60 px-2 py-0.5 rounded border border-indigo-700/50">
             حوزه: {activeTopic.category}
@@ -332,6 +334,7 @@ export const TableTopicFilters: React.FC<TableTopicFiltersProps> = ({
                 <button
                   key={topic.id}
                   type="button"
+                  title={topic.description}
                   onClick={() => {
                     onSelectTopic(isSelected ? null : topic.id);
                     setIsOpen(false);
@@ -355,12 +358,6 @@ export const TableTopicFilters: React.FC<TableTopicFiltersProps> = ({
                       </span>
                     )}
                   </div>
-
-                  <p className={`text-[10px] mt-1.5 line-clamp-2 leading-relaxed ${
-                    isSelected ? 'text-indigo-100' : 'text-slate-400'
-                  }`}>
-                    {topic.description}
-                  </p>
 
                   <div id={`table-topic-filters-grid-list-of-topics-in-the-4-${topic.id}`} className="mt-2 pt-1 border-t border-slate-700/50 flex items-center justify-between text-[9px]">
                     <span className={isSelected ? 'text-indigo-200' : 'text-slate-400'}>

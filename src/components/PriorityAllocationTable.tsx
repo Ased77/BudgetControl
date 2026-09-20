@@ -1222,7 +1222,7 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
                             {toPersianDigits(p.code)}
                           </span>
 
-                          <span className="truncate">{p.title}</span>
+                           <span className="truncate cursor-help" title={p.description}>{p.title}</span>
                           
                           {/* Damage Rank Badge */}
                           {priorityStat && (
@@ -1269,9 +1269,6 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
                             <HelpCircle className="w-3 h-3" />
                           </button>
                         </div>
-                        <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">
-                          {p.description}
-                        </p>
 
                         {/* Sub-Items Badge & Accordion */}
                         {p.subItems && p.subItems.length > 0 && (

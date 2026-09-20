@@ -304,7 +304,7 @@ export const DepartmentsView: React.FC = () => {
                     </div>
                     <div id={`departments-view-departments-grid-7-${dept.id}`}>
                       <span className="text-[10px] font-mono text-slate-400 tracking-wider block">{dept.code}</span>
-                      <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight">{dept.name}</h3>
+                      <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight cursor-help" title={dept.description}>{dept.name}</h3>
                     </div>
                   </div>
 
@@ -312,10 +312,6 @@ export const DepartmentsView: React.FC = () => {
                     {dept.categoryFa}
                   </span>
                 </div>
-
-                <p className="text-xs text-slate-600 dark:text-slate-400 mb-4 line-clamp-2 leading-relaxed">
-                  {dept.description}
-                </p>
 
                 {/* Manager and Contact */}
                 <div id={`departments-view-manager-and-contact-${dept.id}`} className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 space-y-1.5 text-xs text-slate-600 dark:text-slate-300 border border-slate-100 dark:border-slate-800/80 mb-4">
