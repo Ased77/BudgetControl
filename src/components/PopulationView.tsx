@@ -287,16 +287,16 @@ export const PopulationView: React.FC = () => {
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => setActiveSubTab(tab.id)}
-                className={`group flex items-center gap-2.5 whitespace-nowrap rounded-t-2xl border border-b-0 px-4 text-right transition-all duration-200 shrink-0 ${
+                className={`group flex items-center gap-2.5 whitespace-nowrap rounded-t-2xl border border-b-0 px-5 text-right transition-colors duration-150 shrink-0 h-12 ${
                   isActive
-                    ? 'relative z-10 -mb-px bg-white border-slate-200 py-3 text-blue-800 shadow-[0_-10px_18px_-12px_rgba(30,64,175,0.45)]'
-                    : 'bg-slate-100/90 border-slate-200/80 py-2 text-slate-500 hover:bg-slate-200/60 hover:text-slate-700'
+                    ? 'relative z-10 -mb-px bg-white border-slate-200 text-blue-800 shadow-[0_-10px_18px_-12px_rgba(30,64,175,0.45)]'
+                    : 'bg-slate-100/90 border-slate-200/80 text-slate-500 hover:bg-slate-200/60 hover:text-slate-700'
                 }`}
               >
                 <TabIcon className={`w-4 h-4 shrink-0 ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
-                <span className={`text-xs whitespace-nowrap ${isActive ? 'font-black' : 'font-bold'}`}>{tab.label}</span>
+                <span className="text-[13px] whitespace-nowrap font-bold">{tab.label}</span>
                 <span
-                  className={`text-[10px] font-bold font-mono px-2 py-0.5 rounded-md border whitespace-nowrap shrink-0 transition-colors ${
+                  className={`text-[11px] font-bold font-mono px-2 py-0.5 rounded-md border whitespace-nowrap shrink-0 transition-colors ${
                     isActive
                       ? 'bg-blue-50 border-blue-200 text-blue-700'
                       : 'bg-white/80 border-slate-200/80 text-slate-400'

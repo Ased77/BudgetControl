@@ -25,6 +25,7 @@ export interface SectorDevelopmentForecast {
   currentAllocatedToman: number;
   currentPercentage: number;
   logInterventionCount: number;
+  relatedAuditLogs: AuditLogItem[];
   logPressureFactor: number;
   unresolvedCrisesCount: number;
   projectedNeedNextYearToman: number;
@@ -93,28 +94,47 @@ export function runDashboardPredictiveAnalysis(
     environment: 0,
   };
 
+  // Retain the actual audit log entries that matched each domain so the
+  // sector detail modal can surface the underlying "لاگ های ممیزی" evidence.
+  const logItemsPerKeyword: Record<string, AuditLogItem[]> = {
+    water: [],
+    health: [],
+    road_infra: [],
+    employment: [],
+    vulnerable_family: [],
+    education: [],
+    environment: [],
+  };
+
   auditLogs.forEach((log) => {
     const text = `${log.targetPriorityTitle || ''} ${log.rationale || ''} ${log.actionType}`.toLowerCase();
     if (text.includes('آب') || text.includes('وات') || text.includes('water') || text.includes('آبرسانی')) {
       logCountsPerKeyword.water += 1;
+      logItemsPerKeyword.water.push(log);
     }
     if (text.includes('بهداشت') || text.includes('درمان') || text.includes('بیمارستان') || text.includes('مسمومیت')) {
       logCountsPerKeyword.health += 1;
+      logItemsPerKeyword.health.push(log);
     }
     if (text.includes('زیرساخت') || text.includes('عمران') || text.includes('راه') || text.includes('مسکن') || text.includes('چاه')) {
       logCountsPerKeyword.road_infra += 1;
+      logItemsPerKeyword.road_infra.push(log);
     }
     if (text.includes('اشتغال') || text.includes('بیکاری') || text.includes('کارآفرینی') || text.includes('وام')) {
       logCountsPerKeyword.employment += 1;
+      logItemsPerKeyword.employment.push(log);
     }
     if (text.includes('آسیب') || text.includes('فرزندآوری') || text.includes('ازدواج') || text.includes('معتاد')) {
       logCountsPerKeyword.vulnerable_family += 1;
+      logItemsPerKeyword.vulnerable_family.push(log);
     }
     if (text.includes('آموزش') || text.includes('مدرسه') || text.includes('دانش')) {
       logCountsPerKeyword.education += 1;
+      logItemsPerKeyword.education.push(log);
     }
     if (text.includes('محیط') || text.includes('هوا') || text.includes('پسماند') || text.includes('گردوغبار')) {
       logCountsPerKeyword.environment += 1;
+      logItemsPerKeyword.environment.push(log);
     }
   });
 
@@ -133,6 +153,26 @@ export function runDashboardPredictiveAnalysis(
     else if (pTitle.includes('آموزش') || pTitle.includes('مدرسه') || p.code === 7) logCount = Math.max(1, logCountsPerKeyword.education);
     else if (pTitle.includes('محیط') || p.code === 5) logCount = Math.max(1, logCountsPerKeyword.environment);
     else logCount = 1;
+
+    // Actual audit log entries that fed this sector's log pressure (same
+    // domain buckets as logCount), deduplicated, for evidence display.
+    const sectorLogKeys: string[] =
+      pTitle.includes('آب') || p.code === 1
+        ? ['water', 'road_infra']
+        : pTitle.includes('بهداشت') || pTitle.includes('درمان') || p.code === 4
+        ? ['health']
+        : pTitle.includes('اشتغال') || p.code === 2
+        ? ['employment']
+        : pTitle.includes('خانواده') || pTitle.includes('فرزند') || p.code === 3 || p.code === 6
+        ? ['vulnerable_family']
+        : pTitle.includes('آموزش') || pTitle.includes('مدرسه') || p.code === 7
+        ? ['education']
+        : pTitle.includes('محیط') || p.code === 5
+        ? ['environment']
+        : [];
+    const relatedAuditLogs = sectorLogKeys
+      .flatMap((k) => logItemsPerKeyword[k])
+      .filter((log, i, arr) => arr.findIndex((x) => x.id === log.id) === i);
 
     // Count unresolved crises in this domain
     const relatedCrises = crisesHarms.filter((c) => {
@@ -192,6 +232,7 @@ export function runDashboardPredictiveAnalysis(
       currentAllocatedToman,
       currentPercentage: currentPct,
       logInterventionCount: logCount,
+      relatedAuditLogs,
       logPressureFactor: Math.round(logPressureFactor * 100) / 100,
       unresolvedCrisesCount,
       projectedNeedNextYearToman,

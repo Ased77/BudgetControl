@@ -91,27 +91,27 @@ export const NationalDashboardView: React.FC = () => {
           </div>
 
           {/* Primary Macro KPI Cards */}
-          <div id="national-dashboard-view-primary-macro-kpi-cards" className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 pt-4 border-t border-blue-200/60">
-            <div id="national-dashboard-view-primary-macro-kpi-cards-2" className="bg-white/90 rounded-2xl p-4 border border-slate-200 shadow-2xs">
-              <div id="national-dashboard-view-primary-macro-kpi-cards-3" className="flex items-center justify-between text-slate-500 text-xs mb-1 font-semibold">
+          <div id="national-dashboard-view-primary-macro-kpi-cards" className="grid grid-cols-2 sm:grid-cols-4 gap-5 md:gap-6 pt-4 border-t border-blue-200/60">
+            <div id="national-dashboard-view-primary-macro-kpi-cards-2" className="bg-white/90 rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-3">
+              <div id="national-dashboard-view-primary-macro-kpi-cards-3" className="flex items-center justify-between text-slate-500 text-xs font-semibold">
                 <span>کل منابع مالی مصوب</span>
                 <Wallet className="w-4 h-4 text-emerald-600" />
               </div>
               <span className="text-xl md:text-2xl font-black text-emerald-700 block font-mono">
                 {formatToman(totalBudgetSources)}
               </span>
-              <span className="text-[11px] text-slate-500 mt-1 block">از {toPersianDigits(budgetSources.length)} منبع و سرفصل فعال</span>
+              <span className="text-[11px] text-slate-500 block">از {toPersianDigits(budgetSources.length)} منبع و سرفصل فعال</span>
             </div>
 
-            <div id="national-dashboard-view-primary-macro-kpi-cards-4" className="bg-white/90 rounded-2xl p-4 border border-slate-200 shadow-2xs">
-              <div id="national-dashboard-view-primary-macro-kpi-cards-5" className="flex items-center justify-between text-slate-500 text-xs mb-1 font-semibold">
+            <div id="national-dashboard-view-primary-macro-kpi-cards-4" className="bg-white/90 rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-3">
+              <div id="national-dashboard-view-primary-macro-kpi-cards-5" className="flex items-center justify-between text-slate-500 text-xs font-semibold">
                 <span>پروژه‌های اجرایی فعال</span>
                 <FolderKanban className="w-4 h-4 text-blue-600" />
               </div>
               <span className="text-xl md:text-2xl font-black text-slate-900 block font-mono">
                 {toPersianDigits(projects.length)} پروژه
               </span>
-              <span className="text-[11px] text-blue-700 mt-1 block font-mono font-medium">
+              <span className="text-[11px] text-blue-700 block font-mono font-medium">
                 ارزش: {formatToman(totalAllocatedToProjects)}
               </span>
             </div>
@@ -119,30 +119,30 @@ export const NationalDashboardView: React.FC = () => {
             <div
               id="national-dashboard-view-primary-macro-kpi-cards-6"
               onClick={() => setActiveTab('POPULATION')}
-              className="bg-white/90 hover:bg-cyan-50/50 rounded-2xl p-4 border border-slate-200 hover:border-cyan-300 shadow-2xs transition-all cursor-pointer group"
+              className="bg-white/90 hover:bg-cyan-50/50 rounded-2xl p-4 border border-slate-200 hover:border-cyan-300 shadow-2xs transition-all cursor-pointer group space-y-3"
               title="کلیک برای مشاهده جزئیات در تب آمار جمعیت"
             >
-              <div id="national-dashboard-view-primary-macro-kpi-cards-7" className="flex items-center justify-between text-slate-500 text-xs mb-1 font-semibold">
+              <div id="national-dashboard-view-primary-macro-kpi-cards-7" className="flex items-center justify-between text-slate-500 text-xs font-semibold">
                 <span className="group-hover:text-cyan-800 transition-colors">جمعیت محروم شناسایی‌شده</span>
                 <Users2 className="w-4 h-4 text-cyan-600" />
               </div>
               <span className="text-xl md:text-2xl font-black text-cyan-700 block font-mono">
                 {formatNumber(selectedLocation.indicators.vulnerableGroupsPopulation)} نفر
               </span>
-              <span className="text-[11px] text-slate-500 mt-1 block">
+              <span className="text-[11px] text-slate-500 block">
                 از {formatNumber(selectedLocation.population)} نفر ({toPersianDigits(((selectedLocation.indicators.vulnerableGroupsPopulation / selectedLocation.population) * 100).toFixed(1))}٪ جمعیت کل)
               </span>
             </div>
 
-            <div id="national-dashboard-view-primary-macro-kpi-cards-9" className="bg-white/90 rounded-2xl p-4 border border-slate-200 shadow-2xs">
-              <div id="national-dashboard-view-primary-macro-kpi-cards-10" className="flex items-center justify-between text-slate-500 text-xs mb-1 font-semibold">
+            <div id="national-dashboard-view-primary-macro-kpi-cards-9" className="bg-white/90 rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-3">
+              <div id="national-dashboard-view-primary-macro-kpi-cards-10" className="flex items-center justify-between text-slate-500 text-xs font-semibold">
                 <span>صرفه‌جویی ضد موازی‌کاری</span>
                 <ShieldAlert className="w-4 h-4 text-amber-600" />
               </div>
               <span className="text-xl md:text-2xl font-black text-amber-700 block font-mono">
                 {formatToman(optimizationMetrics.potentialSavingsToman)}
               </span>
-              <span className="text-[11px] text-amber-800 mt-1 block font-medium">جلوگیری از اتلاف منابع</span>
+              <span className="text-[11px] text-amber-800 block font-medium">جلوگیری از اتلاف منابع</span>
             </div>
           </div>
         </div>

@@ -33,7 +33,6 @@ import {
   Calendar,
   CheckCircle2,
   FileClock,
-  ArrowRight,
   Building2,
   Activity,
   Droplets,
@@ -41,7 +40,43 @@ import {
   Briefcase,
   HardHat,
   Scale,
+  X,
+  ChevronDown,
 } from 'lucide-react';
+
+// Audit action badges (mirrors RolesAndAccessView audit trail styling)
+const AUDIT_ACTION_LABELS: Record<string, { label: string; badge: string }> = {
+  PERCENTAGE_CHANGE: { label: 'تنظیم درصد بودجه', badge: 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300' },
+  BUDGET_UPDATE: { label: 'تغییر سقف کل بودجه', badge: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300' },
+  SCENARIO_APPLIED: { label: 'اعمال سناریوی AI', badge: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300' },
+  LOCATION_CHANGE: { label: 'تغییر موقعیت مکانی', badge: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' },
+  DUPLICATE_FLAGGED: { label: 'هشدار موازی‌کاری', badge: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' },
+  PRIORITY_ADD: { label: 'افزودن اولویت', badge: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' },
+  PRIORITY_EDIT: { label: 'ویرایش اولویت', badge: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' },
+  PRIORITY_DELETE: { label: 'حذف اولویت', badge: 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300' },
+  PROJECT_ADD: { label: 'ثبت پروژه جدید', badge: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' },
+  PROJECT_EDIT: { label: 'ویرایش پروژه', badge: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' },
+  PROJECT_DELETE: { label: 'حذف پروژه', badge: 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300' },
+  PROJECT_STATUS_CHANGE: { label: 'تغییر وضعیت پروژه', badge: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' },
+  DEPARTMENT_ADD: { label: 'ثبت نهاد جدید', badge: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300' },
+  DEPARTMENT_EDIT: { label: 'ویرایش نهاد', badge: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' },
+  DEPARTMENT_DELETE: { label: 'حذف نهاد', badge: 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300' },
+  BUDGET_SOURCE_ADD: { label: 'ثبت منبع بودجه', badge: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' },
+  BUDGET_SOURCE_EDIT: { label: 'ویرایش منبع بودجه', badge: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' },
+  BUDGET_SOURCE_DELETE: { label: 'حذف منبع بودجه', badge: 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300' },
+  CRISIS_ADD: { label: 'ثبت بحران جدید', badge: 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300' },
+  CRISIS_EDIT: { label: 'ویرایش بحران', badge: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' },
+  CRISIS_DELETE: { label: 'حذف بحران', badge: 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300' },
+  EXECUTOR_ADD: { label: 'ثبت مجری جدید', badge: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300' },
+  EXECUTOR_EDIT: { label: 'ویرایش مجری', badge: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' },
+  EXECUTOR_DELETE: { label: 'حذف مجری', badge: 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300' },
+  CONTRACTOR_ADD: { label: 'ثبت پیمانکار جدید', badge: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300' },
+  CONTRACTOR_EDIT: { label: 'ویرایش پیمانکار', badge: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' },
+  CONTRACTOR_DELETE: { label: 'حذف پیمانکار', badge: 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300' },
+  EXPORT_REPORT: { label: 'خروجی گزارش', badge: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' },
+  LOGIN: { label: 'ورود به سامانه', badge: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' },
+  LOGOUT: { label: 'خروج از سامانه', badge: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' },
+};
 
 export const DashboardPredictiveEngine: React.FC = () => {
   const {
@@ -59,6 +94,15 @@ export const DashboardPredictiveEngine: React.FC = () => {
   const [scenario, setScenario] = useState<ForecastScenario>('BASE');
   const [chartType, setChartType] = useState<'BUDGET_VS_NEED' | 'SECTOR_TRENDS'>('BUDGET_VS_NEED');
   const [filterUrgency, setFilterUrgency] = useState<string>('ALL');
+
+  // Sector detail modal
+  const [detailSector, setDetailSector] = useState<SectorDevelopmentForecast | null>(null);
+  const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
+
+  const openSectorDetail = (sector: SectorDevelopmentForecast) => {
+    setDetailSector(sector);
+    setExpandedLogId(null);
+  };
 
   // Compute forecast
   const predictiveData = useMemo(() => {
@@ -445,25 +489,27 @@ export const DashboardPredictiveEngine: React.FC = () => {
           </div>
         </div>
 
-        {/* Sector Cards Grid */}
-        <div id="dashboard-predictive-engine-sector-cards-grid" className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {/* Sector Cards Grid — summary only; click opens the full detail modal */}
+        <div id="dashboard-predictive-engine-sector-cards-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {filteredSectors.map((sector) => (
             <div
               id={`dashboard-predictive-engine-sector-cards-grid-2-${sector.priorityId}`}
               key={sector.priorityId}
-              className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs hover:border-indigo-300 transition-colors space-y-3 flex flex-col justify-between"
+              onClick={() => openSectorDetail(sector)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openSectorDetail(sector); } }}
+              title="کلیک برای مشاهده جزئیات کامل"
+              className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs hover:border-indigo-300 hover:shadow-sm cursor-pointer transition-all space-y-3 flex flex-col justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
             >
               <div id={`dashboard-predictive-engine-sector-cards-grid-3-${sector.priorityId}`}>
-                <div id={`dashboard-predictive-engine-sector-cards-grid-4-${sector.priorityId}`} className="flex items-start justify-between gap-2 mb-2">
-                  <div id={`dashboard-predictive-engine-sector-cards-grid-5-${sector.priorityId}`} className="flex items-center gap-2">
-                    <span className="p-1.5 rounded-lg bg-slate-100 border border-slate-200">
+                <div id={`dashboard-predictive-engine-sector-cards-grid-4-${sector.priorityId}`} className="flex items-center justify-between gap-2">
+                  <div id={`dashboard-predictive-engine-sector-cards-grid-5-${sector.priorityId}`} className="flex items-center gap-2 min-w-0">
+                    <span className="p-1.5 rounded-lg bg-slate-100 border border-slate-200 shrink-0">
                       {getSectorIcon(sector.code)}
                     </span>
-                    <div id={`dashboard-predictive-engine-sector-cards-grid-6-${sector.priorityId}`}>
-                      <h4 className="font-bold text-xs text-slate-900 leading-snug line-clamp-1" title={sector.titleFa}>
-                        {sector.titleFa}
-                      </h4>
-                      <span className="text-[11px] text-slate-500">{sector.category}</span>
+                    <div id={`dashboard-predictive-engine-sector-cards-grid-6-${sector.priorityId}`} className="min-w-0">
+                      <span className="text-[11px] text-slate-500 truncate block">{sector.category}</span>
                     </div>
                   </div>
 
@@ -479,48 +525,22 @@ export const DashboardPredictiveEngine: React.FC = () => {
                     {sector.urgencyStatusFa}
                   </span>
                 </div>
-
-                {/* Financial comparison row */}
-                <div id={`dashboard-predictive-engine-financial-comparison-row-${sector.priorityId}`} className="grid grid-cols-3 gap-2 py-2 px-2.5 bg-slate-50 rounded-lg border border-slate-100 text-center text-xs">
-                  <div id={`dashboard-predictive-engine-financial-comparison-row-2-${sector.priorityId}`}>
-                    <span className="text-[10px] text-slate-500 block">تخصیص جاری (۱۴۰۳)</span>
-                    <span className="font-bold font-mono text-slate-800">
-                      {formatToman(sector.currentAllocatedToman)}
-                    </span>
-                  </div>
-                  <div id={`dashboard-predictive-engine-financial-comparison-row-3-${sector.priorityId}`}>
-                    <span className="text-[10px] text-slate-500 block">برآورد نیاز (۱۴۰۴)</span>
-                    <span className="font-bold font-mono text-indigo-700">
-                      {formatToman(sector.projectedNeedNextYearToman)}
-                    </span>
-                  </div>
-                  <div id={`dashboard-predictive-engine-financial-comparison-row-4-${sector.priorityId}`}>
-                    <span className="text-[10px] text-slate-500 block">درصد رشد نیاز</span>
-                    <span className="font-bold font-mono text-rose-700">
-                      +{toPersianDigits(sector.growthRatePct)}٪
-                    </span>
-                  </div>
-                </div>
-
-                {/* Log-derived Rationale */}
-                <div id={`dashboard-predictive-engine-log-derived-rationale-${sector.priorityId}`} className="mt-2.5 pt-2 border-t border-slate-100 text-[11px] text-slate-600 leading-relaxed">
-                  <div id={`dashboard-predictive-engine-log-derived-rationale-2-${sector.priorityId}`} className="flex items-center gap-1 text-slate-500 mb-1 font-semibold text-[10px]">
-                    <FileClock className="w-3 h-3 text-indigo-600" />
-                    <span>علت مستخرج از سوابق لاگ‌ها و شاخص‌های محلی:</span>
-                  </div>
-                  <p className="line-clamp-2">{sector.logDerivedRationale}</p>
-                </div>
               </div>
 
+              <h4
+                id={`dashboard-predictive-engine-sector-cards-grid-title-${sector.priorityId}`}
+                className="font-black text-sm text-slate-900 leading-snug text-right line-clamp-2"
+                title={sector.titleFa}
+              >
+                {sector.titleFa}
+              </h4>
+
               <div id={`dashboard-predictive-engine-log-derived-rationale-3-${sector.priorityId}`} className="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px] text-slate-500">
-                <span>تعداد لاگ‌های مرتبط: {toPersianDigits(sector.logInterventionCount)} لاگ ممیزی</span>
-                <button
-                  onClick={() => setActiveTab('PRIORITIES')}
-                  className="text-indigo-600 font-bold hover:underline flex items-center gap-0.5 cursor-pointer"
-                >
-                  <span>تنظیم وزن</span>
-                  <ArrowRight className="w-3 h-3 rtl:rotate-180" />
-                </button>
+                <span>{toPersianDigits(sector.logInterventionCount)} لاگ ممیزی</span>
+                <span className="flex items-center gap-1 text-indigo-500 font-bold">
+                  جزئیات
+                  <ArrowUpRight className="w-3 h-3 rtl:-scale-x-100" />
+                </span>
               </div>
             </div>
           ))}
@@ -560,6 +580,224 @@ export const DashboardPredictiveEngine: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Sector Detail Modal — full card details */}
+      {detailSector && (
+        <div
+          id="dashboard-predictive-engine-sector-detail-modal"
+          onClick={() => setDetailSector(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        >
+          <div
+            id="dashboard-predictive-engine-sector-detail-modal-2"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="dashboard-predictive-engine-sector-detail-modal-title"
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[90vh] space-y-4 animate-in fade-in zoom-in-95 duration-150"
+          >
+            {/* Modal header */}
+            <div id="dashboard-predictive-engine-sector-detail-modal-3" className="flex items-start justify-between gap-3 pb-4 border-b border-slate-200 dark:border-slate-800">
+              <div id="dashboard-predictive-engine-sector-detail-modal-4" className="flex items-center gap-3">
+                <span className="p-2 rounded-xl bg-slate-100 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+                  {getSectorIcon(detailSector.code)}
+                </span>
+                <div id="dashboard-predictive-engine-sector-detail-modal-5">
+                  <h3
+                    id="dashboard-predictive-engine-sector-detail-modal-title"
+                    className="font-black text-base text-slate-900 dark:text-slate-100 leading-snug"
+                  >
+                    {detailSector.titleFa}
+                  </h3>
+                  <span className="text-xs text-slate-500">{detailSector.category}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setDetailSector(null)}
+                aria-label="بستن"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Urgency status */}
+            <div id="dashboard-predictive-engine-sector-detail-modal-6" className="flex items-center justify-between">
+              <span className="text-xs text-slate-500 font-semibold">وضعیت فوریت بخش:</span>
+              <span
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
+                  detailSector.urgencyStatus === 'CRITICAL_SURGE'
+                    ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                    : detailSector.urgencyStatus === 'HIGH_GROWTH'
+                    ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                    : 'bg-slate-100 text-slate-700 border border-slate-200'
+                }`}
+              >
+                {detailSector.urgencyStatusFa}
+              </span>
+            </div>
+
+            {/* Full financial breakdown */}
+            <div id="dashboard-predictive-engine-sector-detail-modal-7" className="grid grid-cols-2 gap-3">
+              <div id="dashboard-predictive-engine-sector-detail-modal-8" className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-center">
+                <span className="text-[11px] text-slate-500 block mb-1">تخصیص جاری (۱۴۰۳)</span>
+                <span className="text-base font-black font-mono text-slate-800 block">
+                  {formatToman(detailSector.currentAllocatedToman)}
+                </span>
+                <span className="text-[10px] text-slate-500 block mt-1">
+                  سهم تخصیص: {toPersianDigits(detailSector.currentPercentage)}٪
+                </span>
+              </div>
+              <div id="dashboard-predictive-engine-sector-detail-modal-9" className="p-3.5 bg-indigo-50/70 rounded-xl border border-indigo-200 text-center">
+                <span className="text-[11px] text-indigo-700 block mb-1">برآورد نیاز (۱۴۰۴)</span>
+                <span className="text-base font-black font-mono text-indigo-700 block">
+                  {formatToman(detailSector.projectedNeedNextYearToman)}
+                </span>
+                <span className="text-[10px] text-indigo-700 block mt-1 font-semibold">
+                  رشد نیاز: +{toPersianDigits(detailSector.growthRatePct)}٪
+                </span>
+              </div>
+            </div>
+
+            {/* Deficit, log pressure & crises */}
+            <div id="dashboard-predictive-engine-sector-detail-modal-10" className="grid grid-cols-3 gap-3">
+              <div id="dashboard-predictive-engine-sector-detail-modal-11" className="p-3 bg-rose-50/70 rounded-xl border border-rose-200 text-center">
+                <span className="text-[10px] text-rose-700 block mb-1">کسری پیش‌بینی‌شده</span>
+                <span className="text-xs font-black font-mono text-rose-800 block">
+                  {formatToman(detailSector.forecastedDeficitToman)}
+                </span>
+              </div>
+              <div id="dashboard-predictive-engine-sector-detail-modal-12" className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center">
+                <span className="text-[10px] text-slate-500 block mb-1">ضریب فشار لاگ</span>
+                <span className="text-xs font-black font-mono text-slate-800 block">
+                  ×{toPersianDigits(detailSector.logPressureFactor.toFixed(2))}
+                </span>
+              </div>
+              <div id="dashboard-predictive-engine-sector-detail-modal-13" className="p-3 bg-amber-50/70 rounded-xl border border-amber-200 text-center">
+                <span className="text-[10px] text-amber-700 block mb-1">بحران‌های حل‌نشده</span>
+                <span className="text-xs font-black font-mono text-amber-800 block">
+                  {toPersianDigits(detailSector.unresolvedCrisesCount)} کانون
+                </span>
+              </div>
+            </div>
+
+            {/* Related raw audit logs — underlying evidence incl. log count */}
+            <div id="dashboard-predictive-engine-sector-detail-modal-audit-logs" className="rounded-xl border border-indigo-100 bg-indigo-50/40 dark:bg-indigo-950/20 dark:border-indigo-900 p-3">
+              <div id="dashboard-predictive-engine-sector-detail-modal-audit-logs-2" className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5 text-indigo-700 dark:text-indigo-300 font-semibold text-xs">
+                  <FileClock className="w-3.5 h-3.5" />
+                  <span>لاگ‌های ممیزی مرتبط با این بخش:</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-mono font-bold text-indigo-600 dark:text-indigo-300">
+                    {toPersianDigits(detailSector.logInterventionCount)} لاگ ممیزی
+                  </span>
+                  {detailSector.relatedAuditLogs.length > 0 && (
+                    <>
+                      <span className="w-1 h-1 rounded-full bg-indigo-300 dark:bg-indigo-600" />
+                      <span className="text-[10px] font-mono text-indigo-500 dark:text-indigo-400">
+                        {toPersianDigits(detailSector.relatedAuditLogs.length)} سوابق
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {detailSector.relatedAuditLogs.length > 0 ? (
+                <div id="dashboard-predictive-engine-sector-detail-modal-audit-logs-3" className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden">
+                  {detailSector.relatedAuditLogs.map((log) => {
+                    const actionInfo = AUDIT_ACTION_LABELS[log.actionType] || {
+                      label: log.actionType,
+                      badge: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+                    };
+                    const isExpanded = expandedLogId === log.id;
+                    return (
+                      <div
+                        id={`dashboard-predictive-engine-sector-detail-modal-audit-log-${log.id}`}
+                        key={log.id}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setExpandedLogId(isExpanded ? null : log.id)}
+                          aria-expanded={isExpanded}
+                          title={isExpanded ? 'جمع‌بندی' : 'نمایش جزئیات لاگ'}
+                          className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-right hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+                        >
+                          <span className="flex items-center gap-2 min-w-0">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${actionInfo.badge}`}>
+                              {actionInfo.label}
+                            </span>
+                            <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 truncate">
+                              {log.targetPriorityTitle || log.actionType}
+                            </span>
+                          </span>
+                          <span className="flex items-center gap-1.5 shrink-0">
+                            <span className="text-[10px] font-mono text-slate-400">{log.timestamp}</span>
+                            <ChevronDown
+                              className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-150 ${isExpanded ? 'rotate-180' : ''}`}
+                            />
+                          </span>
+                        </button>
+                        {isExpanded && (
+                          <div
+                            id={`dashboard-predictive-engine-sector-detail-modal-audit-log-${log.id}-detail`}
+                            className="px-3 pb-3 pt-1 space-y-1.5 bg-slate-50/70 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800"
+                          >
+                            {(log.oldValue || log.newValue) && (
+                              <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                                {log.oldValue || '-'} ➔ {log.newValue || '-'}
+                              </div>
+                            )}
+                            {log.rationale && (
+                              <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">{log.rationale}</p>
+                            )}
+                            <div className="flex items-center gap-1 text-[10px] text-slate-400 pt-1 border-t border-slate-200/70 dark:border-slate-800">
+                              <span className="font-bold text-slate-500 dark:text-slate-400">{log.userName}</span>
+                              <span>({log.userRole})</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p id="dashboard-predictive-engine-sector-detail-modal-audit-logs-empty" className="text-[11px] text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2.5">
+                  لاگ مستقیم مرتبطی در سوابق ممیزی ثبت نشده است؛ فشار این بخش بر پایه شاخص‌های منطقه‌ای و بحران‌های فعال محاسبه شده است.
+                </p>
+              )}
+            </div>
+
+            {/* Full log-derived rationale — unclamped */}
+            <div id="dashboard-predictive-engine-sector-detail-modal-15" className="pt-1 border-t border-slate-200 dark:border-slate-800">
+              <div id="dashboard-predictive-engine-sector-detail-modal-16" className="flex items-center gap-1 text-slate-500 mb-1.5 font-semibold text-xs">
+                <FileClock className="w-3.5 h-3.5 text-indigo-600" />
+                <span>علت مستخرج از سوابق لاگ‌ها و شاخص‌های محلی:</span>
+              </div>
+              <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                {detailSector.logDerivedRationale}
+              </p>
+            </div>
+
+            {/* Modal footer actions */}
+            <div id="dashboard-predictive-engine-sector-detail-modal-17" className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <button
+                onClick={() => setDetailSector(null)}
+                className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 shadow-2xs transition-colors cursor-pointer"
+              >
+                بستن
+              </button>
+              <button
+                onClick={() => { setDetailSector(null); setActiveTab('PRIORITIES'); }}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-colors cursor-pointer"
+              >
+                <Scale className="w-3.5 h-3.5" />
+                <span>تنظیم وزن در اولویت‌ها</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
