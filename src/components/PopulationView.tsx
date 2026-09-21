@@ -22,7 +22,11 @@ import {
   PieChart as PieChartIcon,
   Home,
   Scale,
+  LayoutDashboard,
+  BarChart3,
 } from 'lucide-react';
+
+type PopulationSubTabId = 'OVERVIEW' | 'DISTRICTS' | 'VULNERABLE' | 'PYRAMID';
 
 export const PopulationView: React.FC = () => {
   const { locations, selectedLocation, handleSelectLocation } = useAppContext();
@@ -83,6 +87,40 @@ export const PopulationView: React.FC = () => {
       supportType: 'بسته‌های معیشتی فصلی، بیمه روستایی و کمک‌هزینه درمان',
       icon: Briefcase,
       color: 'text-rose-700 bg-rose-50 border-rose-200',
+    },
+  ];
+
+  // District Population List
+  // Quick sub-navigation tab model (redesigned segment tabs)
+  const subNavigationTabs: {
+    id: PopulationSubTabId;
+    label: string;
+    badge: string;
+    icon: React.ElementType;
+  }[] = [
+    {
+      id: 'OVERVIEW',
+      label: 'نمای کلی جمعیت',
+      badge: '۴ بخش',
+      icon: LayoutDashboard,
+    },
+    {
+      id: 'DISTRICTS',
+      label: 'بخش‌ها و آبادی‌ها',
+      badge: '۲۲۰ آبادی',
+      icon: MapPin,
+    },
+    {
+      id: 'VULNERABLE',
+      label: 'محرومین و آسیب‌پذیران',
+      badge: `${formatNumber(totalDeprivedVulnerable)} نفر`,
+      icon: HeartHandshake,
+    },
+    {
+      id: 'PYRAMID',
+      label: 'هرم سنی و جوانان',
+      badge: '۴ گروه سنی',
+      icon: BarChart3,
     },
   ];
 
@@ -230,48 +268,54 @@ export const PopulationView: React.FC = () => {
         </div>
       </div>
 
-      {/* Quick Sub-navigation — sits below the clarification alert */}
-      <div id="population-view-quick-sub-navigation" className="flex flex-wrap items-center gap-2 shrink-0 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
-        <button
-          onClick={() => setActiveSubTab('OVERVIEW')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-            activeSubTab === 'OVERVIEW'
-              ? 'bg-white text-blue-700 shadow-xs'
-              : 'text-slate-600 hover:text-slate-900'
-          }`}
+      {/* Quick Sub-navigation — redesigned segment tabs, sits below the clarification alert */}
+      <div id="population-view-quick-sub-navigation" className="shrink-0 bg-white rounded-3xl p-2 border border-slate-200 shadow-sm">
+        <div
+          id="population-view-quick-sub-navigation-2"
+          role="tablist"
+          aria-label="بخش‌های نمای جمعیت"
+          className="flex items-stretch gap-2 overflow-x-auto"
         >
-          نمای کلی جمعیت
-        </button>
-        <button
-          onClick={() => setActiveSubTab('DISTRICTS')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-            activeSubTab === 'DISTRICTS'
-              ? 'bg-white text-blue-700 shadow-xs'
-              : 'text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          تفکیک بخش‌ها و روستاها
-        </button>
-        <button
-          onClick={() => setActiveSubTab('VULNERABLE')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-            activeSubTab === 'VULNERABLE'
-              ? 'bg-white text-blue-700 shadow-xs'
-              : 'text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          آمار دقیق محرومین ({formatNumber(totalDeprivedVulnerable)} نفر)
-        </button>
-        <button
-          onClick={() => setActiveSubTab('PYRAMID')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-            activeSubTab === 'PYRAMID'
-              ? 'bg-white text-blue-700 shadow-xs'
-              : 'text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          هرم سنی و جوانان
-        </button>
+          {subNavigationTabs.map((tab) => {
+            const isActive = activeSubTab === tab.id;
+            const TabIcon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                id={`population-view-quick-sub-navigation-3-${tab.id}`}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setActiveSubTab(tab.id)}
+                className={`group flex items-center gap-3 px-4 py-2.5 rounded-2xl border text-right transition-all duration-200 flex-1 min-w-fit ${
+                  isActive
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 border-blue-500 text-white shadow-md shadow-blue-600/25'
+                    : 'bg-slate-50 border-transparent text-slate-600 hover:bg-blue-50/60 hover:text-blue-800 hover:border-blue-100'
+                }`}
+              >
+                <span
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border transition-colors ${
+                    isActive
+                      ? 'bg-white/15 border-white/25 text-white'
+                      : 'bg-white border-slate-200 text-blue-600 group-hover:text-blue-700'
+                  }`}
+                >
+                  <TabIcon className="w-4 h-4" />
+                </span>
+                <span className="text-xs font-black whitespace-nowrap">{tab.label}</span>
+                <span
+                  className={`text-[10px] font-bold font-mono px-2 py-1 rounded-lg border whitespace-nowrap ms-auto shrink-0 transition-colors ${
+                    isActive
+                      ? 'bg-white/20 border-white/30 text-white'
+                      : 'bg-white border-slate-200 text-slate-500 group-hover:border-blue-200 group-hover:text-blue-700'
+                  }`}
+                >
+                  {tab.badge}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* SUB-TAB 1: Overview & Comparative Metrics */}
