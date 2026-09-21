@@ -30,6 +30,7 @@ import {
   Sparkles,
   FolderPlus,
 } from 'lucide-react';
+import { HelpTooltip } from './HelpTooltip';
 
 export const ProjectsView: React.FC = () => {
   const {
@@ -442,7 +443,10 @@ export const ProjectsView: React.FC = () => {
                     </div>
                     <div id={`projects-view-projects-list-7-${proj.id}`}>
                       <span className="text-[10px] font-mono text-slate-400 tracking-wider block">{proj.code}</span>
-                      <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight cursor-help" title={proj.description}>{proj.title}</h3>
+                      <div className="flex items-start gap-1">
+                        <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight min-w-0 flex-1">{proj.title}</h3>
+                        <HelpTooltip text={proj.description} label="مشاهده توضیح پروژه" size="sm" />
+                      </div>
                     </div>
                   </div>
 

@@ -19,6 +19,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { formatToman, toPersianDigits } from '../utils/numberUtils';
+import { HelpTooltip } from './HelpTooltip';
 import { useConfirmDelete } from './ConfirmDeleteModal';
 
 export const DepartmentsView: React.FC = () => {
@@ -304,7 +305,10 @@ export const DepartmentsView: React.FC = () => {
                     </div>
                     <div id={`departments-view-departments-grid-7-${dept.id}`}>
                       <span className="text-[10px] font-mono text-slate-400 tracking-wider block">{dept.code}</span>
-                      <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight cursor-help" title={dept.description}>{dept.name}</h3>
+                      <div className="flex items-start gap-1">
+                        <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight min-w-0 flex-1">{dept.name}</h3>
+                        <HelpTooltip text={dept.description} label="مشاهده توضیح نهاد" size="sm" />
+                      </div>
                     </div>
                   </div>
 

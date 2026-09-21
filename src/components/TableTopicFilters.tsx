@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { toPersianDigits } from '../utils/numberUtils';
 import { Filter, X, ChevronDown, ChevronUp, Sparkles, Check, Search, Layers } from 'lucide-react';
+import { HelpTooltip } from './HelpTooltip';
 
 export interface HarmTopicFilter {
   id: string;
@@ -261,9 +262,10 @@ export const TableTopicFilters: React.FC<TableTopicFiltersProps> = ({
         <div id="table-topic-filters-active-filter-operational" className="mt-1.5 p-2.5 rounded-lg bg-indigo-950/70 border border-indigo-800/60 text-[11px] text-indigo-200 flex items-center justify-between shadow-xs">
           <div id="table-topic-filters-active-filter-operational-2" className="flex items-center gap-2">
             <span className="text-base">{activeTopic.emoji}</span>
-            <span className="cursor-help" title={activeTopic.description}>
-              <strong>تمرکز عملیاتی فیلتر فعال:</strong> {activeTopic.label}
+            <span className="min-w-0 truncate">
+              <strong>فیلتر فعال:</strong> {activeTopic.label}
             </span>
+            <HelpTooltip text={activeTopic.description} label="مشاهده توضیح فیلتر" size="sm" />
           </div>
           <span className="text-[10px] text-indigo-300 bg-indigo-900/60 px-2 py-0.5 rounded border border-indigo-700/50">
             حوزه: {activeTopic.category}
@@ -334,7 +336,6 @@ export const TableTopicFilters: React.FC<TableTopicFiltersProps> = ({
                 <button
                   key={topic.id}
                   type="button"
-                  title={topic.description}
                   onClick={() => {
                     onSelectTopic(isSelected ? null : topic.id);
                     setIsOpen(false);
@@ -346,9 +347,10 @@ export const TableTopicFilters: React.FC<TableTopicFiltersProps> = ({
                   }`}
                 >
                   <div id={`table-topic-filters-grid-list-of-topics-in-the-2-${topic.id}`} className="flex items-start justify-between gap-1.5 w-full">
-                    <div id={`table-topic-filters-grid-list-of-topics-in-the-3-${topic.id}`} className="flex items-center gap-2">
+                    <div id={`table-topic-filters-grid-list-of-topics-in-the-3-${topic.id}`} className="flex items-center gap-1.5 min-w-0">
                       <span className="text-base shrink-0">{topic.emoji}</span>
-                      <span className="text-xs font-bold leading-tight">{topic.label}</span>
+                      <span className="text-xs font-bold leading-tight min-w-0 truncate">{topic.label}</span>
+                      <HelpTooltip portal variant="ghost" text={topic.description} label="مشاهده توضیح موضوع" size="sm" widthClassName="w-64" />
                     </div>
                     {isSelected ? (
                       <Check className="w-4 h-4 text-white shrink-0" />

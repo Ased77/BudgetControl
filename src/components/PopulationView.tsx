@@ -1,7 +1,7 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { useOutsideClick } from '../hooks/useOutsideClick';
 import { formatNumber, toPersianDigits } from '../utils/numberUtils';
+import { HelpTooltip } from './HelpTooltip';
 import {
   Users,
   Baby,
@@ -27,9 +27,6 @@ import {
 export const PopulationView: React.FC = () => {
   const { locations, selectedLocation, handleSelectLocation } = useAppContext();
   const [activeSubTab, setActiveSubTab] = useState<'OVERVIEW' | 'DISTRICTS' | 'VULNERABLE' | 'PYRAMID'>('OVERVIEW');
-  const [helpInfoOpen, setHelpInfoOpen] = useState(false);
-  const helpInfoRef = useRef<HTMLSpanElement>(null);
-  useOutsideClick(helpInfoRef, () => setHelpInfoOpen(false));
   const [clarificationExpanded, setClarificationExpanded] = useState(false);
 
   // Official demographics data for Rafsanjan County (سالنامه آماری رسمی شهرستان رفسنجان)
@@ -151,29 +148,11 @@ export const PopulationView: React.FC = () => {
               <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
                 آمار جمعیت و توزیع محرومیت شهرستان رفسنجان
               </h1>
-              <span ref={helpInfoRef} className="relative shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setHelpInfoOpen((open) => !open)}
-                  aria-expanded={helpInfoOpen}
-                  aria-label="مشاهده توضیحات سرشماری رسمی"
-                  title="مشاهده توضیحات سرشماری رسمی"
-                  className={`-m-2 p-2 cursor-pointer rounded-lg transition-colors ${
-                    helpInfoOpen ? 'text-blue-600 bg-blue-50' : 'text-slate-400 hover:text-blue-600 hover:bg-slate-100'
-                  }`}
-                >
-                  <Info className="w-5 h-5" />
-                </button>
-                {helpInfoOpen && (
-                  <span
-                    dir="rtl"
-                    className="absolute top-full left-0 mt-1.5 w-80 max-w-[80vw] bg-slate-900 text-slate-100 text-sm leading-relaxed rounded-xl p-3.5 shadow-xl border border-slate-700 z-50"
-                  >
-                    <span className="absolute -top-1 left-3.5 w-2 h-2 bg-slate-900 border-t border-r border-slate-700 rotate-45" />
-                    بر پایه آخرین سرشماری رسمی و سالنامه آماری استان کرمان، شهرستان رفسنجان دارای ۳۱۵,۰۰۰ نفر جمعیت کل در ۴ بخش (مرکزی، کشكوئیه، نوق و فردوس) است. از این تعداد، دقیقا ۳۸,۲۰۰ نفر (۱۲.۱٪) به عنوان اقشار آسیب‌پذیر و محروم نیازمند حمایت مستقیم شناسایی شده‌اند.
-                  </span>
-                )}
-              </span>
+              <HelpTooltip
+                text="بر پایه آخرین سرشماری رسمی و سالنامه آماری استان کرمان، شهرستان رفسنجان دارای ۳۱۵,۰۰۰ نفر جمعیت کل در ۴ بخش (مرکزی، کشکوئیه، نوق و فردوس) است. از این تعداد، دقیقا ۳۸,۲۰۰ نفر (۱۲.۱٪) به عنوان اقشار آسیب‌پذیر و محروم نیازمند حمایت مستقیم شناسایی شده‌اند."
+                label="مشاهده توضیحات سرشماری رسمی"
+                widthClassName="w-80"
+              />
             </div>
           </div>
 

@@ -23,6 +23,7 @@ import { CsrPriority } from '../types';
 import { toPersianDigits, formatCurrency } from '../utils/numberUtils';
 import { useConfirmDelete } from './ConfirmDeleteModal';
 import { useOutsideClick } from '../hooks/useOutsideClick';
+import { HelpTooltip } from './HelpTooltip';
 
 export const CsrDomainsCatalogView: React.FC = () => {
   const { 
@@ -299,7 +300,6 @@ export const CsrDomainsCatalogView: React.FC = () => {
               {/* Main Interactive Dropdown Button */}
               <button
                 type="button"
-                title={activeDomain?.description}
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="w-full flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100/80 border-2 border-indigo-500/30 hover:border-indigo-500 rounded-xl transition-all text-right shadow-xs group"
               >
@@ -308,13 +308,14 @@ export const CsrDomainsCatalogView: React.FC = () => {
                     {toPersianDigits(activeDomain?.code || 1)}
                   </span>
                   <div id="csr-domains-catalog-view-main-interactive-dropdown-button-2">
-                    <div id="csr-domains-catalog-view-main-interactive-dropdown-button-3" className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-900">
+                    <div id="csr-domains-catalog-view-main-interactive-dropdown-button-3" className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-xs font-bold text-slate-900 min-w-0 truncate">
                         {activeDomain?.title}
                       </span>
-                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800">
+                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 shrink-0">
                         {activeDomain?.category}
                       </span>
+                      <HelpTooltip portal variant="ghost" text={activeDomain?.description} label="مشاهده توضیح عنوان" size="sm" widthClassName="w-72" />
                     </div>
                   </div>
                 </div>
@@ -361,7 +362,6 @@ export const CsrDomainsCatalogView: React.FC = () => {
                         <button
                           key={p.id}
                           type="button"
-                          title={p.description}
                           onClick={() => {
                             setSelectedDomainId(p.id);
                             setIsDropdownOpen(false);
@@ -380,12 +380,13 @@ export const CsrDomainsCatalogView: React.FC = () => {
                             }`}>
                               {toPersianDigits(p.code)}
                             </span>
-                            <div id={`csr-domains-catalog-view-dropdown-options-list-3-${p.id}`}>
-                              <div id={`csr-domains-catalog-view-dropdown-options-list-4-${p.id}`} className="flex items-center gap-2">
-                                <span className="text-xs font-bold">{p.title}</span>
-                                <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
+                            <div id={`csr-domains-catalog-view-dropdown-options-list-3-${p.id}`} className="min-w-0">
+                              <div id={`csr-domains-catalog-view-dropdown-options-list-4-${p.id}`} className="flex items-center gap-1.5">
+                                <span className="text-xs font-bold min-w-0 truncate">{p.title}</span>
+                                <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
                                   {p.category}
                                 </span>
+                                <HelpTooltip portal variant="ghost" text={p.description} label="مشاهده توضیح عنوان" size="sm" widthClassName="w-72" />
                               </div>
                             </div>
                           </div>
@@ -456,24 +457,24 @@ export const CsrDomainsCatalogView: React.FC = () => {
                 {/* Accordion Header / Click to expand/collapse */}
                 <button
                   type="button"
-                  title={domain.description}
                   onClick={() => toggleAccordion(domain.id)}
                   className={`w-full p-4 text-right flex items-center justify-between transition-colors ${
                     isExpanded ? 'bg-indigo-50/70 border-b border-indigo-100' : 'hover:bg-slate-50'
                   }`}
                 >
-                  <div id={`csr-domains-catalog-view-accordion-header-click-to-${domain.id}`} className="flex items-center gap-3">
-                    <span className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs">
+                  <div id={`csr-domains-catalog-view-accordion-header-click-to-${domain.id}`} className="flex items-center gap-3 min-w-0">
+                    <span className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
                       {toPersianDigits(domain.code)}
                     </span>
-                    <div id={`csr-domains-catalog-view-accordion-header-click-to-2-${domain.id}`}>
-                      <div id={`csr-domains-catalog-view-accordion-header-click-to-3-${domain.id}`} className="flex items-center gap-2">
-                        <h3 className="text-xs font-bold text-slate-900">
+                    <div id={`csr-domains-catalog-view-accordion-header-click-to-2-${domain.id}`} className="min-w-0">
+                      <div id={`csr-domains-catalog-view-accordion-header-click-to-3-${domain.id}`} className="flex items-center gap-1.5">
+                        <h3 className="text-xs font-bold text-slate-900 min-w-0 truncate">
                           {domain.title}
                         </h3>
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800">
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 shrink-0">
                           {domain.category}
                         </span>
+                        <HelpTooltip portal variant="ghost" text={domain.description} label="مشاهده توضیح عنوان" size="sm" widthClassName="w-72" />
                       </div>
                     </div>
                   </div>

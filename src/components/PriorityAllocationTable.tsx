@@ -10,6 +10,7 @@ import {
   Coins, BarChart3, PieChart, FolderKanban, CircleDot
 } from 'lucide-react';
 import { TableTopicFilters, HARM_TOPIC_FILTERS, HarmTopicFilter } from './TableTopicFilters';
+import { HelpTooltip } from './HelpTooltip';
 
 interface PriorityAllocationTableProps {
   priorities: CsrPriority[];
@@ -1222,7 +1223,8 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
                             {toPersianDigits(p.code)}
                           </span>
 
-                           <span className="truncate cursor-help" title={p.description}>{p.title}</span>
+                            <span className="truncate">{p.title}</span>
+                            <HelpTooltip portal text={p.description} label="مشاهده توضیح اولویت" size="sm" widthClassName="w-72" />
                           
                           {/* Damage Rank Badge */}
                           {priorityStat && (

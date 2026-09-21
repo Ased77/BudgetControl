@@ -22,6 +22,7 @@ import {
   ChevronDown,
   Check
 } from 'lucide-react';
+import { HelpTooltip } from './HelpTooltip';
 
 export interface SocialHarmIndicatorDef {
   key: keyof LocalIndicators;
@@ -789,14 +790,15 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
 
                     {/* Indicator Title & Description */}
                     <td className="py-3 px-3">
-                      <div id={`comparative-harms-table-indicator-title-description-${item.key}`} className="font-extrabold text-slate-900 flex items-center gap-1.5">
-                        <span className="cursor-help" title={item.description}>{item.title}</span>
+                      <div id={`comparative-harms-table-indicator-title-description-${item.key}`} className="font-extrabold text-slate-900 flex items-center gap-1.5 flex-wrap">
+                        <span>{item.title}</span>
                         {isHotspot && (
                           <span className="text-[10px] font-black px-1.5 py-0.2 rounded bg-rose-100 text-rose-700 border border-rose-300 flex items-center gap-0.5">
                             <Flame className="w-3 h-3 text-rose-600" />
                             کانون بحران
                           </span>
                         )}
+                        <HelpTooltip portal text={item.description} label="مشاهده توضیح شاخص" size="sm" />
                       </div>
                       <span className="text-[10px] text-slate-400 font-mono">
                         منبع: {item.source}

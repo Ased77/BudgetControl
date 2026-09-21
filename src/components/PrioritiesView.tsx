@@ -25,6 +25,7 @@ import {
   Target,
   Coins,
 } from 'lucide-react';
+import { HelpTooltip } from './HelpTooltip';
 
 export const PrioritiesView: React.FC = () => {
   const {
@@ -297,7 +298,10 @@ export const PrioritiesView: React.FC = () => {
                     </div>
                     <div id={`priorities-view-priorities-grid-7-${p.id}`}>
                       <span className="text-[10px] font-bold text-slate-400 block">اولویت کد #{p.code}</span>
-                      <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight cursor-help" title={p.description}>{p.title}</h3>
+                      <div className="flex items-start gap-1">
+                        <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight min-w-0 flex-1">{p.title}</h3>
+                        <HelpTooltip text={p.description} label="مشاهده توضیح اولویت" size="sm" />
+                      </div>
                     </div>
                   </div>
 
