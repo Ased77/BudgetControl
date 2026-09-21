@@ -44,10 +44,10 @@ export const PopulationView: React.FC = () => {
 
   // Age Cohorts
   const ageCohorts = [
-    { label: 'کودکان و نونهالان (۰ تا ۱۴ سال)', percent: 22.4, count: 70560, color: 'bg-emerald-500', note: 'نیاز به مهدکودک، تغذیه سالم و مدارس استاندارد' },
-    { label: 'نوجوانان و جوانان (۱۵ تا ۲۹ سال)', percent: 24.1, count: 75915, color: 'bg-blue-500', note: 'سن کلیدی دانشگاه، اشتغال اولیه، تسهیلات ازدواج و مسکن' },
-    { label: 'میانسالان و شاغلین (۳۰ تا ۶۴ سال)', percent: 45.2, count: 142380, color: 'bg-indigo-500', note: 'نیروی کار فعال، شاغلین باغات پسته، صنایع مس و اصناف' },
-    { label: 'سالمندان و بازنشستگان (۶۵ سال به بالا)', percent: 8.3, count: 26145, color: 'bg-amber-500', note: 'خدمات درمانی تخصصی، مراقبت در منزل و بیمه سلامت' },
+    { label: 'کودکان و نونهالان (۰ تا ۱۴ سال)', tab: 'نونهالان ۰ تا ۱۴', percent: 22.4, count: 70560, color: 'bg-emerald-500', note: 'نیاز به مهدکودک، تغذیه سالم و مدارس استاندارد' },
+    { label: 'نوجوانان و جوانان (۱۵ تا ۲۹ سال)', tab: 'جوانان ۱۵ تا ۲۹', percent: 24.1, count: 75915, color: 'bg-blue-500', note: 'سن کلیدی دانشگاه، اشتغال اولیه، تسهیلات ازدواج و مسکن' },
+    { label: 'میانسالان و شاغلین (۳۰ تا ۶۴ سال)', tab: 'شاغلین ۳۰ تا ۶۴', percent: 45.2, count: 142380, color: 'bg-indigo-500', note: 'نیروی کار فعال، شاغلین باغات پسته، صنایع مس و اصناف' },
+    { label: 'سالمندان و بازنشستگان (۶۵ سال به بالا)', tab: 'سالمندان ۶۵+', percent: 8.3, count: 26145, color: 'bg-amber-500', note: 'خدمات درمانی تخصصی، مراقبت در منزل و بیمه سلامت' },
   ];
 
   // Vulnerable groups breakdown (تفکیک اقشار نیازمند حمایت در رفسنجان)
@@ -269,12 +269,12 @@ export const PopulationView: React.FC = () => {
       </div>
 
       {/* Quick Sub-navigation — redesigned segment tabs, sits below the clarification alert */}
-      <div id="population-view-quick-sub-navigation" className="shrink-0 bg-white rounded-3xl p-2 border border-slate-200 shadow-sm">
+      <div id="population-view-quick-sub-navigation" className="shrink-0">
         <div
           id="population-view-quick-sub-navigation-2"
           role="tablist"
           aria-label="بخش‌های نمای جمعیت"
-          className="flex items-stretch gap-2 overflow-x-auto"
+          className="flex flex-wrap items-end gap-1 px-1 relative z-10"
         >
           {subNavigationTabs.map((tab) => {
             const isActive = activeSubTab === tab.id;
@@ -287,27 +287,19 @@ export const PopulationView: React.FC = () => {
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => setActiveSubTab(tab.id)}
-                className={`group flex items-center gap-3 px-4 py-2.5 rounded-2xl border text-right transition-all duration-200 flex-1 min-w-fit ${
+                className={`group flex items-center gap-2.5 whitespace-nowrap rounded-t-2xl border border-b-0 px-4 text-right transition-all duration-200 shrink-0 ${
                   isActive
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 border-blue-500 text-white shadow-md shadow-blue-600/25'
-                    : 'bg-slate-50 border-transparent text-slate-600 hover:bg-blue-50/60 hover:text-blue-800 hover:border-blue-100'
+                    ? 'relative z-10 -mb-px bg-white border-slate-200 py-3 text-blue-800 shadow-[0_-10px_18px_-12px_rgba(30,64,175,0.45)]'
+                    : 'bg-slate-100/90 border-slate-200/80 py-2 text-slate-500 hover:bg-slate-200/60 hover:text-slate-700'
                 }`}
               >
+                <TabIcon className={`w-4 h-4 shrink-0 ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                <span className={`text-xs whitespace-nowrap ${isActive ? 'font-black' : 'font-bold'}`}>{tab.label}</span>
                 <span
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border transition-colors ${
+                  className={`text-[10px] font-bold font-mono px-2 py-0.5 rounded-md border whitespace-nowrap shrink-0 transition-colors ${
                     isActive
-                      ? 'bg-white/15 border-white/25 text-white'
-                      : 'bg-white border-slate-200 text-blue-600 group-hover:text-blue-700'
-                  }`}
-                >
-                  <TabIcon className="w-4 h-4" />
-                </span>
-                <span className="text-xs font-black whitespace-nowrap">{tab.label}</span>
-                <span
-                  className={`text-[10px] font-bold font-mono px-2 py-1 rounded-lg border whitespace-nowrap ms-auto shrink-0 transition-colors ${
-                    isActive
-                      ? 'bg-white/20 border-white/30 text-white'
-                      : 'bg-white border-slate-200 text-slate-500 group-hover:border-blue-200 group-hover:text-blue-700'
+                      ? 'bg-blue-50 border-blue-200 text-blue-700'
+                      : 'bg-white/80 border-slate-200/80 text-slate-400'
                   }`}
                 >
                   {tab.badge}
@@ -316,7 +308,9 @@ export const PopulationView: React.FC = () => {
             );
           })}
         </div>
-      </div>
+
+        {/* Folder body — the active panel renders inside the folder */}
+        <div id="population-view-quick-sub-navigation-folder-body" className="bg-white rounded-b-3xl rounded-tl-3xl border border-slate-200 shadow-sm p-3 md:p-4">
 
       {/* SUB-TAB 1: Overview & Comparative Metrics */}
       {activeSubTab === 'OVERVIEW' && (
@@ -524,8 +518,8 @@ export const PopulationView: React.FC = () => {
 
       {/* SUB-TAB 4: Age Cohorts and Demographic Pyramid */}
       {activeSubTab === 'PYRAMID' && (
-        <div id="population-view-sub-tab-4-age-cohorts-and" className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-6">
-          <div id="population-view-sub-tab-4-age-cohorts-and-2" className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div id="population-view-sub-tab-4-age-cohorts-and" className="space-y-6 animate-in fade-in duration-200">
+          <div id="population-view-sub-tab-4-age-cohorts-and-2" className="flex items-center justify-between pb-3 border-b border-dashed border-slate-200">
             <div id="population-view-sub-tab-4-age-cohorts-and-3">
               <h3 className="font-black text-slate-900 text-lg">ساختار هرم سنی جمعیت شهرستان رفسنجان</h3>
               <p className="text-xs text-slate-500 mt-0.5">توزیع گروه‌های سنی و اولویت‌های متناظر در قانون جوانی جمعیت</p>
@@ -537,15 +531,21 @@ export const PopulationView: React.FC = () => {
 
           <div id="population-view-sub-tab-4-age-cohorts-and-4" className="space-y-5">
             {ageCohorts.map((cohort, index) => (
-              <div id={`population-view-sub-tab-4-age-cohorts-and-5-${index}`} key={index} className="space-y-1.5 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+              <div id={`population-view-sub-tab-4-age-cohorts-and-5-${index}`} key={index}>
+                {/* Mini folder-divider tab for this cohort section */}
+                <div className="flex -mb-px relative z-10">
+                  <span className="ms-5 inline-flex items-center gap-1.5 rounded-t-xl bg-slate-50 border border-b-0 border-slate-200 px-4 py-1.5 text-[10px] font-black text-slate-600">
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${cohort.color}`} />
+                    {cohort.tab}
+                    <span className="font-mono text-slate-400">{toPersianDigits(cohort.percent)}٪</span>
+                  </span>
+                </div>
+                <div className="space-y-1.5 bg-slate-50 p-4 rounded-2xl rounded-tr-none border border-slate-200">
                 <div id={`population-view-sub-tab-4-age-cohorts-and-6-${index}`} className="flex items-center justify-between text-xs">
                   <span className="font-bold text-slate-900 text-sm">{cohort.label}</span>
-                  <div id={`population-view-sub-tab-4-age-cohorts-and-7-${index}`} className="flex items-center gap-3 font-mono">
-                    <span className="font-black text-slate-900">{formatNumber(cohort.count)} نفر</span>
-                    <span className="font-bold text-blue-700 bg-blue-100/70 px-2 py-0.5 rounded-md">
-                      {toPersianDigits(cohort.percent)}٪
-                    </span>
-                  </div>
+                  <span id={`population-view-sub-tab-4-age-cohorts-and-7-${index}`} className="font-black text-slate-900 font-mono">
+                    {formatNumber(cohort.count)} نفر
+                  </span>
                 </div>
 
                 <div id={`population-view-sub-tab-4-age-cohorts-and-8-${index}`} className="w-full bg-slate-200 h-3 rounded-full overflow-hidden">
@@ -559,6 +559,7 @@ export const PopulationView: React.FC = () => {
                 <p className="text-[11px] text-slate-600 mt-1">
                   💡 <strong className="text-slate-800">برنامه اقدام:</strong> {cohort.note}
                 </p>
+                </div>
               </div>
             ))}
           </div>
@@ -567,8 +568,9 @@ export const PopulationView: React.FC = () => {
             <span className="font-bold block mb-1">🌟 تحلیل پنجره جمعیتی شهرستان رفسنجان:</span>
             بیش از <strong>۶۹.۳٪ از جمعیت رفسنجان</strong> در سنین فعال کار و جوانی (۱۵ تا ۶۴ سال) قرار دارند. این پنجره جمعیتی طلایی نشان می‌دهد که اولویت شماره یک تخصیص منابع CSR و بودجه عمومی باید معطوف به <strong>تسهیلات اشتغال خرد، رفع موانع ازدواج، تامین مسکن و درمان ناباروری</strong> باشد تا از تله جمعیتی و مهاجرت نخبگان جلوگیری به عمل آید.
           </div>
+        </div>      )}
         </div>
-      )}
+      </div>
     </div>
   );
 };
