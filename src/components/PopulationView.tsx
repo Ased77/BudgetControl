@@ -274,7 +274,7 @@ export const PopulationView: React.FC = () => {
           id="population-view-quick-sub-navigation-2"
           role="tablist"
           aria-label="بخش‌های نمای جمعیت"
-          className="flex flex-wrap items-end gap-1 px-1 relative z-10"
+          className="flex flex-wrap items-end gap-1 relative z-10"
         >
           {subNavigationTabs.map((tab) => {
             const isActive = activeSubTab === tab.id;
