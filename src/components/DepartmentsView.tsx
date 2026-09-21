@@ -237,7 +237,7 @@ export const DepartmentsView: React.FC = () => {
       </div>
 
       {/* Filter and Search Bar */}
-      <div id="departments-view-filter-and-search-bar" className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
+      <div id="departments-view-filter-and-search-bar" className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row flex-wrap gap-4 justify-between items-center">
         <div id="departments-view-filter-and-search-bar-2" className="relative w-full md:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-3" />
           <input
@@ -280,10 +280,9 @@ export const DepartmentsView: React.FC = () => {
             <option value="RURAL_DISTRICT">بخشداری / دهیاری</option>
           </select>
         </div>
-      </div>
 
-      {/* Departments Grid */}
-      <div id="departments-view-departments-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Departments Grid */}
+        <div id="departments-view-departments-grid" className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
         {filteredDepartments.map((dept) => {
           const deptProjects = projects.filter((p) => p.departmentId === dept.id);
           const absorptionRate =
@@ -293,7 +292,7 @@ export const DepartmentsView: React.FC = () => {
 
           return (
             <div
-              id={`departments-view-departments-grid-2-${dept.id}`}
+              id={`departments-view-departments-grid-card-${dept.id}`}
               key={dept.id}
               className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
             >
@@ -399,6 +398,7 @@ export const DepartmentsView: React.FC = () => {
             </div>
           );
         })}
+        </div>
       </div>
 
       {filteredDepartments.length === 0 && (

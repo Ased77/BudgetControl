@@ -231,7 +231,7 @@ export const PrioritiesView: React.FC = () => {
       </div>
 
       {/* Filter and Search Bar */}
-      <div id="priorities-view-filter-and-search-bar" className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
+      <div id="priorities-view-filter-and-search-bar" className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row flex-wrap gap-4 justify-between items-center">
         <div id="priorities-view-filter-and-search-bar-2" className="relative w-full md:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-3" />
           <input
@@ -261,10 +261,9 @@ export const PrioritiesView: React.FC = () => {
             ))}
           </select>
         </div>
-      </div>
 
-      {/* Priorities Grid */}
-      <div id="priorities-view-priorities-grid" className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Priorities Grid */}
+        <div id="priorities-view-priorities-grid" className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
         {filteredPriorities.map((p) => {
           const currentPct = currentPercentages[p.id] || 0;
           const isLocked = lockedIds.has(p.id);
@@ -282,7 +281,7 @@ export const PrioritiesView: React.FC = () => {
 
           return (
             <div
-              id={`priorities-view-priorities-grid-2-${p.id}`}
+              id={`priorities-view-priorities-grid-card-${p.id}`}
               key={p.id}
               className={`bg-white dark:bg-slate-900 rounded-2xl p-5 border shadow-sm hover:shadow-md transition-all flex flex-col justify-between ${
                 isLocked
@@ -496,6 +495,7 @@ export const PrioritiesView: React.FC = () => {
             </div>
           );
         })}
+        </div>
       </div>
 
       {/* CRUD Modal */}

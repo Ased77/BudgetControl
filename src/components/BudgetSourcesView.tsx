@@ -216,7 +216,7 @@ export const BudgetSourcesView: React.FC = () => {
       </div>
 
       {/* Filter and Search Bar */}
-      <div id="budget-sources-view-filter-and-search-bar" className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
+      <div id="budget-sources-view-filter-and-search-bar" className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row flex-wrap gap-4 justify-between items-center">
         <div id="budget-sources-view-filter-and-search-bar-2" className="relative w-full md:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-3" />
           <input
@@ -247,10 +247,9 @@ export const BudgetSourcesView: React.FC = () => {
             <option value="PUBLIC_PARTICIPATION">مشارکت‌های مردمی</option>
           </select>
         </div>
-      </div>
 
-      {/* Sources Grid */}
-      <div id="budget-sources-view-sources-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Sources Grid */}
+        <div id="budget-sources-view-sources-grid" className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
         {filteredSources.map((source) => {
           const linkedProjects = projects.filter((p) => p.budgetSourceId === source.id);
           const usagePercent =
@@ -260,7 +259,7 @@ export const BudgetSourcesView: React.FC = () => {
 
           return (
             <div
-              id={`budget-sources-view-sources-grid-2-${source.id}`}
+              id={`budget-sources-view-sources-grid-card-${source.id}`}
               key={source.id}
               className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
             >
@@ -373,6 +372,7 @@ export const BudgetSourcesView: React.FC = () => {
             </div>
           );
         })}
+        </div>
       </div>
 
       {/* CRUD Modal */}
