@@ -135,6 +135,13 @@ export const DashboardPredictiveEngine: React.FC = () => {
     return sectorForecasts.filter((s) => s.urgencyStatus === filterUrgency);
   }, [sectorForecasts, filterUrgency]);
 
+  // Per-urgency tab counts
+  const urgencyCounts = useMemo(() => ({
+    ALL: sectorForecasts.length,
+    CRITICAL_SURGE: sectorForecasts.filter((s) => s.urgencyStatus === 'CRITICAL_SURGE').length,
+    HIGH_GROWTH: sectorForecasts.filter((s) => s.urgencyStatus === 'HIGH_GROWTH').length,
+  }), [sectorForecasts]);
+
   // Sector icon helper
   const getSectorIcon = (code: number) => {
     switch (code) {
@@ -442,54 +449,68 @@ export const DashboardPredictiveEngine: React.FC = () => {
       </div>
 
       {/* Sector Forecast Details & Log-Derived Rationales */}
-      <div id="dashboard-predictive-engine-sector-forecast-details-log" className="space-y-3">
-        <div id="dashboard-predictive-engine-sector-forecast-details-log-2" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2">
-          <div id="dashboard-predictive-engine-sector-forecast-details-log-3">
-            <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+      <div id="dashboard-predictive-engine-sector-forecast-details-log" className="bg-slate-50/70 rounded-2xl border border-slate-200 p-4 md:p-5 space-y-4">
+        <div id="dashboard-predictive-engine-sector-forecast-details-log-2" className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div id="dashboard-predictive-engine-sector-forecast-details-log-3" className="flex items-start gap-3">
+            <span className="p-2 rounded-xl bg-white border border-slate-200 shadow-2xs shrink-0">
               <Layers className="w-4 h-4 text-indigo-600" />
-              تفکیک برآورد نیازهای توسعه‌ای سال آینده به همراه دلایل مستخرج از لاگ‌ها
-            </h3>
-            <span className="text-xs text-slate-500">
-              ارزیابی هوشمند اولویت‌ها بر اساس تعداد مداخلات ثبت‌شده و هشدارهای موازی‌کاری
             </span>
+            <div>
+              <h3 className="font-black text-sm text-slate-900 leading-snug">
+                تفکیک برآورد نیازهای توسعه‌ای سال آینده به همراه دلایل مستخرج از لاگ‌ها
+              </h3>
+              <span className="text-[11px] text-slate-500 block mt-0.5">
+                ارزیابی هوشمند اولویت‌ها بر اساس مداخلات ثبت‌شده و هشدارهای موازی‌کاری — برای جزئیات کامل، روی هر کارت بزنید
+              </span>
+            </div>
           </div>
 
-          {/* Filter badges */}
-          <div id="dashboard-predictive-engine-filter-badges" className="flex items-center gap-1.5 flex-wrap">
+          {/* Urgency filter tabs — segmented control with live counts */}
+          <div id="dashboard-predictive-engine-filter-badges" className="flex items-center gap-1 self-start lg:self-auto bg-white border border-slate-200 rounded-xl p-1 shadow-2xs">
             <button
               onClick={() => setFilterUrgency('ALL')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 filterUrgency === 'ALL'
-                  ? 'bg-slate-800 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  ? 'bg-slate-800 text-white shadow-xs'
+                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
               }`}
             >
-              همه سرفصل‌ها ({sectorForecasts.length})
+              <span>همه سرفصل‌ها</span>
+              <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-mono ${filterUrgency === 'ALL' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                {toPersianDigits(urgencyCounts.ALL)}
+              </span>
             </button>
             <button
               onClick={() => setFilterUrgency('CRITICAL_SURGE')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 filterUrgency === 'CRITICAL_SURGE'
-                  ? 'bg-rose-700 text-white'
-                  : 'bg-rose-100 text-rose-800 hover:bg-rose-200'
+                  ? 'bg-rose-600 text-white shadow-xs'
+                  : 'text-slate-500 hover:bg-rose-50 hover:text-rose-700'
               }`}
             >
-              جهش بحرانی
+              <span>جهش بحرانی</span>
+              <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-mono ${filterUrgency === 'CRITICAL_SURGE' ? 'bg-white/20 text-white' : 'bg-rose-50 text-rose-600'}`}>
+                {toPersianDigits(urgencyCounts.CRITICAL_SURGE)}
+              </span>
             </button>
             <button
               onClick={() => setFilterUrgency('HIGH_GROWTH')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 filterUrgency === 'HIGH_GROWTH'
-                  ? 'bg-amber-700 text-white'
-                  : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'text-slate-500 hover:bg-amber-50 hover:text-amber-700'
               }`}
             >
-              رشد شتابان
+              <span>رشد شتابان</span>
+              <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-mono ${filterUrgency === 'HIGH_GROWTH' ? 'bg-white/20 text-white' : 'bg-amber-50 text-amber-600'}`}>
+                {toPersianDigits(urgencyCounts.HIGH_GROWTH)}
+              </span>
             </button>
           </div>
         </div>
 
         {/* Sector Cards Grid — summary only; click opens the full detail modal */}
+        {filteredSectors.length > 0 ? (
         <div id="dashboard-predictive-engine-sector-cards-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {filteredSectors.map((sector) => (
             <div
@@ -500,12 +521,12 @@ export const DashboardPredictiveEngine: React.FC = () => {
               tabIndex={0}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openSectorDetail(sector); } }}
               title="کلیک برای مشاهده جزئیات کامل"
-              className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs hover:border-indigo-300 hover:shadow-sm cursor-pointer transition-all space-y-3 flex flex-col justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+              className="group bg-white rounded-xl p-4 border border-slate-200 shadow-2xs hover:border-indigo-300 hover:shadow-md hover:-translate-y-0.5 cursor-pointer transition-all space-y-3 flex flex-col justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
             >
               <div id={`dashboard-predictive-engine-sector-cards-grid-3-${sector.priorityId}`}>
                 <div id={`dashboard-predictive-engine-sector-cards-grid-4-${sector.priorityId}`} className="flex items-center justify-between gap-2">
                   <div id={`dashboard-predictive-engine-sector-cards-grid-5-${sector.priorityId}`} className="flex items-center gap-2 min-w-0">
-                    <span className="p-1.5 rounded-lg bg-slate-100 border border-slate-200 shrink-0">
+                    <span className="p-1.5 rounded-lg bg-slate-100 border border-slate-200 group-hover:bg-indigo-50 group-hover:border-indigo-200 transition-colors shrink-0">
                       {getSectorIcon(sector.code)}
                     </span>
                     <div id={`dashboard-predictive-engine-sector-cards-grid-6-${sector.priorityId}`} className="min-w-0">
@@ -536,15 +557,27 @@ export const DashboardPredictiveEngine: React.FC = () => {
               </h4>
 
               <div id={`dashboard-predictive-engine-log-derived-rationale-3-${sector.priorityId}`} className="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px] text-slate-500">
-                <span>{toPersianDigits(sector.logInterventionCount)} لاگ ممیزی</span>
-                <span className="flex items-center gap-1 text-indigo-500 font-bold">
+                <span className="flex items-center gap-1">
+                  <FileClock className="w-3 h-3 text-indigo-500" />
+                  {toPersianDigits(sector.logInterventionCount)} لاگ ممیزی
+                </span>
+                <span className="flex items-center gap-1 text-indigo-500 font-bold group-hover:text-indigo-700 transition-colors">
                   جزئیات
-                  <ArrowUpRight className="w-3 h-3 rtl:-scale-x-100" />
+                  <ArrowUpRight className="w-3 h-3 rtl:-scale-x-100 group-hover:-translate-x-0.5 group-hover:translate-y-0.5 transition-transform" />
                 </span>
               </div>
             </div>
           ))}
         </div>
+        ) : (
+          <div id="dashboard-predictive-engine-sector-cards-grid-empty" className="flex flex-col items-center justify-center gap-2 py-10 bg-white rounded-xl border border-dashed border-slate-300 text-center">
+            <span className="p-2.5 rounded-full bg-slate-100">
+              <Layers className="w-4 h-4 text-slate-400" />
+            </span>
+            <span className="text-xs font-bold text-slate-600">هیچ سرفصلی در این وضعیت فوریت یافت نشد.</span>
+            <span className="text-[11px] text-slate-400">فیلتر وضعیت فوریت را تغییر دهید تا سایر بخش‌ها نمایش داده شوند.</span>
+          </div>
+        )}
       </div>
 
       {/* AI Executive Insight Strip */}
