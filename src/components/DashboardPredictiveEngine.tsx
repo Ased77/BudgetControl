@@ -444,7 +444,7 @@ export const DashboardPredictiveEngine: React.FC = () => {
               بخش سبز نشان‌دهنده خط روند اعتبارات تصویب‌شده قطعی است.
             </span>
           </div>
-          <span className="text-slate-400 font-mono">واحد ارقام: میلیارد و هزار میلیارد تومان (همت)</span>
+          <span className="text-slate-400 font-mono">واحد ارقام: میلیارد و هزار میلیارد تومان</span>
         </div>
       </div>
 

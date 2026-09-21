@@ -35,7 +35,7 @@ export function formatLargeBudgetPersian(amountInToman: number): string {
 
   if (amountInToman >= TOMAN_TRILLION) {
     const valueInHemmat = amountInToman / TOMAN_TRILLION;
-    return `${toPersianDigits(valueInHemmat.toLocaleString('fa-IR', { maximumFractionDigits: 3 }))} هزار میلیارد تومان (همت)`;
+    return `${toPersianDigits(valueInHemmat.toLocaleString('fa-IR', { maximumFractionDigits: 3 }))} هزار میلیارد تومان`;
   } else if (amountInToman >= TOMAN_BILLION) {
     const valueInBillion = amountInToman / TOMAN_BILLION;
     return `${toPersianDigits(valueInBillion.toLocaleString('fa-IR', { maximumFractionDigits: 2 }))} میلیارد تومان`;

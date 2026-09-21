@@ -323,18 +323,34 @@ export const BudgetSourcesView: React.FC = () => {
                     <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatToman(source.remainingAmountToman)}</span>
                   </div>
 
-                  <div id={`budget-sources-view-amounts-breakdown-5-${source.id}`} className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                    <div
-                      id={`budget-sources-view-amounts-breakdown-6-${source.id}`}
-                      className={`h-full rounded-full transition-all duration-500 ${
-                        usagePercent >= 90 ? 'bg-amber-500' : usagePercent >= 50 ? 'bg-emerald-500' : 'bg-blue-500'
-                      }`}
-                      style={{ width: `${usagePercent}%` }}
-                    />
-                  </div>
-                  <div id={`budget-sources-view-amounts-breakdown-7-${source.id}`} className="flex justify-between items-center text-[10px] text-slate-400">
-                    <span>نرخ تعهد و تخصیص</span>
-                    <span className="font-bold text-slate-700 dark:text-slate-300">{toPersianDigits(usagePercent)}٪</span>
+                  <div id={`budget-sources-view-amounts-breakdown-5-${source.id}`} className="pt-1">
+                    <div className="flex items-center gap-3">
+                      <div className="relative w-14 h-14 shrink-0">
+                        <svg viewBox="0 0 56 56" className="w-14 h-14 -rotate-90">
+                          <circle cx="28" cy="28" r="22" fill="none" strokeWidth="6" className="stroke-slate-100 dark:stroke-slate-800" />
+                          <circle
+                            cx="28"
+                            cy="28"
+                            r="22"
+                            fill="none"
+                            strokeWidth="6"
+                            strokeLinecap="round"
+                            className={`transition-all duration-500 ${
+                              usagePercent >= 90 ? 'stroke-amber-500' : usagePercent >= 50 ? 'stroke-emerald-500' : 'stroke-blue-500'
+                            }`}
+                            strokeDasharray={2 * Math.PI * 22}
+                            strokeDashoffset={2 * Math.PI * 22 * (1 - usagePercent / 100)}
+                          />
+                        </svg>
+                        <span className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-slate-700 dark:text-slate-300">
+                          {toPersianDigits(usagePercent)}٪
+                        </span>
+                      </div>
+                      <div className="space-y-0.5 min-w-0">
+                        <span className="block text-[10px] text-slate-400">نرخ تعهد و تخصیص</span>
+                        <span className="block text-[10px] text-slate-500 dark:text-slate-400">از سقف کل {formatToman(source.totalAmountToman)}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
