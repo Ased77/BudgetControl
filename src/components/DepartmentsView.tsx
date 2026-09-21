@@ -292,7 +292,7 @@ export const DepartmentsView: React.FC = () => {
 
           return (
             <div
-              id={`departments-view-departments-grid-card-${dept.id}`}
+              id="departments-view-departments-grid-card"
               key={dept.id}
               className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
             >

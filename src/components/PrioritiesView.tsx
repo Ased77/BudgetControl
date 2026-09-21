@@ -281,7 +281,7 @@ export const PrioritiesView: React.FC = () => {
 
           return (
             <div
-              id={`priorities-view-priorities-grid-card-${p.id}`}
+              id="priorities-view-priorities-grid-card"
               key={p.id}
               className={`bg-white dark:bg-slate-900 rounded-2xl p-5 border shadow-sm hover:shadow-md transition-all flex flex-col justify-between ${
                 isLocked

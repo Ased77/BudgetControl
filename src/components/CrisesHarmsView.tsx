@@ -282,7 +282,7 @@ export const CrisesHarmsView: React.FC = () => {
 
           return (
             <div
-              id={`crises-harms-view-crises-grid-2-${item.id}`}
+              id="crises-harms-view-crises-grid-card"
               key={item.id}
               className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
             >

@@ -251,7 +251,7 @@ export const ExecutorsView: React.FC = () => {
 
           return (
             <div
-              id={`executors-view-grid-2-${exec.id}`}
+              id="executors-view-grid-card"
               key={exec.id}
               className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
             >

@@ -514,7 +514,7 @@ export const DashboardPredictiveEngine: React.FC = () => {
         <div id="dashboard-predictive-engine-sector-cards-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {filteredSectors.map((sector) => (
             <div
-              id={`dashboard-predictive-engine-sector-cards-grid-2-${sector.priorityId}`}
+              id="dashboard-predictive-engine-sector-cards-grid-card"
               key={sector.priorityId}
               onClick={() => openSectorDetail(sector)}
               role="button"
