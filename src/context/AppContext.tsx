@@ -37,6 +37,7 @@ import {
 import { calculateSmartRecommendations } from '../utils/recommendationEngine';
 import { formatNumber, roundPercentage, toPersianDigits } from '../utils/numberUtils';
 import { analyzeProjectDuplicatesAndEfficiency, OptimizationMetrics } from '../utils/antiDuplicationEngine';
+import { api } from '../services/api';
 
 const AUTH_STORAGE_KEY = 'csr.auth.userId';
 const TAB_STORAGE_KEY = 'csr.activeTab';
@@ -201,6 +202,8 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // State boots from the bundled seed data (instant first paint), then is
+  // replaced by the SQLite-backed API payload once the server responds.
   const [locations, setLocations] = useState<LocationData[]>(INITIAL_LOCATIONS);
   const [selectedLocation, setSelectedLocation] = useState<LocationData>(INITIAL_LOCATIONS[0]);
   const [administrativeScope, setAdministrativeScope] = useState<AdministrativeLevel>('COUNTY');
@@ -208,7 +211,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [priorities, setPriorities] = useState<CsrPriority[]>(INITIAL_PRIORITIES);
   const [lockedIds, setLockedIds] = useState<Set<string>>(new Set());
   const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>(INITIAL_AUDIT_LOGS);
-  
+
   // Comprehensive Entities State
   const [departments, setDepartments] = useState<Department[]>(INITIAL_DEPARTMENTS);
   const [budgetSources, setBudgetSources] = useState<BudgetSource[]>(INITIAL_BUDGET_SOURCES);
@@ -220,7 +223,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Individual per-user permission overrides, keyed by user id. Only the
   // changed flags are stored; everything else inherits the role default.
   const [userPermissionOverrides, setUserPermissionOverrides] = useState<Record<string, UserPermissionOverride>>({});
-  const [users] = useState<UserProfile[]>(INITIAL_USERS);
+  const [users, setUserDatabase] = useState<UserProfile[]>(INITIAL_USERS);
   const [currentUser, setCurrentUser] = useState<UserProfile>(() => {
     const persistedId = readPersistedUserId();
     return INITIAL_USERS.find((u) => u.id === persistedId) ?? INITIAL_USERS[0];
@@ -233,6 +236,55 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setActiveTabState(tab);
     persistTab(tab);
   };
+
+  // --- SQLite backend sync ---------------------------------------------------
+  // Hydrate all entity state from the server on mount. The bundled INITIAL_*
+  // constants only serve as optimistic seed / offline fallback.
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      try {
+        const [locs, org, prios, projs, depts, sources, crises, execs, cnts, users, roles, logs] = await Promise.all([
+          api.locations.list(),
+          api.organization.get(),
+          api.priorities.list(),
+          api.projects.list(),
+          api.departments.list(),
+          api.budgetSources.list(),
+          api.crisesHarms.list(),
+          api.executors.list(),
+          api.contractors.list(),
+          api.users.list(),
+          api.rolesPermissions.list(),
+          api.auditLogs.list(),
+        ]);
+        if (cancelled) return;
+
+        setLocations(locs);
+        setSelectedLocation((prev) => locs.find((l) => l.id === prev.id) ?? locs[0] ?? prev);
+        setOrgConfig(org);
+        setPriorities(prios);
+        setProjects(projs);
+        setDepartments(depts);
+        setBudgetSources(sources);
+        setCrisesHarms(crises);
+        setExecutors(execs);
+        setContractors(cnts);
+        setRolesPermissions(roles);
+        setAuditLogs(logs);
+        setUserDatabase(users);
+        setCurrentUser((prev) => users.find((u) => u.id === prev.id) ?? prev);
+      } catch {
+        // Server unreachable — keep the bundled seed data so the app stays usable offline.
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Initial Percentages state mapped directly from smart recommendations for active location
   const [currentPercentages, setCurrentPercentages] = useState<Record<string, number>>(() => {
@@ -264,6 +316,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       rationale,
     };
     setAuditLogs((prev) => [newEntry, ...prev]);
+    api.auditLogs.create(newEntry).catch(() => {});
   };
 
   // --- Access gate (organizational identity simulation) ---
@@ -483,11 +536,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     setPriorities((prev) => [...prev, newPriority]);
     setCurrentPercentages((prev) => ({ ...prev, [newId]: defaultPct }));
+    api.priorities.create(newPriority).catch(console.error);
     addAuditLog('PRIORITY_ADD', title, 'عدم وجود', `${toPersianDigits(defaultPct)}٪`, 'افزودن اولویت توسعه جدید');
   };
 
   const handleUpdatePriority = (updated: CsrPriority) => {
     setPriorities((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+    api.priorities.update(updated).catch(console.error);
     addAuditLog('PRIORITY_EDIT', updated.title, 'نسخه پیشین', 'به‌روزرسانی', 'ویرایش مشخصات اولویت توسعه');
   };
 
@@ -499,6 +554,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       delete next[priorityId];
       return next;
     });
+    api.priorities.remove(priorityId).catch(console.error);
     addAuditLog('PRIORITY_DELETE', prio?.title, 'فعال', 'حذف شده', 'حذف اولویت از ماتریس تخصیص');
   };
 
@@ -509,6 +565,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       newPctMap[p.id] = p.defaultPercentage;
     });
     setCurrentPercentages(newPctMap);
+    api.priorities.importAll(imported).catch(console.error);
     addAuditLog('PRIORITY_ADD', 'ایمپورت داده‌ها', '-', `${toPersianDigits(imported.length)} اولویت`, 'بارگذاری اولویت‌ها');
   };
 
@@ -553,6 +610,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       antiOverlapStatus: 'CLEAR',
     };
     setProjects((prev) => [proj, ...prev]);
+    api.projects.create(proj).catch(console.error);
     addAuditLog('PROJECT_ADD', newP.title, 'تعریف اولیه', `${toPersianDigits((newP.estimatedCostToman / 1_000_000_000).toFixed(1))} میلیارد تومان`, `ثبت پروژه توسط ${newP.departmentName}`);
   };
 
@@ -561,12 +619,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const costPer = Math.round(updated.estimatedCostToman / beneficiaries);
     const finalized = { ...updated, costPerBeneficiaryToman: costPer };
     setProjects((prev) => prev.map((p) => (p.id === finalized.id ? finalized : p)));
+    api.projects.update(finalized).catch(console.error);
     addAuditLog('PROJECT_EDIT', updated.title, 'ویرایش', `${toPersianDigits(updated.progressPercentage)}٪ پیشرفت`, 'به‌روزرسانی اطلاعات پروژه');
   };
 
   const handleDeleteProject = (projectId: string) => {
     const proj = projects.find((p) => p.id === projectId);
     setProjects((prev) => prev.filter((p) => p.id !== projectId));
+    api.projects.remove(projectId).catch(console.error);
     addAuditLog('PROJECT_DELETE', proj?.title, 'موجود', 'حذف شده', 'حذف پروژه از سامانه');
   };
 
@@ -574,6 +634,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setProjects((prev) =>
       prev.map((p) => (p.id === projectId ? { ...p, status: newStatus } : p))
     );
+    api.projects.setStatus(projectId, newStatus).catch(console.error);
     const proj = projects.find((p) => p.id === projectId);
     addAuditLog('PROJECT_STATUS_CHANGE', proj?.title, proj?.status, newStatus, `تغییر وضعیت پروژه به ${newStatus}`);
   };
@@ -582,17 +643,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const handleAddDepartment = (dept: Omit<Department, 'id'>) => {
     const newDept: Department = { ...dept, id: `dept-${Date.now()}` };
     setDepartments((prev) => [...prev, newDept]);
+    api.departments.create(newDept).catch(console.error);
     addAuditLog('DEPARTMENT_ADD', dept.name, 'تعریف جدید', dept.categoryFa, `ثبت نهاد/اداره جدید در سامانه ملی`);
   };
 
   const handleUpdateDepartment = (dept: Department) => {
     setDepartments((prev) => prev.map((d) => (d.id === dept.id ? dept : d)));
+    api.departments.update(dept).catch(console.error);
     addAuditLog('DEPARTMENT_EDIT', dept.name, 'ویرایش', `${toPersianDigits((dept.allocatedBudgetToman / 1_000_000_000).toFixed(0))} م.ت`, 'ویرایش مشخصات نهاد');
   };
 
   const handleDeleteDepartment = (departmentId: string) => {
     const dept = departments.find((d) => d.id === departmentId);
     setDepartments((prev) => prev.filter((d) => d.id !== departmentId));
+    api.departments.remove(departmentId).catch(console.error);
     addAuditLog('DEPARTMENT_DELETE', dept?.name, 'فعال', 'حذف شده', 'حذف اداره متولی');
   };
 
@@ -600,17 +664,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const handleAddBudgetSource = (source: Omit<BudgetSource, 'id'>) => {
     const newSrc: BudgetSource = { ...source, id: `src-${Date.now()}` };
     setBudgetSources((prev) => [...prev, newSrc]);
+    api.budgetSources.create(newSrc).catch(console.error);
     addAuditLog('BUDGET_SOURCE_ADD', source.title, 'سرفصل جدید', `${toPersianDigits((source.totalAmountToman / 1_000_000_000).toFixed(0))} م.ت`, `تعریف منبع بودجه جدید (${source.sourceTypeFa})`);
   };
 
   const handleUpdateBudgetSource = (source: BudgetSource) => {
     setBudgetSources((prev) => prev.map((s) => (s.id === source.id ? source : s)));
+    api.budgetSources.update(source).catch(console.error);
     addAuditLog('BUDGET_SOURCE_EDIT', source.title, 'ویرایش', `${toPersianDigits((source.totalAmountToman / 1_000_000_000).toFixed(0))} م.ت`, 'به‌روزرسانی منبع مالی');
   };
 
   const handleDeleteBudgetSource = (sourceId: string) => {
     const src = budgetSources.find((s) => s.id === sourceId);
     setBudgetSources((prev) => prev.filter((s) => s.id !== sourceId));
+    api.budgetSources.remove(sourceId).catch(console.error);
     addAuditLog('BUDGET_SOURCE_DELETE', src?.title, 'فعال', 'حذف شده', 'حذف سرفصل تأمین مالی');
   };
 
@@ -618,17 +685,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const handleAddCrisisHarm = (item: Omit<CrisisHarmItem, 'id'>) => {
     const newItem: CrisisHarmItem = { ...item, id: `crisis-${Date.now()}` };
     setCrisesHarms((prev) => [...prev, newItem]);
+    api.crisesHarms.create(newItem).catch(console.error);
     addAuditLog('CRISIS_ADD', item.title, 'نیازسنجی جدید', item.urgency, `ثبت آسیب یا بحران محلی با ضریب فوریت ${item.urgency}`);
   };
 
   const handleUpdateCrisisHarm = (item: CrisisHarmItem) => {
     setCrisesHarms((prev) => prev.map((c) => (c.id === item.id ? item : c)));
+    api.crisesHarms.update(item).catch(console.error);
     addAuditLog('CRISIS_EDIT', item.title, 'ویرایش', item.status, 'ویرایش مشخصات بحران/آسیب');
   };
 
   const handleDeleteCrisisHarm = (crisisId: string) => {
     const crisis = crisesHarms.find((c) => c.id === crisisId);
     setCrisesHarms((prev) => prev.filter((c) => c.id !== crisisId));
+    api.crisesHarms.remove(crisisId).catch(console.error);
     addAuditLog('CRISIS_DELETE', crisis?.title, 'موجود', 'حذف شده', 'حذف آسیب از پایگاه داده');
   };
 
@@ -636,17 +706,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const handleAddExecutor = (executor: Omit<ProjectExecutor, 'id'>) => {
     const newExec: ProjectExecutor = { ...executor, id: `exec-${Date.now()}` };
     setExecutors((prev) => [...prev, newExec]);
+    api.executors.create(newExec).catch(console.error);
     addAuditLog('EXECUTOR_ADD', executor.name, 'تعریف جدید', executor.typeFa, 'ثبت مجری جدید');
   };
 
   const handleUpdateExecutor = (executor: ProjectExecutor) => {
     setExecutors((prev) => prev.map((e) => (e.id === executor.id ? executor : e)));
+    api.executors.update(executor).catch(console.error);
     addAuditLog('EXECUTOR_EDIT', executor.name, 'ویرایش', executor.capacityStatus, 'به‌روزرسانی مشخصات مجری');
   };
 
   const handleDeleteExecutor = (executorId: string) => {
     const exec = executors.find((e) => e.id === executorId);
     setExecutors((prev) => prev.filter((e) => e.id !== executorId));
+    api.executors.remove(executorId).catch(console.error);
     addAuditLog('EXECUTOR_DELETE', exec?.name, 'فعال', 'حذف شده', 'حذف مجری');
   };
 
@@ -654,17 +727,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const handleAddContractor = (contractor: Omit<Contractor, 'id'>) => {
     const newCnt: Contractor = { ...contractor, id: `cnt-${Date.now()}` };
     setContractors((prev) => [...prev, newCnt]);
+    api.contractors.create(newCnt).catch(console.error);
     addAuditLog('CONTRACTOR_ADD', contractor.companyName, 'ثبت نام جدید', contractor.gradeFa, 'ثبت پیمانکار واجد صلاحیت');
   };
 
   const handleUpdateContractor = (contractor: Contractor) => {
     setContractors((prev) => prev.map((c) => (c.id === contractor.id ? contractor : c)));
+    api.contractors.update(contractor).catch(console.error);
     addAuditLog('CONTRACTOR_EDIT', contractor.companyName, 'ویرایش', `${toPersianDigits(contractor.performanceScore)} امتیاز`, 'ویرایش مشخصات پیمانکار');
   };
 
   const handleDeleteContractor = (contractorId: string) => {
     const cnt = contractors.find((c) => c.id === contractorId);
     setContractors((prev) => prev.filter((c) => c.id !== contractorId));
+    api.contractors.remove(contractorId).catch(console.error);
     addAuditLog('CONTRACTOR_DELETE', cnt?.companyName, 'موجود', 'حذف شده', 'حذف پیمانکار');
   };
 
@@ -705,6 +781,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Save Org Config
   const handleSaveOrgConfig = (updated: OrganizationConfig) => {
     setOrgConfig(updated);
+    api.organization.save(updated).catch(console.error);
     addAuditLog('BUDGET_UPDATE', 'مشخصات سامانه ملی', 'ویرایش شده', `${formatNumber(updated.totalBudget)} تومان`, 'به‌روزرسانی مشخصات و تنظیمات کلان');
   };
 
