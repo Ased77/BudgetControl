@@ -1,7 +1,6 @@
 import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
-import { GoogleGenAI } from '@google/genai';
 import {
   getOrganization,
   saveOrganization,
@@ -49,45 +48,21 @@ async function startServer() {
 
   app.use(express.json({ limit: '10mb' }));
 
-  // Initialize Gemini AI lazily
-  let aiClient: GoogleGenAI | null = null;
-  function getGeminiClient(): GoogleGenAI | null {
-    if (!aiClient) {
-      const apiKey = process.env.GEMINI_API_KEY;
-      if (apiKey && apiKey !== 'MY_GEMINI_API_KEY') {
-        try {
-          aiClient = new GoogleGenAI({ apiKey });
-        } catch (e) {
-          console.warn('Gemini client initialization warning:', e);
-        }
-      }
-    }
-    return aiClient;
-  }
-
   // --- API ROUTES ---
 
-  app.get('/api/health', (req, res) => {
-    res.json({
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      service: 'CSR Budgeting API',
-      hasGeminiKey: Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY'),
-    });
-  });  // -----------------------------------------------------------------
-  // SQLite-backed CRUD API
-  // -----------------------------------------------------------------
-
-  // Health now reflects real persistence state
+  // Health reflects real persistence state
   app.get('/api/health', wrap((req, res) => {
     res.json({
       status: 'ok',
       timestamp: new Date().toISOString(),
       service: 'CSR Budgeting API',
       persistence: 'sqlite',
-      hasGeminiKey: Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY'),
     });
   }));
+
+  // -----------------------------------------------------------------
+  // SQLite-backed CRUD API
+  // -----------------------------------------------------------------
 
   // Calculate budget allocation in Toman and Rial (from DB priorities)
   app.post('/api/calculate', wrap((req, res) => {
@@ -328,73 +303,20 @@ async function startServer() {
     res.status(201).json({ ok: true });
   }));
 
-  // Executive AI Narrative Report using Gemini
+  // Executive AI Narrative Report (rule-based, local analysis)
   app.post('/api/ai-analysis', wrap(async (req, res) => {
-    try {
-      const { orgName, totalBudgetToman, locationName, indicators, currentAllocations } = req.body;
-      const gemini = getGeminiClient();
+    const { locationName, totalBudgetToman } = req.body;
 
-      if (!gemini) {
-        // Return structured Fallback Analysis if no API key is active
-        return res.json({
-          isAiGenerated: false,
-          executiveSummary: `تحلیل هوشمند برای ${locationName} بر اساس شاخص‌های محرومیت محلی و بودجه ${totalBudgetToman.toLocaleString('fa-IR')} تومان:`,
-          keyTakeaways: [
-            `بالاترین اولویت بر اساس داده‌های محرومیت منطقه ${locationName}، ساماندهی سکونتگاه‌های غیررسمی و کاهش آسیب‌های اجتماعی است.`,
-            `پیشنهاد می‌شود حداقل ۳۵٪ از بودجه کل صرف طرح‌های دوجانبه زیرساخت و سلامت روانی-اجتماعی گردد.`,
-            `توصیه می‌شود پایش پروژه‌ها به‌صورت کوارترلی توسط نماینده شورای راهبری محلی صورت پذیرد.`,
-          ],
-          strategicAdvice: `جهت حداکثرسازی اثرگذاری ملموس برای عموم شهروندان در سراسر شهرستان رفسنجان، پروژه‌هایی با اولویت رفع تنش آبی، تجهیز مراکز درمانی و بهسازی محلات حاشیه‌ای در فاز نخست اجرا شوند.`,
-        });
-      }
-
-      const prompt = `
-تو یک مشاور ارشد و تحلیل‌گر استراتژیک مسؤولیت اجتماعی شرکتی (CSR) در ایران هستی.
-یک تحلیل مدیریتی رسمی و کارشناسی به زبان فارسی برای هیئت‌مدیره شرکت "${orgName}" آماده کن.
-
-اطلاعات ورودی:
-- بودجه کل CSR: ${totalBudgetToman.toLocaleString('fa-IR')} تومان
-- منطقه جغرافیایی: ${locationName}
-- نرخ فقر محلی: ${toPersianDigits(indicators?.povertyRate || 38)}٪
-- نرخ حاشیه‌نشینی: ${toPersianDigits(indicators?.marginalizationRate || 42)}٪
-- نرخ بیکاری: ${toPersianDigits(indicators?.unemploymentRate || 24)}٪
-- شاخص آسیب‌های اجتماعی: ${toPersianDigits(indicators?.socialHarmsIndex || 70)} از ۱۰۰
-
-پاسخ را در قالب یک JSON معتبر با ساختار زیر برگردان (بدون هیچ مارک‌داون یا توضیح اضافه):
-{
-  "executiveSummary": "متن خلاصه مدیریتی کوتاه و فاخر (۲ الی ۳ جمله)",
-  "keyTakeaways": ["نکته کلیدی ۱", "نکته کلیدی ۲", "نکته کلیدی ۳"],
-  "strategicAdvice": "توصیه استراتژیک نهایی برای هیئت مدیره جهت افزایش شفافیت و رضایت جامعه محلی"
-}
-      `;
-
-      const response = await gemini.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-          responseMimeType: 'application/json',
-        },
-      });
-
-      const responseText = response.text || '';
-      const parsed = JSON.parse(responseText);
-
-      return res.json({
-        isAiGenerated: true,
-        ...parsed,
-      });
-    } catch (error: any) {
-      console.error('Gemini AI analysis error:', error);
-      return res.json({
-        isAiGenerated: false,
-        executiveSummary: `گزارش تحلیل راهبردی بودجه CSR برای منطقه هدف بر اساس داده‌های منطقه‌ای آماده شد.`,
-        keyTakeaways: [
-          `تمرکز بودجه بر ۲ اولویت اصلی آسیب‌های اجتماعی و حاشیه‌نشینی معطوف است.`,
-          `تخصیص متوازن اعتبارات خرد باعث ارتقای سرمایه اجتماعی شرکت در جامعه محلی می‌گردد.`,
-        ],
-        strategicAdvice: `تصویب برنامه تخصیص پیشنهادی در هیئت مدیره و درج آن در گزارش پایداری سالانه شرکتی.`,
-      });
-    }
+    return res.json({
+      isAiGenerated: false,
+      executiveSummary: `تحلیل هوشمند برای ${locationName} بر اساس شاخص‌های محرومیت محلی و بودجه ${Number(totalBudgetToman || 0).toLocaleString('fa-IR')} تومان:`,
+      keyTakeaways: [
+        `بالاترین اولویت بر اساس داده‌های محرومیت منطقه ${locationName}، ساماندهی سکونتگاه‌های غیررسمی و کاهش آسیب‌های اجتماعی است.`,
+        `پیشنهاد می‌شود حداقل ۳۵٪ از بودجه کل صرف طرح‌های دوجانبه زیرساخت و سلامت روانی-اجتماعی گردد.`,
+        `توصیه می‌شود پایش پروژه‌ها به‌صورت کوارترلی توسط نماینده شورای راهبری محلی صورت پذیرد.`,
+      ],
+      strategicAdvice: `جهت حداکثرسازی اثرگذاری ملموس برای عموم شهروندان در سراسر شهرستان رفسنجان، پروژه‌هایی با اولویت رفع تنش آبی، تجهیز مراکز درمانی و بهسازی محلات حاشیه‌ای در فاز نخست اجرا شوند.`,
+    });
   }));
 
   // --- VITE OR STATIC MIDDLEWARE ---

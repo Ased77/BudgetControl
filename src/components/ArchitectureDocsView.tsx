@@ -157,15 +157,15 @@ router.post('/api/calculate', (req, res) => {
 +-----------------------------------------------------------------------------------+
 |                                BACKEND LAYER (Node.js / Express)                  |
 |  +------------------------+  +------------------------+  +----------------------+ |
-|  | Allocation Calculator  |  | Smart Recommendation   |  | Gemini AI Analysis   | |
-|  | (/api/calculate)       |  | Engine Algorithm       |  | Proxy Integration    | |
+|  | Allocation Calculator  |  | Smart Recommendation   |  | Local Rules Engine   | |
+|  | (/api/calculate)       |  | Engine Algorithm       |  | Rule-Based Output    | |
 |  +-----------+------------+  +-----------+------------+  +----------+-----------+ |
 +--------------|---------------------------|--------------------------|-------------+
                |                           |                          |
                v                           v                          v
 +-----------------------------+  +-------------------------+  +---------------------+
-| PostgreSQL Database         |  | Regional Indicators DB  |  | Google Gemini AI API|
-| (Drizzle ORM / PostGIS)     |  | (Statistics Center API) |  | (@google/genai SDK) |
+| PostgreSQL Database         |  | Regional Indicators DB  |  | Local Rules Analysis|
+| (Drizzle ORM / PostGIS)     |  | (Statistics Center API) |  | (rule-based module) |
 +-----------------------------+  +-------------------------+  +---------------------+`}
           </pre>
         </div>
