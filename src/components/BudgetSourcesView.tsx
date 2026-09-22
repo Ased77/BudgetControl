@@ -25,6 +25,7 @@ export const BudgetSourcesView: React.FC = () => {
   const {
     budgetSources,
     projects,
+    selectedLocation,
     handleAddBudgetSource,
     handleUpdateBudgetSource,
     handleDeleteBudgetSource,
@@ -75,7 +76,7 @@ export const BudgetSourcesView: React.FC = () => {
     setFormAllocated(0);
     setFormFiscalYear('۱۴۰۳-۱۴۰۴');
     setFormSponsor('');
-    setFormScope('مناطق محروم و روستایی شهرستان');
+    setFormScope(`مناطق محروم و روستایی ${selectedLocation.county}`);
     setFormNote('');
     setFormStatus('ACTIVE');
     setIsModalOpen(true);
@@ -135,6 +136,8 @@ export const BudgetSourcesView: React.FC = () => {
         targetScope: formScope.trim(),
         restrictionNote: formNote.trim(),
         status: formStatus,
+        province: selectedLocation.province,
+        county: selectedLocation.county,
       });
     }
     setIsModalOpen(false);

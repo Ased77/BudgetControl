@@ -330,7 +330,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
             {item.isHotspot && (
               <div id="charts-view-div-11" className="flex items-center gap-1.5 text-[10px] text-rose-700 font-bold bg-rose-50 border border-rose-200 px-2 py-1 rounded-md">
                 <Flame className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                <span>کانون بحران حاد منطقه رفسنجان (نیازمند اولویت ۱ بودجه)</span>
+                <span>کانون بحران حاد منطقه {context.selectedLocation.city} (نیازمند اولویت ۱ بودجه)</span>
               </div>
             )}
             <p className="text-[10px] text-slate-400 text-center pt-0.5">
@@ -895,7 +895,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
 
             <div id="charts-view-drill-down-detail-inspector-box-4" className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div id="charts-view-drill-down-detail-inspector-box-5" className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
-                <span className="text-[10px] text-slate-500 block">شدت آسیب محلی رفسنجان</span>
+                <span className="text-[10px] text-slate-500 block">شدت آسیب محلی {context.selectedLocation.city}</span>
                 <span className="text-base font-black text-rose-700 dir-rtl font-mono mt-0.5 block">
                   {toPersianDigits(activeSelectedBubble.deprivationIndex)}٪
                 </span>

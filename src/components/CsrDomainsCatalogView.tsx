@@ -1016,7 +1016,7 @@ export const CsrDomainsCatalogView: React.FC = () => {
                   type="text"
                   value={projExecutor}
                   onChange={(e) => setProjExecutor(e.target.value)}
-                  placeholder="مثال: شهرداری رفسنجان / دانشگاه علوم پزشکی / اداره راهداری"
+                  placeholder={`مثال: شهرداری ${selectedLocation.city} / دانشگاه علوم پزشکی / اداره راهداری`}
                   className="w-full p-2.5 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   required
                 />

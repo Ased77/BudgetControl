@@ -216,9 +216,9 @@ export function runDashboardPredictiveAnalysis(
     // Generate log-derived rationale
     let logDerivedRationale = `ثبت ${toPersianDigits(logCount)} لاگ مداخله و ${toPersianDigits(unresolvedCrisesCount)} کانون فعال بحران در منطقه، تقاضای توسعه‌ای این بخش را برای سال آینده ${toPersianDigits(growthRatePct)}٪ افزایش داده است.`;
     if (p.code === 1) {
-      logDerivedRationale = `انطباق با لاگ‌های هشدار تنش آبی کشکوئیه و نوق، نیاز مبرم به احداث مجتمع‌های آبرسانی تجمیعی و ارتقای بودجه به ${toPersianDigits(Math.round(projectedNeedNextYearToman / 1_000_000_000))} میلیارد تومان را نشان می‌دهد.`;
+      logDerivedRationale = `انطباق با لاگ‌های هشدار تنش آبی روستاهای دارای بحران در ${selectedLocation.city}، نیاز مبرم به احداث مجتمع‌های آبرسانی تجمیعی و ارتقای بودجه به ${toPersianDigits(Math.round(projectedNeedNextYearToman / 1_000_000_000))} میلیارد تومان را نشان می‌دهد.`;
     } else if (p.code === 4) {
-      logDerivedRationale = `به استناد لاگ‌های فوری اورژانس مسمومیت‌ها و کمبود تجهیزات درمانی رفسنجان، تخصیص بخش سلامت با جهش ${toPersianDigits(growthRatePct)} درصدی باید به ${toPersianDigits(Math.round(projectedNeedNextYearToman / 1_000_000_000))} میلیارد تومان ارتقا یابد.`;
+      logDerivedRationale = `به استناد لاگ‌های فوری اورژانس مسمومیت‌ها و کمبود تجهیزات درمانی در ${selectedLocation.city}، تخصیص بخش سلامت با جهش ${toPersianDigits(growthRatePct)} درصدی باید به ${toPersianDigits(Math.round(projectedNeedNextYearToman / 1_000_000_000))} میلیارد تومان ارتقا یابد.`;
     } else if (p.code === 2) {
       logDerivedRationale = `ثبت مطالبات اشتغال جوانان روستایی در لاگ‌های شورا و دهیاری‌ها، ضرورت افزایش تسهیلات خرد کارگاهی را تا سقف ${toPersianDigits(Math.round(projectedNeedNextYearToman / 1_000_000_000))} میلیارد تومان تبیین می‌کند.`;
     }

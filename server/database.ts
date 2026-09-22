@@ -29,8 +29,13 @@ import {
   INITIAL_CONTRACTORS,
   INITIAL_ROLES_PERMISSIONS,
 } from '../src/data/initialData.js';
+import { buildCountyDataset, CountyDataset } from '../src/data/countyTemplates.js';
+import { OMIDIYEH_COUNTY } from '../src/data/omidiyehData.js';
 
-const SCHEMA_VERSION = '1';
+// v2 — reseed: datasets for شهرستان امیدیه plus an indicator-driven dataset for
+// every other county in the registry, so all dependent sections follow the
+// selected location instead of a single hard-coded county.
+const SCHEMA_VERSION = '3';
 
 /* =========================================================================
    Connection
@@ -227,6 +232,43 @@ function seed(): void {
     for (const a of INITIAL_AUDIT_LOGS) {
       insAudit.run(a.id, a.timestamp, a.actionType, a.userName, JSON.stringify(a));
     }
+
+    // ---- Generated datasets for every remaining county --------------------
+    // Counties with hand-crafted, web-researched data keep their records;
+    // every other county gets a complete indicator-driven dataset derived from
+    // its real population and deprivation indices (src/data/countyTemplates).
+    const handcraftedCounties = new Set(['شهرستان رفسنجان', OMIDIYEH_COUNTY]);
+    const generatedDatasets: CountyDataset[] = INITIAL_LOCATIONS.filter(
+      (loc) => loc.level === 'COUNTY' && !handcraftedCounties.has(loc.county)
+    ).map((loc) => buildCountyDataset(loc));
+
+    for (const dataset of generatedDatasets) {
+      for (const d of dataset.departments) {
+        insDepartment.run(d.id, d.name, d.code, JSON.stringify(d));
+      }
+      for (const s of dataset.budgetSources) {
+        insSource.run(s.id, s.title, s.code, JSON.stringify(s));
+      }
+      for (const c of dataset.crisesHarms) {
+        insCrisis.run(c.id, c.title, c.code, JSON.stringify(c));
+      }
+      for (const e of dataset.executors) {
+        insExecutor.run(e.id, e.name, e.code, JSON.stringify(e));
+      }
+      for (const c of dataset.contractors) {
+        insContractor.run(c.id, c.companyName, JSON.stringify(c));
+      }
+      for (const p of dataset.projects) {
+        insProject.run(p.id, p.code, p.title, p.status, p.priorityId, p.departmentId, p.budgetSourceId, JSON.stringify(p));
+      }
+      for (const u of dataset.users) {
+        insUser.run(u.id, u.name, u.role, JSON.stringify(u));
+      }
+      for (const a of dataset.auditLogs) {
+        insAudit.run(a.id, a.timestamp, a.actionType, a.userName, JSON.stringify(a));
+      }
+    }
+    console.log(`[db] Generated dependent datasets for ${generatedDatasets.length} counties`);
 
     db.prepare(
       'INSERT INTO app_meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'

@@ -25,6 +25,10 @@ export interface UserProfile {
   organization: string;
   departmentId?: string;
   allowedLocationId?: string;
+  /** استان و شهرستان محل خدمت؛ رکوردهای بدون شهرستان (سطح ملی) در همه
+   *  موقعیت‌ها قابل مشاهده می‌مانند. */
+  province?: string;
+  county?: string;
 }
 
 export type OrgType = 'GOVERNMENT' | 'PUBLIC' | 'PRIVATE' | 'SEMI_PRIVATE' | 'COOPERATIVE';
@@ -102,6 +106,10 @@ export interface BudgetSource {
   targetScope: string; // e.g. "کل شهرستان"، "مناطق روستایی محروم"
   restrictionNote?: string;
   status: 'ACTIVE' | 'DEPLETED' | 'RESERVED';
+  /** استان مالک منبع مالی — برای فیلتر داینامیک بر اساس منطقه انتخاب‌شده */
+  province?: string;
+  /** شهرستان مالک منبع مالی */
+  county?: string;
 }
 
 /* =========================================================================
@@ -185,6 +193,10 @@ export interface ProjectExecutor {
   successRate: number; // 0 - 100
   capacityStatus: 'AVAILABLE' | 'OPTIMAL' | 'OVERLOADED';
   coverageRegion: string;
+  /** استان حوزه فعالیت مجری */
+  province?: string;
+  /** شهرستان حوزه فعالیت مجری */
+  county?: string;
 }
 
 /* =========================================================================
@@ -207,6 +219,10 @@ export interface Contractor {
   freeCapacitySlots: number;
   phone: string;
   status: 'VERIFIED' | 'UNDER_EVALUATION' | 'SUSPENDED';
+  /** استان محل فعالیت پیمانکار */
+  province?: string;
+  /** شهرستان محل فعالیت پیمانکار */
+  county?: string;
 }
 
 /* =========================================================================
@@ -374,6 +390,10 @@ export interface AuditLogItem {
   oldValue?: string;
   newValue?: string;
   rationale?: string;
+  /** استان و شهرستان رویداد؛ رکوردهای بدون شهرستان (سطح ملی) همیشه نمایش
+   *  داده می‌شوند. */
+  province?: string;
+  county?: string;
 }
 
 /* =========================================================================

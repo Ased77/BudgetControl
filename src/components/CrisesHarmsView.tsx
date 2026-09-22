@@ -26,6 +26,7 @@ export const CrisesHarmsView: React.FC = () => {
   const {
     crisesHarms,
     projects,
+    selectedLocation,
     handleAddCrisisHarm,
     handleUpdateCrisisHarm,
     handleDeleteCrisisHarm,
@@ -48,9 +49,9 @@ export const CrisesHarmsView: React.FC = () => {
   const [formCode, setFormCode] = useState('');
   const [formCategory, setFormCategory] = useState('زیرساخت و آب شرب');
   const [formLevel, setFormLevel] = useState<AdministrativeLevel>('COUNTY');
-  const [formProvince, setFormProvince] = useState('کرمان');
-  const [formCounty, setFormCounty] = useState('شهرستان رفسنجان');
-  const [formDistrict, setFormDistrict] = useState('');
+  const [formProvince, setFormProvince] = useState(selectedLocation.province);
+  const [formCounty, setFormCounty] = useState(selectedLocation.county);
+  const [formDistrict, setFormDistrict] = useState(selectedLocation.district);
   const [formSeverity, setFormSeverity] = useState<number>(85);
   const [formUrgency, setFormUrgency] = useState<UrgencyLevel>('CRITICAL');
   const [formAffectedPop, setFormAffectedPop] = useState<number>(45000);
@@ -75,9 +76,9 @@ export const CrisesHarmsView: React.FC = () => {
     setFormCode(`CRS-${Math.floor(100 + Math.random() * 900)}`);
     setFormCategory('زیرساخت و آب شرب');
     setFormLevel('COUNTY');
-    setFormProvince('کرمان');
-    setFormCounty('شهرستان رفسنجان');
-    setFormDistrict('بخش‌های کشکوئیه و فردوس');
+    setFormProvince(selectedLocation.province);
+    setFormCounty(selectedLocation.county);
+    setFormDistrict(selectedLocation.district);
     setFormSeverity(85);
     setFormUrgency('CRITICAL');
     setFormAffectedPop(40000);

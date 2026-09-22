@@ -23,6 +23,7 @@ export const ContractorsView: React.FC = () => {
   const {
     contractors,
     projects,
+    selectedLocation,
     handleAddContractor,
     handleUpdateContractor,
     handleDeleteContractor,
@@ -127,6 +128,8 @@ export const ContractorsView: React.FC = () => {
         performanceScore: Number(formScore),
         satisfactionRating: Number(formRating),
         status: formStatus,
+        province: selectedLocation.province,
+        county: selectedLocation.county,
       });
     }
     setIsModalOpen(false);

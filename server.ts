@@ -303,19 +303,47 @@ async function startServer() {
     res.status(201).json({ ok: true });
   }));
 
-  // Executive AI Narrative Report (rule-based, local analysis)
+  // Executive AI Narrative Report (rule-based, local analysis).
+  // The narrative is assembled from the county the client is working in plus
+  // recorded local data (crises, projects) so no location is hard-coded.
   app.post('/api/ai-analysis', wrap(async (req, res) => {
-    const { locationName, totalBudgetToman } = req.body;
+    const { locationName, locationId, totalBudgetToman } = req.body;
+    const allLocations = listLocations();
+    // Match by explicit id first, then by the longest county name contained in
+    // the display label the client sent, so the narrative always belongs to the
+    // county the user is working in (never a fixed default county).
+    const namedMatches = (locationName ? allLocations.filter((l) => String(locationName).includes(l.county)) : [])
+      .slice()
+      .sort((a, b) => b.county.length - a.county.length);
+    const location =
+      (locationId ? allLocations.find((l) => l.id === locationId) : undefined) ??
+      namedMatches[0] ??
+      allLocations.find((l) => l.city === locationName) ??
+      allLocations[0];
+
+    const countyLabel = location?.county ?? locationName ?? 'منطقه هدف';
+    const countyCrises = location
+      ? listCrisesHarms()
+          .filter((c) => c.county === location.county)
+          .sort((a, b) => b.severityScore - a.severityScore)
+      : [];
+    const countyProjects = location ? listProjects().filter((p) => p.county === location.county) : [];
+    const topCrisis = countyCrises[0];
+    const indicators = location?.indicators;
 
     return res.json({
       isAiGenerated: false,
-      executiveSummary: `تحلیل هوشمند برای ${locationName} بر اساس شاخص‌های محرومیت محلی و بودجه ${Number(totalBudgetToman || 0).toLocaleString('fa-IR')} تومان:`,
+      executiveSummary: `تحلیل هوشمند برای ${countyLabel} (${location?.city ?? locationName}) بر اساس شاخص‌های محرومیت محلی و بودجه ${Number(totalBudgetToman || 0).toLocaleString('fa-IR')} تومان:`,
       keyTakeaways: [
-        `بالاترین اولویت بر اساس داده‌های محرومیت منطقه ${locationName}، ساماندهی سکونتگاه‌های غیررسمی و کاهش آسیب‌های اجتماعی است.`,
-        `پیشنهاد می‌شود حداقل ۳۵٪ از بودجه کل صرف طرح‌های دوجانبه زیرساخت و سلامت روانی-اجتماعی گردد.`,
-        `توصیه می‌شود پایش پروژه‌ها به‌صورت کوارترلی توسط نماینده شورای راهبری محلی صورت پذیرد.`,
+        topCrisis
+          ? `بالاترین شدت بحران ثبت‌شده در ${countyLabel} مربوط به «${topCrisis.title}» با شدت ${toPersianDigits(topCrisis.severityScore)} از ۱۰۰ و جمعیت تحت تأثیر ${topCrisis.affectedPopulation.toLocaleString('fa-IR')} نفر است.`
+          : `داده بحران محلی برای ${countyLabel} ثبت نشده است و نیازسنجی میدانی توصیه می‌شود.`,
+        `از ${toPersianDigits(countyProjects.length)} پروژه ثبت‌شده این شهرستان، ${toPersianDigits(countyProjects.filter((p) => p.status === 'IN_PROGRESS').length)} پروژه در حال اجرا و ${toPersianDigits(countyProjects.filter((p) => p.antiOverlapStatus !== 'CLEAR').length)} مورد نیازمند بازبینی هم‌پوشانی است.`,
+        indicators
+          ? `شاخص‌های کلیدی ${countyLabel}: نرخ فقر ${toPersianDigits(indicators.povertyRate)}٪، بیکاری ${toPersianDigits(indicators.unemploymentRate)}٪، کمبود زیرساخت ${toPersianDigits(indicators.infrastructureDeficit)}٪ و ریسک محیط‌زیستی ${toPersianDigits(indicators.environmentalRiskScore)} از ۱۰۰.`
+          : `پایش فصلی پروژه‌ها توسط شورای راهبری محلی توصیه می‌شود.`,
       ],
-      strategicAdvice: `جهت حداکثرسازی اثرگذاری ملموس برای عموم شهروندان در سراسر شهرستان رفسنجان، پروژه‌هایی با اولویت رفع تنش آبی، تجهیز مراکز درمانی و بهسازی محلات حاشیه‌ای در فاز نخست اجرا شوند.`,
+      strategicAdvice: `جهت حداکثرسازی اثرگذاری ملموس برای عموم شهروندان ${countyLabel}، پروژه‌هایی با اولویت «${topCrisis?.recommendedIntervention ?? 'تکمیل زیرساخت پایه' }» در فاز نخست اجرا شوند و تخصیص منابع متناسب با شاخص‌های محرومیت همین شهرستان بازنگری گردد.`,
     });
   }));
 

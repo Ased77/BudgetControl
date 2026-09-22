@@ -226,6 +226,7 @@ export const DepartmentsView: React.FC = () => {
   const {
     departments,
     projects,
+    selectedLocation,
     handleAddDepartment,
     handleUpdateDepartment,
     handleDeleteDepartment,
@@ -260,8 +261,8 @@ export const DepartmentsView: React.FC = () => {
   const [formAbsorbed, setFormAbsorbed] = useState<number>(200_000_000_000);
   const [formScore, setFormScore] = useState<number>(85);
   const [formLevel, setFormLevel] = useState<AdministrativeLevel>('COUNTY');
-  const [formProvince, setFormProvince] = useState('کرمان');
-  const [formCounty, setFormCounty] = useState('شهرستان رفسنجان');
+  const [formProvince, setFormProvince] = useState(selectedLocation.province);
+  const [formCounty, setFormCounty] = useState(selectedLocation.county);
   const [formDesc, setFormDesc] = useState('');
   const [formLogoDataUrl, setFormLogoDataUrl] = useState('');
   const [formLogoError, setFormLogoError] = useState<string | null>(null);
@@ -294,8 +295,8 @@ export const DepartmentsView: React.FC = () => {
     setFormAbsorbed(0);
     setFormScore(85);
     setFormLevel('COUNTY');
-    setFormProvince('کرمان');
-    setFormCounty('شهرستان رفسنجان');
+    setFormProvince(selectedLocation.province);
+    setFormCounty(selectedLocation.county);
     setFormDesc('');
     setFormLogoDataUrl('');
     setFormLogoError(null);
@@ -316,7 +317,7 @@ export const DepartmentsView: React.FC = () => {
     setFormScore(dept.performanceScore);
     setFormLevel(dept.administrativeLevel);
     setFormProvince(dept.province);
-    setFormCounty(dept.county || 'شهرستان رفسنجان');
+    setFormCounty(dept.county || selectedLocation.county);
     setFormDesc(dept.description);
     setFormLogoDataUrl(dept.logoDataUrl || '');
     setFormLogoError(null);

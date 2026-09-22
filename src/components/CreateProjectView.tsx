@@ -153,10 +153,10 @@ export const CreateProjectView: React.FC = () => {
 
   // --- Step 5: Location & Target Beneficiaries ---
   const [adminLevel, setAdminLevel] = useState<AdministrativeLevel>('COUNTY');
-  const [province, setProvince] = useState<string>('کرمان');
-  const [county, setCounty] = useState<string>('شهرستان رفسنجان');
-  const [district, setDistrict] = useState<string>('بخش مرکزی و شهر رفسنجان');
-  const [targetArea, setTargetArea] = useState<string>('حوزه شهری رفسنجان و حاشیه');
+  const [province, setProvince] = useState<string>(selectedLocation.province);
+  const [county, setCounty] = useState<string>(selectedLocation.county);
+  const [district, setDistrict] = useState<string>(selectedLocation.city);
+  const [targetArea, setTargetArea] = useState<string>(selectedLocation.district);
   const [beneficiariesCount, setBeneficiariesCount] = useState<number>(5000);
   const [selectedBeneficiaryGroups, setSelectedBeneficiaryGroups] = useState<string[]>([
     'روستاییان مناطق محروم و دارای تنش آبی',
@@ -264,102 +264,72 @@ export const CreateProjectView: React.FC = () => {
     const isUrban = /شهرداری|بوستان|پارک|شهر|زباله|خدمات شهری|معابر شهری|بازآفرینی/.test(t);
     const isRuralHousing = /مسکن|طرح هادی|بنیاد مسکن|روستایی|مقاوم‌سازی|عمران روستا/.test(t);
 
-    // 2. Geographic Detection from Title if present
-    let inferredDistrict = district;
-    if (/کشکوئیه|راویز/.test(t)) {
-      inferredDistrict = 'بخش کشکوئیه و دهستان راویز';
-    } else if (/نوق|بهرمان|دقوق‌آباد|باقریه/.test(t)) {
-      inferredDistrict = 'بخش نوق و شهر بهرمان';
-    } else if (/فردوس|صفائیه|چاه‌میل/.test(t)) {
-      inferredDistrict = 'بخش فردوس و شهر صفائیه';
-    } else if (/مرکزی|شهر رفسنجان|داوران|رحمت‌آباد|علی‌آباد|کمال‌آباد/.test(t)) {
-      inferredDistrict = 'بخش مرکزی و شهر رفسنجان';
-    }
+    // 2. Geographic Detection from Title — matched against the واقعی بخش‌ها و
+    // شهرهای the selected county from the location registry (بدون نام ثابت).
+    const countyLocations = locations.filter((l) => l.county === county);
+    const normalizeName = (value: string) =>
+      value.replace(/[()،,\-–]/g, ' ').replace(/\s+/g, ' ').trim();
+    const titleMatchedLocation = countyLocations.find((l) =>
+      normalizeName(l.city)
+        .split(' ')
+        .filter((word) => word.length >= 4 && !/^(بخش|شهر|دهستان|کل|و|مرکزی)$/.test(word))
+        .some((word) => t.includes(word))
+    );
 
-    // 3. Demographic Baselines from Official Census & Data in Rafsanjan
-    let districtTotalPop = 222000;
-    let districtVulnerablePop = 18500;
-    let districtNameFa = 'بخش مرکزی و شهر رفسنجان';
-
+    // 3. Demographic baselines straight from the matched location record،
+    // جمعیت و جامعه آسیب‌پذیر واقعی همان محدوده است.
+    const districtFallbackRow =
+      countyLocations.find((l) => l.city === district) ?? countyLocations[0] ?? selectedLocation;
+    const matchedLocation = titleMatchedLocation ?? districtFallbackRow;
+    const inferredDistrict = matchedLocation.city;
     const activeDistrict = inferredDistrict || district;
-    if (activeDistrict.includes('کشکوئیه')) {
-      districtTotalPop = 41000;
-      districtVulnerablePop = 8400;
-      districtNameFa = 'بخش کشکوئیه و دهستان راویز';
-    } else if (activeDistrict.includes('نوق')) {
-      districtTotalPop = 29000;
-      districtVulnerablePop = 6200;
-      districtNameFa = 'بخش نوق و شهر بهرمان';
-    } else if (activeDistrict.includes('فردوس')) {
-      districtTotalPop = 23000;
-      districtVulnerablePop = 5100;
-      districtNameFa = 'بخش فردوس و شهر صفائیه';
-    } else if (activeDistrict.includes('کل شهرستان')) {
-      districtTotalPop = 315000;
-      districtVulnerablePop = 38200;
-      districtNameFa = 'کل شهرستان رفسنجان';
-    }
+    const districtTotalPop = matchedLocation.population || selectedLocation.population;
+    const districtVulnerablePop = matchedLocation.indicators.vulnerableGroupsPopulation;
+    const districtNameFa = matchedLocation.city;
 
     // 4. Beneficiaries Count Inference (The User's Primary Focus Element)
     let suggestedBeneficiaries = 5000;
     let suggestedBeneficiariesReason = '';
 
     if (isWater) {
-      if (/راویز|روستا|تک روستا|اقماری/.test(t)) {
-        suggestedBeneficiaries = 4200;
+      if (/روستا|تک روستا|اقماری|دهستان/.test(t)) {
+        suggestedBeneficiaries = Math.max(Math.round(districtTotalPop * 0.35), 1200);
         suggestedBeneficiariesReason = `روستاییان تحت پوشش شبکه آب در ${districtNameFa}`;
-      } else if (activeDistrict.includes('کشکوئیه')) {
-        suggestedBeneficiaries = 22000;
-        suggestedBeneficiariesReason = 'ساکنان تحت پوشش آب شرب پایدار بخش کشکوئیه';
-      } else if (activeDistrict.includes('نوق')) {
-        suggestedBeneficiaries = 18000;
-        suggestedBeneficiariesReason = 'ساکنان تحت پوشش آب شرب دشت نوق و بهرمان';
-      } else if (activeDistrict.includes('فردوس')) {
-        suggestedBeneficiaries = 14000;
-        suggestedBeneficiariesReason = 'ساکنان روستاهای دارای تنش آبی بخش فردوس';
       } else {
-        suggestedBeneficiaries = 35000;
-        suggestedBeneficiariesReason = 'جمعیت بهره‌بردار از ارتقای شبکه آب و مخازن ذخیره';
+        suggestedBeneficiaries = Math.max(Math.round(districtTotalPop * 0.6), 2000);
+        suggestedBeneficiariesReason = `جمعیت بهره‌بردار از ارتقای شبکه آب و مخازن ذخیره در ${districtNameFa}`;
       }
     } else if (isRoad) {
-      if (activeDistrict.includes('نوق')) {
-        suggestedBeneficiaries = 29000;
-        suggestedBeneficiariesReason = 'ترددکنندگان روزانه محور پرحادثه رفسنجان - نوق';
-      } else if (activeDistrict.includes('کشکوئیه')) {
-        suggestedBeneficiaries = 32000;
-        suggestedBeneficiariesReason = 'ترددکنندگان محورهای مواصلاتی و روستاهای کشکوئیه';
-      } else {
-        suggestedBeneficiaries = 45000;
-        suggestedBeneficiariesReason = 'شهروندان و کاربران محورهای شریانی شهرستان';
-      }
+      suggestedBeneficiaries = Math.max(Math.round(districtTotalPop * 1.3), 3000);
+      suggestedBeneficiariesReason = `ترددکنندگان روزانه محورهای مواصلاتی ${districtNameFa} و مسیرهای پیرامون`;
     } else if (isHealth) {
       if (/دیالیز|مسموم|متانول|اورژانس/.test(t)) {
-        suggestedBeneficiaries = 14500;
+        suggestedBeneficiaries = Math.max(Math.round(districtTotalPop * 0.15), 800);
         suggestedBeneficiariesReason = 'بیماران حاد، مراجعان اورژانس و خانواده‌های نیازمند خدمات تخصصی';
       } else if (/ناباروری/.test(t)) {
-        suggestedBeneficiaries = 3200;
+        suggestedBeneficiaries = Math.max(Math.round(districtTotalPop * 0.03), 300);
         suggestedBeneficiariesReason = 'زوج‌های نابارور کم‌بضاعت تحت درمان تخصصی در شهرستان';
       } else {
-        suggestedBeneficiaries = 25000;
+        suggestedBeneficiaries = Math.max(Math.round(districtTotalPop * 0.3), 1500);
         suggestedBeneficiariesReason = 'مراجعان سالانه مراکز جامع سلامت و پایگاه‌های بهداشتی';
       }
     } else if (isEmployment) {
-      suggestedBeneficiaries = 2500;
+      suggestedBeneficiaries = Math.max(Math.round(districtTotalPop * 0.04), 500);
       suggestedBeneficiariesReason = 'جوانان جویای کار، فارغ‌التحصیلان و بهبودیافتگان دریافت‌کننده وام';
     } else if (isSocialWelfare) {
       suggestedBeneficiaries = districtVulnerablePop > 0 ? Math.min(districtVulnerablePop, 6500) : 5000;
       suggestedBeneficiariesReason = `مددجویان بهزیستی، نیازمندان و خانواده‌های آسیب‌دیده ${districtNameFa}`;
     } else if (isEnvironment) {
-      suggestedBeneficiaries = 28000;
-      suggestedBeneficiariesReason = 'ساکنان محدوده تحت تأثیر ریزگردها و فرسایش بادی دشت رفسنجان';
+      suggestedBeneficiaries = Math.max(Math.round(districtTotalPop * 0.9), 2000);
+      suggestedBeneficiariesReason = `ساکنان محدوده تحت تأثیر ریزگرد و فرسایش بادی ${districtNameFa}`;
     } else if (isEducation) {
-      suggestedBeneficiaries = 3800;
+      suggestedBeneficiaries = Math.max(Math.round(districtTotalPop * 0.06), 500);
       suggestedBeneficiariesReason = 'دانش‌آموزان مدارس مناطق کم‌برخوردار و هنرستان‌های فنی';
     } else if (isUrban) {
-      suggestedBeneficiaries = 65000;
+      suggestedBeneficiaries = Math.max(Math.round(districtTotalPop * 0.7), 3000);
       suggestedBeneficiariesReason = 'شهروندان بهره‌مند از خدمات شهری و ارتقای بهسازی معابر';
     } else if (isRuralHousing) {
-      suggestedBeneficiaries = 4800;
+      suggestedBeneficiaries = Math.max(Math.round(districtTotalPop * 0.06), 400);
       suggestedBeneficiariesReason = 'خانوارهای روستایی بهره‌مند از بهسازی مسکن و طرح هادی';
     } else {
       suggestedBeneficiaries = Math.round(districtTotalPop * 0.25);
@@ -499,7 +469,7 @@ export const CreateProjectView: React.FC = () => {
       suggestedContractorId,
       suggestedContractor: contractors.find((c) => c.id === suggestedContractorId),
     };
-  }, [title, targetArea, district, departments, crisesHarms, priorities, executors, contractors]);
+  }, [title, targetArea, district, departments, crisesHarms, priorities, executors, contractors, locations, county, selectedLocation]);
 
   // Apply all smart recommendations with 1 click
   const handleApplyAllSmartSuggestions = () => {
@@ -562,26 +532,49 @@ export const CreateProjectView: React.FC = () => {
     }
   }, [title, targetArea]);
 
-  // Active demographic data of the chosen district
+  // Switch the form's geography whenever the global location picker changes so
+  // a new project is always attributed to the county the user is working in.
+  useEffect(() => {
+    setProvince(selectedLocation.province);
+    setCounty(selectedLocation.county);
+    setDistrict(selectedLocation.city);
+    setTargetArea(selectedLocation.district);
+  }, [selectedLocation.id]);
+
+  // محدوده‌های قابل انتخاب همان شهرستان برای دراپ‌داون مکان اجرا.
+  const selectableAreas = useMemo(
+    () => locations.filter((l) => l.county === county),
+    [locations, county]
+  );
+
+  // Active demographic data of the chosen محدوده — derived from the location
+  // registry of the selected county (بدون شناسه ثابت یک شهرستان خاص).
   const activeLocationData = useMemo(() => {
-    if (district.includes('کشکوئیه')) {
-      return locations.find((l) => l.id.includes('koshkuiyeh')) || locations[2];
-    }
-    if (district.includes('نوق')) {
-      return locations.find((l) => l.id.includes('nuq')) || locations[3];
-    }
-    if (district.includes('فردوس')) {
-      return locations.find((l) => l.id.includes('ferdows')) || locations[4];
-    }
-    if (district.includes('کل شهرستان')) {
-      return locations.find((l) => l.id.includes('all')) || locations[0];
-    }
-    return locations.find((l) => l.id.includes('central')) || locations[1];
-  }, [district, locations]);
+    const sameCounty = locations.filter((l) => l.county === county);
+    const row =
+      sameCounty.find((l) => l.city === district) ??
+      sameCounty.find((l) => district.includes(l.city) || l.city.includes(district)) ??
+      sameCounty.find((l) => l.id.includes('all')) ??
+      sameCounty.reduce((max, l) => (l.population > max.population ? l : max), selectedLocation);
+
+    // Alias the registry shape to the demographic field names used by this view.
+    return {
+      ...row,
+      nameFa: row.city,
+      totalPopulation: row.population,
+      vulnerablePopulation: row.indicators.vulnerableGroupsPopulation,
+      indicators: {
+        ...row.indicators,
+        infrastructureDeficitPct: row.indicators.infrastructureDeficit,
+        healthAccessDeficitPct: row.indicators.healthAccessDeficit,
+        povertyRatePct: row.indicators.povertyRate,
+      },
+    };
+  }, [district, county, locations, selectedLocation]);
 
   // Demographic-driven smart priorities generator
   const demographicPrioritySuggestions = useMemo((): DemographicPrioritySuggestion[] => {
-    const locName = district || 'بخش مرکزی و شهر رفسنجان';
+    const locName = district || selectedLocation.city;
     const isKoshkuiyeh = locName.includes('کشکوئیه') || locName.includes('راویز');
     const isNuq = locName.includes('نوق') || locName.includes('بهرمان');
     const isFerdows = locName.includes('فردوس') || locName.includes('صفائیه');
@@ -617,6 +610,78 @@ export const CreateProjectView: React.FC = () => {
     const cntRoad = contractors.find((c) => c.companyName.includes('راه'))?.id || contractors[0]?.id;
     const cntMedical = contractors.find((c) => c.companyName.includes('پزشکی'))?.id || contractors[0]?.id;
     const cntEnv = contractors.find((c) => c.companyName.includes('سبز') || c.companyName.includes('زیست'))?.id || contractors[0]?.id;
+
+    // --- GENERIC BRANCH — هر شهرستان دیگر ---
+    // For any county other than the hand-crafted one, suggestions are generated
+    // from that county's own recorded crises, departments and priorities, so the
+    // surface never falls back to another county's districts.
+    if (county !== 'شهرستان رفسنجان') {
+      const categoryFromCrisis = (crisisTitle: string): { category: ProjectCategoryKey; categoryFa: string; titlePrefix: string } => {
+        if (/آب|شرب|شوری|تنش/.test(crisisTitle))
+          return { category: 'WATER', categoryFa: 'آب و فاضلاب', titlePrefix: 'آبرسانی پایدار و ارتقای شبکه آب شرب' };
+        if (/ریزگرد|گردوغبار|آلودگ|محیط|تالاب/.test(crisisTitle))
+          return { category: 'ENVIRONMENT', categoryFa: 'محیط زیست', titlePrefix: 'مهار کانون‌های آلودگی و ریزگرد' };
+        if (/گرما|برق|خدمات اضطراری/.test(crisisTitle))
+          return { category: 'RURAL_HOUSING', categoryFa: 'زیرساخت و خدمات پایه', titlePrefix: 'ارتقای خدمات پایه و تاب‌آوری اقلیمی' };
+        if (/بیکاری|اشتغال|معیشت/.test(crisisTitle))
+          return { category: 'EMPLOYMENT', categoryFa: 'اشتغال و معیشت', titlePrefix: 'اشتغال‌زایی و توانمندسازی اقتصادی' };
+        if (/حاشیه|بافت|مسکن|سکونت/.test(crisisTitle))
+          return { category: 'RURAL_HOUSING', categoryFa: 'مسکن و بافت شهری', titlePrefix: 'ساماندهی بافت فرسوده و تأمین مسکن محرومان' };
+        if (/آسیب|اجتماعی|اعتیاد|سلامت روان/.test(crisisTitle))
+          return { category: 'HEALTH', categoryFa: 'سلامت و حمایت اجتماعی', titlePrefix: 'کاهش آسیب‌های اجتماعی و خدمات سلامت روان' };
+        return { category: 'RURAL_HOUSING', categoryFa: 'عمران و زیرساخت', titlePrefix: 'توسعه زیرساخت عمومی و خدمات روستایی' };
+      };
+
+      const deptByCategory: Partial<Record<string, string>> = {
+        WATER: departments.find((d) => d.name.includes('آب'))?.id,
+        ENVIRONMENT: departments.find((d) => d.name.includes('محیط'))?.id,
+        HEALTH: departments.find((d) => d.name.includes('بهداشت') || d.name.includes('درمان') || d.name.includes('بیمارستان'))?.id,
+        EMPLOYMENT: departments.find((d) => d.name.includes('بهزیستی') || d.name.includes('تعاون'))?.id,
+        RURAL_HOUSING: departments.find((d) => d.name.includes('مسکن'))?.id,
+        EDUCATION: departments.find((d) => d.name.includes('آموزش'))?.id,
+        ROAD: departments.find((d) => d.name.includes('راهداری') || d.name.includes('حمل'))?.id,
+      };
+
+      const priorityByCategory: Partial<Record<string, string>> = {
+        WATER: priorities.find((p) => p.category.includes('عمران'))?.id || 'p1',
+        ROAD: priorities.find((p) => p.category.includes('عمران'))?.id || 'p1',
+        EMPLOYMENT: priorities.find((p) => p.category.includes('اقتصاد'))?.id || 'p2',
+        HEALTH: priorities.find((p) => p.category.includes('بهداشت'))?.id || 'p4',
+        ENVIRONMENT: priorities.find((p) => p.category.includes('محیط'))?.id || 'p5',
+        EDUCATION: priorities.find((p) => p.category.includes('آموزش'))?.id || 'p7',
+        RURAL_HOUSING: priorities.find((p) => p.category.includes('عدالت'))?.id || 'p10',
+      };
+
+      const districtLabel = smartInference.districtNameFa || locName;
+      return [...crisesHarms]
+        .sort((a, b) => b.severityScore - a.severityScore)
+        .slice(0, 4)
+        .map((crisis, index) => {
+          const meta = categoryFromCrisis(crisis.title);
+          const deptId = deptByCategory[meta.category] ?? departments[0]?.id ?? '';
+          const urgency: UrgencyLevel = crisis.urgency;
+          return {
+            id: `generic-sug-${index + 1}`,
+            title: `${meta.titlePrefix} در ${crisis.districtOrVillage || districtLabel}`,
+            category: meta.category,
+            categoryFa: meta.categoryFa,
+            demographicRationale: `شدت شاخص «${crisis.title}» در ${county} معادل ${toPersianDigits(crisis.severityScore)} از ۱۰۰ و جمعیت تحت تأثیر حدود ${formatNumber(crisis.affectedPopulation)} نفر است. ${crisis.recommendedIntervention}`,
+            keyIndicatorBadge: `شدت بحران محلی: ${toPersianDigits(crisis.severityScore)} از ۱۰۰`,
+            urgency,
+            estimatedCostToman: Math.max(Math.round(activeLocationData.totalPopulation * 4_000_000), 20_000_000_000),
+            beneficiariesCount: crisis.affectedPopulation || activeLocationData.totalPopulation,
+            district: districtLabel,
+            targetArea: crisis.districtOrVillage || districtLabel,
+            suggestedDeptId: deptId,
+            suggestedCrisisId: crisis.id,
+            suggestedPriorityId: priorityByCategory[meta.category] ?? 'p1',
+            suggestedBudgetShares: { csr: 55, gov: 30, dehyari: 10, bank: 5, charity: 0 },
+            suggestedExecutorId: executors[0]?.id ?? '',
+            suggestedContractorId: contractors[0]?.id,
+            expectedOutcome: crisis.recommendedIntervention,
+          };
+        });
+    }
 
     // --- CASE: KOSHKUIYEH & RAVIZ ---
     if (isKoshkuiyeh) {
@@ -1510,11 +1575,11 @@ export const CreateProjectView: React.FC = () => {
                       onChange={(e) => setDistrict(e.target.value)}
                       className="w-full text-xs font-bold bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-cyan-500 cursor-pointer"
                     >
-                      <option value="بخش کشکوئیه و دهستان راویز">بخش کشکوئیه و دهستان راویز (جمعیت: ۴۱,۰۰۰)</option>
-                      <option value="بخش نوق و شهر بهرمان">بخش نوق و شهر بهرمان (جمعیت: ۲۹,۰۰۰)</option>
-                      <option value="بخش فردوس و شهر صفائیه">بخش فردوس و شهر صفائیه (جمعیت: ۲۳,۰۰۰)</option>
-                      <option value="بخش مرکزی و شهر رفسنجان">بخش مرکزی و شهر رفسنجان (جمعیت: ۲۲۲,۰۰۰)</option>
-                      <option value="کل شهرستان رفسنجان">کل شهرستان رفسنجان (جمعیت: ۳۱۵,۰۰۰)</option>
+                      {selectableAreas.map((area) => (
+                        <option key={area.id} value={area.city}>
+                          {area.city} (جمعیت: {formatNumber(area.population)})
+                        </option>
+                      ))}
                     </select>
                   </div>
 
@@ -1558,7 +1623,7 @@ export const CreateProjectView: React.FC = () => {
                       <Activity className="w-3.5 h-3.5 text-emerald-600" />
                       <span>شناسنامه شاخص‌های دموگرافیک {activeLocationData?.nameFa || district}:</span>
                     </span>
-                    <span className="text-[10px] text-slate-400">منبع داده: سرشماری و اطلس محرومیت رفسنجان</span>
+                    <span className="text-[10px] text-slate-400">منبع داده: سرشماری و اطلس محرومیت {selectedLocation.county}</span>
                   </div>
                   <div id="create-project-view-regional-demographic-snapshot-3" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-center">
                     <div id="create-project-view-regional-demographic-snapshot-4" className="bg-slate-50 p-2 rounded-lg border border-slate-200">
@@ -1771,16 +1836,18 @@ export const CreateProjectView: React.FC = () => {
                 <div id="create-project-view-smart-assistance-recommendation-7" className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
                   <div id="create-project-view-smart-assistance-recommendation-8" className="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
                     <Sparkles className="w-3 h-3 text-indigo-500" />
-                    <span>نمونه‌های آماده طرح‌های محوری رفسنجان جهت بررسی و اعمال هوشمند:</span>
+                    <span>نمونه‌های آماده طرح‌های محوری {selectedLocation.city} جهت بررسی و اعمال هوشمند:</span>
                   </div>
                   <div id="create-project-view-smart-assistance-recommendation-9" className="flex flex-wrap gap-1.5">
-                    {[
-                      { t: 'آبرسانی پایدار به روستاهای تنش‌دار کشکوئیه و دهستان راویز', d: 'بخش کشکوئیه و دهستان راویز', a: 'دهستان راویز و روستاهای تابعه' },
-                      { t: 'تعریض، روشنایی و ایمن‌سازی نقاط حادثه‌خیز محور رفسنجان - نوق', d: 'بخش نوق و شهر بهرمان', a: 'کیلومتر ۱۵ تا ۳۵ محور نوق' },
-                      { t: 'احداث و تجهیز اورژانس مسمومیت‌ها و بخش دیالیز بیمارستان علی‌ابن‌ابیطالب', d: 'بخش مرکزی و شهر رفسنجان', a: 'مرکز آموزشی درمانی رفسنجان' },
-                      { t: 'تسهیلات خوداشتغالی و کارگاه‌های مهارت‌آموزی فنی‌وحرفه‌ای جوانان جویای کار', d: 'کل شهرستان رفسنجان', a: 'سطح شهرستان و بخش‌های تابعه' },
-                      { t: 'احداث کمربند سبز بادشکن و تثبیت ماسه‌های روان دشت رفسنجان', d: 'بخش فردوس و شهر صفائیه', a: 'کانون بحران فرسایش بادی فردوس' },
-                    ].map((sample, idx) => (
+                    {[...crisesHarms]
+                      .sort((a, b) => b.severityScore - a.severityScore)
+                      .slice(0, 5)
+                      .map((crisis) => ({
+                        t: `طرح محوری: ${crisis.recommendedIntervention.split('،')[0]}`,
+                        d: crisis.districtOrVillage || district,
+                        a: crisis.districtOrVillage || district,
+                      }))
+                      .map((sample, idx) => (
                       <button
                         key={idx}
                         type="button"
@@ -2429,7 +2496,7 @@ export const CreateProjectView: React.FC = () => {
               <div id="create-project-view-section-5-demographics-6" className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div id="create-project-view-section-5-demographics-7">
                   <div id="create-project-view-section-5-demographics-8" className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-bold text-slate-700">بخش هدف در رفسنجان</label>
+                    <label className="block text-xs font-bold text-slate-700">بخش هدف در {selectedLocation.city}</label>
                     {smartInference.hasSignal && smartInference.inferredDistrict && district !== smartInference.inferredDistrict && (
                       <button
                         type="button"
@@ -2446,11 +2513,11 @@ export const CreateProjectView: React.FC = () => {
                     onChange={(e) => setDistrict(e.target.value)}
                     className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2"
                   >
-                    <option value="بخش مرکزی و شهر رفسنجان">بخش مرکزی و شهر رفسنجان (۲۲۲هزار نفر)</option>
-                    <option value="بخش کشکوئیه و دهستان راویز">بخش کشکوئیه و دهستان راویز (۴۱هزار نفر)</option>
-                    <option value="بخش نوق و شهر بهرمان">بخش نوق و شهر بهرمان (۲۹هزار نفر)</option>
-                    <option value="بخش فردوس و شهر صفائیه">بخش فردوس و شهر صفائیه (۲۳هزار نفر)</option>
-                    <option value="کل شهرستان رفسنجان">کل شهرستان رفسنجان (۳۱۵هزار نفر)</option>
+                    {selectableAreas.map((area) => (
+                      <option key={area.id} value={area.city}>
+                        {area.city} ({formatNumber(area.population)} نفر)
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -2460,7 +2527,7 @@ export const CreateProjectView: React.FC = () => {
                     type="text"
                     value={targetArea}
                     onChange={(e) => setTargetArea(e.target.value)}
-                    placeholder="مثال: دهستان راویز، روستاهای خنامان، بیمارستان علی‌ابن‌ابیطالب"
+                    placeholder={`مثال: ${district}، محلات هدف یا مراکز خدماتی ${selectedLocation.city}`}
                     className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2"
                   />
                 </div>
@@ -2516,7 +2583,7 @@ export const CreateProjectView: React.FC = () => {
                       type="button"
                       onClick={() => setBeneficiariesCount(smartInference.districtTotalPop)}
                       className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors cursor-pointer"
-                      title="کل جمعیت ثبت‌شده این بخش در رفسنجان"
+                      title={`کل جمعیت ثبت‌شده این محدوده در ${selectedLocation.city}`}
                     >
                       کل بخش ({formatNumber(smartInference.districtTotalPop)})
                     </button>
@@ -2542,7 +2609,7 @@ export const CreateProjectView: React.FC = () => {
               <div id="create-project-view-target-beneficiary-groups">
                 <div id="create-project-view-target-beneficiary-groups-2" className="flex items-center justify-between mb-2">
                   <label className="block text-xs font-bold text-slate-700">
-                    اقشار و گروه‌های هدف تحت پوشش طرح (از آمار جمعیتی رفسنجان):
+                    اقشار و گروه‌های هدف تحت پوشش طرح (از آمار جمعیتی {selectedLocation.city}):
                   </label>
                   {smartInference.hasSignal && smartInference.suggestedGroups.length > 0 && (
                     <button

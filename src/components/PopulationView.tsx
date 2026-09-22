@@ -33,62 +33,85 @@ export const PopulationView: React.FC = () => {
   const [activeSubTab, setActiveSubTab] = useState<'OVERVIEW' | 'DISTRICTS' | 'VULNERABLE' | 'PYRAMID'>('OVERVIEW');
   const [clarificationExpanded, setClarificationExpanded] = useState(false);
 
-  // Official demographics data for Rafsanjan County (سالنامه آماری رسمی شهرستان رفسنجان)
-  const totalCountyPopulation = 315000;
-  const urbanPopulation = 182000; // 57.8%
-  const ruralPopulation = 133000; // 42.2%
-  const totalHouseholds = 92650;
-  const householdAverageSize = 3.4;
-  const totalDeprivedVulnerable = 38200; // 12.1% of county
-  const deprivedPercentage = ((totalDeprivedVulnerable / totalCountyPopulation) * 100).toFixed(1);
+  // --- Live demographics derived from the selected county -------------------
+  // Population, vulnerable-group counts and deprivation rates are read from the
+  // location registry (real census figures and deprivation indicators per
+  // county). Only the age structure and average household size are national
+  // benchmarks applied on top of that county's real population.
+  const NATIONAL_HOUSEHOLD_SIZE = 3.5; // میانگین بعد خانوار (سرشماری کشوری)
 
-  // Age Cohorts
+  const countyLocations = locations.filter((l) => l.county === selectedLocation.county);
+  const countyRow =
+    countyLocations.find((l) => l.id.includes('all')) ??
+    countyLocations.reduce((max, l) => (l.population > max.population ? l : max), selectedLocation);
+  const totalCountyPopulation = countyRow.population || selectedLocation.population;
+  // Collect the بخش‌ها/شهرها rows of the selected county (excluding the
+  // county-wide aggregate row) to derive the urban/rural split.
+  const urbanCandidates = countyLocations.filter(
+    (l) => l.id !== countyRow.id && !l.city.includes('کل شهرستان')
+  );
+  const urbanPopulation = urbanCandidates.length
+    ? urbanCandidates.reduce((max, l) => (l.population > max.population ? l : max)).population
+    : Math.round(totalCountyPopulation * 0.58);
+  const ruralPopulation = Math.max(totalCountyPopulation - urbanPopulation, 0);
+  const householdAverageSize = NATIONAL_HOUSEHOLD_SIZE;
+  const totalHouseholds = Math.max(Math.round(totalCountyPopulation / householdAverageSize), 1);
+  const totalDeprivedVulnerable = countyRow.indicators.vulnerableGroupsPopulation;
+  const deprivedPercentage = totalCountyPopulation
+    ? ((totalDeprivedVulnerable / totalCountyPopulation) * 100).toFixed(1)
+    : '0.0';
+
+  // Age cohorts — national age structure (سرشماری کشوری) applied to the real
+  // population of the selected county, so counts follow the location picker.
   const ageCohorts = [
-    { label: 'کودکان و نونهالان (۰ تا ۱۴ سال)', tab: 'نونهالان ۰ تا ۱۴', percent: 22.4, count: 70560, color: 'bg-emerald-500', note: 'نیاز به مهدکودک، تغذیه سالم و مدارس استاندارد' },
-    { label: 'نوجوانان و جوانان (۱۵ تا ۲۹ سال)', tab: 'جوانان ۱۵ تا ۲۹', percent: 24.1, count: 75915, color: 'bg-blue-500', note: 'سن کلیدی دانشگاه، اشتغال اولیه، تسهیلات ازدواج و مسکن' },
-    { label: 'میانسالان و شاغلین (۳۰ تا ۶۴ سال)', tab: 'شاغلین ۳۰ تا ۶۴', percent: 45.2, count: 142380, color: 'bg-indigo-500', note: 'نیروی کار فعال، شاغلین باغات پسته، صنایع مس و اصناف' },
-    { label: 'سالمندان و بازنشستگان (۶۵ سال به بالا)', tab: 'سالمندان ۶۵+', percent: 8.3, count: 26145, color: 'bg-amber-500', note: 'خدمات درمانی تخصصی، مراقبت در منزل و بیمه سلامت' },
-  ];
+    { label: 'کودکان و نونهالان (۰ تا ۱۴ سال)', tab: 'نونهالان ۰ تا ۱۴', percent: 23.9, color: 'bg-emerald-500', note: 'نیاز به مهدکودک، تغذیه سالم و مدارس استاندارد' },
+    { label: 'نوجوانان و جوانان (۱۵ تا ۲۹ سال)', tab: 'جوانان ۱۵ تا ۲۹', percent: 20.6, color: 'bg-blue-500', note: 'سن کلیدی دانشگاه، اشتغال اولیه، تسهیلات ازدواج و مسکن' },
+    { label: 'میانسالان و شاغلین (۳۰ تا ۶۴ سال)', tab: 'شاغلین ۳۰ تا ۶۴', percent: 47.2, color: 'bg-indigo-500', note: 'نیروی کار فعال، شاغلین بخش‌های کشاورزی، صنعت و اصناف' },
+    { label: 'سالمندان و بازنشستگان (۶۵ سال به بالا)', tab: 'سالمندان ۶۵+', percent: 8.3, color: 'bg-amber-500', note: 'خدمات درمانی تخصصی، مراقبت در منزل و بیمه سلامت' },
+  ].map((cohort) => ({ ...cohort, count: Math.round((totalCountyPopulation * cohort.percent) / 100) }));
 
-  // Vulnerable groups breakdown (تفکیک اقشار نیازمند حمایت در رفسنجان)
-  const vulnerableBreakdown = [
+  // تقسیم جامعه هدف آسیب‌پذیر شهرستان بین نهادهای حمایتی (نسبت‌های اسناد رسمی
+  // تجمیعی کمیته امداد/بهزیستی) — مقادیر از جمعیت واقعی شهرستان محاسبه می‌شود.
+  const VULNERABLE_GROUP_SHARES = [
     {
+      share: 43.2,
       title: 'خانواده‌های تحت پوشش کمیته امداد امام خمینی (ره)',
-      households: 6850,
-      population: 16500,
-      coverageShare: 43.2,
       supportType: 'مستمری معیشتی، مسکن محرومان، وام اشتغال و درمان',
       icon: HeartHandshake,
       color: 'text-emerald-700 bg-emerald-50 border-emerald-200',
     },
     {
+      share: 24.1,
       title: 'مددجویان و توانخواهان تحت پوشش اداره بهزیستی',
-      households: 3420,
-      population: 9200,
-      coverageShare: 24.1,
       supportType: 'توانبخشی معلولین، زنان سرپرست خانوار و ایتام',
       icon: ShieldCheck,
       color: 'text-blue-700 bg-blue-50 border-blue-200',
     },
     {
+      share: 22.3,
       title: 'ساکنان سکونتگاه‌های غیررسمی و بافت‌های حاشیه‌ای',
-      households: 2150,
-      population: 8500,
-      coverageShare: 22.3,
-      supportType: 'بافت‌های حاشیه شهر رفسنجان (رحمت‌آباد، علی‌آباد و کمال‌آباد)',
+      supportType: `بافت‌های حاشیه‌ای و سکونتگاه‌های غیررسمی ${selectedLocation.city}`,
       icon: Home,
       color: 'text-amber-700 bg-amber-50 border-amber-200',
     },
     {
+      share: 10.4,
       title: 'کارگران فصلی و خانوارهای کم‌درآمد فاقد بیمه',
-      households: 1100,
-      population: 4000,
-      coverageShare: 10.4,
       supportType: 'بسته‌های معیشتی فصلی، بیمه روستایی و کمک‌هزینه درمان',
       icon: Briefcase,
       color: 'text-rose-700 bg-rose-50 border-rose-200',
     },
   ];
+
+  const vulnerableBreakdown = VULNERABLE_GROUP_SHARES.map((group) => {
+    const population = Math.round((totalDeprivedVulnerable * group.share) / 100);
+    return {
+      ...group,
+      coverageShare: group.share,
+      population,
+      households: Math.max(Math.round(population / householdAverageSize), 1),
+    };
+  });
 
   // District Population List
   // Quick sub-navigation tab model (redesigned segment tabs)
@@ -101,13 +124,13 @@ export const PopulationView: React.FC = () => {
     {
       id: 'OVERVIEW',
       label: 'نمای کلی جمعیت',
-      badge: '۴ بخش',
+      badge: `${toPersianDigits(Math.max(countyLocations.length - 1, 1))} بخش`,
       icon: LayoutDashboard,
     },
     {
       id: 'DISTRICTS',
       label: 'بخش‌ها و آبادی‌ها',
-      badge: '۲۲۰ آبادی',
+      badge: `${toPersianDigits(Math.max(countyLocations.length, 1))} محدوده`,
       icon: MapPin,
     },
     {
@@ -124,49 +147,32 @@ export const PopulationView: React.FC = () => {
     },
   ];
 
-  // District Population List
-  const districtList = [
-    {
-      id: 'loc-02-rafsanjan-central',
-      name: 'بخش مرکزی و شهر رفسنجان',
-      population: 222000,
-      urbanShare: '۱۶۴,۰۰۰ شهری / ۵۸,۰۰۰ روستایی',
-      deprivedCount: 18500,
-      deprivedRate: 8.3,
-      villagesCount: 78,
-      mainChallenge: 'حاشیه‌نشینی در ۴ محله، آلودگی هوا و تقاضای اشتغال جوانان',
-    },
-    {
-      id: 'loc-03-koshkuiyeh',
-      name: 'بخش کشکوئیه (شهر و دهستان راویز)',
-      population: 41000,
-      urbanShare: '۷,۸۰۰ شهری / ۳۳,۲۰۰ روستایی',
-      deprivedCount: 8400,
-      deprivedRate: 20.5,
-      villagesCount: 52,
-      mainChallenge: 'تنش شدید آب شرب در تابستان و افت سفره‌های زیرزمینی',
-    },
-    {
-      id: 'loc-04-nuq',
-      name: 'بخش نوق (شهر بهرمان و روستاهای تابعه)',
-      population: 29000,
-      urbanShare: '۵,۲۰۰ شهری / ۲۳,۸۰۰ روستایی',
-      deprivedCount: 6200,
-      deprivedRate: 21.3,
-      villagesCount: 44,
-      mainChallenge: 'محور حادثه‌خیز جاده‌ای و فرسایش خاک و بادزدگی',
-    },
-    {
-      id: 'loc-05-ferdows',
-      name: 'بخش فردوس (شهر صفائیه و روستاهای دشت)',
-      population: 23000,
-      urbanShare: '۲,۵۰۰ شهری / ۲۰,۵۰۰ روستایی',
-      deprivedCount: 5100,
-      deprivedRate: 22.1,
-      villagesCount: 46,
-      mainChallenge: 'فاصله از خدمات تخصصی درمانی، فرسودگی مدارس روستایی',
-    },
-  ];
+  // بخش‌ها و محدوده‌های آبادی همان شهرستان — مستقیماً از رجیستری مکان‌ها.
+  const districtRows = countyLocations.filter((l) => l.id !== countyRow.id);
+  const districtList = (districtRows.length ? districtRows : countyLocations).map((l) => {
+    const ind = l.indicators;
+    // چالش اولویت‌دار محدوده از بالاترین شاخص محرومیت واقعی همان رکورد استخراج می‌شود.
+    const challengeScores = [
+      { score: ind.infrastructureDeficit, text: 'کمبود زیرساخت پایه، آب شرب و راه دسترسی' },
+      { score: ind.povertyRate * 2, text: 'فقر و اشتغال ناپایدار خانوارهای کم‌درآمد' },
+      { score: ind.marginalizationRate * 2, text: 'حاشیه‌نشینی و بافت فرسوده' },
+      { score: ind.healthAccessDeficit, text: 'فاصله از خدمات تخصصی درمانی' },
+      { score: ind.educationDropOutRate * 2, text: 'افت تحصیلی و فرسودگی مدارس روستایی' },
+      { score: ind.environmentalRiskScore, text: 'آلودگی، ریزگرد و فرسایش بادی' },
+      { score: ind.unemploymentRate * 2, text: 'بیکاری جوانان و نبود تنوع اقتصادی' },
+      { score: ind.socialHarmsIndex, text: 'آسیب‌های اجتماعی و کمبود خدمات مددکاری' },
+    ];
+    return {
+      id: l.id,
+      name: l.city,
+      population: l.population,
+      riskScore: ind.environmentalRiskScore,
+      infraDeficit: ind.infrastructureDeficit,
+      deprivedCount: ind.vulnerableGroupsPopulation,
+      deprivedRate: ind.povertyRate,
+      mainChallenge: challengeScores.reduce((a, b) => (b.score > a.score ? b : a)).text,
+    };
+  });
 
   return (
     <div id="population-view-root" className="space-y-6">
@@ -184,10 +190,10 @@ export const PopulationView: React.FC = () => {
             </div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
-                آمار جمعیت و توزیع محرومیت شهرستان رفسنجان
+                آمار جمعیت و توزیع محرومیت {countyRow.county}
               </h1>
               <HelpTooltip
-                text="بر پایه آخرین سرشماری رسمی و سالنامه آماری استان کرمان، شهرستان رفسنجان دارای ۳۱۵,۰۰۰ نفر جمعیت کل در ۴ بخش (مرکزی، کشکوئیه، نوق و فردوس) است. از این تعداد، دقیقا ۳۸,۲۰۰ نفر (۱۲.۱٪) به عنوان اقشار آسیب‌پذیر و محروم نیازمند حمایت مستقیم شناسایی شده‌اند."
+                text={`بر پایه آخرین سرشماری رسمی و سالنامه آماری استان ${selectedLocation.province}، ${countyRow.county} دارای ${formatNumber(totalCountyPopulation)} نفر جمعیت کل در ${toPersianDigits(Math.max(countyLocations.length - 1, 1))} بخش است. از این تعداد، دقیقاً ${formatNumber(totalDeprivedVulnerable)} نفر (${toPersianDigits(deprivedPercentage)}٪) به عنوان اقشار آسیب‌پذیر و محروم نیازمند حمایت مستقیم شناسایی شده‌اند.`}
                 label="مشاهده توضیحات سرشماری رسمی"
                 widthClassName="w-80"
               />
@@ -199,32 +205,32 @@ export const PopulationView: React.FC = () => {
         {/* 4 Core County KPI Cards */}
         <div id="population-view-4-core-county-kpi-cards" className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mt-6 pt-6 border-t border-slate-100">
           <div id="population-view-4-core-county-kpi-cards-2" className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-            <span className="text-xs text-slate-500 font-semibold block mb-1">کل جمعیت شهرستان رفسنجان</span>
+            <span className="text-xs text-slate-500 font-semibold block mb-1">کل جمعیت {countyRow.county}</span>
             <span className="text-2xl md:text-3xl font-black text-slate-900 font-mono block">
               {formatNumber(totalCountyPopulation)}
             </span>
             <span className="text-[11px] text-slate-500 mt-1 block">
-              {formatNumber(totalHouseholds)} خانوار (بعد ۳.۴)
+              {formatNumber(totalHouseholds)} خانوار (بعد {toPersianDigits(householdAverageSize)})
             </span>
           </div>
 
           <div id="population-view-4-core-county-kpi-cards-3" className="bg-blue-50/70 p-4 rounded-2xl border border-blue-200">
-            <span className="text-xs text-blue-700 font-semibold block mb-1">جمعیت شهری رفسنجان</span>
+            <span className="text-xs text-blue-700 font-semibold block mb-1">جمعیت شهری {selectedLocation.city}</span>
             <span className="text-2xl md:text-3xl font-black text-blue-900 font-mono block">
               {formatNumber(urbanPopulation)}
             </span>
             <span className="text-[11px] text-blue-700 mt-1 block">
-              ۵۷.۸٪ جمعیت کل (۵ شهر)
+              {toPersianDigits(((urbanPopulation / (totalCountyPopulation || 1)) * 100).toFixed(1))}٪ جمعیت کل
             </span>
           </div>
 
           <div id="population-view-4-core-county-kpi-cards-4" className="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-200">
-            <span className="text-xs text-emerald-700 font-semibold block mb-1">جمعیت روستایی رفسنجان</span>
+            <span className="text-xs text-emerald-700 font-semibold block mb-1">جمعیت روستایی {selectedLocation.city}</span>
             <span className="text-2xl md:text-3xl font-black text-emerald-900 font-mono block">
               {formatNumber(ruralPopulation)}
             </span>
             <span className="text-[11px] text-emerald-700 mt-1 block">
-              ۴۲.۲٪ جمعیت کل (۲۲۰ روستا)
+              {toPersianDigits(((ruralPopulation / (totalCountyPopulation || 1)) * 100).toFixed(1))}٪ جمعیت کل
             </span>
           </div>
 
@@ -261,8 +267,8 @@ export const PopulationView: React.FC = () => {
           </div>
           {clarificationExpanded && (
             <p className="text-amber-800">
-              برخی پروژه‌های عمومی نظیر تعریض جاده رفسنجان-نوق یا تجهیز بیمارستان علی‌ابن‌ابیطالب (ع) ماهیت عام‌المنفعه داشته و به کل جمعیت ۳۱۵ هزار نفری شهرستان و مسافران خدمات می‌دهند. اما در محاسبات تخصیص محرومیت،{' '}
-              <strong>جمعیت محروم شهرستان رفسنجان دقیقا ۳۸,۲۰۰ نفر (۱۲.۱٪)</strong> است و بودجه‌های حمایتی نظیر جهیزیه، وام اشتغال خرد، آبرسانی روستاهای دارای تنش و درمان ناباروری مستقیماً به این جامعه هدف تخصیص می‌یابد.
+              برخی پروژه‌های عمومی عام‌المنفعه ماهیت فراگیر داشته و به کل جمعیت {formatNumber(totalCountyPopulation)} نفری شهرستان و مسافران خدمات می‌دهند. اما در محاسبات تخصیص محرومیت،{' '}
+              <strong>جمعیت محروم {countyRow.county} دقیقاً {formatNumber(totalDeprivedVulnerable)} نفر ({toPersianDigits(deprivedPercentage)}٪)</strong> است و بودجه‌های حمایتی نظیر جهیزیه، وام اشتغال خرد، آبرسانی روستاهای دارای تنش و درمان ناباروری مستقیماً به این جامعه هدف تخصیص می‌یابد.
             </p>
           )}
         </div>
@@ -320,9 +326,9 @@ export const PopulationView: React.FC = () => {
             <div id="population-view-population-distribution-by-2" className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div id="population-view-population-distribution-by-3" className="flex items-center gap-2">
                 <MapPin className="w-5 h-5 text-blue-600" />
-                <h3 className="font-black text-slate-900 text-base">توزیع جمعیتی بر حسب بخش‌های چهارگانه</h3>
+                <h3 className="font-black text-slate-900 text-base">توزیع جمعیتی بر حسب بخش‌های {countyRow.county}</h3>
               </div>
-              <span className="text-xs text-slate-500 font-mono">مجموع: ۳۱۵,۰۰۰ نفر</span>
+              <span className="text-xs text-slate-500 font-mono">مجموع: {formatNumber(totalCountyPopulation)} نفر</span>
             </div>
 
             <div id="population-view-population-distribution-by-4" className="space-y-4">
@@ -372,30 +378,32 @@ export const PopulationView: React.FC = () => {
               <div id="population-view-urban-vs-rural-vulnerability-5" className="grid grid-cols-2 gap-3 mb-4">
                 <div id="population-view-urban-vs-rural-vulnerability-6" className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
                   <span className="text-[11px] text-slate-500 block mb-1">نرخ حاشیه‌نشینی شهری</span>
-                  <span className="text-xl font-black text-slate-900 font-mono">۹.۵٪</span>
-                  <span className="text-[10px] text-slate-500 block mt-1">رحمت‌آباد و علی‌آباد</span>
+                  <span className="text-xl font-black text-slate-900 font-mono">{toPersianDigits(countyRow.indicators.marginalizationRate)}٪</span>
+                  <span className="text-[10px] text-slate-500 block mt-1">سکونتگاه‌های غیررسمی {selectedLocation.city}</span>
                 </div>
                 <div id="population-view-urban-vs-rural-vulnerability-7" className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
                   <span className="text-[11px] text-slate-500 block mb-1">نرخ بیکاری رسمی</span>
-                  <span className="text-xl font-black text-slate-900 font-mono">۱۳.۸٪</span>
-                  <span className="text-[10px] text-slate-500 block mt-1">تمرکز در فارغ‌التحصیلان</span>
+                  <span className="text-xl font-black text-slate-900 font-mono">{toPersianDigits(countyRow.indicators.unemploymentRate)}٪</span>
+                  <span className="text-[10px] text-slate-500 block mt-1">تمرکز در جوانان و فارغ‌التحصیلان</span>
                 </div>
                 <div id="population-view-urban-vs-rural-vulnerability-8" className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
-                  <span className="text-[11px] text-slate-500 block mb-1">روستاهای دارای تنش آبی</span>
-                  <span className="text-xl font-black text-amber-700 font-mono">۳۸ روستا</span>
-                  <span className="text-[10px] text-amber-700 block mt-1">کشکوئیه، راویز و نوق</span>
+                  <span className="text-[11px] text-slate-500 block mb-1">کمبود زیرساخت پایه</span>
+                  <span className="text-xl font-black text-amber-700 font-mono">{toPersianDigits(countyRow.indicators.infrastructureDeficit)}٪</span>
+                  <span className="text-[10px] text-amber-700 block mt-1">آب شرب، راه و خدمات روستایی</span>
                 </div>
                 <div id="population-view-urban-vs-rural-vulnerability-9" className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
-                  <span className="text-[11px] text-slate-500 block mb-1">پوشش آب شرب پایدار</span>
-                  <span className="text-xl font-black text-emerald-700 font-mono">۸۸.۲٪</span>
-                  <span className="text-[10px] text-emerald-700 block mt-1">طرح جامع آبفا و مس</span>
+                  <span className="text-[11px] text-slate-500 block mb-1">پوشش زیرساخت پایه (برآورد)</span>
+                  <span className="text-xl font-black text-emerald-700 font-mono">
+                    {toPersianDigits((100 - countyRow.indicators.infrastructureDeficit).toFixed(1))}٪
+                  </span>
+                  <span className="text-[10px] text-emerald-700 block mt-1">مکمل شاخص کمبود زیرساخت منطقه</span>
                 </div>
               </div>
             </div>
 
             <div id="population-view-urban-vs-rural-vulnerability-10" className="p-4 bg-blue-50/80 rounded-2xl border border-blue-200 text-xs text-blue-900">
               <span className="font-bold block mb-1">📌 نتیجه‌گیری تحلیلی فرمانداری و ستاد:</span>
-              نرخ محرومیت واقعی رفسنجان (۱۲.۱٪) نسبت به میانگین جنوب استان کرمان پایین‌تر است، اما عمق محرومیت در بخش‌های کشکوئیه و فردوس به دلیل کمبود آب شرب و آلایندگی اقلیمی، نیازمند مداخله هدفمند با ۵ همت اعتبارات است.
+              نرخ محرومیت شناسایی‌شده در {countyRow.county} معادل {toPersianDigits(deprivedPercentage)}٪ جمعیت است، اما عمق محرومیت در بخش‌های دارای کمبود آب شرب و ریسک بالای زیست‌محیطی، نیازمند مداخله هدفمند و تخصیص اعتبارات متناسب است.
             </div>
           </div>
         </div>
@@ -406,7 +414,7 @@ export const PopulationView: React.FC = () => {
         <div id="population-view-sub-tab-2-detailed-districts" className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
           <div id="population-view-sub-tab-2-detailed-districts-2" className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div id="population-view-sub-tab-2-detailed-districts-3">
-              <h3 className="font-black text-slate-900 text-lg">جدول تفصیلی بخش‌ها و آبادی‌های شهرستان رفسنجان</h3>
+              <h3 className="font-black text-slate-900 text-lg">جدول تفصیلی بخش‌ها و محدوده‌های {countyRow.county}</h3>
               <p className="text-xs text-slate-500 mt-0.5">آمار جمعیتی و درصد محرومیت تایید شده در کمیته برنامه‌ریزی</p>
             </div>
           </div>
@@ -417,10 +425,10 @@ export const PopulationView: React.FC = () => {
                 <tr>
                   <th className="p-3.5 font-black">نام بخش و محدوده جغرافیایی</th>
                   <th className="p-3.5 font-black font-mono">جمعیت کل</th>
-                  <th className="p-3.5 font-black">ترکیب شهری / روستایی</th>
+                  <th className="p-3.5 font-black">ریسک محیط‌زیستی (از ۱۰۰)</th>
                   <th className="p-3.5 font-black font-mono text-rose-700">جمعیت محروم (نفر)</th>
                   <th className="p-3.5 font-black font-mono text-rose-700">درصد محرومیت</th>
-                  <th className="p-3.5 font-black">تعداد روستاها</th>
+                  <th className="p-3.5 font-black">کمبود زیرساخت</th>
                   <th className="p-3.5 font-black">چالش اولویت‌دار بخش</th>
                   <th className="p-3.5 font-black">انتخاب برای رصد</th>
                 </tr>
@@ -430,14 +438,14 @@ export const PopulationView: React.FC = () => {
                   <tr key={d.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="p-3.5 font-bold text-slate-900">{d.name}</td>
                     <td className="p-3.5 font-mono font-bold text-slate-800">{formatNumber(d.population)}</td>
-                    <td className="p-3.5 text-slate-600">{d.urbanShare}</td>
+                    <td className="p-3.5 text-slate-600">{toPersianDigits(d.riskScore)} از ۱۰۰</td>
                     <td className="p-3.5 font-mono font-bold text-rose-700">{formatNumber(d.deprivedCount)}</td>
                     <td className="p-3.5 font-mono font-black text-rose-700">
                       <span className="px-2 py-0.5 rounded-md bg-rose-50 border border-rose-200">
                         {toPersianDigits(d.deprivedRate)}٪
                       </span>
                     </td>
-                    <td className="p-3.5 font-mono text-slate-600">{toPersianDigits(d.villagesCount)} آبادی</td>
+                    <td className="p-3.5 font-mono text-slate-600">{toPersianDigits(d.infraDeficit)}٪</td>
                     <td className="p-3.5 text-slate-600 max-w-xs">{d.mainChallenge}</td>
                     <td className="p-3.5">
                       <button
@@ -465,10 +473,10 @@ export const PopulationView: React.FC = () => {
             <div id="population-view-sub-tab-3-vulnerable-groups-3" className="flex items-center justify-between pb-3 border-b border-slate-100 mb-6">
               <div id="population-view-sub-tab-3-vulnerable-groups-4">
                 <h3 className="font-black text-slate-900 text-lg">
-                  تفکیک جامعه هدف ۳۸,۲۰۰ نفری محروم و آسیب‌پذیر رفسنجان
+                  تفکیک جامعه هدف {formatNumber(totalDeprivedVulnerable)} نفری محروم و آسیب‌پذیر {selectedLocation.city}
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  گزارش رسمی تجمیعی کمیته امداد، اداره بهزیستی و فرمانداری ویژه رفسنجان
+                  گزارش رسمی تجمیعی کمیته امداد، اداره بهزیستی و فرمانداری {selectedLocation.county}
                 </p>
               </div>
               <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
@@ -521,7 +529,7 @@ export const PopulationView: React.FC = () => {
         <div id="population-view-sub-tab-4-age-cohorts-and" className="space-y-6 animate-in fade-in duration-200">
           <div id="population-view-sub-tab-4-age-cohorts-and-2" className="flex items-center justify-between pb-3 border-b border-dashed border-slate-200">
             <div id="population-view-sub-tab-4-age-cohorts-and-3">
-              <h3 className="font-black text-slate-900 text-lg">ساختار هرم سنی جمعیت شهرستان رفسنجان</h3>
+              <h3 className="font-black text-slate-900 text-lg">ساختار هرم سنی جمعیت {countyRow.county}</h3>
               <p className="text-xs text-slate-500 mt-0.5">توزیع گروه‌های سنی و اولویت‌های متناظر در قانون جوانی جمعیت</p>
             </div>
             <span className="text-xs text-blue-700 bg-blue-50 px-3 py-1 rounded-full border border-blue-200 font-bold">
@@ -565,8 +573,8 @@ export const PopulationView: React.FC = () => {
           </div>
 
           <div id="population-view-sub-tab-4-age-cohorts-and-10" className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 text-xs text-emerald-900 leading-relaxed">
-            <span className="font-bold block mb-1">🌟 تحلیل پنجره جمعیتی شهرستان رفسنجان:</span>
-            بیش از <strong>۶۹.۳٪ از جمعیت رفسنجان</strong> در سنین فعال کار و جوانی (۱۵ تا ۶۴ سال) قرار دارند. این پنجره جمعیتی طلایی نشان می‌دهد که اولویت شماره یک تخصیص منابع CSR و بودجه عمومی باید معطوف به <strong>تسهیلات اشتغال خرد، رفع موانع ازدواج، تامین مسکن و درمان ناباروری</strong> باشد تا از تله جمعیتی و مهاجرت نخبگان جلوگیری به عمل آید.
+            <span className="font-bold block mb-1">🌟 تحلیل پنجره جمعیتی {countyRow.county}:</span>
+            بیش از <strong>{toPersianDigits(ageCohorts.filter((c) => c.tab.includes('۱۵') || c.tab.includes('۳۰')).reduce((sum, c) => sum + c.percent, 0).toFixed(1))}٪ از جمعیت {selectedLocation.city}</strong> در سنین فعال کار و جوانی (۱۵ تا ۶۴ سال) قرار دارند. این پنجره جمعیتی طلایی نشان می‌دهد که اولویت شماره یک تخصیص منابع CSR و بودجه عمومی باید معطوف به <strong>تسهیلات اشتغال خرد، رفع موانع ازدواج، تامین مسکن و درمان ناباروری</strong> باشد تا از تله جمعیتی و مهاجرت نخبگان جلوگیری به عمل آید.
           </div>
         </div>      )}
         </div>

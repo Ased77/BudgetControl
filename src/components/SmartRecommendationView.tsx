@@ -95,7 +95,7 @@ export const SmartRecommendationView: React.FC<SmartRecommendationViewProps> = (
             </span>
           </div>
           <p className="mt-2 text-[11px] text-slate-600 leading-snug">
-            آسیب‌هایی که حتی با نرمال بودن در سطح ملی، در سطح شهرستان رفسنجان و بخش‌های تابعه حاد بوده و اولویت قطعی تخصیص دارند.
+            آسیب‌هایی که حتی با نرمال بودن در سطح ملی، در سطح {orgConfig.county} و بخش‌های تابعه حاد بوده و اولویت قطعی تخصیص دارند.
           </p>
         </div>
 
@@ -144,7 +144,7 @@ export const SmartRecommendationView: React.FC<SmartRecommendationViewProps> = (
             </span>
           </div>
           <p className="mt-2 text-[11px] text-slate-600 leading-snug">
-            مستخرج از داده‌های رسمی مرکز آمار ایران، سازمان ثبت احوال و پایگاه‌های رفاه ایرانیان در سراسر شهرستان رفسنجان.
+            مستخرج از داده‌های رسمی مرکز آمار ایران، سازمان ثبت احوال و پایگاه‌های رفاه ایرانیان در سراسر {orgConfig.county}.
           </p>
         </div>
 

@@ -41,6 +41,7 @@ export const ProjectsView: React.FC = () => {
     contractors,
     crisesHarms,
     priorities,
+    selectedLocation,
     antiDuplicationAlerts,
     optimizationMetrics,
     handleAddProject,
@@ -74,9 +75,9 @@ export const ProjectsView: React.FC = () => {
   const [formCrisisId, setFormCrisisId] = useState(crisesHarms[0]?.id || '');
   const [formCost, setFormCost] = useState<number>(1_000_000_000_000);
   const [formBeneficiaries, setFormBeneficiaries] = useState<number>(10000);
-  const [formProvince, setFormProvince] = useState('کرمان');
-  const [formCounty, setFormCounty] = useState('شهرستان رفسنجان');
-  const [formDistrict, setFormDistrict] = useState('بخش کشکوئیه');
+  const [formProvince, setFormProvince] = useState(selectedLocation.province);
+  const [formCounty, setFormCounty] = useState(selectedLocation.county);
+  const [formDistrict, setFormDistrict] = useState(selectedLocation.district);
   const [formStartYear, setFormStartYear] = useState(1403);
   const [formEndYear, setFormEndYear] = useState(1404);
   const [formProgress, setFormProgress] = useState(25);
@@ -104,9 +105,9 @@ export const ProjectsView: React.FC = () => {
     setFormCrisisId(crisesHarms[0]?.id || '');
     setFormCost(1_000_000_000_000);
     setFormBeneficiaries(10000);
-    setFormProvince('کرمان');
-    setFormCounty('شهرستان رفسنجان');
-    setFormDistrict('بخش کشکوئیه');
+    setFormProvince(selectedLocation.province);
+    setFormCounty(selectedLocation.county);
+    setFormDistrict(selectedLocation.district);
     setFormStartYear(1403);
     setFormEndYear(1404);
     setFormProgress(10);

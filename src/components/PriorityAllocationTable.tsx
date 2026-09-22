@@ -358,7 +358,7 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
             <span className="text-base font-black text-slate-900 mt-0.5 block dir-rtl font-mono">
               {formatLargeBudgetPersian(totalBudgetToman)}
             </span>
-            <span className="text-[10px] text-slate-400 mt-0.5 block">سال مالی ۱۴۰۳ - کل شهرستان رفسنجان</span>
+            <span className="text-[10px] text-slate-400 mt-0.5 block">سال مالی ۱۴۰۳ - کل محدوده شهرستان</span>
           </div>
           <div id="priority-allocation-table-card-1-total-approved-csr-budget-3" className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
             <Coins className="w-5 h-5" />
@@ -407,7 +407,7 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
             </span>
             <span className="text-[10px] text-rose-600 font-semibold mt-0.5 block flex items-center gap-1">
               <Flame className="w-3 h-3 text-rose-500" />
-              {toPersianDigits(filterCounts.hotspots)} کانون بحران حاد در رفسنجان
+              {toPersianDigits(filterCounts.hotspots)} کانون بحران حاد در شهرستان
             </span>
           </div>
           <div id="priority-allocation-table-card-3-prioritized-csr-domains-3" className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100">
@@ -455,7 +455,7 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
                 )}
               </div>
               <p className="text-[11px] text-slate-500 mt-0.5 hidden sm:block">
-                تعیین سهم بودجه مسئولیت اجتماعی به تفکیک ۱۱ رسته کلان، کانون‌های آسیب‌پذیری و پروژه‌های رفسنجان
+                تعیین سهم بودجه مسئولیت اجتماعی به تفکیک ۱۱ رسته کلان، کانون‌های آسیب‌پذیری و پروژه‌های شهرستان
               </p>
             </div>
 
@@ -803,7 +803,7 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
               <div id="priority-allocation-table-3-collapsible-advanced-filters-3" className="flex items-center gap-2">
                 <span className="text-xs font-black text-slate-800 flex items-center gap-1.5">
                   <Filter className="w-3.5 h-3.5 text-indigo-600" />
-                  فیلترهای پیشرفته و کانون‌های بحران رفسنجان
+                  فیلترهای پیشرفته و کانون‌های بحران شهرستان
                 </span>
                 <span className="text-[10px] text-slate-500">
                   (انتخاب بر اساس نرخ آسیب، فراگیری و موضوعات اجتماعی)
@@ -1520,7 +1520,7 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
               </div>
               <div id="priority-allocation-table-5-executive-quick-navigation-7">
                 <span className="text-xs font-black text-slate-800 block">جدول مقایسه‌ای آسیب‌ها</span>
-                <span className="text-[10px] text-slate-400">مقایسه نرخ رفسنجان با استان و کشور</span>
+                <span className="text-[10px] text-slate-400">مقایسه نرخ شهرستان با استان و کشور</span>
               </div>
             </div>
             <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:-translate-x-1 transition-transform rotate-180" />

@@ -22,6 +22,7 @@ export const ExecutorsView: React.FC = () => {
   const {
     executors,
     projects,
+    selectedLocation,
     handleAddExecutor,
     handleUpdateExecutor,
     handleDeleteExecutor,
@@ -44,7 +45,7 @@ export const ExecutorsView: React.FC = () => {
   const [formType, setFormType] = useState<ExecutorType>('GOVERNMENTAL');
   const [formLead, setFormLead] = useState('');
   const [formPhone, setFormPhone] = useState('');
-  const [formRegion, setFormRegion] = useState('شهرستان رفسنجان و بخش‌های تابعه');
+  const [formRegion, setFormRegion] = useState(`${selectedLocation.county} و بخش‌های تابعه`);
   const [formSuccessRate, setFormSuccessRate] = useState<number>(90);
   const [formCapacity, setFormCapacity] = useState<ProjectExecutor['capacityStatus']>('AVAILABLE');
 
@@ -67,7 +68,7 @@ export const ExecutorsView: React.FC = () => {
     setFormType('GOVERNMENTAL');
     setFormLead('');
     setFormPhone('');
-    setFormRegion('شهرستان رفسنجان و بخش‌های تابعه');
+    setFormRegion(`${selectedLocation.county} و بخش‌های تابعه`);
     setFormSuccessRate(90);
     setFormCapacity('AVAILABLE');
     setIsModalOpen(true);
@@ -116,6 +117,8 @@ export const ExecutorsView: React.FC = () => {
         successRate: Number(formSuccessRate),
         capacityStatus: formCapacity,
         coverageRegion: formRegion.trim(),
+        province: selectedLocation.province,
+        county: selectedLocation.county,
       });
     }
     setIsModalOpen(false);

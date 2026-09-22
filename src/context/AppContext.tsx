@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useState, useMemo, useEffect } from 'react';
 import {
   LocationData,
   LocalIndicators,
@@ -205,7 +205,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // State boots from the bundled seed data (instant first paint), then is
   // replaced by the SQLite-backed API payload once the server responds.
   const [locations, setLocations] = useState<LocationData[]>(INITIAL_LOCATIONS);
-  const [selectedLocation, setSelectedLocation] = useState<LocationData>(INITIAL_LOCATIONS[0]);
+  // The initial workspace is شهرستان امیدیه (first fully detailed county); the
+  // global location picker can switch to any other registered county.
+  const [selectedLocation, setSelectedLocation] = useState<LocationData>(
+    () => INITIAL_LOCATIONS.find((l) => l.id === 'loc-06-omidiyeh-all') ?? INITIAL_LOCATIONS[0]
+  );
   const [administrativeScope, setAdministrativeScope] = useState<AdministrativeLevel>('COUNTY');
   const [orgConfig, setOrgConfig] = useState<OrganizationConfig>(INITIAL_ORGANIZATION);
   const [priorities, setPriorities] = useState<CsrPriority[]>(INITIAL_PRIORITIES);
@@ -314,6 +318,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       oldValue,
       newValue,
       rationale,
+      // هر رویداد به موقعیت فعال همان لحظه مهر می‌خورد تا تاریخچه نظارتی هر
+      // شهرستان جدا از سایر شهرستان‌ها نمایش داده شود.
+      province: selectedLocation.province,
+      county: selectedLocation.county,
     };
     setAuditLogs((prev) => [newEntry, ...prev]);
     api.auditLogs.create(newEntry).catch(() => {});
@@ -345,15 +353,66 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // --- Location-scoped entity views -----------------------------------------
+  // The registry holds records for many counties. Dependent sections must
+  // follow the selected location, so each list is narrowed here once instead of
+  // hard-coding a county name inside every view. Records without any county
+  // (national/policy level or user-created ones) keep showing, so nothing
+  // user-entered ever disappears from the UI.
+  const matchesSelectedCounty = useCallback(
+    (entity: { province?: string; county?: string }) => {
+      const county = entity.county?.trim();
+      if (county) return county === selectedLocation.county;
+      const province = entity.province?.trim();
+      if (province) return province === selectedLocation.province;
+      return true;
+    },
+    [selectedLocation.county, selectedLocation.province]
+  );
+
+  const scopedDepartments = useMemo(
+    () => departments.filter(matchesSelectedCounty),
+    [departments, matchesSelectedCounty]
+  );
+  const scopedBudgetSources = useMemo(
+    () => budgetSources.filter(matchesSelectedCounty),
+    [budgetSources, matchesSelectedCounty]
+  );
+  const scopedCrisesHarms = useMemo(
+    () => crisesHarms.filter(matchesSelectedCounty),
+    [crisesHarms, matchesSelectedCounty]
+  );
+  const scopedExecutors = useMemo(
+    () => executors.filter(matchesSelectedCounty),
+    [executors, matchesSelectedCounty]
+  );
+  const scopedContractors = useMemo(
+    () => contractors.filter(matchesSelectedCounty),
+    [contractors, matchesSelectedCounty]
+  );
+  const scopedProjects = useMemo(
+    () => projects.filter(matchesSelectedCounty),
+    [projects, matchesSelectedCounty]
+  );
+  const scopedUsers = useMemo(
+    () => users.filter(matchesSelectedCounty),
+    [users, matchesSelectedCounty]
+  );
+  const scopedAuditLogs = useMemo(
+    () => auditLogs.filter(matchesSelectedCounty),
+    [auditLogs, matchesSelectedCounty]
+  );
+
   // Smart Recommendations recalculated dynamically based on selectedLocation indicators
   const recommendations = useMemo(() => {
     return calculateSmartRecommendations(priorities, selectedLocation.indicators, selectedLocation.city);
   }, [priorities, selectedLocation.indicators, selectedLocation.city]);
 
-  // Anti-duplication and project efficiency engine analysis
+  // Anti-duplication and project efficiency engine analysis — scoped to the
+  // selected county so overlap/duplication warnings describe the local portfolio.
   const { evaluatedProjects, alerts: antiDuplicationAlerts, metrics: optimizationMetrics } = useMemo(() => {
-    return analyzeProjectDuplicatesAndEfficiency(projects, crisesHarms, budgetSources);
-  }, [projects, crisesHarms, budgetSources]);
+    return analyzeProjectDuplicatesAndEfficiency(scopedProjects, scopedCrisesHarms, scopedBudgetSources);
+  }, [scopedProjects, scopedCrisesHarms, scopedBudgetSources]);
 
   // Centralized Effect: Automatically sync orgConfig and re-evaluate smart allocations when selectedLocation updates
   useEffect(() => {
@@ -794,15 +853,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     currentPercentages,
     lockedIds,
     recommendations,
-    auditLogs,
+    auditLogs: scopedAuditLogs,
     projects: evaluatedProjects,
-    departments,
-    budgetSources,
-    crisesHarms,
-    executors,
-    contractors,
+    departments: scopedDepartments,
+    budgetSources: scopedBudgetSources,
+    crisesHarms: scopedCrisesHarms,
+    executors: scopedExecutors,
+    contractors: scopedContractors,
     rolesPermissions,
-    users,
+    users: scopedUsers,
     currentUser,
     activeTab,
     isAuthenticated,
