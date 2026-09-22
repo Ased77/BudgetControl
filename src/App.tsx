@@ -381,7 +381,6 @@ function AppContent() {
             selectedLocation={selectedLocation}
             onSelectLocation={handleSelectLocation}
             onClose={() => setShowLocationDrawer(false)}
-            vulnerabilityIndex={selectedLocation.indicators.overallVulnerabilityScore || 45}
           />
         )}
 

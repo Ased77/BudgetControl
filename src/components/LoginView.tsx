@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { toPersianDigits } from '../utils/numberUtils';
+import { LocationCascade } from './LocationCascade';
 import {
   ShieldCheck,
   KeyRound,
@@ -9,24 +10,37 @@ import {
   CheckCircle2,
   AlertTriangle,
   Sparkles,
+  Globe,
 } from 'lucide-react';
 
 /**
  * Access gate for the national development system.
  *
  * This app has no user store, no password and no server session: identities are
- * the seven organizational personas seeded in `INITIAL_USERS`, and "signing in"
- * selects one of them (the same switch the header dropdown and the نقش‌ها tab
- * expose). The screen says so plainly instead of pretending to authenticate —
- * see the warning panel below. Real authentication would need a server session.
+ * the organizational personas seeded per county, and "signing in" selects one of
+ * them (the same switch the header dropdown and the نقش‌ها tab expose). Because
+ * the roster is location-scoped, the gate opens with the same cascading
+ * province → county → city filter as the workspace picker, so an operator signs
+ * in from — and into — the county they actually serve. The screen says so
+ * plainly instead of pretending to authenticate — see the warning panel below.
+ * Real authentication would need a server session.
  */
 export const LoginView: React.FC = () => {
-  const { users, login } = useAppContext();
+  const { users, login, locations, selectedLocation, handleSelectLocation } = useAppContext();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Remote avatars can fail (offline, blocked host); fall back to initials.
   const [brokenAvatars, setBrokenAvatars] = useState<Record<string, boolean>>({});
 
   const selectedUser = users.find((u) => u.id === selectedId) ?? null;
+
+  // Changing the geographic scope swaps the roster; drop a selection that no
+  // longer belongs to the newly selected county so the submit button can never
+  // carry an identity from another location.
+  useEffect(() => {
+    if (selectedId && !users.some((u) => u.id === selectedId)) {
+      setSelectedId(null);
+    }
+  }, [users, selectedId]);
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -115,15 +129,46 @@ export const LoginView: React.FC = () => {
               ورود به سامانه
             </h2>
             <p className="text-slate-600 text-xs mt-2 leading-relaxed">
-              برای ورود، هویت سازمانی خود را انتخاب کنید. سطح دسترسی، اختیارات ویرایش و گزارش‌های
-              در دسترس بر اساس نقش انتخابی تعیین می‌شود.
+              برای ورود، حوزه جغرافیایی خدمت و سپس هویت سازمانی خود را انتخاب کنید. سطح دسترسی،
+              اختیارات ویرایش و گزارش‌های در دسترس بر اساس نقش انتخابی تعیین می‌شود.
             </p>
             <span className="inline-block mt-3 text-[10px] font-mono font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
-              {toPersianDigits(users.length)} هویت سازمانی قابل انتخاب
+              {toPersianDigits(users.length)} هویت سازمانی فعال در {selectedLocation.county}
             </span>
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            {/* Geographic scope of the session — drives the identity roster below */}
+            <div
+              id="login-view-geographic-scope"
+              className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3"
+            >
+              <div className="flex items-start gap-2">
+                <div className="p-1.5 bg-blue-100 text-blue-600 rounded-lg border border-blue-200 shrink-0">
+                  <Globe className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-xs font-black text-slate-900">حوزه جغرافیایی خدمت</h3>
+                  <p className="text-[10px] text-slate-500 leading-relaxed mt-0.5">
+                    استان، شهرستان و شهر/بخش محل ورود را انتخاب کنید؛ فهرست هویت‌های سازمانی و تمام
+                    بخش‌های وابسته سامانه بر همین اساس به‌روزرسانی می‌شود.
+                  </p>
+                </div>
+              </div>
+              <LocationCascade
+                locations={locations}
+                selectedLocation={selectedLocation}
+                onSelectLocation={handleSelectLocation}
+              />
+              <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-2.5 py-1.5">
+                <MapPin className="w-3.5 h-3.5 shrink-0" />
+                <span>
+                  ورود به عنوان ناحیه: {selectedLocation.province} — {selectedLocation.county} —{' '}
+                  {selectedLocation.city}
+                </span>
+              </div>
+            </div>
+
             <div
               id="login-view-identity-selection-2"
               role="radiogroup"

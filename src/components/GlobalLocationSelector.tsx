@@ -1,14 +1,13 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { LocationData } from '../types';
-import { toPersianDigits } from '../utils/numberUtils';
-import { MapPin, Globe, AlertTriangle, X } from 'lucide-react';
+import { Globe, X } from 'lucide-react';
 import { useOutsideClick } from '../hooks/useOutsideClick';
+import { LocationCascade } from './LocationCascade';
 
 interface GlobalLocationSelectorProps {
   locations: LocationData[];
   selectedLocation: LocationData;
   onSelectLocation: (loc: LocationData) => void;
-  vulnerabilityIndex: number;
   onClose: () => void;
 }
 
@@ -22,7 +21,6 @@ export const GlobalLocationSelector: React.FC<GlobalLocationSelectorProps> = ({
   locations,
   selectedLocation,
   onSelectLocation,
-  vulnerabilityIndex,
   onClose,
 }) => {
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -38,55 +36,6 @@ export const GlobalLocationSelector: React.FC<GlobalLocationSelectorProps> = ({
 
   // Outside click closes the dialog, matching the export dropdown's behavior.
   useOutsideClick(dialogRef, onClose);
-
-  // Extract unique provinces
-  const provinces = useMemo(() => {
-    return Array.from(new Set(locations.map((l) => l.province)));
-  }, [locations]);
-
-  // Extract counties for current selected province
-  const availableCounties = useMemo(() => {
-    return Array.from(
-      new Set(
-        locations
-          .filter((l) => l.province === selectedLocation.province)
-          .map((l) => l.county)
-      )
-    );
-  }, [locations, selectedLocation.province]);
-
-  // Extract districts/cities for current selected county
-  const availableDistricts = useMemo(() => {
-    return locations.filter(
-      (l) => l.province === selectedLocation.province && l.county === selectedLocation.county
-    );
-  }, [locations, selectedLocation.province, selectedLocation.county]);
-
-  // Handle Province Change
-  const handleProvinceChange = (province: string) => {
-    const match = locations.find((l) => l.province === province);
-    if (match) {
-      onSelectLocation(match);
-    }
-  };
-
-  // Handle County Change
-  const handleCountyChange = (county: string) => {
-    const match = locations.find(
-      (l) => l.province === selectedLocation.province && l.county === county
-    );
-    if (match) {
-      onSelectLocation(match);
-    }
-  };
-
-  // Handle District / City Change
-  const handleDistrictChange = (id: string) => {
-    const match = locations.find((l) => l.id === id);
-    if (match) {
-      onSelectLocation(match);
-    }
-  };
 
   return (
     <div
@@ -129,90 +78,12 @@ export const GlobalLocationSelector: React.FC<GlobalLocationSelectorProps> = ({
 
         {/* Body: cascading selectors + live badges */}
         <div id="global-location-selector-body" className="p-5 overflow-y-auto space-y-4">
-          <div id="global-location-selector-cascade-fields" className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {/* Province Dropdown */}
-            <div id="global-location-selector-province-dropdown" className="flex flex-col text-right">
-              <label className="text-[10px] text-slate-500 font-bold mb-1 mr-1">استان هدف</label>
-              <select
-                value={selectedLocation.province}
-                onChange={(e) => handleProvinceChange(e.target.value)}
-                className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-300 text-slate-800 font-bold text-xs rounded-xl px-3 py-2 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all cursor-pointer shadow-2xs"
-              >
-                {provinces.map((prov) => (
-                  <option key={prov} value={prov} className="bg-white text-slate-800">
-                    استان {prov}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* County Dropdown */}
-            <div id="global-location-selector-county-dropdown" className="flex flex-col text-right">
-              <label className="text-[10px] text-slate-500 font-bold mb-1 mr-1">شهرستان</label>
-              <select
-                value={selectedLocation.county}
-                onChange={(e) => handleCountyChange(e.target.value)}
-                className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-300 text-slate-800 font-bold text-xs rounded-xl px-3 py-2 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all cursor-pointer shadow-2xs"
-              >
-                {availableCounties.map((cnt) => (
-                  <option key={cnt} value={cnt} className="bg-white text-slate-800">
-                    شهرستان {cnt}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* District / City Dropdown */}
-            <div id="global-location-selector-district-city-dropdown" className="flex flex-col text-right">
-              <label className="text-[10px] text-slate-500 font-bold mb-1 mr-1">شهر / بخش / منطقه هدف</label>
-              <select
-                value={selectedLocation.id}
-                onChange={(e) => handleDistrictChange(e.target.value)}
-                className="w-full bg-blue-50/60 hover:bg-blue-50 border border-blue-300 text-blue-900 font-black text-xs rounded-xl px-3 py-2 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40 transition-all cursor-pointer shadow-xs"
-              >
-                {availableDistricts.map((d) => (
-                  <option key={d.id} value={d.id} className="bg-white text-slate-800 font-medium">
-                    {d.city}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Real-time Indicator Badges */}
-          <div id="global-location-selector-real-time-indicator-badges" className="flex items-center gap-3 flex-wrap">
-            {/* Population Badge */}
-            <div id="global-location-selector-population-badge" className="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-right">
-              <div id="global-location-selector-population-badge-2" className="text-[10px] text-slate-500">جمعیت تحت پوشش</div>
-                <div id="global-location-selector-population-badge-3" className="text-xs font-bold text-slate-800">
-                {toPersianDigits(selectedLocation.population.toLocaleString('fa-IR'))} نفر
-              </div>
-            </div>
-
-            {/* Vulnerability Index Badge */}
-            <div id="global-location-selector-vulnerability-index-badge" className="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-right">
-              <div id="global-location-selector-vulnerability-index-badge-2" className="text-[10px] text-slate-500">آسیب‌پذیری منطقه</div>
-                <div id="global-location-selector-vulnerability-index-badge-3" className="text-xs font-extrabold text-amber-600 flex items-center gap-1">
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-                <span>{toPersianDigits(vulnerabilityIndex)} از ۱۰۰</span>
-              </div>
-            </div>
-
-            {/* District Details Badge */}
-            <div id="global-location-selector-district-badge" className="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-right">
-              <div id="global-location-selector-district-badge-2" className="text-[10px] text-slate-500">شرح بخش / منطقه</div>
-              <div id="global-location-selector-district-badge-3" className="text-xs font-bold text-slate-800">
-                {selectedLocation.district}
-              </div>
-            </div>
-
-            <div id="global-location-selector-active-scope" className="bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl text-right flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <span className="text-[11px] font-bold text-emerald-700">
-                {selectedLocation.province} - {selectedLocation.county} - {selectedLocation.city}
-              </span>
-            </div>
-          </div>
+          <LocationCascade
+            locations={locations}
+            selectedLocation={selectedLocation}
+            onSelectLocation={onSelectLocation}
+            showBadges
+          />
         </div>
 
         {/* Footer actions */}
