@@ -62,6 +62,11 @@ export interface Department {
   headPersonName: string;
   contactNumber: string;
   email?: string;
+  /**
+   * Organisation logo as a data URL. Downscaled client-side before saving and
+   * carried inside the department payload, so it needs no upload endpoint.
+   */
+  logoDataUrl?: string;
   allocatedBudgetToman: number;
   absorbedBudgetToman: number;
   activeProjectsCount: number;
