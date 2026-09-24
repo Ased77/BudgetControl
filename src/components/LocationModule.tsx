@@ -70,12 +70,6 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
             </p>
           </div>
 
-          <div id="location-module-region-selector-grid-header-4" className="flex items-center gap-2 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-xl text-xs text-blue-800 font-bold self-start md:self-auto">
-            <span>لوکیشن فعال فعلی:</span>
-            <span className="bg-blue-600 text-white px-2 py-0.5 rounded-md">
-              {selectedLocation.province} - {selectedLocation.county} ({selectedLocation.district})
-            </span>
-          </div>
         </div>
 
         {/* Filter and Search Bar */}

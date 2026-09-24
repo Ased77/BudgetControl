@@ -714,7 +714,7 @@ export const DepartmentsView: React.FC = () => {
                 {/* Three-metric strip: absorption gauge / active projects / approved budget */}
                 <div
                   id={`departments-view-card-metrics-${dept.id}`}
-                  className="grid grid-cols-3 items-stretch border-y border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30"
+                  className="mt-auto grid grid-cols-3 items-stretch border-y border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30 rounded-b-2xl"
                 >
                   <div
                     id={`departments-view-card-gauge-${dept.id}`}
@@ -774,38 +774,6 @@ export const DepartmentsView: React.FC = () => {
                     </span>
                   </div>
                 </div>
-
-                {/* Admin actions — the card itself opens the drill-down, so these
-                    stop propagation to avoid opening the modal as a side effect. */}
-                {canEdit && (
-                  <div
-                    id={`departments-view-card-actions-${dept.id}`}
-                    className="mt-auto px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/30 rounded-b-2xl flex items-center justify-end gap-1"
-                  >
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenEdit(dept);
-                      }}
-                      className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                      title="ویرایش نهاد"
-                    >
-                      <Edit className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        confirmDelete(`آیا از حذف نهاد «${dept.name}» مطمئن هستید؟ این عملیات قابل بازگشت نیست.`, () =>
-                          handleDeleteDepartment(dept.id)
-                        );
-                      }}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                      title="حذف نهاد"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                )}
               </article>
             );
           })}
@@ -1150,28 +1118,38 @@ export const DepartmentsView: React.FC = () => {
                   </span>
                   <div className="flex items-center gap-2 shrink-0">
                     {canEdit && (
-                      <button
-                        id="btn-edit-department-from-details"
-                        type="button"
-                        onClick={() => {
-                          const target = detailDept;
-                          setDetailDept(null);
-                          handleOpenEdit(target);
-                        }}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-bold text-[11px] border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-950/70 transition-colors"
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                        ویرایش مشخصات
-                      </button>
+                      <>
+                        <button
+                          id="btn-edit-department-from-details"
+                          type="button"
+                          onClick={() => {
+                            const target = detailDept;
+                            setDetailDept(null);
+                            handleOpenEdit(target);
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-bold text-[11px] border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-950/70 transition-colors"
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                          ویرایش مشخصات
+                        </button>
+                        <button
+                          id="btn-delete-department-from-details"
+                          type="button"
+                          onClick={() => {
+                            const target = detailDept;
+                            setDetailDept(null);
+                            confirmDelete(
+                              `آیا از حذف نهاد «${target.name}» مطمئن هستید؟ این عملیات قابل بازگشت نیست.`,
+                              () => handleDeleteDepartment(target.id)
+                            );
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-bold text-[11px] border border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-950/70 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          حذف نهاد
+                        </button>
+                      </>
                     )}
-                    <button
-                      id="btn-close-department-details-footer"
-                      type="button"
-                      onClick={() => setDetailDept(null)}
-                      className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-[11px] hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                    >
-                      بستن
-                    </button>
                   </div>
                 </div>
               </div>

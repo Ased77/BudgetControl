@@ -27,7 +27,6 @@ import {
   Flame,
   ArrowUpRight,
   TrendingDown,
-  Sparkles,
   FolderPlus,
 } from 'lucide-react';
 import { HelpTooltip } from './HelpTooltip';
@@ -42,8 +41,6 @@ export const ProjectsView: React.FC = () => {
     crisesHarms,
     priorities,
     selectedLocation,
-    antiDuplicationAlerts,
-    optimizationMetrics,
     handleAddProject,
     handleUpdateProject,
     handleDeleteProject,
@@ -301,54 +298,6 @@ export const ProjectsView: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Anti-Duplication Engine Alerts Strip */}
-      {antiDuplicationAlerts.length > 0 && (
-        <div id="projects-view-anti-duplication-engine-alerts" className="bg-amber-500/10 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800/80 rounded-2xl p-4 shadow-sm">
-          <div id="projects-view-anti-duplication-engine-alerts-2" className="flex items-center justify-between gap-2 mb-3">
-            <div id="projects-view-anti-duplication-engine-alerts-3" className="flex items-center gap-2">
-              <ShieldAlert className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
-              <h3 className="font-black text-sm text-amber-900 dark:text-amber-200">
-                هشدارهای فعال موتور ضد موازی‌کاری و اتلاف بودجه ({toPersianDigits(antiDuplicationAlerts.length)} مورد کشف شد)
-              </h3>
-            </div>
-            <span className="text-xs text-amber-700 dark:text-amber-400 font-mono">
-              صرفه‌جویی احتمالی: {formatToman(optimizationMetrics.potentialSavingsToman)}
-            </span>
-          </div>
-
-          <div id="projects-view-anti-duplication-engine-alerts-4" className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-            {antiDuplicationAlerts.map((alert) => (
-              <div
-                id={`projects-view-anti-duplication-engine-alerts-5-${alert.id}`}
-                key={alert.id}
-                className="bg-white/90 dark:bg-slate-900/90 rounded-xl p-3 border border-amber-200 dark:border-amber-900/60 text-xs shadow-xs"
-              >
-                <div id={`projects-view-anti-duplication-engine-alerts-6-${alert.id}`} className="flex items-start justify-between gap-2">
-                  <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
-                    {alert.projectTitle}
-                  </span>
-                  <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      alert.severity === 'HIGH'
-                        ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
-                        : 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
-                    }`}
-                  >
-                    {alert.severity === 'HIGH' ? 'بحرانی' : 'متوسط'}
-                  </span>
-                </div>
-                <p className="text-slate-600 dark:text-slate-300 text-[11px] mt-1 leading-relaxed">{alert.message}</p>
-                <div id={`projects-view-anti-duplication-engine-alerts-7-${alert.id}`} className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px] text-indigo-600 dark:text-indigo-400 flex items-center gap-1 font-medium">
-                  <Sparkles className="w-3 h-3 text-indigo-500" />
-                  <span>پیشنهاد الگوریتم: {alert.recommendation}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Filter and Search Bar */}
       <div id="projects-view-filter-and-search-bar" className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">

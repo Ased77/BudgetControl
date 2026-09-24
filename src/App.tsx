@@ -39,10 +39,8 @@ import {
   Download,
   FileSpreadsheet,
   FileText,
-  ChevronDown,
   Menu,
   X,
-  ShieldAlert,
   HelpCircle,
   Bell,
   LogOut,
@@ -64,8 +62,6 @@ function AppContent() {
     contractors,
     auditLogs,
     currentUser,
-    users,
-    setCurrentUser,
     isAuthenticated,
     logout,
     activeTab,
@@ -78,7 +74,6 @@ function AppContent() {
   } = useAppContext();
 
   const [showAiModal, setShowAiModal] = useState(false);
-  const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [showLocationDrawer, setShowLocationDrawer] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -173,8 +168,8 @@ function AppContent() {
             </button>
           </div>
 
-          {/* Quick Location & Anti-Overlap Alert Banner */}
-          <div id="app-quick-location-anti-overlap" className="p-3 bg-slate-50 border-b border-slate-100 space-y-2 shrink-0">
+          {/* Quick Location Switcher */}
+          <div id="app-quick-location-anti-overlap" className="p-3 bg-slate-50 border-b border-slate-100 shrink-0">
             <button
               onClick={() => setShowLocationDrawer(!showLocationDrawer)}
               className="w-full flex items-center gap-2.5 p-2 rounded-xl bg-white hover:bg-slate-50 text-xs border border-slate-200 hover:border-emerald-300 shadow-2xs transition-colors text-right group"
@@ -193,27 +188,6 @@ function AppContent() {
               </span>
             </button>
 
-            {antiDuplicationAlerts.length > 0 && (
-              <button
-                id="app-quick-location-anti-overlap-3"
-                onClick={() => {
-                  setActiveTab('PROJECTS');
-                  setSidebarOpen(false);
-                }}
-                className="w-full p-2 rounded-xl bg-amber-50 border border-amber-200 hover:border-amber-300 text-amber-900 text-[11px] flex items-center justify-between transition-colors hover:bg-amber-100"
-              >
-                <span className="flex items-center gap-1.5 font-bold">
-                  <ShieldAlert className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                  <span>هشدار موازی‌کاری</span>
-                </span>
-                <span className="flex items-center gap-1.5 shrink-0">
-                  <span className="min-w-4.5 h-4.5 rounded-full bg-amber-500 text-white font-mono text-[9px] font-bold flex items-center justify-center px-1">
-                    {antiDuplicationAlerts.length}
-                  </span>
-                  <span className="text-[10px] font-bold text-amber-800">مشاهده</span>
-                </span>
-              </button>
-            )}
           </div>
 
           {/* Nav List */}
@@ -282,11 +256,8 @@ function AppContent() {
 
       {/* Main Content Area */}
       <div id="app-main-content-area" className="flex-1 flex flex-col h-full overflow-hidden">
-        {/* Top Navbar.
-            Deliberately no z-index: a z-index here makes the header a stacking
-            context, which would trap the persona dropdown's z-50 inside it and
-            let the sidebar (z-40) and the workspace paint over the open menu.
-            The dropdown itself carries the z-50, so it wins over the sidebar. */}
+        {/* Top Navbar — page title only; the header stays unlayered so nothing
+            in it can be painted over by the sidebar or the workspace. */}
         <header className="bg-white border-b border-slate-200 shadow-2xs h-16 px-4 md:px-6 flex items-center justify-between shrink-0">
           <div id="app-top-navbar" className="flex items-center gap-3 md:gap-4">
             <button
@@ -315,63 +286,6 @@ function AppContent() {
             </div>
           </div>
 
-          {/* Actions & Persona */}
-          <div id="app-actions-persona" className="flex items-center gap-2 md:gap-3">
-            {/* Persona Switcher Quick Pill */}
-            <div id="app-persona-switcher-quick-pill" className="relative">
-              <button
-                onClick={() => setShowUserDropdown(!showUserDropdown)}
-                className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-800 transition-colors"
-              >
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="hidden md:inline">{currentUser.name}</span>
-                <span className="text-[10px] text-slate-500 font-normal">({currentUser.roleFa})</span>
-                <ChevronDown className="w-3 h-3 text-slate-400" />
-              </button>
-
-              {showUserDropdown && (
-                <div id="app-persona-switcher-quick-pill-2" className="absolute left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 p-3 z-50 text-xs">
-                  <div id="app-persona-switcher-quick-pill-3" className="border-b border-slate-100 pb-2 mb-2">
-                    <span className="text-[10px] text-slate-500 block">تغییر کاربر و نقش سیستمی (شبیه‌سازی دسترسی):</span>
-                  </div>
-                  <div id="app-persona-switcher-quick-pill-4" className="space-y-1">
-                    {users.map((u) => (
-                      <button
-                        key={u.id}
-                        onClick={() => {
-                          setCurrentUser(u);
-                          setShowUserDropdown(false);
-                        }}
-                        className={`w-full text-right p-2 rounded-xl transition-colors flex flex-col ${
-                          currentUser.id === u.id
-                            ? 'bg-blue-50 text-blue-700 font-bold'
-                            : 'hover:bg-slate-50 text-slate-700'
-                        }`}
-                      >
-                        <span className="text-xs">{u.name}</span>
-                        <span className="text-[10px] text-slate-500">
-                          {u.roleFa} — {u.organization}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-
-                  <div id="app-persona-switcher-quick-pill-5" className="border-t border-slate-100 mt-2 pt-2">
-                    <button
-                      onClick={() => {
-                        setShowUserDropdown(false);
-                        logout();
-                      }}
-                      className="w-full text-right p-2 rounded-xl text-rose-600 hover:bg-rose-50 font-bold flex items-center gap-2 transition-colors"
-                    >
-                      <LogOut className="w-3.5 h-3.5" />
-                      خروج از حساب
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
         </header>
 
         {/* Global Location Selector Modal — opened from the sidebar location button */}
