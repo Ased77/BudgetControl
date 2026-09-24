@@ -21,7 +21,6 @@ import {
   Gauge,
   Wallet,
   Banknote,
-  Coins,
   MapPin,
   ListChecks,
   Upload,
@@ -633,12 +632,6 @@ export const DepartmentsView: React.FC = () => {
                 ? Math.min(100, Math.round((dept.absorbedBudgetToman / dept.allocatedBudgetToman) * 100))
                 : 0;
             const budget = compactBudget(dept.allocatedBudgetToman);
-            const barTone =
-              absorptionRate >= 75
-                ? 'bg-gradient-to-l from-emerald-500 to-emerald-400'
-                : absorptionRate >= 40
-                ? 'bg-gradient-to-l from-indigo-500 to-indigo-400'
-                : 'bg-gradient-to-l from-amber-500 to-amber-400';
 
             return (
               <article
@@ -695,7 +688,6 @@ export const DepartmentsView: React.FC = () => {
                   </div>
 
                   <div className="flex items-center justify-center gap-1.5 flex-wrap mt-2">
-                    <span className="text-[10px] font-mono text-slate-400 tracking-wider">{dept.code}</span>
                     <span
                       id={`departments-view-card-category-${dept.id}`}
                       className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border whitespace-nowrap ${catStyle.soft}`}
@@ -703,13 +695,6 @@ export const DepartmentsView: React.FC = () => {
                       {dept.categoryFa}
                     </span>
                   </div>
-
-                  <p
-                    id={`departments-view-card-mission-${dept.id}`}
-                    className="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400 line-clamp-2 mt-2.5"
-                  >
-                    {dept.description}
-                  </p>
 
                   <div
                     id={`departments-view-card-meta-${dept.id}`}
@@ -790,39 +775,12 @@ export const DepartmentsView: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Absorption progress */}
-                <div id={`departments-view-card-progress-${dept.id}`} className="px-5 pt-4">
-                  <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                    <div
-                      id={`departments-view-card-progress-bar-${dept.id}`}
-                      className={`h-full rounded-full transition-all duration-500 ${barTone}`}
-                      style={{ width: `${absorptionRate}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div
-                  id={`departments-view-card-figures-${dept.id}`}
-                  className="mt-auto px-5 py-3 flex items-center justify-between gap-2 text-[11px]"
-                >
-                  <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 min-w-0">
-                    <Coins className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span className="truncate">{formatToman(dept.absorbedBudgetToman)} تخصیص‌یافته</span>
-                  </span>
-                  <span
-                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold border shrink-0 ${catStyle.soft}`}
-                    title="درصد جذب بودجه"
-                  >
-                    {toPersianDigits(absorptionRate)}٪ جذب
-                  </span>
-                </div>
-
                 {/* Admin actions — the card itself opens the drill-down, so these
                     stop propagation to avoid opening the modal as a side effect. */}
                 {canEdit && (
                   <div
                     id={`departments-view-card-actions-${dept.id}`}
-                    className="px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/30 rounded-b-2xl flex items-center justify-end gap-1"
+                    className="mt-auto px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/30 rounded-b-2xl flex items-center justify-end gap-1"
                   >
                     <button
                       onClick={(e) => {
