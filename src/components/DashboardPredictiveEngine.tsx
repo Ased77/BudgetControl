@@ -521,7 +521,7 @@ export const DashboardPredictiveEngine: React.FC = () => {
               tabIndex={0}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openSectorDetail(sector); } }}
               title="کلیک برای مشاهده جزئیات کامل"
-              className="group bg-white rounded-xl p-4 border border-slate-200 shadow-2xs hover:border-indigo-300 hover:shadow-md hover:-translate-y-0.5 cursor-pointer transition-all space-y-3 flex flex-col justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+              className="group bg-white rounded-xl p-4 border border-slate-200 shadow-2xs hover:border-indigo-300 hover:shadow-md cursor-pointer transition-all space-y-3 flex flex-col justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
             >
               <div id={`dashboard-predictive-engine-sector-cards-grid-3-${sector.priorityId}`}>
                 <div id={`dashboard-predictive-engine-sector-cards-grid-4-${sector.priorityId}`} className="flex items-center justify-between gap-2">

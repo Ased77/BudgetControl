@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Department, AdministrativeLevel, ProjectStatus } from '../types';
 import { useOutsideClick } from '../hooks/useOutsideClick';
+import { PageHeader } from './PageHeader';
 import {
   Building2,
   Plus,
@@ -32,7 +33,6 @@ import {
   Landmark,
 } from 'lucide-react';
 import { formatToman, toPersianDigits } from '../utils/numberUtils';
-import { HelpTooltip } from './HelpTooltip';
 import { useConfirmDelete } from './ConfirmDeleteModal';
 
 /** Departments rendered per page of the card grid. */
@@ -477,6 +477,14 @@ export const DepartmentsView: React.FC = () => {
 
   return (
     <div id="departments-view-root" className="space-y-5">
+      <PageHeader
+        id="departments-view-page-header"
+        icon={Building2}
+        title="دستگاه‌ها و ادارات متولی توسعه"
+        subtitle={`${toPersianDigits(departments.length)} نهاد ثبت‌شده — شناسنامه، عملکرد و بودجه هر اداره در ${selectedLocation.province} - ${selectedLocation.county}`}
+        tone="bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-900"
+      />
+
       {/* Macro KPI Cards — totals across every registered department */}
       <div id="departments-view-kpi-cards" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {kpiCards.map((kpi) => {
@@ -647,7 +655,7 @@ export const DepartmentsView: React.FC = () => {
                   }
                 }}
                 title="کلیک برای مشاهده جزئیات نهاد"
-                className="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 cursor-pointer transition-all flex flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                className="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs hover:shadow-md cursor-pointer transition-all flex flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
               >
                 {/* Identity — centred emblem over the department name. An uploaded
                     logo replaces the category icon wherever the emblem is shown. */}
@@ -678,13 +686,6 @@ export const DepartmentsView: React.FC = () => {
                     >
                       {dept.name}
                     </h3>
-                    <HelpTooltip
-                      portal
-                      variant="ghost"
-                      text={dept.description}
-                      label="مشاهده توضیح نهاد"
-                      size="sm"
-                    />
                   </div>
 
                   <div className="flex items-center justify-center gap-1.5 flex-wrap mt-2">

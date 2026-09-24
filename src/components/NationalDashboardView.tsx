@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { formatToman, formatNumber, toPersianDigits } from '../utils/numberUtils';
 import { DashboardPredictiveEngine } from './DashboardPredictiveEngine';
+import { PageHeader } from './PageHeader';
 import {
   ShieldAlert,
   Wallet,
@@ -58,6 +59,14 @@ export const NationalDashboardView: React.FC = () => {
 
   return (
     <div id="national-dashboard-view-root" className="space-y-6">
+      <PageHeader
+        id="national-dashboard-view-page-header"
+        icon={Activity}
+        title="داشبورد ملی توسعه متوازن"
+        subtitle={`پایش کلان منابع، شاخص‌های محرومیت و تخصیص بهینه اعتبارات در ${selectedLocation.province} - ${selectedLocation.county}`}
+        tone="bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900"
+      />
+
       {/* Hero Macro Strip (Light Theme) */}
       <div id="national-dashboard-view-hero-macro-strip-light-theme" className="bg-gradient-to-r from-blue-50/90 via-indigo-50/70 to-slate-50 rounded-3xl p-6 md:p-8 text-slate-900 border border-blue-200/80 shadow-sm relative overflow-hidden">
         {/* Subtle accent glow */}

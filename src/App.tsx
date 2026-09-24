@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AppProvider, useAppContext } from './context/AppContext';
+import { ShellChromeContext } from './context/ShellContext';
 import { exportToCsv } from './utils/excelExport';
 import { triggerPrintPdf } from './utils/pdfExport';
 import { formatToman, toPersianDigits } from './utils/numberUtils';
@@ -39,7 +40,6 @@ import {
   Download,
   FileSpreadsheet,
   FileText,
-  Menu,
   X,
   HelpCircle,
   Bell,
@@ -77,6 +77,9 @@ function AppContent() {
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [showLocationDrawer, setShowLocationDrawer] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Handed to each page's title block so the mobile nav toggle can live there.
+  const shellChrome = useMemo(() => ({ openSidebar: () => setSidebarOpen(true) }), []);
   const exportDropdownRef = useRef<HTMLDivElement>(null);
   const mainWorkspaceRef = useRef<HTMLDivElement>(null);
 
@@ -142,40 +145,48 @@ function AppContent() {
 
   return (
     <div id="app-root" className="flex h-screen w-full bg-[#f8fafc] text-slate-800 font-sans antialiased overflow-hidden dir-rtl">
-      {/* Sleek Right Navigation Sidebar (Light Theme) */}
+      {/* Navigation Sidebar — floating white panel, blue pill for the active row. */}
       <aside
-        className={`fixed inset-y-0 right-0 z-40 w-72 bg-white text-slate-800 flex flex-col justify-between border-l border-slate-200 shadow-xl lg:shadow-none transition-transform duration-300 lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 right-0 z-40 w-72 p-3 bg-slate-100/70 flex flex-col transition-transform duration-300 lg:static lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
         }`}
       >
-        <div id="app-sleek-right-navigation-sidebar" className="flex-1 flex flex-col min-h-0">
-          {/* Brand Header */}
-          <div id="app-brand-header" className="p-5 border-b border-slate-100 flex items-center justify-between shrink-0">
-            <div id="app-brand-header-2" className="flex items-center gap-3">
-              <div id="app-brand-header-3" className="w-10 h-10 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl text-white font-black text-lg flex items-center justify-center shadow-md shadow-blue-500/20">
+        <div
+          id="app-sleek-right-navigation-sidebar"
+          className="flex-1 flex flex-col min-h-0 bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/60 overflow-hidden"
+        >
+          {/* Brand */}
+          <div id="app-brand-header" className="px-5 py-4 flex items-center justify-between gap-3 shrink-0">
+            <div id="app-brand-header-2" className="flex items-center gap-2.5 min-w-0">
+              <div id="app-brand-header-3" className="w-9 h-9 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl text-white font-black text-sm flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
                 ملی
               </div>
-              <div id="app-brand-header-4">
-                <h1 className="font-black text-sm text-slate-900 tracking-tight">سامانه توسعه ملی</h1>
-                <p className="text-[10px] text-slate-500">توسعه هوشمند روستایی و شهری</p>
+              <div id="app-brand-header-4" className="min-w-0">
+                <h1 className="font-black text-sm text-blue-700 tracking-tight truncate">سامانه توسعه ملی</h1>
+                <p className="text-[10px] text-slate-400 truncate">توسعه هوشمند روستایی و شهری</p>
               </div>
             </div>
             <button
+              id="app-sidebar-close-button"
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden text-slate-400 hover:text-slate-700 p-1 rounded-lg"
+              title="بستن منوی دسترسی"
+              aria-label="بستن منوی دسترسی"
+              className="lg:hidden shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-xl border border-slate-200 bg-white text-slate-600 shadow-2xs transition-all duration-150 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 active:scale-95 active:border-blue-300 active:bg-blue-50 active:text-blue-700 active:shadow-none focus:outline-none focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/45 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
+          <div id="app-sidebar-top-divider" className="h-px bg-slate-100 mx-5 shrink-0" />
+
           {/* Quick Location Switcher */}
-          <div id="app-quick-location-anti-overlap" className="p-3 bg-slate-50 border-b border-slate-100 shrink-0">
+          <div id="app-quick-location-anti-overlap" className="px-3 pt-3 shrink-0">
             <button
               onClick={() => setShowLocationDrawer(!showLocationDrawer)}
-              className="w-full flex items-center gap-2.5 p-2 rounded-xl bg-white hover:bg-slate-50 text-xs border border-slate-200 hover:border-emerald-300 shadow-2xs transition-colors text-right group"
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-2xl bg-slate-50 hover:bg-slate-100 text-xs transition-colors text-right group"
             >
-              <span className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 group-hover:bg-emerald-100 transition-colors">
-                <MapPin className="w-3.5 h-3.5" />
+              <span className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 group-hover:bg-emerald-100 transition-colors">
+                <MapPin className="w-4 h-4" />
               </span>
               <span id="app-quick-location-anti-overlap-2" className="flex-1 min-w-0">
                 <span className="block text-[9px] font-bold text-slate-400">موقعیت فعال سامانه</span>
@@ -191,7 +202,7 @@ function AppContent() {
           </div>
 
           {/* Nav List */}
-          <nav className="p-3 space-y-1 overflow-y-auto flex-1">
+          <nav className="scrollbar-none p-3 space-y-1 overflow-y-auto flex-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -203,91 +214,61 @@ function AppContent() {
                     setActiveTab(item.id as any);
                     setSidebarOpen(false);
                   }}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-bold transition-all text-right ${
+                  className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold transition-colors text-right ${
                     isActive
                       ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
                 >
-                  <div id={`app-nav-list-${item.id}`} className="flex items-center gap-3">
-                    <Icon className={`w-6 h-6 ${isActive ? 'text-white' : item.color} shrink-0`} />
-                    <span className="text-sm">{item.label}</span>
-                  </div>
+                  <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                  <span id={`app-nav-list-${item.id}`} className="flex-1 min-w-0 truncate text-sm">
+                    {item.label}
+                  </span>
                 </button>
               );
             })}
           </nav>
-        </div>
 
-        {/* Sidebar Footer User Role */}
-        <div id="app-sidebar-footer-user-role" className="p-4 border-t border-slate-100 bg-slate-50 text-xs shrink-0">
-          <div id="app-sidebar-footer-user-role-2" className="flex items-center justify-between">
-            <div id="app-sidebar-footer-user-role-3" className="flex items-center gap-2">
-              <div id="app-sidebar-footer-user-role-4" className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center font-bold text-xs text-white shadow-xs">
-                {currentUser.name.charAt(0)}
-              </div>
-              <div id="app-sidebar-footer-user-role-5" className="truncate">
-                <div id="app-sidebar-footer-user-role-6" className="font-bold text-slate-800 text-xs truncate">{currentUser.name}</div>
-                <div id="app-sidebar-footer-user-role-7" className="text-[10px] text-slate-500 truncate">{currentUser.roleFa}</div>
-              </div>
-            </div>
-            <div id="app-sidebar-footer-user-role-8" className="flex items-center gap-2 shrink-0">
+          {/* Account & sign-out — divided from the nav and tinted red, per the reference. */}
+          <div id="app-sidebar-footer-user-role" className="shrink-0">
+            <div id="app-sidebar-footer-divider" className="h-px bg-slate-100 mx-5" />
+
+            <div className="p-3 space-y-1">
               <button
+                id="app-sidebar-footer-user-role-2"
                 onClick={() => {
                   setActiveTab('ROLES_PERMISSIONS');
                   setSidebarOpen(false);
                 }}
-                className="text-[10px] text-blue-600 hover:text-blue-800 font-bold hover:underline"
+                className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-slate-50 transition-colors text-right"
               >
-                مدیریت
+                <span id="app-sidebar-footer-user-role-4" className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-xs text-white shadow-xs shrink-0">
+                  {currentUser.name.charAt(0)}
+                </span>
+                <span id="app-sidebar-footer-user-role-5" className="min-w-0 flex-1">
+                  <span id="app-sidebar-footer-user-role-6" className="block font-bold text-slate-800 text-xs truncate">{currentUser.name}</span>
+                  <span id="app-sidebar-footer-user-role-7" className="block text-[10px] text-slate-400 truncate">{currentUser.roleFa}</span>
+                </span>
               </button>
+
               <button
+                id="app-sidebar-footer-user-role-8"
                 onClick={logout}
                 title={`خروج ${currentUser.name} از سامانه`}
-                className="flex items-center gap-1 text-[10px] text-rose-600 hover:text-rose-800 font-bold hover:underline"
+                className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-rose-600 hover:bg-rose-50 font-bold text-sm transition-colors text-right"
               >
-                <LogOut className="w-3 h-3" />
-                خروج
+                <LogOut className="w-5 h-5 shrink-0" />
+                <span>خروج</span>
               </button>
             </div>
           </div>
         </div>
       </aside>
 
-      {/* Main Content Area */}
+      {/* Main Content Area.
+          No workspace header: each page renders its own title block at the top
+          of its content (see `PageHeader`). */}
       <div id="app-main-content-area" className="flex-1 flex flex-col h-full overflow-hidden">
-        {/* Top Navbar — page title only; the header stays unlayered so nothing
-            in it can be painted over by the sidebar or the workspace. */}
-        <header className="bg-white border-b border-slate-200 shadow-2xs h-16 px-4 md:px-6 flex items-center justify-between shrink-0">
-          <div id="app-top-navbar" className="flex items-center gap-3 md:gap-4">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="lg:hidden text-slate-600 hover:text-slate-900 p-1 rounded-lg"
-            >
-              <Menu className="w-6 h-6" />
-            </button>
-
-            <div id="app-top-navbar-2">
-              <h2 className="font-black text-sm text-slate-900 flex items-center gap-2">
-                <span>
-                  {activeTab === 'DASHBOARD' && 'داشبورد'}
-                  {activeTab === 'DEPARTMENTS' && 'دستگاه‌ها و ادارات متولی توسعه'}
-                  {activeTab === 'BUDGET_SOURCES' && 'سرفصل‌های منابع بودجه (CSR، دولتی، دهیاری و خیریه)'}
-                  {activeTab === 'PRIORITIES' && 'اولویت‌های توسعه و ضرایب وزنی تخصیص اعتبار'}
-                  {activeTab === 'CRISES_HARMS' && 'بانک کانون‌های بحران، آسیب و نیازهای فوریتی'}
-                  {activeTab === 'EXECUTORS' && 'نهادها و دستگاه‌های مجری طرح‌ها'}
-                  {activeTab === 'CONTRACTORS' && 'پیمانکاران ذیصلاح و رتبه‌بندی فنی'}
-                  {activeTab === 'PROJECTS' && 'رصد پروژه‌های عمرانی و تطبیق ضد موازی‌کاری'}
-                  {activeTab === 'CHARTS' && 'نمودار حبابی (ارتباط شاخص محرومیت و تخصیص بودجه) و تحلیل زنده'}
-                  {activeTab === 'LOCATIONS' && `شاخص‌های تفصیلی محرومیت (${selectedLocation.province} - ${selectedLocation.county})`}
-                  {activeTab === 'ROLES_PERMISSIONS' && 'ماتریس دسترسی نقش‌ها، سطح اختیارات و تاریخچه نظارتی'}
-                </span>
-              </h2>
-            </div>
-          </div>
-
-        </header>
-
         {/* Global Location Selector Modal — opened from the sidebar location button */}
         {showLocationDrawer && (
           <GlobalLocationSelector
@@ -299,7 +280,8 @@ function AppContent() {
         )}
 
         {/* Scrollable Main Workspace */}
-        <div id="app-scrollable-main-workspace" ref={mainWorkspaceRef} className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+        <ShellChromeContext.Provider value={shellChrome}>
+        <div id="app-scrollable-main-workspace" ref={mainWorkspaceRef} className="scrollbar-none flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
           {activeTab === 'DASHBOARD' && <NationalDashboardView />}
 
           {activeTab === 'POPULATION' && <PopulationView />}
@@ -336,6 +318,7 @@ function AppContent() {
 
           {activeTab === 'ROLES_PERMISSIONS' && <RolesAndAccessView />}
         </div>
+        </ShellChromeContext.Provider>
       </div>
 
       {/* AI Analysis Modal */}

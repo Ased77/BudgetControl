@@ -89,6 +89,25 @@ body {
 }
 
 /* -------------------------------------------------------------------------
+   Scrollbar-free scrolling.
+   Applied to the page scroll container and the sidebar nav so the workspace
+   reads as one clean surface instead of a grey gutter on every page. The
+   element keeps its own `overflow-y-auto`, so wheel, trackpad, keyboard and
+   programmatic scrolling all still work — only the painted bar is removed.
+   Already referenced by LocationModule's province pill row.
+   ------------------------------------------------------------------------- */
+.scrollbar-none {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* legacy Edge / IE */
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none; /* Chromium / Safari */
+  width: 0;
+  height: 0;
+}
+
+/* -------------------------------------------------------------------------
    Priority allocation slider (PrioritiesView,
    `priorities-view-slider-and-percentage-display-*` block).
    A native range input reskinned so the track's filled portion tracks the

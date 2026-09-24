@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { CsrPriority, SmartRecommendationResult } from '../types';
 import { useAppContext } from '../context/AppContext';
+import { PageHeader } from './PageHeader';
 import { formatCurrency, toPersianDigits } from '../utils/numberUtils';
 import { 
   PieChart as PieIcon, BarChart3, Radar as RadarIcon, Globe2, 
@@ -345,6 +346,13 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
 
   return (
     <div id="charts-view-div-12" className="space-y-6">
+      <PageHeader
+        id="charts-view-page-header"
+        icon={BarChart3}
+        title="نمودارها و تحلیل زنده تخصیص"
+        subtitle="نمودار حبابی ارتباط شاخص محرومیت با تخصیص بودجه و تحلیل زنده جریان اعتبارات"
+        tone="bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-900"
+      />
 
       {/* ========================================================================= */}
       {/* 1. FEATURED ANALYTICAL BUBBLE CHART: DEPRIVATION INDEX VS BUDGET ALLOCATION */}
