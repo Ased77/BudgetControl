@@ -145,7 +145,8 @@ function AppContent() {
 
   return (
     <div id="app-root" className="flex h-screen w-full bg-[#f8fafc] text-slate-800 font-sans antialiased overflow-hidden dir-rtl">
-      {/* Navigation Sidebar — floating white panel, blue pill for the active row. */}
+      {/* Navigation Sidebar — floating white panel; the active row is an
+          outlined pill with a start-edge accent (no solid fill). */}
       <aside
         className={`fixed inset-y-0 right-0 z-40 w-72 p-3 bg-slate-100/70 flex flex-col transition-transform duration-300 lg:static lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
@@ -214,13 +215,21 @@ function AppContent() {
                     setActiveTab(item.id as any);
                     setSidebarOpen(false);
                   }}
-                  className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold transition-colors text-right ${
+                  className={`relative w-full flex items-center gap-3 px-3.5 py-3 rounded-xl border font-bold transition-colors text-right ${
                     isActive
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      ? 'border-blue-200 text-blue-700'
+                      : 'border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
                 >
-                  <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                  {/* Distinct shape, never a fill: the active row is outlined and
+                      carries a rounded accent bar on the leading edge. */}
+                  {isActive && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute inset-y-2 start-1 w-1 rounded-full bg-blue-600"
+                    />
+                  )}
+                  <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-blue-600' : 'text-slate-400'}`} />
                   <span id={`app-nav-list-${item.id}`} className="flex-1 min-w-0 truncate text-sm">
                     {item.label}
                   </span>

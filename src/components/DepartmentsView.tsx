@@ -1259,16 +1259,11 @@ export const DepartmentsView: React.FC = () => {
                 )}
               </div>
 
+              {/* The systemic code is no longer editable here: it is always
+                  auto-generated for a new record, kept untouched when editing,
+                  and surfaced read-only in the detail view. The management level
+                  now shares this row with the direct phone line. */}
               <div id="departments-view-crud-modal-5" className="grid grid-cols-2 gap-3">
-                <div id="departments-view-crud-modal-6">
-                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">کد شناسایی سیستمی</label>
-                  <input
-                    type="text"
-                    value={formCode}
-                    onChange={(e) => setFormCode(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono"
-                  />
-                </div>
                 <div id="departments-view-crud-modal-7">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">سطح مدیریتی</label>
                   <select
@@ -1281,6 +1276,19 @@ export const DepartmentsView: React.FC = () => {
                     <option value="COUNTY">شهرستانی</option>
                     <option value="RURAL_DISTRICT">بخشداری / دهیاری</option>
                   </select>
+                </div>
+
+                <div id="departments-view-crud-modal-11">
+                  <div id="departments-view-crud-modal-12">
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">شماره تماس مستقیم</label>
+                    <input
+                      type="text"
+                      value={formPhone}
+                      onChange={(e) => setFormPhone(e.target.value)}
+                      placeholder="۰۳۴-..."
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -1314,29 +1322,6 @@ export const DepartmentsView: React.FC = () => {
                     onChange={(e) => setFormHeadName(e.target.value)}
                     placeholder="نام و نام خانوادگی"
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div id="departments-view-crud-modal-11" className="grid grid-cols-2 gap-3">
-                <div id="departments-view-crud-modal-12">
-                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">شماره تماس مستقیم</label>
-                  <input
-                    type="text"
-                    value={formPhone}
-                    onChange={(e) => setFormPhone(e.target.value)}
-                    placeholder="۰۳۴-..."
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono"
-                  />
-                </div>
-                <div id="departments-view-crud-modal-13">
-                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">ایمیل سازمانی</label>
-                  <input
-                    type="email"
-                    value={formEmail}
-                    onChange={(e) => setFormEmail(e.target.value)}
-                    placeholder="info@org.ir"
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono"
                   />
                 </div>
               </div>
