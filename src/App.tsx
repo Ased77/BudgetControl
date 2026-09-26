@@ -44,7 +44,39 @@ import {
   HelpCircle,
   Bell,
   LogOut,
+  type LucideIcon,
 } from 'lucide-react';
+
+/**
+ * Sidebar hues — one per section, the colours this nav used before the flat
+ * slate/blue restyle, brought back without returning to a solid fill.
+ *
+ * At rest every row shows its own hue on the icon, so the sections stay
+ * distinguishable at a glance; when a row is active the same hue drives its
+ * outline, accent bar and label. That way colour *and* shape mark the active
+ * section, and no row is ever painted as a filled block.
+ */
+const NAV_TONES = {
+  indigo: { icon: 'text-indigo-500', outline: 'border-indigo-200', bar: 'bg-indigo-500', label: 'text-indigo-700' },
+  blue: { icon: 'text-blue-600', outline: 'border-blue-200', bar: 'bg-blue-500', label: 'text-blue-700' },
+  cyan: { icon: 'text-cyan-600', outline: 'border-cyan-200', bar: 'bg-cyan-500', label: 'text-cyan-700' },
+  emerald: { icon: 'text-emerald-600', outline: 'border-emerald-200', bar: 'bg-emerald-500', label: 'text-emerald-700' },
+  purple: { icon: 'text-purple-600', outline: 'border-purple-200', bar: 'bg-purple-500', label: 'text-purple-700' },
+  rose: { icon: 'text-rose-600', outline: 'border-rose-200', bar: 'bg-rose-500', label: 'text-rose-700' },
+  amber: { icon: 'text-amber-600', outline: 'border-amber-200', bar: 'bg-amber-500', label: 'text-amber-700' },
+  slate: { icon: 'text-slate-500', outline: 'border-slate-300', bar: 'bg-slate-500', label: 'text-slate-700' },
+} as const;
+
+type NavTone = keyof typeof NAV_TONES;
+
+type NavItem = {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  count: number | string | null;
+  tone: NavTone;
+  badgeAlert?: boolean;
+};
 
 function AppContent() {
   const {
@@ -121,20 +153,20 @@ function AppContent() {
   };
 
   // Navigation Items
-  const navItems = [
-    { id: 'DASHBOARD', label: 'داشبورد', icon: LayoutDashboard, count: null, color: 'text-indigo-400' },
-    { id: 'POPULATION', label: 'جمعیت', icon: Users, count: '۳۱۵هزار', color: 'text-cyan-600' },
-    { id: 'DEPARTMENTS', label: 'ادارات', icon: Building2, count: departments.length, color: 'text-blue-600' },
-    { id: 'BUDGET_SOURCES', label: 'منابع بودجه', icon: Wallet, count: budgetSources.length, color: 'text-emerald-600' },
-    { id: 'PRIORITIES', label: 'اولویت‌ها', icon: Scale, count: priorities.length, color: 'text-purple-600' },
-    { id: 'CRISES_HARMS', label: 'بحران‌ها', icon: Flame, count: crisesHarms.length, color: 'text-rose-600' },
-    { id: 'EXECUTORS', label: 'دستگاه‌های مجری', icon: Users2, count: executors.length, color: 'text-cyan-600' },
-    { id: 'CONTRACTORS', label: 'پیمانکاران', icon: HardHat, count: contractors.length, color: 'text-amber-600' },
-    { id: 'CREATE_PROJECT', label: 'ثبت پروژه', icon: FolderPlus, count: 'جدید', color: 'text-indigo-600' },
-    { id: 'PROJECTS', label: 'پروژه‌ها', icon: FolderKanban, count: projects.length, color: 'text-blue-600', badgeAlert: antiDuplicationAlerts.length > 0 },
-    { id: 'CHARTS', label: 'نمودارها', icon: BarChart3, count: null, color: 'text-indigo-600' },
-    { id: 'LOCATIONS', label: 'شاخص‌های مکانی', icon: MapPin, count: null, color: 'text-emerald-600' },
-    { id: 'ROLES_PERMISSIONS', label: 'نقش‌ها و دسترسی', icon: ShieldCheck, count: auditLogs.length, color: 'text-slate-600' },
+  const navItems: NavItem[] = [
+    { id: 'DASHBOARD', label: 'داشبورد', icon: LayoutDashboard, count: null, tone: 'indigo' },
+    { id: 'POPULATION', label: 'جمعیت', icon: Users, count: '۳۱۵هزار', tone: 'cyan' },
+    { id: 'DEPARTMENTS', label: 'ادارات', icon: Building2, count: departments.length, tone: 'blue' },
+    { id: 'BUDGET_SOURCES', label: 'منابع بودجه', icon: Wallet, count: budgetSources.length, tone: 'emerald' },
+    { id: 'PRIORITIES', label: 'اولویت‌ها', icon: Scale, count: priorities.length, tone: 'purple' },
+    { id: 'CRISES_HARMS', label: 'بحران‌ها', icon: Flame, count: crisesHarms.length, tone: 'rose' },
+    { id: 'EXECUTORS', label: 'دستگاه‌های مجری', icon: Users2, count: executors.length, tone: 'cyan' },
+    { id: 'CONTRACTORS', label: 'پیمانکاران', icon: HardHat, count: contractors.length, tone: 'amber' },
+    { id: 'CREATE_PROJECT', label: 'ثبت پروژه', icon: FolderPlus, count: 'جدید', tone: 'indigo' },
+    { id: 'PROJECTS', label: 'پروژه‌ها', icon: FolderKanban, count: projects.length, tone: 'blue', badgeAlert: antiDuplicationAlerts.length > 0 },
+    { id: 'CHARTS', label: 'نمودارها', icon: BarChart3, count: null, tone: 'indigo' },
+    { id: 'LOCATIONS', label: 'شاخص‌های مکانی', icon: MapPin, count: null, tone: 'emerald' },
+    { id: 'ROLES_PERMISSIONS', label: 'نقش‌ها و دسترسی', icon: ShieldCheck, count: auditLogs.length, tone: 'slate' },
   ];
 
   // Access gate — every hook above runs unconditionally, then signed-out users
@@ -207,6 +239,7 @@ function AppContent() {
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
+              const tone = NAV_TONES[item.tone];
 
               return (
                 <button
@@ -217,19 +250,20 @@ function AppContent() {
                   }}
                   className={`relative w-full flex items-center gap-3 px-3.5 py-3 rounded-xl border font-bold transition-colors text-right ${
                     isActive
-                      ? 'border-blue-200 text-blue-700'
+                      ? `${tone.outline} ${tone.label}`
                       : 'border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
                 >
                   {/* Distinct shape, never a fill: the active row is outlined and
-                      carries a rounded accent bar on the leading edge. */}
+                      carries a rounded accent bar on the leading edge — outline,
+                      bar and label all borrow the row's own hue. */}
                   {isActive && (
                     <span
                       aria-hidden="true"
-                      className="absolute inset-y-2 start-1 w-1 rounded-full bg-blue-600"
+                      className={`absolute inset-y-2 start-1 w-1 rounded-full ${tone.bar}`}
                     />
                   )}
-                  <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-blue-600' : 'text-slate-400'}`} />
+                  <Icon className={`w-5 h-5 shrink-0 ${tone.icon}`} />
                   <span id={`app-nav-list-${item.id}`} className="flex-1 min-w-0 truncate text-sm">
                     {item.label}
                   </span>
