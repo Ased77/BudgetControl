@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { CrisisHarmItem, UrgencyLevel, AdministrativeLevel } from '../types';
 import { useOutsideClick } from '../hooks/useOutsideClick';
+import { PageHeader } from './PageHeader';
 import {
   AlertTriangle,
   Plus,
@@ -173,25 +174,23 @@ export const CrisesHarmsView: React.FC = () => {
 
   return (
     <div id="crises-harms-view-root" className="space-y-6">
-      {/* Header Banner (Light Theme) */}
+      {/* Page title block — above the banner, per the page-header reference. */}
+      <PageHeader
+        id="crises-harms-view-page-header"
+        icon={AlertTriangle}
+        title="آسیب‌ها، بحران‌ها و نیازسنجی محلی / منطقه‌ای"
+        subtitle="مبنای هوشمند سنجش اولویت و توجیه پروژه‌ها"
+        tone="text-rose-600"
+      />
+
+      {/* Banner — section label, actions and the aggregate KPI strip. */}
       <div id="crises-harms-view-header-banner-light-theme" className="bg-gradient-to-r from-rose-50/90 via-pink-50/70 to-slate-50 rounded-2xl p-6 text-slate-900 border border-rose-200/80 shadow-2xs relative overflow-hidden">
         <div id="crises-harms-view-header-banner-light-theme-2" className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div id="crises-harms-view-header-banner-light-theme-3">
-            <div id="crises-harms-view-header-banner-light-theme-4" className="flex items-center gap-2 mb-2">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-200 flex items-center gap-1">
-                <Flame className="w-3.5 h-3.5 text-rose-600" />
-                پایگاه داده آسیب‌ها، بحران‌ها و نیازهای واقعی
-              </span>
-              <span className="text-xs text-slate-500">مبنای هوشمند سنجش اولویت و توجیه پروژه‌ها</span>
-            </div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 flex items-center gap-3">
-              <AlertTriangle className="w-7 h-7 text-rose-600" />
-              آسیب‌ها، بحران‌ها و نیازسنجی محلی / منطقه‌ای
-            </h1>
-            <p className="text-slate-600 text-sm mt-1 max-w-3xl leading-relaxed">
-              ثبت و رتبه‌بندی دقیق بحران‌ها (تنش آبی، تصادفات جاده‌ای، اورژانس مسمومیت‌ها، بیکاری جوانان، حاشیه‌نشینی و فرونشست زمین).
-              موتور هوشمند سامانه اجازه تعریف پروژه‌های موازی یا کم‌اثر را در مناطقی که بحران‌های حاد حل‌نشده دارند نخواهد داد.
-            </p>
+          <div id="crises-harms-view-header-banner-light-theme-4" className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-200 flex items-center gap-1">
+              <Flame className="w-3.5 h-3.5 text-rose-600" />
+              پایگاه داده آسیب‌ها، بحران‌ها و نیازهای واقعی
+            </span>
           </div>
 
           <div id="crises-harms-view-header-banner-light-theme-5" className="flex items-center gap-3 self-start md:self-auto">

@@ -4,6 +4,7 @@ import { CsrPriority } from '../types';
 import { formatToman, roundPercentage, toPersianDigits } from '../utils/numberUtils';
 import { useConfirmDelete } from './ConfirmDeleteModal';
 import { useOutsideClick } from '../hooks/useOutsideClick';
+import { PageHeader } from './PageHeader';
 import {
   ListChecks,
   Plus,
@@ -137,25 +138,23 @@ export const PrioritiesView: React.FC = () => {
 
   return (
     <div id="priorities-view-root" className="space-y-6">
-      {/* Header Banner (Light Theme) */}
+      {/* Page title block — above the banner, per the page-header reference. */}
+      <PageHeader
+        id="priorities-view-page-header"
+        icon={ListChecks}
+        title="اولویت‌ها و ضرایب وزنی تخصیص بودجه"
+        subtitle={`انطباق زنده با شاخص‌های محرومیت ${selectedLocation.province} (${selectedLocation.county})`}
+        tone="text-purple-600"
+      />
+
+      {/* Banner — section label, actions and the live allocation summary. */}
       <div id="priorities-view-header-banner-light-theme" className="bg-gradient-to-r from-purple-50/90 via-indigo-50/70 to-slate-50 rounded-2xl p-6 text-slate-900 border border-purple-200/80 shadow-2xs relative overflow-hidden">
         <div id="priorities-view-header-banner-light-theme-2" className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div id="priorities-view-header-banner-light-theme-3">
-            <div id="priorities-view-header-banner-light-theme-4" className="flex items-center gap-2 mb-2">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200 flex items-center gap-1">
-                <Target className="w-3.5 h-3.5 text-purple-600" />
-                ماتریس هوشمند اولویت‌های توسعه
-              </span>
-              <span className="text-xs text-slate-500">انطباق زنده با شاخص‌های محرومیت {selectedLocation.province} ({selectedLocation.county})</span>
-            </div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 flex items-center gap-3">
-              <ListChecks className="w-7 h-7 text-purple-600" />
-              اولویت‌ها و ضرایب وزنی تخصیص بودجه
-            </h1>
-            <p className="text-slate-600 text-sm mt-1 max-w-3xl leading-relaxed">
-              تنظیم درصدهای تخصیص به بخش‌های حیاتی (آبرسانی، بهداشت، راه‌سازی، اشتغال و آموزش). الگوریتم هوشمند با تغییر منطقه،
-              بر اساس داده‌های واقعی محرومیت همان نقطه، پیشنهاد وزنی ارائه داده و امکان قفل‌گذاری و تراز آنی ۱۰۰٪ را فراهم می‌کند.
-            </p>
+          <div id="priorities-view-header-banner-light-theme-4" className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200 flex items-center gap-1">
+              <Target className="w-3.5 h-3.5 text-purple-600" />
+              ماتریس هوشمند اولویت‌های توسعه
+            </span>
           </div>
 
           <div id="priorities-view-header-banner-light-theme-5" className="flex flex-wrap items-center gap-2.5 self-start md:self-auto">

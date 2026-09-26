@@ -3,6 +3,7 @@ import { LocationData, LocalIndicators } from '../types';
 import { toPersianDigits } from '../utils/numberUtils';
 import { MapPin, Sliders, CheckCircle2, Search, Filter, Globe, BarChart2 } from 'lucide-react';
 import { ComparativeHarmsTable } from './ComparativeHarmsTable';
+import { PageHeader } from './PageHeader';
 
 interface LocationModuleProps {
   locations: LocationData[];
@@ -56,7 +57,15 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
 
   return (
     <div id="location-module-root" className="space-y-6 dir-rtl">
-      
+      {/* Page title block — this tab previously opened straight into the card below. */}
+      <PageHeader
+        id="location-module-page-header"
+        icon={MapPin}
+        title="شاخص‌های مکانی و لوکیشن‌های هدف"
+        subtitle="انتخاب لوکیشن و پایش شاخص‌های محرومیت همان منطقه"
+        tone="text-emerald-600"
+      />
+
       {/* Region Selector Grid Header & Controls */}
       <div id="location-module-region-selector-grid-header" className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-4">
         <div id="location-module-region-selector-grid-header-2" className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-3">

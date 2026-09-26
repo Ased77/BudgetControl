@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { UserProfile, UserPermissionField, AuditActionType } from '../types';
 import { useOutsideClick } from '../hooks/useOutsideClick';
+import { PageHeader } from './PageHeader';
 import {
   ShieldCheck,
   KeyRound,
@@ -124,24 +125,22 @@ export const RolesAndAccessView: React.FC = () => {
 
   return (
     <div id="roles-and-access-view-root" className="space-y-6">
-      {/* Header Banner (Light Theme) */}
+      {/* Page title block — above the banner, per the page-header reference. */}
+      <PageHeader
+        id="roles-and-access-view-page-header"
+        icon={ShieldCheck}
+        title="مدیریت نقش‌ها، سطح دسترسی‌ها و تاریخچه عملیات"
+        subtitle="ماتریس دسترسی مبتنی بر نقش (RBAC) و لاگ‌های سیستمی"
+        tone="text-indigo-600"
+      />
+
+      {/* Banner — section label and the sub-tab switcher. */}
       <div id="roles-and-access-view-header-banner-light-theme" className="bg-gradient-to-r from-slate-100 via-indigo-50/70 to-slate-50 rounded-2xl p-6 text-slate-900 border border-indigo-200/80 shadow-2xs relative overflow-hidden">
         <div id="roles-and-access-view-header-banner-light-theme-2" className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div id="roles-and-access-view-header-banner-light-theme-3">
-            <div id="roles-and-access-view-header-banner-light-theme-4" className="flex items-center gap-2 mb-2">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-200">
-                امنیت، حاکمیت داده و ردگیری تغییرات
-              </span>
-              <span className="text-xs text-slate-500">ماتریس دسترسی مبتنی بر نقش (RBAC) و لاگ‌های سیستمی</span>
-            </div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 flex items-center gap-3">
-              <ShieldCheck className="w-7 h-7 text-indigo-600" />
-              مدیریت نقش‌ها، سطح دسترسی‌ها و تاریخچه عملیات
-            </h1>
-            <p className="text-slate-600 text-sm mt-1 max-w-3xl leading-relaxed">
-              پیکربندی حدود اختیارات هر نقش در سامانه و بررسی شفاف تمامی رویدادها، تغییرات تخصیص بودجه و تغییر وضعیت پروژه‌ها به
-              همراه دلیل تصمیم‌گیری و مشخصات دقیق کاربر مسئول.
-            </p>
+          <div id="roles-and-access-view-header-banner-light-theme-4" className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-200">
+              امنیت، حاکمیت داده و ردگیری تغییرات
+            </span>
           </div>
         </div>
 

@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { ExecutiveProject, ContributingDepartment, ProjectStatus, UrgencyLevel, AdministrativeLevel } from '../types';
 import { formatToman, formatNumber, toPersianDigits } from '../utils/numberUtils';
+import { PageHeader } from './PageHeader';
 import {
   FolderPlus,
   Building2,
@@ -1398,24 +1399,21 @@ export const CreateProjectView: React.FC = () => {
 
   return (
     <div id="create-project-view-root" className="space-y-6 pb-16">
-      {/* Header Banner */}
+      {/* Page title block — above the banner, per the page-header reference. */}
+      <PageHeader
+        id="create-project-view-page-header"
+        icon={FolderPlus}
+        title="سامانه جامع تعریف، تجمیع و ثبت هوشمند پروژه"
+        subtitle="ثبت یکپارچه پرونده پروژه با پیوند منابع، ادارات، مجریان و جامعه هدف"
+        tone="text-indigo-600"
+      />
+
       <div id="create-project-view-header-banner" className="bg-gradient-to-l from-indigo-50/90 via-blue-50/70 to-slate-50 text-slate-900 rounded-2xl p-6 border border-indigo-200/80 shadow-2xs relative overflow-hidden">
         <div id="create-project-view-header-banner-2" className="absolute top-0 left-0 w-80 h-80 bg-blue-500/10 rounded-full filter blur-3xl pointer-events-none" />
         <div id="create-project-view-header-banner-3" className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div id="create-project-view-header-banner-4">
-            <div id="create-project-view-header-banner-5" className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-100 rounded-lg text-xs font-semibold text-indigo-800 border border-indigo-200 mb-3">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              موتور هوشمند تجمیع و پیوند تمامی تب‌ها
-            </div>
-            <h1 className="text-xl md:text-2xl font-black tracking-tight text-slate-900 flex items-center gap-3">
-              <FolderPlus className="w-7 h-7 text-indigo-600" />
-              سامانه جامع تعریف، تجمیع و ثبت هوشمند پروژه
-            </h1>
-            <p className="text-sm text-slate-600 mt-2 max-w-3xl leading-relaxed">
-              این ماژول کلیه ارکان سامانه شامل{' '}
-              <span className="text-slate-900 font-medium">منابع بودجه‌ای (دولتی، CSR، عوارض)، ادارات متقاضی و همکار، اولویت‌ها، کانون‌های آسیب، مجریان و جامعه هدف جمعیتی</span>{' '}
-              را در قالب یک پرونده متصل و استاندارد یکپارچه می‌کند.
-            </p>
+          <div id="create-project-view-header-banner-5" className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-100 rounded-lg text-xs font-semibold text-indigo-800 border border-indigo-200">
+            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+            موتور هوشمند تجمیع و پیوند تمامی تب‌ها
           </div>
 
           <div id="create-project-view-header-banner-6" className="flex items-center gap-3 shrink-0">

@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { ProjectExecutor, ExecutorType } from '../types';
 import { useOutsideClick } from '../hooks/useOutsideClick';
+import { PageHeader } from './PageHeader';
 import {
   Users2,
   Plus,
@@ -147,24 +148,22 @@ export const ExecutorsView: React.FC = () => {
 
   return (
     <div id="executors-view-root" className="space-y-6">
-      {/* Header Banner (Light Theme) */}
+      {/* Page title block — above the banner, per the page-header reference. */}
+      <PageHeader
+        id="executors-view-page-header"
+        icon={Users2}
+        title="مجریان طرح‌ها و پروژه‌های توسعه"
+        subtitle="دستگاه‌های اجرایی، قرارگاه‌های جهادی و تعاونی‌ها"
+        tone="text-cyan-600"
+      />
+
+      {/* Banner — section label, actions and the micro-KPI strip. */}
       <div id="executors-view-header-banner-light-theme" className="bg-gradient-to-r from-cyan-50/90 via-sky-50/70 to-slate-50 rounded-2xl p-6 text-slate-900 border border-cyan-200/80 shadow-2xs relative overflow-hidden">
         <div id="executors-view-header-banner-light-theme-2" className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div id="executors-view-header-banner-light-theme-3">
-            <div id="executors-view-header-banner-light-theme-4" className="flex items-center gap-2 mb-2">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-cyan-100 text-cyan-800 border border-cyan-200">
-                بازوی اجرایی و پیاده‌سازی میدانی
-              </span>
-              <span className="text-xs text-slate-500">دستگاه‌های اجرایی، قرارگاه‌های جهادی و تعاونی‌ها</span>
-            </div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 flex items-center gap-3">
-              <Users2 className="w-7 h-7 text-cyan-600" />
-              مجریان طرح‌ها و پروژه‌های توسعه
-            </h1>
-            <p className="text-slate-600 text-sm mt-1 max-w-3xl leading-relaxed">
-              مدیریت و ارزیابی صلاحیت نهادهای مجری پروژه (دستگاه‌های اجرایی تخصصی، قرارگاه‌های جهادی محرومیت‌زدایی و دهیاری‌ها).
-              سامانه ظرفیت عملیاتی هر مجری را سنجیده و از واگذاری متمرکز به مجریان دارای بار مضاعف جلوگیری می‌کند.
-            </p>
+          <div id="executors-view-header-banner-light-theme-4" className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-cyan-100 text-cyan-800 border border-cyan-200">
+              بازوی اجرایی و پیاده‌سازی میدانی
+            </span>
           </div>
 
           <div id="executors-view-header-banner-light-theme-5" className="flex items-center gap-3 self-start md:self-auto">

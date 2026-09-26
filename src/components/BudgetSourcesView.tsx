@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { BudgetSource, BudgetSourceType } from '../types';
 import { useOutsideClick } from '../hooks/useOutsideClick';
+import { PageHeader } from './PageHeader';
 import {
   Wallet,
   Plus,
@@ -163,24 +164,22 @@ export const BudgetSourcesView: React.FC = () => {
 
   return (
     <div id="budget-sources-view-root" className="space-y-6">
-      {/* Header Banner (Light Theme) */}
+      {/* Page title block — above the banner, per the page-header reference. */}
+      <PageHeader
+        id="budget-sources-view-page-header"
+        icon={Wallet}
+        title="سرفصل‌ها و منابع تأمین مالی توسعه"
+        subtitle="ترکیب بهینه بودجه دولتی، مسئولیت اجتماعی، دهیاری و خیریه"
+        tone="text-emerald-600"
+      />
+
+      {/* Banner — section label, actions and the aggregate KPI strip. */}
       <div id="budget-sources-view-header-banner-light-theme" className="bg-gradient-to-r from-emerald-50/90 via-teal-50/70 to-slate-50 rounded-2xl p-6 text-slate-900 border border-emerald-200/80 shadow-2xs relative overflow-hidden">
         <div id="budget-sources-view-header-banner-light-theme-2" className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div id="budget-sources-view-header-banner-light-theme-3">
-            <div id="budget-sources-view-header-banner-light-theme-4" className="flex items-center gap-2 mb-2">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                مدیریت منابع و اعتبارات چندگانه
-              </span>
-              <span className="text-xs text-slate-500">ترکیب بهینه بودجه دولتی، مسئولیت اجتماعی، دهیاری و خیریه</span>
-            </div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 flex items-center gap-3">
-              <Wallet className="w-7 h-7 text-emerald-600" />
-              سرفصل‌ها و منابع تأمین مالی توسعه
-            </h1>
-            <p className="text-slate-600 text-sm mt-1 max-w-3xl leading-relaxed">
-              تعریف و کنترل دقیق انواع منابع بودجه (مسئولیت اجتماعی صنایع، اعتبارات استانی دولت، منابع دهیاری‌ها و شهرداری‌ها،
-              تسهیلات بانکی اشتغال و خیریه‌ها). ردیابی لحظه‌ای مانده منابع جهت ممانعت از کسری و هدایت هدفمند نقدینگی.
-            </p>
+          <div id="budget-sources-view-header-banner-light-theme-4" className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+              مدیریت منابع و اعتبارات چندگانه
+            </span>
           </div>
 
           <div id="budget-sources-view-header-banner-light-theme-5" className="flex items-center gap-3 self-start md:self-auto">

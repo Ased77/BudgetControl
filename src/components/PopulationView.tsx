@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { formatNumber, toPersianDigits } from '../utils/numberUtils';
+import { PageHeader } from './PageHeader';
 import { HelpTooltip } from './HelpTooltip';
 import {
   Users,
@@ -176,34 +177,25 @@ export const PopulationView: React.FC = () => {
 
   return (
     <div id="population-view-root" className="space-y-6">
-      {/* Header Banner */}
+      {/* Page title block — above the banner, per the page-header reference. */}
+      <PageHeader
+        id="population-view-page-header"
+        icon={Users}
+        title={`آمار جمعیت و توزیع محرومیت ${countyRow.county}`}
+        subtitle="پایش آمار دموگرافی رسمی - سالنامه ۱۴۰۳"
+        tone="text-blue-600"
+        adornment={
+          <HelpTooltip
+            text={`بر پایه آخرین سرشماری رسمی و سالنامه آماری استان ${selectedLocation.province}، ${countyRow.county} دارای ${formatNumber(totalCountyPopulation)} نفر جمعیت کل در ${toPersianDigits(Math.max(countyLocations.length - 1, 1))} بخش است. از این تعداد، دقیقاً ${formatNumber(totalDeprivedVulnerable)} نفر (${toPersianDigits(deprivedPercentage)}٪) به عنوان اقشار آسیب‌پذیر و محروم نیازمند حمایت مستقیم شناسایی شده‌اند.`}
+            label="مشاهده توضیحات سرشماری رسمی"
+            widthClassName="w-80"
+          />
+        }
+      />
+
       <div id="population-view-header-banner" className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-sm relative overflow-hidden">
-        <div id="population-view-header-banner-2" className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-          <div id="population-view-header-banner-3">
-            <div id="population-view-header-banner-4" className="flex items-center gap-2 mb-2">
-              <span className="p-2 rounded-xl bg-blue-50 text-blue-700 border border-blue-200">
-                <Users className="w-5 h-5" />
-              </span>
-              <span className="text-xs font-bold text-blue-700 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
-                پایش آمار دموگرافی رسمی - سالنامه ۱۴۰۳
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
-                آمار جمعیت و توزیع محرومیت {countyRow.county}
-              </h1>
-              <HelpTooltip
-                text={`بر پایه آخرین سرشماری رسمی و سالنامه آماری استان ${selectedLocation.province}، ${countyRow.county} دارای ${formatNumber(totalCountyPopulation)} نفر جمعیت کل در ${toPersianDigits(Math.max(countyLocations.length - 1, 1))} بخش است. از این تعداد، دقیقاً ${formatNumber(totalDeprivedVulnerable)} نفر (${toPersianDigits(deprivedPercentage)}٪) به عنوان اقشار آسیب‌پذیر و محروم نیازمند حمایت مستقیم شناسایی شده‌اند.`}
-                label="مشاهده توضیحات سرشماری رسمی"
-                widthClassName="w-80"
-              />
-            </div>
-          </div>
-
-        </div>
-
         {/* 4 Core County KPI Cards */}
-        <div id="population-view-4-core-county-kpi-cards" className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mt-6 pt-6 border-t border-slate-100">
+        <div id="population-view-4-core-county-kpi-cards" className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <div id="population-view-4-core-county-kpi-cards-2" className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
             <span className="text-xs text-slate-500 font-semibold block mb-1">کل جمعیت {countyRow.county}</span>
             <span className="text-2xl md:text-3xl font-black text-slate-900 font-mono block">

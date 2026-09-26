@@ -4,6 +4,7 @@ import { ExecutiveProject, ProjectStatus } from '../types';
 import { formatToman, formatNumber, toPersianDigits } from '../utils/numberUtils';
 import { useConfirmDelete } from './ConfirmDeleteModal';
 import { useOutsideClick } from '../hooks/useOutsideClick';
+import { PageHeader } from './PageHeader';
 import {
   FolderKanban,
   Plus,
@@ -233,25 +234,23 @@ export const ProjectsView: React.FC = () => {
 
   return (
     <div id="projects-view-root" className="space-y-6">
-      {/* Header Banner (Light Theme) */}
+      {/* Page title block — above the banner, per the page-header reference. */}
+      <PageHeader
+        id="projects-view-page-header"
+        icon={FolderKanban}
+        title="پروژه‌های عمرانی و توسعه‌ای سامانه ملی"
+        subtitle="اتصال کامل به ادارات، سرفصل بودجه، مجریان و بحران‌ها"
+        tone="text-blue-600"
+      />
+
+      {/* Banner — section label, actions and the micro-KPI strip. */}
       <div id="projects-view-header-banner-light-theme" className="bg-gradient-to-r from-blue-50/90 via-indigo-50/70 to-slate-50 rounded-2xl p-6 text-slate-900 border border-blue-200/80 shadow-2xs relative overflow-hidden">
         <div id="projects-view-header-banner-light-theme-2" className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div id="projects-view-header-banner-light-theme-3">
-            <div id="projects-view-header-banner-light-theme-4" className="flex items-center gap-2 mb-2">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200 flex items-center gap-1">
-                <FolderKanban className="w-3.5 h-3.5 text-blue-600" />
-                رصد پروژه‌های اجرایی و ممانعت از موازی‌کاری
-              </span>
-              <span className="text-xs text-slate-500">اتصال کامل به ادارات، سرفصل بودجه، مجریان و بحران‌ها</span>
-            </div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 flex items-center gap-3">
-              <FolderKanban className="w-7 h-7 text-blue-600" />
-              پروژه‌های عمرانی و توسعه‌ای سامانه ملی
-            </h1>
-            <p className="text-slate-600 text-sm mt-1 max-w-3xl leading-relaxed">
-              سامانه هوشمند با تطبیق پیوسته ادارات متولی، سرفصل‌های تأمین مالی (CSR، دولتی، دهیاری)، مجریان و پیمانکاران،
-              از تعریف پروژه‌های موازی یا طرح‌های بدون تناسب سرانه جمعیت جلوگیری کرده و تخصیص بهینه منابع را تضمین می‌کند.
-            </p>
+          <div id="projects-view-header-banner-light-theme-4" className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200 flex items-center gap-1">
+              <FolderKanban className="w-3.5 h-3.5 text-blue-600" />
+              رصد پروژه‌های اجرایی و ممانعت از موازی‌کاری
+            </span>
           </div>
 
           <div id="projects-view-header-banner-light-theme-5" className="flex items-center gap-3 self-start md:self-auto">

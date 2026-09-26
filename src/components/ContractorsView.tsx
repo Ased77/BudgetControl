@@ -3,6 +3,7 @@ import { useAppContext } from '../context/AppContext';
 import { Contractor, ContractorGrade } from '../types';
 import { useOutsideClick } from '../hooks/useOutsideClick';
 import { formatToman, toPersianDigits } from '../utils/numberUtils';
+import { PageHeader } from './PageHeader';
 import {
   HardHat,
   Plus,
@@ -158,24 +159,22 @@ export const ContractorsView: React.FC = () => {
 
   return (
     <div id="contractors-view-root" className="space-y-6">
-      {/* Header Banner (Light Theme) */}
+      {/* Page title block — above the banner, per the page-header reference. */}
+      <PageHeader
+        id="contractors-view-page-header"
+        icon={HardHat}
+        title="بانک اطلاعات پیمانکاران احراز صلاحیت‌شده"
+        subtitle="نظام رتبه‌بندی کیفی و اولویت‌دهی به نیروهای بومی"
+        tone="text-amber-600"
+      />
+
+      {/* Banner — section label, actions and the micro-KPI strip. */}
       <div id="contractors-view-header-banner-light-theme" className="bg-gradient-to-r from-amber-50/90 via-orange-50/70 to-slate-50 rounded-2xl p-6 text-slate-900 border border-amber-200/80 shadow-2xs relative overflow-hidden">
         <div id="contractors-view-header-banner-light-theme-2" className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div id="contractors-view-header-banner-light-theme-3">
-            <div id="contractors-view-header-banner-light-theme-4" className="flex items-center gap-2 mb-2">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-                پیمانکاران ذیصلاح و شرکت‌های فنی‌مهندسی
-              </span>
-              <span className="text-xs text-slate-500">نظام رتبه‌بندی کیفی و اولویت‌دهی به نیروهای بومی</span>
-            </div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 flex items-center gap-3">
-              <HardHat className="w-7 h-7 text-amber-600" />
-              بانک اطلاعات پیمانکاران احراز صلاحیت‌شده
-            </h1>
-            <p className="text-slate-600 text-sm mt-1 max-w-3xl leading-relaxed">
-              ثبت و ارزیابی فنی پیمانکاران بر اساس رتبه‌بندی سازمان برنامه و بودجه، سابقه اجرایی، نمره کیفیت و سقف مجاز پیمان‌ها.
-              پروژه‌های روستایی با تأکید بر استفاده از پیمانکاران بومی تأیید صلاحیت‌شده جهت اشتغال‌زایی پایدار کنترل می‌شوند.
-            </p>
+          <div id="contractors-view-header-banner-light-theme-4" className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+              پیمانکاران ذیصلاح و شرکت‌های فنی‌مهندسی
+            </span>
           </div>
 
           <div id="contractors-view-header-banner-light-theme-5" className="flex items-center gap-3 self-start md:self-auto">

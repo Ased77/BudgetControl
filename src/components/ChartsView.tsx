@@ -351,7 +351,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
         icon={BarChart3}
         title="نمودارها و تحلیل زنده تخصیص"
         subtitle="نمودار حبابی ارتباط شاخص محرومیت با تخصیص بودجه و تحلیل زنده جریان اعتبارات"
-        tone="bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-900"
+        tone="text-indigo-600"
       />
 
       {/* ========================================================================= */}

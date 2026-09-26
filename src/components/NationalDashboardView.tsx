@@ -64,7 +64,7 @@ export const NationalDashboardView: React.FC = () => {
         icon={Activity}
         title="داشبورد ملی توسعه متوازن"
         subtitle={`پایش کلان منابع، شاخص‌های محرومیت و تخصیص بهینه اعتبارات در ${selectedLocation.province} - ${selectedLocation.county}`}
-        tone="bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900"
+        tone="text-blue-600"
       />
 
       {/* Hero Macro Strip (Light Theme) */}

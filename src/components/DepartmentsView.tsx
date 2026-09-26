@@ -482,7 +482,7 @@ export const DepartmentsView: React.FC = () => {
         icon={Building2}
         title="دستگاه‌ها و ادارات متولی توسعه"
         subtitle={`${toPersianDigits(departments.length)} نهاد ثبت‌شده — شناسنامه، عملکرد و بودجه هر اداره در ${selectedLocation.province} - ${selectedLocation.county}`}
-        tone="bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-900"
+        tone="text-indigo-600"
       />
 
       {/* Macro KPI Cards — totals across every registered department */}
