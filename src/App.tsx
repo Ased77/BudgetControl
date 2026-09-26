@@ -78,6 +78,12 @@ type NavItem = {
   badgeAlert?: boolean;
 };
 
+type NavGroup = {
+  id: string;
+  label: string;
+  items: NavItem[];
+};
+
 function AppContent() {
   const {
     locations,
@@ -152,21 +158,53 @@ function AppContent() {
     addAuditLog('PERCENTAGE_CHANGE', 'خروجی اکسل/CSV', '-', 'دانلود CSV', 'دریافت فایل تفصیلی داده‌های ملی');
   };
 
-  // Navigation Items
-  const navItems: NavItem[] = [
-    { id: 'DASHBOARD', label: 'داشبورد', icon: LayoutDashboard, count: null, tone: 'indigo' },
-    { id: 'POPULATION', label: 'جمعیت', icon: Users, count: '۳۱۵هزار', tone: 'cyan' },
-    { id: 'DEPARTMENTS', label: 'ادارات', icon: Building2, count: departments.length, tone: 'blue' },
-    { id: 'BUDGET_SOURCES', label: 'منابع بودجه', icon: Wallet, count: budgetSources.length, tone: 'emerald' },
-    { id: 'PRIORITIES', label: 'اولویت‌ها', icon: Scale, count: priorities.length, tone: 'purple' },
-    { id: 'CRISES_HARMS', label: 'بحران‌ها', icon: Flame, count: crisesHarms.length, tone: 'rose' },
-    { id: 'EXECUTORS', label: 'دستگاه‌های مجری', icon: Users2, count: executors.length, tone: 'cyan' },
-    { id: 'CONTRACTORS', label: 'پیمانکاران', icon: HardHat, count: contractors.length, tone: 'amber' },
-    { id: 'CREATE_PROJECT', label: 'ثبت پروژه', icon: FolderPlus, count: 'جدید', tone: 'indigo' },
-    { id: 'PROJECTS', label: 'پروژه‌ها', icon: FolderKanban, count: projects.length, tone: 'blue', badgeAlert: antiDuplicationAlerts.length > 0 },
-    { id: 'CHARTS', label: 'نمودارها', icon: BarChart3, count: null, tone: 'indigo' },
-    { id: 'LOCATIONS', label: 'شاخص‌های مکانی', icon: MapPin, count: null, tone: 'emerald' },
-    { id: 'ROLES_PERMISSIONS', label: 'نقش‌ها و دسترسی', icon: ShieldCheck, count: auditLogs.length, tone: 'slate' },
+  // Navigation groups — the sidebar is organised by the stage of the planning
+  // workflow instead of one flat list, so related sections sit together and
+  // each cluster carries its own heading.
+  const navGroups: NavGroup[] = [
+    {
+      id: 'OVERVIEW',
+      label: 'پایش و داده‌های پایه',
+      items: [
+        { id: 'DASHBOARD', label: 'داشبورد', icon: LayoutDashboard, count: null, tone: 'indigo' },
+        { id: 'POPULATION', label: 'جمعیت', icon: Users, count: '۳۱۵هزار', tone: 'cyan' },
+        { id: 'LOCATIONS', label: 'شاخص‌های مکانی', icon: MapPin, count: null, tone: 'emerald' },
+      ],
+    },
+    {
+      id: 'STAKEHOLDERS',
+      label: 'سازمان‌ها و مجریان',
+      items: [
+        { id: 'DEPARTMENTS', label: 'ادارات', icon: Building2, count: departments.length, tone: 'blue' },
+        { id: 'EXECUTORS', label: 'دستگاه‌های مجری', icon: Users2, count: executors.length, tone: 'cyan' },
+        { id: 'CONTRACTORS', label: 'پیمانکاران', icon: HardHat, count: contractors.length, tone: 'amber' },
+      ],
+    },
+    {
+      id: 'RESOURCES',
+      label: 'منابع و اولویت‌ها',
+      items: [
+        { id: 'BUDGET_SOURCES', label: 'منابع بودجه', icon: Wallet, count: budgetSources.length, tone: 'emerald' },
+        { id: 'PRIORITIES', label: 'اولویت‌ها', icon: Scale, count: priorities.length, tone: 'purple' },
+        { id: 'CRISES_HARMS', label: 'بحران‌ها', icon: Flame, count: crisesHarms.length, tone: 'rose' },
+      ],
+    },
+    {
+      id: 'PROJECT_LIFECYCLE',
+      label: 'چرخه پروژه',
+      items: [
+        { id: 'CREATE_PROJECT', label: 'ثبت پروژه', icon: FolderPlus, count: 'جدید', tone: 'indigo' },
+        { id: 'PROJECTS', label: 'پروژه‌ها', icon: FolderKanban, count: projects.length, tone: 'blue', badgeAlert: antiDuplicationAlerts.length > 0 },
+      ],
+    },
+    {
+      id: 'GOVERNANCE',
+      label: 'تحلیل و حاکمیت',
+      items: [
+        { id: 'CHARTS', label: 'نمودارها', icon: BarChart3, count: null, tone: 'indigo' },
+        { id: 'ROLES_PERMISSIONS', label: 'نقش‌ها و دسترسی', icon: ShieldCheck, count: auditLogs.length, tone: 'slate' },
+      ],
+    },
   ];
 
   // Access gate — every hook above runs unconditionally, then signed-out users
@@ -234,40 +272,60 @@ function AppContent() {
 
           </div>
 
-          {/* Nav List */}
-          <nav className="scrollbar-none p-3 space-y-1 overflow-y-auto flex-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              const tone = NAV_TONES[item.tone];
+          {/* Nav List — grouped by workflow stage. No `tracking-*` on the
+              headings: letter-spacing breaks the joining of Persian script. */}
+          <nav className="scrollbar-none p-3 space-y-2 overflow-y-auto flex-1">
+            {navGroups.map((group) => {
+              const hasActiveItem = group.items.some((item) => item.id === activeTab);
 
               return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setActiveTab(item.id as any);
-                    setSidebarOpen(false);
-                  }}
-                  className={`relative w-full flex items-center gap-3 px-3.5 py-3 rounded-xl border font-bold transition-colors text-right ${
-                    isActive
-                      ? `${tone.outline} ${tone.label}`
-                      : 'border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                  }`}
+                <div
+                  key={group.id}
+                  role="group"
+                  aria-labelledby={`app-nav-group-${group.id}`}
+                  className="space-y-1"
                 >
-                  {/* Distinct shape, never a fill: the active row is outlined and
-                      carries a rounded accent bar on the leading edge — outline,
-                      bar and label all borrow the row's own hue. */}
-                  {isActive && (
-                    <span
-                      aria-hidden="true"
-                      className={`absolute inset-y-2 start-1 w-1 rounded-full ${tone.bar}`}
-                    />
-                  )}
-                  <Icon className={`w-5 h-5 shrink-0 ${tone.icon}`} />
-                  <span id={`app-nav-list-${item.id}`} className="flex-1 min-w-0 truncate text-sm">
-                    {item.label}
-                  </span>
-                </button>
+                  <p
+                    id={`app-nav-group-${group.id}`}
+                    className={`px-3.5 pt-0.5 pb-0.5 text-[10px] font-black ${hasActiveItem ? 'text-slate-600' : 'text-slate-400'}`}
+                  >
+                    {group.label}
+                  </p>
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = activeTab === item.id;
+                    const tone = NAV_TONES[item.tone];
+
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          setActiveTab(item.id as any);
+                          setSidebarOpen(false);
+                        }}
+                        className={`relative w-full flex items-center gap-3 px-3.5 py-3 rounded-xl border font-bold transition-colors text-right ${
+                          isActive
+                            ? `${tone.outline} ${tone.label}`
+                            : 'border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                        }`}
+                      >
+                        {/* Distinct shape, never a fill: the active row is outlined and
+                            carries a rounded accent bar on the leading edge — outline,
+                            bar and label all borrow the row's own hue. */}
+                        {isActive && (
+                          <span
+                            aria-hidden="true"
+                            className={`absolute inset-y-2 start-1 w-1 rounded-full ${tone.bar}`}
+                          />
+                        )}
+                        <Icon className={`w-5 h-5 shrink-0 ${tone.icon}`} />
+                        <span id={`app-nav-list-${item.id}`} className="flex-1 min-w-0 truncate text-sm">
+                          {item.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               );
             })}
           </nav>
