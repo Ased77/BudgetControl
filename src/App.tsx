@@ -144,11 +144,11 @@ function AppContent() {
   }
 
   return (
-    <div id="app-root" className="flex h-screen w-full bg-[#f8fafc] text-slate-800 font-sans antialiased overflow-hidden dir-rtl">
+    <div id="app-root" className="flex h-screen w-full bg-app-page text-slate-800 font-sans antialiased overflow-hidden dir-rtl">
       {/* Navigation Sidebar — floating white panel; the active row is an
           outlined pill with a start-edge accent (no solid fill). */}
       <aside
-        className={`fixed inset-y-0 right-0 z-40 w-72 p-3 bg-slate-100/70 flex flex-col transition-transform duration-300 lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 right-0 z-40 w-72 p-3 bg-slate-200/50 flex flex-col transition-transform duration-300 lg:static lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
         }`}
       >
