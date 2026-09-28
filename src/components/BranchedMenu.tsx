@@ -28,6 +28,13 @@ export type BranchedMenuLeaf = {
   value: string;
   label: string;
   icon?: IconSpec;
+  /**
+   * The row's own colour. The icon always wears it, and while the row is active
+   * so do its label and its accent branch, so a hue reads as one colour instead
+   * of a tinted glyph beside an accent-coloured word. Left undefined the icon
+   * inherits the menu ink and the active row falls back to `accentColor`.
+   */
+  hue?: string;
 };
 
 export type BranchedMenuItem = {
@@ -35,6 +42,8 @@ export type BranchedMenuItem = {
   value?: string;
   label: string;
   icon?: IconSpec;
+  /** A leaf section head (the dashboard) wears its hue; see BranchedMenuLeaf. */
+  hue?: string;
   children?: BranchedMenuLeaf[];
 };
 
@@ -211,12 +220,16 @@ export default function BranchedMenu({
         const isOpen = kids ? open.has(i) : false;
         const leafValue = item.value ?? item.label;
         const leafActive = !kids && leafValue === active;
+        // The group that owns the current row — not simply the open one, since a
+        // section can also be open because it is being hovered.
+        const holdsActive = Boolean(kids && i === activeSection);
         const bodyH = kids ? PAD * 2 + kids.length * rowHeight : 0;
         return (
           <div
             key={item.value ?? item.label}
             className="branched-menu__section"
             data-open={isOpen ? '' : undefined}
+            data-active={holdsActive ? '' : undefined}
             onMouseEnter={kids ? () => onSectionHover?.(i, true) : undefined}
             onMouseLeave={kids ? () => onSectionHover?.(i, false) : undefined}
           >
@@ -229,6 +242,7 @@ export default function BranchedMenu({
               aria-expanded={kids ? isOpen : undefined}
               aria-current={leafActive ? 'true' : undefined}
               data-active={leafActive ? '' : undefined}
+              style={item.hue ? ({ '--bm-hue': item.hue } as React.CSSProperties) : undefined}
               onClick={() => (kids ? toggle(i) : select(leafValue, item))}
             >
               {item.icon ? (
@@ -254,10 +268,13 @@ export default function BranchedMenu({
                           key={kid.value}
                           className="branched-menu__reach"
                           d={reach(k)}
-                          style={{
-                            strokeDasharray: length(k),
-                            strokeDashoffset: kid.value === active ? 0 : length(k),
-                          }}
+                          style={
+                            {
+                              '--bm-hue': kid.hue,
+                              strokeDasharray: length(k),
+                              strokeDashoffset: kid.value === active ? 0 : length(k),
+                            } as React.CSSProperties
+                          }
                         />
                       ))}
                     </svg>
@@ -269,6 +286,7 @@ export default function BranchedMenu({
                         aria-current={kid.value === active ? 'true' : undefined}
                         data-active={kid.value === active ? '' : undefined}
                         tabIndex={isOpen ? 0 : -1}
+                        style={kid.hue ? ({ '--bm-hue': kid.hue } as React.CSSProperties) : undefined}
                         onClick={() => select(kid.value, kid)}
                       >
                         {kid.icon ? (

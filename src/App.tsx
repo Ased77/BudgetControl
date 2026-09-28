@@ -50,15 +50,15 @@ import {
   HelpCircle,
   Bell,
   LogOut,
-  type LucideIcon,
-} from 'lucide-react';
-
-/**
+} from 'lucide-react';/**
  * Row icons keep the hue they wore before the branched menu took over the rail.
- * An element is passed rather than a component so the glyph's own colour wins
- * over the menu's ink/accent colouring.
+ * The hue is handed to the menu as a token rather than baked onto the glyph, so
+ * a row's icon, its label while it is the active row and its accent branch all
+ * read from one colour. Tailwind v4 publishes its palette as `--color-*` custom
+ * properties, so these tokens stay in step with the utility classes used
+ * elsewhere in the app.
  */
-const hued = (Icon: LucideIcon, hue: string) => <Icon size={18} strokeWidth={1.8} className={hue} />;
+
 
 /**
  * The sidebar's navigation tree, rendered by BranchedMenu. Sections fold open onto
@@ -67,47 +67,52 @@ const hued = (Icon: LucideIcon, hue: string) => <Icon size={18} strokeWidth={1.8
  * section: it is a destination, not a group of tools.
  */
 const NAV_MENU_ITEMS: BranchedMenuItem[] = [
-  { value: 'DASHBOARD', label: 'داشبورد', icon: hued(LayoutDashboard, 'text-indigo-500') },
+  { value: 'DASHBOARD', label: 'داشبورد', icon: LayoutDashboard, hue: 'var(--color-indigo-500)' },
   {
     label: 'پایش و داده‌های پایه',
     icon: Database,
+    hue: 'var(--color-cyan-700)',
     children: [
-      { value: 'POPULATION', label: 'جمعیت', icon: hued(Users, 'text-cyan-600') },
-      { value: 'LOCATIONS', label: 'شاخص‌های مکانی', icon: hued(MapPin, 'text-emerald-600') },
+      { value: 'POPULATION', label: 'جمعیت', icon: Users, hue: 'var(--color-cyan-600)' },
+      { value: 'LOCATIONS', label: 'شاخص‌های مکانی', icon: MapPin, hue: 'var(--color-emerald-600)' },
     ],
   },
   {
     label: 'سازمان‌ها و مجریان',
     icon: Network,
+    hue: 'var(--color-blue-700)',
     children: [
-      { value: 'DEPARTMENTS', label: 'ادارات', icon: hued(Building2, 'text-blue-600') },
-      { value: 'EXECUTORS', label: 'دستگاه‌های مجری', icon: hued(Users2, 'text-cyan-600') },
-      { value: 'CONTRACTORS', label: 'پیمانکاران', icon: hued(HardHat, 'text-amber-600') },
+      { value: 'DEPARTMENTS', label: 'ادارات', icon: Building2, hue: 'var(--color-blue-600)' },
+      { value: 'EXECUTORS', label: 'دستگاه‌های مجری', icon: Users2, hue: 'var(--color-cyan-600)' },
+      { value: 'CONTRACTORS', label: 'پیمانکاران', icon: HardHat, hue: 'var(--color-amber-600)' },
     ],
   },
   {
     label: 'منابع و اولویت‌ها',
     icon: Layers,
+    hue: 'var(--color-emerald-700)',
     children: [
-      { value: 'BUDGET_SOURCES', label: 'منابع بودجه', icon: hued(Wallet, 'text-emerald-600') },
-      { value: 'PRIORITIES', label: 'اولویت‌ها', icon: hued(Scale, 'text-purple-600') },
-      { value: 'CRISES_HARMS', label: 'بحران‌ها', icon: hued(Flame, 'text-rose-600') },
+      { value: 'BUDGET_SOURCES', label: 'منابع بودجه', icon: Wallet, hue: 'var(--color-emerald-600)' },
+      { value: 'PRIORITIES', label: 'اولویت‌ها', icon: Scale, hue: 'var(--color-purple-600)' },
+      { value: 'CRISES_HARMS', label: 'بحران‌ها', icon: Flame, hue: 'var(--color-rose-600)' },
     ],
   },
   {
     label: 'چرخه پروژه',
     icon: Workflow,
+    hue: 'var(--color-amber-700)',
     children: [
-      { value: 'CREATE_PROJECT', label: 'ثبت پروژه', icon: hued(FolderPlus, 'text-indigo-500') },
-      { value: 'PROJECTS', label: 'پروژه‌ها', icon: hued(FolderKanban, 'text-blue-600') },
+      { value: 'CREATE_PROJECT', label: 'ثبت پروژه', icon: FolderPlus, hue: 'var(--color-indigo-500)' },
+      { value: 'PROJECTS', label: 'پروژه‌ها', icon: FolderKanban, hue: 'var(--color-blue-600)' },
     ],
   },
   {
     label: 'تحلیل و حاکمیت',
     icon: Gauge,
+    hue: 'var(--color-violet-700)',
     children: [
-      { value: 'CHARTS', label: 'نمودارها', icon: hued(BarChart3, 'text-indigo-500') },
-      { value: 'ROLES_PERMISSIONS', label: 'نقش‌ها و دسترسی', icon: hued(ShieldCheck, 'text-slate-500') },
+      { value: 'CHARTS', label: 'نمودارها', icon: BarChart3, hue: 'var(--color-indigo-500)' },
+      { value: 'ROLES_PERMISSIONS', label: 'نقش‌ها و دسترسی', icon: ShieldCheck, hue: 'var(--color-slate-500)' },
     ],
   },
 ];

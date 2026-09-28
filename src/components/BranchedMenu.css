@@ -70,7 +70,9 @@
   align-items: center;
   gap: 8px;
   margin: 0;
-  padding: 9px 0;
+  /* Vertical only: the head keeps the rail's edge alignment, but stands taller
+     than a leaf row so a section label reads as a heading rather than a caption. */
+  padding: 22px 0;
   border: 0;
   background: none;
   color: var(--bm-muted);
@@ -84,9 +86,22 @@
   transition: color 200ms ease;
 }
 
-.branched-menu__section[data-open] .branched-menu__head,
-.branched-menu__head[data-active] {
+.branched-menu__section[data-open] .branched-menu__head {
   color: var(--bm-ink);
+}
+
+/* The group that owns the current row answers in its own colour: its head text
+   takes the same hue as the group's icon, so the selected branch and the group
+   it lives in read as one. A section that is merely open — hovered, or opened
+   by its own fold above — keeps the plain ink. */
+.branched-menu__section[data-active] .branched-menu__head {
+  color: var(--bm-hue, var(--bm-accent));
+}
+
+/* A leaf that heads its own section (the dashboard) is still a leaf, so as the
+   current row it takes its icon's hue, matching the rows below it. */
+.branched-menu__head[data-active] {
+  color: var(--bm-hue, var(--bm-ink));
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -144,7 +159,7 @@
 }
 
 .branched-menu__reach {
-  stroke: var(--bm-accent);
+  stroke: var(--bm-hue, var(--bm-accent));
   transition: stroke-dashoffset var(--bm-draw) var(--bm-ease-out);
 }
 
@@ -176,13 +191,15 @@
 }
 
 .branched-menu__item[data-active] {
-  color: var(--bm-accent);
+  color: var(--bm-hue, var(--bm-accent));
   font-weight: 700;
 }
 
 .branched-menu__icon {
   display: inline-flex;
   flex: none;
+  /* The row's hue wins when it has one; section glyphs keep the head's ink. */
+  color: var(--bm-hue, currentColor);
 }
 
 .branched-menu__label {
