@@ -85,6 +85,13 @@ body {
    ------------------------------------------------------------------------- */
 :root {
   --app-canvas-width: 1440px;
+
+  /* The sidebar reserves this much room at the top so its panel starts on the
+     line where a page's content begins: the title block plus the gap its margin
+     leaves beneath it. The value below is only the first-paint default —
+     `PageHeader` measures the real block and overwrites it, so a page whose
+     subtitle wraps still lines up. */
+  --app-page-header-space: 76px;
 }
 
 @media (min-width: 1024px) {

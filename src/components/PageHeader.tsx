@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 import { Menu } from 'lucide-react';
 import { useShellChrome } from '../context/ShellContext';
 
@@ -41,6 +41,17 @@ interface PageHeaderProps {
  *   • hover — a neutral slate tint that stays quieter than both of the above.
  * Declaring `active:` after `hover:` matters: all three are equally specific, so
  * the pressed look must come last in the class list to win while pressed.
+ *
+ * The block also publishes the room it takes at the top of a page's content —
+ * its own height plus the margin that separates it from the first block below —
+ * as the `--app-page-header-space` custom property on `<html>`. The sidebar
+ * reserves exactly that, so its panel starts on the line where the page's
+ * content begins rather than level with the title's last baseline. Measuring
+ * beats a constant here — the subtitle wraps on narrow columns and pages carry
+ * different adornments — and it keeps the alignment inside CSS, with no shell
+ * re-render on every resize. A header that is mounted but hidden (the charts
+ * view stays in the DOM) measures zero, which is ignored so it cannot clobber
+ * the token set by the visible page.
  */
 export const PageHeader: React.FC<PageHeaderProps> = ({
   id,
@@ -52,9 +63,28 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   children,
 }) => {
   const chrome = useShellChrome();
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const publish = () => {
+      // Fractional on purpose: `offsetHeight` would round, leaving the sidebar
+      // half a pixel out. The trailing margin belongs to the title block too, so
+      // the sidebar lines up with what follows it, not with the title itself.
+      const { height } = el.getBoundingClientRect();
+      if (height === 0) return; // mounted but hidden — a page the user cannot see
+      const gap = parseFloat(getComputedStyle(el).marginBottom) || 0;
+      document.documentElement.style.setProperty('--app-page-header-space', `${height + gap}px`);
+    };
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <div id={id} className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div id={id} ref={rootRef} className="flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div className="flex flex-col gap-1.5 min-w-0">
         <div className="flex items-center gap-3 min-w-0">
           {chrome && (

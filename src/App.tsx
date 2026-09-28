@@ -223,9 +223,13 @@ function AppContent() {
     <div id="app-root" className="flex h-screen w-full bg-app-page text-slate-800 font-sans antialiased overflow-hidden dir-rtl">
       {/* Navigation Sidebar — floating white panel that hugs its own height
           (capped at the viewport) instead of stretching to the bottom; the
-          active row is an outlined pill with a start-edge accent (no fill). */}
+          active row is an outlined pill with a start-edge accent (no fill).
+          From `lg` up its top clears the page's own title block and that block's
+          margin (the workspace's `md:p-6` plus the space `PageHeader` publishes),
+          so the panel begins on the line where the page's content begins rather
+          than above the page title. */}
       <aside
-        className={`fixed inset-y-0 right-0 z-40 w-72 p-3 flex flex-col transition-transform duration-300 lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 right-0 z-40 w-72 p-3 flex flex-col transition-transform duration-300 lg:static lg:translate-x-0 lg:pt-[calc(1.5rem+var(--app-page-header-space))] ${
           sidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
         }`}
       >
