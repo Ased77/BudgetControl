@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { Department, AdministrativeLevel, ProjectStatus } from '../types';
+import { Department, AdministrativeLevel } from '../types';
 import { useOutsideClick } from '../hooks/useOutsideClick';
 import { PageHeader } from './PageHeader';
 import {
@@ -33,7 +33,8 @@ import {
   Leaf,
   Landmark,
 } from 'lucide-react';
-import { formatToman, toPersianDigits } from '../utils/numberUtils';
+import { compactToman, formatToman, toPersianDigits } from '../utils/numberUtils';
+import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
 import { useConfirmDelete } from './ConfirmDeleteModal';
 
 /**
@@ -43,7 +44,6 @@ import { useConfirmDelete } from './ConfirmDeleteModal';
 const PAGE_SIZE = 12;
 /** Brief pause standing in for the network round-trip of a real paged API. */
 const LOAD_MORE_DELAY_MS = 400;
-const BILLION_TOMAN = 1_000_000_000;
 const GAUGE_RADIUS = 22;
 /** Longest edge a stored logo is downscaled to before being saved. */
 const LOGO_MAX_EDGE = 256;
@@ -137,30 +137,6 @@ const DEPARTMENT_CATEGORY_STYLE: Record<
   },
 };
 
-/** Status pill colours for the linked-project rows of the detail modal. */
-const PROJECT_STATUS_META: Record<ProjectStatus, { label: string; className: string }> = {
-  PROPOSED: {
-    label: 'پیشنهادی',
-    className: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
-  },
-  APPROVED: {
-    label: 'مصوب',
-    className: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300',
-  },
-  IN_PROGRESS: {
-    label: 'در حال اجرا',
-    className: 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300',
-  },
-  COMPLETED: {
-    label: 'تکمیل‌شده',
-    className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300',
-  },
-  SUSPENDED: {
-    label: 'متوقف',
-    className: 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300',
-  },
-};
-
 /**
  * Reads an image file into a downscaled PNG data URL, so a logo can be stored
  * inside the department payload without a dedicated upload endpoint or a
@@ -201,30 +177,6 @@ function readLogoAsDataUrl(file: File): Promise<string> {
     };
     reader.readAsDataURL(file);
   });
-}
-
-/**
- * Splits a Toman amount into a compact `{ number, unit }` pair so card metric
- * cells can print "۵۲" large with "میلیارد" as a small unit underneath,
- * the way the budget cells of the design do. Decimals go through the same
- * `fa-IR` locale formatting `formatToman` uses, so the separator (٫) matches
- * the rest of the system.
- */
-const compactNumber = (value: number): string =>
-  toPersianDigits(value.toLocaleString('fa-IR', { maximumFractionDigits: 2 }));
-
-function compactBudget(amountInToman: number): { value: string; unit: string } {
-  if (!amountInToman || isNaN(amountInToman)) return { value: '۰', unit: 'تومان' };
-
-  // The unit stays currency-free: the card's figures row prints the amount in
-  // Tomans, and a short unit keeps this narrow cell on a single line.
-  if (amountInToman >= 1_000 * BILLION_TOMAN) {
-    return { value: compactNumber(amountInToman / (1_000 * BILLION_TOMAN)), unit: 'هزار میلیارد' };
-  }
-  if (amountInToman >= BILLION_TOMAN) {
-    return { value: compactNumber(amountInToman / BILLION_TOMAN), unit: 'میلیارد' };
-  }
-  return { value: compactNumber(amountInToman / 1_000_000), unit: 'میلیون' };
 }
 
 /**
@@ -690,7 +642,7 @@ export const DepartmentsView: React.FC = () => {
               dept.allocatedBudgetToman > 0
                 ? Math.min(100, Math.round((dept.absorbedBudgetToman / dept.allocatedBudgetToman) * 100))
                 : 0;
-            const budget = compactBudget(dept.allocatedBudgetToman);
+            const budget = compactToman(dept.allocatedBudgetToman);
 
             return (
               <article

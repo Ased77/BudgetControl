@@ -51,6 +51,30 @@ export function formatToman(amountInToman: number): string {
   return formatLargeBudgetPersian(amountInToman);
 }
 
+/**
+ * Splits a Toman amount into a compact `{ value, unit }` pair so compact card
+ * metric cells can print "۵۲" large with "میلیارد" as a small unit underneath,
+ * instead of the full sentence `formatLargeBudgetPersian` produces. Decimals go
+ * through the same `fa-IR` locale formatting, so the separator (٫) is the same.
+ */
+export function compactToman(amountInToman: number): { value: string; unit: string } {
+  if (!amountInToman || isNaN(amountInToman)) return { value: '۰', unit: 'تومان' };
+
+  const TOMAN_BILLION = 1_000_000_000;
+  const compact = (value: number) =>
+    toPersianDigits(value.toLocaleString('fa-IR', { maximumFractionDigits: 2 }));
+
+  // The unit stays currency-free: the card's figures row prints the amount in
+  // Tomans, and a short unit keeps this narrow cell on a single line.
+  if (amountInToman >= 1_000 * TOMAN_BILLION) {
+    return { value: compact(amountInToman / (1_000 * TOMAN_BILLION)), unit: 'هزار میلیارد' };
+  }
+  if (amountInToman >= TOMAN_BILLION) {
+    return { value: compact(amountInToman / TOMAN_BILLION), unit: 'میلیارد' };
+  }
+  return { value: compact(amountInToman / 1_000_000), unit: 'میلیون' };
+}
+
 export function calculateAllocationAmount(totalBudgetToman: number, percentage: number): {
   toman: number;
   rial: number;
