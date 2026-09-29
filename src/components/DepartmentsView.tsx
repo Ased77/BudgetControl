@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Department, AdministrativeLevel, ProjectStatus } from '../types';
 import { useOutsideClick } from '../hooks/useOutsideClick';
@@ -17,8 +17,9 @@ import {
   FolderGit2,
   X,
   AlertCircle,
-  ChevronRight,
-  ChevronLeft,
+  ChevronDown,
+  Check,
+  Loader2,
   Gauge,
   Wallet,
   Banknote,
@@ -35,8 +36,13 @@ import {
 import { formatToman, toPersianDigits } from '../utils/numberUtils';
 import { useConfirmDelete } from './ConfirmDeleteModal';
 
-/** Departments rendered per page of the card grid. */
-const PAGE_SIZE = 6;
+/**
+ * Departments revealed per batch of the card grid. Reaching the bottom of the
+ * grid pulls in the next batch (infinite scroll).
+ */
+const PAGE_SIZE = 12;
+/** Brief pause standing in for the network round-trip of a real paged API. */
+const LOAD_MORE_DELAY_MS = 400;
 const BILLION_TOMAN = 1_000_000_000;
 const GAUGE_RADIUS = 22;
 /** Longest edge a stored logo is downscaled to before being saved. */
@@ -221,6 +227,19 @@ function compactBudget(amountInToman: number): { value: string; unit: string } {
   return { value: compactNumber(amountInToman / 1_000_000), unit: 'میلیون' };
 }
 
+/**
+ * Colour of the absorption gauge follows the fill level itself — how much of the
+ * approved budget the department has actually absorbed — rather than the
+ * department's category, so a glance at the ring reads execution health:
+ * a well-absorbed budget writes green (≥ ۷۰٪), a sluggish one amber (۵۰–۶۹٪)
+ * and a stalled one red (below ۵۰٪).
+ */
+function absorptionGaugeTone(absorptionRate: number): string {
+  if (absorptionRate >= 70) return 'stroke-emerald-500 dark:stroke-emerald-400';
+  if (absorptionRate >= 50) return 'stroke-amber-500 dark:stroke-amber-400';
+  return 'stroke-rose-500 dark:stroke-rose-400';
+}
+
 export const DepartmentsView: React.FC = () => {
   const {
     departments,
@@ -236,7 +255,12 @@ export const DepartmentsView: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedLevel, setSelectedLevel] = useState<string>('ALL');
-  const [currentPage, setCurrentPage] = useState(1);
+  // Infinite scroll: how many cards of the filtered result set are revealed,
+  // and whether the next batch is currently being loaded.
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const loadMoreTimerRef = useRef<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   useOutsideClick(modalRef, () => setIsModalOpen(false));
@@ -388,8 +412,6 @@ export const DepartmentsView: React.FC = () => {
         d.code.toLowerCase().includes(searchQuery.toLowerCase());
       const matchCat = selectedCategory === 'ALL' || d.category === selectedCategory;
       const matchLvl = selectedLevel === 'ALL' || d.administrativeLevel === selectedLevel;
-      // Narrowing the result set always drops the reader back to the first page
-      // of the pager; `activePage` below clamps as a second safety net.
       return matchQuery && matchCat && matchLvl;
     });
   }, [departments, searchQuery, selectedCategory, selectedLevel]);
@@ -403,22 +425,51 @@ export const DepartmentsView: React.FC = () => {
   );
   const avgAbsorption = totalAllocated > 0 ? Math.min(100, Math.round((totalAbsorbed / totalAllocated) * 100)) : 0;
 
-  // Pagination — `activePage` clamps when a filter shrinks the result set.
-  const totalPages = Math.max(1, Math.ceil(filteredDepartments.length / PAGE_SIZE));
-  const activePage = Math.min(currentPage, totalPages);
-  const pagedDepartments = useMemo(() => {
-    const start = (activePage - 1) * PAGE_SIZE;
-    return filteredDepartments.slice(start, start + PAGE_SIZE);
-  }, [filteredDepartments, activePage]);
-  const pageNumbers = useMemo(() => {
-    const start = Math.max(1, Math.min(activePage - 2, totalPages - 4));
-    const end = Math.min(totalPages, start + 4);
-    const pages: number[] = [];
-    for (let p = start; p <= end; p += 1) pages.push(p);
-    return pages;
-  }, [activePage, totalPages]);
+  // Infinite scroll — the grid starts with the first batch and reveals the next
+  // one whenever the sentinel at the bottom scrolls into view. Narrowing the
+  // result set (search / filters) drops the reader back to the first batch.
+  const hasMore = visibleCount < filteredDepartments.length;
+  const visibleDepartments = useMemo(
+    () => filteredDepartments.slice(0, visibleCount),
+    [filteredDepartments, visibleCount]
+  );
 
-  const goToPage = (page: number) => setCurrentPage(Math.min(totalPages, Math.max(1, page)));
+  const resetPaging = () => {
+    setVisibleCount(PAGE_SIZE);
+    setIsLoadingMore(false);
+  };
+
+  useEffect(() => {
+    if (!hasMore) return;
+    const sentinel = loadMoreRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setIsLoadingMore((loading) => (loading ? loading : true));
+        }
+      },
+      { rootMargin: '200px 0px' }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore, visibleCount, filteredDepartments.length]);
+
+  useEffect(() => {
+    if (!isLoadingMore) return;
+    loadMoreTimerRef.current = window.setTimeout(() => {
+      setVisibleCount((count) => Math.min(count + PAGE_SIZE, filteredDepartments.length));
+      setIsLoadingMore(false);
+    }, LOAD_MORE_DELAY_MS);
+
+    return () => {
+      if (loadMoreTimerRef.current !== null) {
+        window.clearTimeout(loadMoreTimerRef.current);
+        loadMoreTimerRef.current = null;
+      }
+    };
+  }, [isLoadingMore, filteredDepartments.length]);
 
   // Category distribution drives which chips are worth rendering
   const categoryCounts = useMemo(() => {
@@ -433,7 +484,7 @@ export const DepartmentsView: React.FC = () => {
     setSearchQuery('');
     setSelectedCategory('ALL');
     setSelectedLevel('ALL');
-    setCurrentPage(1);
+    resetPaging();
   };
 
   const kpiCards = [
@@ -525,7 +576,7 @@ export const DepartmentsView: React.FC = () => {
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
-                  setCurrentPage(1);
+                  resetPaging();
                 }}
                 className="w-full pr-10 pl-3 py-2 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
               />
@@ -548,7 +599,7 @@ export const DepartmentsView: React.FC = () => {
                 value={selectedLevel}
                 onChange={(e) => {
                   setSelectedLevel(e.target.value);
-                  setCurrentPage(1);
+                  resetPaging();
                 }}
                 className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
@@ -584,7 +635,7 @@ export const DepartmentsView: React.FC = () => {
             type="button"
             onClick={() => {
               setSelectedCategory('ALL');
-              setCurrentPage(1);
+              resetPaging();
             }}
             className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
               selectedCategory === 'ALL'
@@ -606,7 +657,7 @@ export const DepartmentsView: React.FC = () => {
                 type="button"
                 onClick={() => {
                   setSelectedCategory(cat);
-                  setCurrentPage(1);
+                  resetPaging();
                 }}
                 className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
                   isSelected
@@ -631,7 +682,7 @@ export const DepartmentsView: React.FC = () => {
           id="departments-view-departments-grid"
           className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
         >
-          {pagedDepartments.map((dept) => {
+          {visibleDepartments.map((dept) => {
             const catStyle = DEPARTMENT_CATEGORY_STYLE[dept.category];
             const DeptIcon = catStyle.icon;
             const deptProjects = projects.filter((p) => p.departmentId === dept.id);
@@ -666,16 +717,16 @@ export const DepartmentsView: React.FC = () => {
                   {dept.logoDataUrl ? (
                     <div
                       id={`departments-view-card-logo-${dept.id}`}
-                      className="w-16 h-16 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center p-1.5 overflow-hidden shrink-0 shadow-2xs"
+                      className="w-20 h-20 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center p-2 overflow-hidden shrink-0 shadow-2xs"
                     >
                       <img src={dept.logoDataUrl} alt={`لوگوی ${dept.name}`} className="w-full h-full object-contain" />
                     </div>
                   ) : (
                     <div
                       id={`departments-view-card-icon-${dept.id}`}
-                      className={`w-16 h-16 rounded-2xl border flex items-center justify-center shrink-0 ${catStyle.tile}`}
+                      className="w-20 h-20 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center shrink-0"
                     >
-                      <DeptIcon className="w-7 h-7" />
+                      <DeptIcon className="w-10 h-10" />
                     </div>
                   )}
 
@@ -738,7 +789,7 @@ export const DepartmentsView: React.FC = () => {
                           fill="none"
                           strokeWidth="6"
                           strokeLinecap="round"
-                          className={`transition-all duration-500 ${catStyle.ring}`}
+                          className={`transition-all duration-500 ${absorptionGaugeTone(absorptionRate)}`}
                           strokeDasharray={2 * Math.PI * GAUGE_RADIUS}
                           strokeDashoffset={2 * Math.PI * GAUGE_RADIUS * (1 - absorptionRate / 100)}
                         />
@@ -799,46 +850,36 @@ export const DepartmentsView: React.FC = () => {
         </div>
       )}
 
-      {/* Pagination */}
-      {filteredDepartments.length > 0 && totalPages > 1 && (
-        <div id="departments-view-pagination" className="flex items-center justify-center gap-1.5 pt-1">
-          <button
-            id="departments-view-pagination-prev"
-            type="button"
-            onClick={() => goToPage(activePage - 1)}
-            disabled={activePage === 1}
-            aria-label="صفحه قبلی"
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
+      {/* Infinite scroll footer — this sentinel pulls in the next batch of cards */}
+      {filteredDepartments.length > 0 && hasMore && (
+        <div
+          id="departments-view-load-more"
+          ref={loadMoreRef}
+          role="status"
+          aria-live="polite"
+          className="flex items-center justify-center gap-2 py-5 text-xs font-bold text-slate-500 dark:text-slate-400"
+        >
+          {isLoadingMore ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin text-blue-600 dark:text-blue-400" />
+              <span>در حال بارگذاری ادارات بیشتر…</span>
+            </>
+          ) : (
+            <>
+              <ChevronDown className="w-4 h-4 text-slate-400" />
+              <span>برای مشاهده ادارات بیشتر پایین بروید…</span>
+            </>
+          )}
+        </div>
+      )}
 
-          {pageNumbers.map((page) => (
-            <button
-              id={`departments-view-pagination-page-${page}`}
-              key={page}
-              type="button"
-              onClick={() => goToPage(page)}
-              className={`w-8 h-8 flex items-center justify-center rounded-lg border text-xs font-black transition-all ${
-                page === activePage
-                  ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/25'
-                  : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
-            >
-              {toPersianDigits(page)}
-            </button>
-          ))}
-
-          <button
-            id="departments-view-pagination-next"
-            type="button"
-            onClick={() => goToPage(activePage + 1)}
-            disabled={activePage === totalPages}
-            aria-label="صفحه بعدی"
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
+      {filteredDepartments.length > 0 && !hasMore && (
+        <div
+          id="departments-view-list-end"
+          className="flex items-center justify-center gap-2 py-5 text-[11px] font-bold text-slate-400 dark:text-slate-500"
+        >
+          <Check className="w-4 h-4" />
+          <span>تمام {toPersianDigits(filteredDepartments.length)} اداره نمایش داده شد</span>
         </div>
       )}
 

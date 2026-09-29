@@ -32,10 +32,11 @@ import {
 import { buildCountyDataset, CountyDataset } from '../src/data/countyTemplates.js';
 import { OMIDIYEH_COUNTY } from '../src/data/omidiyehData.js';
 
-// v2 — reseed: datasets for شهرستان امیدیه plus an indicator-driven dataset for
-// every other county in the registry, so all dependent sections follow the
-// selected location instead of a single hard-coded county.
-const SCHEMA_VERSION = '3';
+// v3 — reseed: the full 36-department registry for شهرستان امیدیه plus an
+// indicator-driven dataset for every other county in the registry, so all
+// dependent sections follow the selected location instead of a single
+// hard-coded county.
+const SCHEMA_VERSION = '4';
 
 /* =========================================================================
    Connection
