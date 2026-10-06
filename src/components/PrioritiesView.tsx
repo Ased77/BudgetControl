@@ -271,6 +271,7 @@ export const PrioritiesView: React.FC = () => {
           const isExpanded = expandedSubItemId === p.id;
           const sliderMin = p.minPercent || 1;
           const sliderMax = p.maxPercent || 60;
+          const compactTitle = p.title.length > 38 ? `${p.title.slice(0, 38).trimEnd()}…` : p.title;
           // Filled share of the track between this priority's min/max bounds
           // (clamped, since smart rebalancing can push a value past the max).
           const fillPct =
@@ -294,12 +295,13 @@ export const PrioritiesView: React.FC = () => {
                     <div id={`priorities-view-priorities-grid-6-${p.id}`} className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
                       <Target className="w-5 h-5" />
                     </div>
-                    <div id={`priorities-view-priorities-grid-7-${p.id}`}>
+                    <div id={`priorities-view-priorities-grid-7-${p.id}`} className="min-w-0 flex-1">
                       <span className="text-[10px] font-bold text-slate-400 block">اولویت کد #{p.code}</span>
-                      <div className="flex items-start gap-1">
-                        <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight min-w-0 flex-1">{p.title}</h3>
+                      <div className="flex items-start gap-1 min-w-0">
+                        <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight min-w-0 flex-1 break-words">{compactTitle}</h3>
                         <HelpTooltip text={p.description} label="مشاهده توضیح اولویت" size="sm" />
                       </div>
+                      <p className="mt-1 text-[10px] leading-relaxed text-slate-500 dark:text-slate-400 break-words">{p.title}</p>
                     </div>
                   </div>
 
