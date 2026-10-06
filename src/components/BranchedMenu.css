@@ -1,9 +1,8 @@
 /**
- * BranchedMenu — React Bits, with three local additions:
- * a flex head (so a section may lead with an icon), a strengthened active row
- * (soft tint + start-edge indicator bar), and logical CSS properties throughout
- * so the component mirrors itself under `dir="rtl"` instead of needing a second
- * block of physical overrides.
+ * BranchedMenu — React Bits, with two local additions:
+ * a flex head (so a section may lead with an icon) and logical CSS properties
+ * throughout, so the component mirrors itself under `dir="rtl"` instead of
+ * needing a second block of physical overrides.
  */
 .branched-menu {
   --bm-w: 240px;
@@ -18,7 +17,8 @@
   --bm-fold: 300ms;
   --bm-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   /* 65% ink (not 55%) keeps idle labels at ≈5.6:1 on white — AA for body text —
-     while still reading clearly quieter than the active row. */
+     while still reading clearly quieter than the active row. The active row
+     itself is colour-and-weight only, with no fill or indicator bar. */
   --bm-muted: color-mix(in srgb, var(--bm-ink) 65%, transparent);
 
   position: relative;
@@ -70,19 +70,14 @@
 }
 
 .branched-menu__head {
-  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
   margin: 0;
-  /* The head stands taller than a leaf row so a section label reads as a
-     heading rather than a caption. Its 12px inline start padding leaves room
-     for the active indicator bar beside the glyph, and lands the glyph close to
-     the branch trunk below it. */
-  padding-block: 22px;
-  padding-inline: 12px 0;
+  /* Vertical only: the head keeps the rail's edge alignment, but stands taller
+     than a leaf row so a section label reads as a heading rather than a caption. */
+  padding: 22px 0;
   border: 0;
-  border-radius: 12px;
   background: none;
   color: var(--bm-muted);
   font: inherit;
@@ -91,45 +86,25 @@
   text-align: start;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: color 200ms ease, background-color 200ms ease;
+  transition: color 200ms ease;
 }
 
 .branched-menu__section[data-open] .branched-menu__head {
   color: var(--bm-ink);
 }
 
-/* Hue text is darkened toward the ink before it is used as a label colour:
-   the raw palette hues sit around 4:1 on a tinted white surface, just under the
-   4.5:1 AA floor for 16px text. Mixing toward `--bm-ink` fixes the contrast and
-   keeps the hue recognisable — and on a dark ink the mix lightens instead, which
-   is the right move for a dark panel. */
-
 /* The group that owns the current row answers in its own colour: its head text
    takes the same hue as the group's icon, so the selected branch and the group
    it lives in read as one. A section that is merely open — hovered, or opened
    by its own fold above — keeps the plain ink. */
 .branched-menu__section[data-active] .branched-menu__head {
-  color: color-mix(in srgb, var(--bm-hue, var(--bm-accent)) 84%, var(--bm-ink));
+  color: var(--bm-hue, var(--bm-accent));
 }
 
 /* A leaf that heads its own section (the dashboard) is still a leaf, so as the
-   current row it takes its icon's hue, matching the rows below it — plus the
-   same soft tint and start-edge bar as an active row. */
+   current row it takes its icon's hue, matching the rows below it. */
 .branched-menu__head[data-active] {
-  color: color-mix(in srgb, var(--bm-hue, var(--bm-ink)) 84%, var(--bm-ink));
-  background: color-mix(in srgb, var(--bm-hue, var(--bm-accent)) 12%, transparent);
-}
-
-.branched-menu__head[data-active]::before {
-  content: '';
-  position: absolute;
-  inset-inline-start: 0;
-  top: 22%;
-  bottom: 22%;
-  width: 3px;
-  border-start-start-radius: 3px;
-  border-end-start-radius: 3px;
-  background: var(--bm-hue, var(--bm-accent));
+  color: var(--bm-hue, var(--bm-ink));
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -192,7 +167,6 @@
 }
 
 .branched-menu__item {
-  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -203,7 +177,6 @@
   padding-inline-start: var(--bm-indent);
   padding-inline-end: 0;
   border: 0;
-  border-radius: 12px;
   background: none;
   color: var(--bm-muted);
   font: inherit;
@@ -212,34 +185,18 @@
   cursor: pointer;
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
-  transition: color 200ms ease, background-color 200ms ease;
+  transition: color 200ms ease;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .branched-menu__item:hover {
     color: var(--bm-ink);
-    background: color-mix(in srgb, var(--bm-ink) 6%, transparent);
   }
 }
 
-/* The current row: a soft tinted surface plus a start-edge indicator bar, so
-   the selection reads from shape and surface as well as from text colour. */
 .branched-menu__item[data-active] {
-  color: color-mix(in srgb, var(--bm-hue, var(--bm-accent)) 84%, var(--bm-ink));
+  color: var(--bm-hue, var(--bm-accent));
   font-weight: 700;
-  background: color-mix(in srgb, var(--bm-hue, var(--bm-accent)) 12%, transparent);
-}
-
-.branched-menu__item[data-active]::before {
-  content: '';
-  position: absolute;
-  inset-inline-start: 0;
-  top: 22%;
-  bottom: 22%;
-  width: 3px;
-  border-start-start-radius: 3px;
-  border-end-start-radius: 3px;
-  background: var(--bm-hue, var(--bm-accent));
 }
 
 /* Keyboard focus stays visible on every interactive row and section head. */
@@ -250,8 +207,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .branched-menu__item,
-  .branched-menu__head {
+  .branched-menu__item {
     transition: none;
   }
 }

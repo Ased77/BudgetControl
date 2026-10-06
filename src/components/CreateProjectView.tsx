@@ -1,7 +1,14 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { ExecutiveProject, ContributingDepartment, ProjectStatus, UrgencyLevel, AdministrativeLevel } from '../types';
-import { formatToman, formatNumber, toPersianDigits } from '../utils/numberUtils';
+import {
+  formatMoney,
+  formatMoneyParts,
+  formatNumber,
+  formatPercent,
+  toPersianDigits,
+} from '../utils/numberUtils';
+import { Num } from './Num';
 import { PageHeader } from './PageHeader';
 import {
   FolderPlus,
@@ -43,6 +50,7 @@ import {
   ChevronDown,
   ChevronUp,
   Info,
+  Pencil,
 } from 'lucide-react';
 
 export type ProjectCategoryKey =
@@ -107,6 +115,57 @@ const BENEFICIARY_OPTIONS = [
   'زوج‌های جوان و نیازمندان تسهیلات ازدواج/مسکن',
   'بیماران خاص و نیازمندان خدمات درمانی تخصصی',
   'عموم شهروندان و رانندگان محورهای مواصلاتی',
+];
+
+/**
+ * The wizard's steps — the order the user walks through, which is not the order
+ * the six sections appear in the file. Only one step is mounted at a time, so
+ * the visible order is decided here rather than by the layout of the JSX.
+ *
+ * Section → step: §1 شناسنامه · §5 مکان و جامعه هدف · §4 تأمین مالی ·
+ * §3 اولویت‌ها و بحران‌ها · §2 + §6 دستگاه‌ها، مجری و بازبینی.
+ */
+const FORM_STEPS: {
+  id: number;
+  label: string;
+  hint: string;
+  icon: React.ComponentType<{ className?: string }>;
+}[] = [
+  { id: 1, label: 'شناسنامه طرح', hint: 'عنوان، کد و بازه زمانی', icon: FolderPlus },
+  { id: 2, label: 'مکان و جامعه هدف', hint: 'جغرافیا و بهره‌برداران', icon: MapPin },
+  { id: 3, label: 'تأمین مالی چندمنبعی', hint: 'هزینه و سهم منابع', icon: Wallet },
+  { id: 4, label: 'اولویت‌ها و بحران‌ها', hint: 'انطباق راهبردی و فوریت', icon: Scale },
+  { id: 5, label: 'دستگاه‌ها، مجری و بازبینی', hint: 'حکمرانی، پیمانکار و ثبت', icon: HardHat },
+];
+
+/** Persian labels for the four urgency levels, shared by the review card. */
+const URGENCY_LABELS: Record<UrgencyLevel, string> = {
+  CRITICAL: 'بحرانی و آنی',
+  HIGH: 'اولویت بالا',
+  MEDIUM: 'متوسط',
+  LOW: 'عادی و تکمیلی',
+};
+
+/** Process status labels, mirroring the status select in step ۱. */
+const STATUS_LABELS: Record<ProjectStatus, string> = {
+  PROPOSED: 'پیشنهادی (در انتظار تصویب)',
+  APPROVED: 'مصوب و آماده تأمین مالی',
+  IN_PROGRESS: 'در حال اجرا و عملیات',
+  COMPLETED: 'تکمیل و بهره‌برداری شده',
+  SUSPENDED: 'معلق یا بازنگری فنی',
+};
+
+/**
+ * The modules a saved project publishes to. Declared once and read by the review
+ * card, so the legend cannot drift from what submission actually touches.
+ */
+const PUBLISH_MODULES: { label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { label: 'تب ادارات: سهم و مشارکت', icon: Building2 },
+  { label: 'تب بودجه: چندمنبعی (CSR/دولت)', icon: Wallet },
+  { label: 'تب اولویت‌ها: وزن استراتژیک', icon: Scale },
+  { label: 'تب بحران: کانون و فوریت', icon: Flame },
+  { label: 'تب مجریان و پیمانکاران', icon: Users2 },
+  { label: 'تب جمعیت: افراد ذینفع', icon: Users },
 ];
 
 export const CreateProjectView: React.FC = () => {
@@ -187,7 +246,21 @@ export const CreateProjectView: React.FC = () => {
 
   // Feedback states
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
+
+  // --- Wizard navigation ---
+  // `maxReachedStep` gates the stepper: a step already reached can be reopened,
+  // so the user can move back and forth without losing work, but no step can be
+  // skipped past validation. `showStepErrors` keeps the issue list quiet until an
+  // advance is actually attempted, so a fresh form is never covered in warnings.
   const [activeStep, setActiveStep] = useState<number>(1);
+  const [maxReachedStep, setMaxReachedStep] = useState<number>(1);
+  const [showStepErrors, setShowStepErrors] = useState<boolean>(false);
+  const formTopRef = useRef<HTMLElement | null>(null);
+  // Tracks the step the scroll effect last acted on. Comparing against it (rather
+  // than a "first run" flag) keeps the effect from firing on mount — React's
+  // StrictMode runs mount effects twice in development, which would otherwise
+  // scroll the page the moment it opens.
+  const lastScrolledStep = useRef<number>(1);
 
   // --- Computed Entities ---
   const requestingDept = departments.find((d) => d.id === requestingDeptId);
@@ -218,6 +291,106 @@ export const CreateProjectView: React.FC = () => {
       return (matchCrisis && matchDistrict) || matchTitle;
     });
   }, [selectedCrisisId, district, title, targetArea, projects]);
+
+  /**
+   * Per-step validation. Every rule reads state the form already owns — nothing
+   * is inferred — so a step either genuinely can be left behind or it reports
+   * exactly what is missing, in place of the browser alert the form used to fire.
+   */
+  const stepIssues = useMemo((): Record<number, string[]> => {
+    const issues: Record<number, string[]> = { 1: [], 2: [], 3: [], 4: [], 5: [] };
+
+    if (title.trim().length < 8) issues[1].push('عنوان پروژه را کامل وارد کنید (حداقل ۸ نویسه).');
+    if (endYear < startYear) issues[1].push('سال پایان نمی‌تواند پیش از سال شروع باشد.');
+    if (durationMonths <= 0) issues[1].push('مدت اجرای طرح باید بیش از صفر ماه باشد.');
+
+    if (!district.trim()) issues[2].push('محدوده اجرای طرح را انتخاب کنید.');
+    if (beneficiariesCount <= 0) issues[2].push('تعداد بهره‌برداران باید بیش از صفر باشد.');
+    if (selectedBeneficiaryGroups.length === 0) issues[2].push('حداقل یک گروه بهره‌بردار را انتخاب کنید.');
+
+    if (!(estimatedCostToman > 0)) issues[3].push('برآورد ارزش کل طرح را وارد کنید.');
+    if (!primaryBudgetSourceId) issues[3].push('منبع مالی اصلی را انتخاب کنید.');
+    if (!isBudgetShareValid) {
+      issues[3].push(
+        `جمع سهم منابع باید ۱۰۰٪ باشد؛ اکنون ${formatPercent(totalBudgetShares, { fractionDigits: 0 })} است.`
+      );
+    }
+
+    if (!selectedPriorityId) issues[4].push('اولویت راهبردی مرتبط را انتخاب کنید.');
+    if (!selectedCrisisId) issues[4].push('کانون بحران مرتبط با پروژه را انتخاب کنید.');
+
+    if (!requestingDeptId) issues[5].push('اداره متقاضی را انتخاب کنید.');
+    if (!primaryDeptId) issues[5].push('دستگاه اجرایی اصلی را انتخاب کنید.');
+    if (isMultiDept && contributingDepts.length === 0) {
+      issues[5].push('برای پروژه چنددستگاهی حداقل یک دستگاه همکار ثبت کنید.');
+    }
+    if (contributingDepts.reduce((sum, c) => sum + c.sharePercentage, 0) > 100) {
+      issues[5].push('جمع سهم دستگاه‌های همکار از ۱۰۰٪ بیشتر است.');
+    }
+    if (!executorId) issues[5].push('دستگاه مجری طرح را انتخاب کنید.');
+
+    return issues;
+  }, [
+    title, endYear, startYear, durationMonths, district, beneficiariesCount,
+    selectedBeneficiaryGroups, estimatedCostToman, primaryBudgetSourceId,
+    isBudgetShareValid, totalBudgetShares, selectedPriorityId, selectedCrisisId,
+    requestingDeptId, primaryDeptId, isMultiDept, contributingDepts, executorId,
+  ]);
+
+  const hasStepIssues = (step: number) => (stepIssues[step]?.length ?? 0) > 0;
+  const allStepsValid = FORM_STEPS.every((step) => !hasStepIssues(step.id));
+  const invalidStepCount = FORM_STEPS.filter((step) => hasStepIssues(step.id)).length;
+
+  const goToStep = (step: number) => {
+    if (step < 1 || step > FORM_STEPS.length) return;
+    if (step > maxReachedStep) return; // forward movement is gated by validation
+    setActiveStep(step);
+    setShowStepErrors(false);
+  };
+
+  const handleNextStep = () => {
+    if (hasStepIssues(activeStep)) {
+      setShowStepErrors(true);
+      return;
+    }
+    const next = Math.min(activeStep + 1, FORM_STEPS.length);
+    setActiveStep(next);
+    setMaxReachedStep((prev) => Math.max(prev, next));
+    setShowStepErrors(false);
+  };
+
+  const handlePrevStep = () => {
+    setActiveStep((prev) => Math.max(1, prev - 1));
+    setShowStepErrors(false);
+  };
+
+  // Bring the top of the wizard back into view whenever the step actually
+  // changes, so a long step never leaves the user looking at its middle.
+  useEffect(() => {
+    if (lastScrolledStep.current === activeStep) return;
+    lastScrolledStep.current = activeStep;
+    formTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [activeStep]);
+
+  /**
+   * One review row: the value as captured, plus a link straight back to the step
+   * that owns it. Reading the values out of the same state the fields write means
+   * the review can never disagree with the form.
+   */
+  const reviewRow = (label: string, value: React.ReactNode, step: number) => (
+    <div className="bg-slate-50 rounded-xl border border-slate-200 p-3 space-y-1">
+      <dt className="text-slate-500 font-semibold">{label}</dt>
+      <dd className="text-slate-900 font-bold leading-snug">{value}</dd>
+      <button
+        type="button"
+        onClick={() => goToStep(step)}
+        className="text-xs font-bold text-blue-700 hover:underline flex items-center gap-1 cursor-pointer"
+      >
+        <Pencil className="w-3 h-3" aria-hidden="true" />
+        ویرایش در گام {toPersianDigits(step)}
+      </button>
+    </div>
+  );
 
   // Handle adding contributing department
   const handleAddContributingDept = () => {
@@ -1333,8 +1506,15 @@ export const CreateProjectView: React.FC = () => {
   // Submit Handler
   const handleSubmitProject = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) {
-      alert('لطفاً عنوان کامل پروژه را وارد نمایید.');
+
+    // Validate every step, not only the visible one: a field on an unmounted step
+    // cannot be corrected from here, so park the wizard on the first step that
+    // still has an issue and open its issue list.
+    const firstInvalidStep = FORM_STEPS.find((step) => hasStepIssues(step.id));
+    if (firstInvalidStep) {
+      setMaxReachedStep((prev) => Math.max(prev, firstInvalidStep.id));
+      setActiveStep(firstInvalidStep.id);
+      setShowStepErrors(true);
       return;
     }
 
@@ -1395,6 +1575,8 @@ export const CreateProjectView: React.FC = () => {
     setIsMultiDept(false);
     setSubmittedSuccess(false);
     setActiveStep(1);
+    setMaxReachedStep(1);
+    setShowStepErrors(false);
   };
 
   return (
@@ -1428,32 +1610,13 @@ export const CreateProjectView: React.FC = () => {
         </div>
 
         {/* Interconnected Tabs Legend */}
-        <div id="create-project-view-interconnected-tabs-legend" className="mt-6 pt-5 border-t border-indigo-200/60 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs">
-          <div id="create-project-view-interconnected-tabs-legend-2" className="flex items-center gap-2 bg-white/80 rounded-lg p-2 border border-slate-200">
-            <Building2 className="w-4 h-4 text-blue-600 shrink-0" />
-            <span className="text-slate-700">تب ادارات: سهم و مشارکت</span>
-          </div>
-          <div id="create-project-view-interconnected-tabs-legend-3" className="flex items-center gap-2 bg-white/80 rounded-lg p-2 border border-slate-200">
-            <Wallet className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span className="text-slate-700">تب بودجه: چندمنبعی (CSR/دولت)</span>
-          </div>
-          <div id="create-project-view-interconnected-tabs-legend-4" className="flex items-center gap-2 bg-white/80 rounded-lg p-2 border border-slate-200">
-            <Scale className="w-4 h-4 text-purple-600 shrink-0" />
-            <span className="text-slate-700">تب اولویت‌ها: وزن استراتژیک</span>
-          </div>
-          <div id="create-project-view-interconnected-tabs-legend-5" className="flex items-center gap-2 bg-white/80 rounded-lg p-2 border border-slate-200">
-            <Flame className="w-4 h-4 text-rose-600 shrink-0" />
-            <span className="text-slate-700">تب بحران: کانون و فوریت</span>
-          </div>
-          <div id="create-project-view-interconnected-tabs-legend-6" className="flex items-center gap-2 bg-white/80 rounded-lg p-2 border border-slate-200">
-            <Users2 className="w-4 h-4 text-cyan-600 shrink-0" />
-            <span className="text-slate-700">تب مجریان و پیمانکاران</span>
-          </div>
-          <div id="create-project-view-interconnected-tabs-legend-7" className="flex items-center gap-2 bg-white/80 rounded-lg p-2 border border-slate-200">
-            <Users className="w-4 h-4 text-amber-600 shrink-0" />
-            <span className="text-slate-700">تب جمعیت: افراد ذینفع و محروم</span>
-          </div>
-        </div>
+        {/* One line instead of six chips: the banner no longer pushes the first
+            field of the form below the fold, and the full list of destination
+            modules lives in the review card next to the submit button. */}
+        <p id="create-project-view-interconnected-tabs-legend" className="mt-4 pt-4 border-t border-indigo-200/60 text-xs text-slate-700 leading-relaxed">
+          ماژول‌های مقصد ثبت این طرح: تب ادارات · تب بودجه (چندمنبعی) · تب اولویت‌ها · تب بحران ·
+          تب مجریان و پیمانکاران · تب جمعیت — فهرست کامل در گام بازبینی نهایی.
+        </p>
       </div>
 
       {/* Success Modal / Banner */}
@@ -1509,7 +1672,7 @@ export const CreateProjectView: React.FC = () => {
                     <h2 className="text-sm font-bold text-slate-900 tracking-tight">
                       دستیار برنامه‌ریزی دموگرافیک و اولویت‌های پیشنهادی منطقه
                     </h2>
-                    <span className="text-[10px] bg-cyan-100 text-cyan-800 px-2 py-0.5 rounded-full border border-cyan-200 font-semibold">
+                    <span className="text-xs bg-cyan-100 text-cyan-800 px-2 py-0.5 rounded-full border border-cyan-200 font-semibold">
                       هوشمند آمایشی
                     </span>
                   </div>
@@ -1588,7 +1751,7 @@ export const CreateProjectView: React.FC = () => {
                         <Layers className="w-3.5 h-3.5 text-blue-600" />
                         <span>نوع پروژه و حوزه مأموریت:</span>
                       </div>
-                      <span className="text-[10px] text-slate-400">یک حوزه را انتخاب کنید</span>
+                      <span className="text-xs text-slate-500">یک حوزه را انتخاب کنید</span>
                     </label>
                     <div id="create-project-view-project-category-domain-3" className="flex items-center gap-1.5 flex-wrap">
                       {PROJECT_CATEGORIES.map((cat) => {
@@ -1599,7 +1762,7 @@ export const CreateProjectView: React.FC = () => {
                             key={cat.key}
                             type="button"
                             onClick={() => setSelectedCategory(cat.key)}
-                            className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                            className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer ${
                               isSelected
                                 ? `${cat.activeBg} border-transparent shadow-md`
                                 : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-900'
@@ -1621,41 +1784,41 @@ export const CreateProjectView: React.FC = () => {
                       <Activity className="w-3.5 h-3.5 text-emerald-600" />
                       <span>شناسنامه شاخص‌های دموگرافیک {activeLocationData?.nameFa || district}:</span>
                     </span>
-                    <span className="text-[10px] text-slate-400">منبع داده: سرشماری و اطلس محرومیت {selectedLocation.county}</span>
+                    <span className="text-xs text-slate-500">منبع داده: سرشماری و اطلس محرومیت {selectedLocation.county}</span>
                   </div>
                   <div id="create-project-view-regional-demographic-snapshot-3" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-center">
                     <div id="create-project-view-regional-demographic-snapshot-4" className="bg-slate-50 p-2 rounded-lg border border-slate-200">
-                      <div id="create-project-view-regional-demographic-snapshot-5" className="text-[10px] text-slate-500">جمعیت کل</div>
+                      <div id="create-project-view-regional-demographic-snapshot-5" className="text-xs text-slate-500">جمعیت کل</div>
                       <div id="create-project-view-regional-demographic-snapshot-6" className="text-xs font-bold text-slate-900 mt-0.5">
                         {formatNumber(activeLocationData?.totalPopulation || 0)} نفر
                       </div>
                     </div>
                     <div id="create-project-view-regional-demographic-snapshot-7" className="bg-slate-50 p-2 rounded-lg border border-slate-200">
-                      <div id="create-project-view-regional-demographic-snapshot-8" className="text-[10px] text-amber-600">اقشار آسیب‌پذیر</div>
+                      <div id="create-project-view-regional-demographic-snapshot-8" className="text-xs text-amber-600">اقشار آسیب‌پذیر</div>
                       <div id="create-project-view-regional-demographic-snapshot-9" className="text-xs font-bold text-amber-600 mt-0.5">
                         {formatNumber(activeLocationData?.vulnerablePopulation || 0)} نفر
                       </div>
                     </div>
                     <div id="create-project-view-regional-demographic-snapshot-10" className="bg-slate-50 p-2 rounded-lg border border-slate-200">
-                      <div id="create-project-view-regional-demographic-snapshot-11" className="text-[10px] text-rose-600">کمبود زیرساخت</div>
+                      <div id="create-project-view-regional-demographic-snapshot-11" className="text-xs text-rose-600">کمبود زیرساخت</div>
                       <div id="create-project-view-regional-demographic-snapshot-12" className="text-xs font-bold text-rose-600 mt-0.5">
                         {toPersianDigits(activeLocationData?.indicators.infrastructureDeficitPct)}٪
                       </div>
                     </div>
                     <div id="create-project-view-regional-demographic-snapshot-13" className="bg-slate-50 p-2 rounded-lg border border-slate-200">
-                      <div id="create-project-view-regional-demographic-snapshot-14" className="text-[10px] text-cyan-600">کمبود دسترسی سلامت</div>
+                      <div id="create-project-view-regional-demographic-snapshot-14" className="text-xs text-cyan-600">کمبود دسترسی سلامت</div>
                       <div id="create-project-view-regional-demographic-snapshot-15" className="text-xs font-bold text-cyan-600 mt-0.5">
                         {toPersianDigits(activeLocationData?.indicators.healthAccessDeficitPct)}٪
                       </div>
                     </div>
                     <div id="create-project-view-regional-demographic-snapshot-16" className="bg-slate-50 p-2 rounded-lg border border-slate-200">
-                      <div id="create-project-view-regional-demographic-snapshot-17" className="text-[10px] text-purple-600">نرخ فقر / بیکاری</div>
+                      <div id="create-project-view-regional-demographic-snapshot-17" className="text-xs text-purple-600">نرخ فقر / بیکاری</div>
                       <div id="create-project-view-regional-demographic-snapshot-18" className="text-xs font-bold text-purple-600 mt-0.5">
                         {toPersianDigits(activeLocationData?.indicators.povertyRatePct)}٪
                       </div>
                     </div>
                     <div id="create-project-view-regional-demographic-snapshot-19" className="bg-slate-50 p-2 rounded-lg border border-slate-200">
-                      <div id="create-project-view-regional-demographic-snapshot-20" className="text-[10px] text-emerald-600">ریسک محیط‌زیستی</div>
+                      <div id="create-project-view-regional-demographic-snapshot-20" className="text-xs text-emerald-600">ریسک محیط‌زیستی</div>
                       <div id="create-project-view-regional-demographic-snapshot-21" className="text-xs font-bold text-emerald-600 mt-0.5">
                         {toPersianDigits(activeLocationData?.indicators.environmentalRiskScore)}٪
                       </div>
@@ -1673,7 +1836,7 @@ export const CreateProjectView: React.FC = () => {
                         {PROJECT_CATEGORIES.find((c) => c.key === selectedCategory)?.labelFa}):
                       </span>
                     </span>
-                    <span className="text-[11px] text-slate-500">
+                    <span className="text-xs text-slate-500">
                       {toPersianDigits(demographicPrioritySuggestions.length)} پروژه اولویت‌دار شناسایی شد
                     </span>
                   </div>
@@ -1688,13 +1851,13 @@ export const CreateProjectView: React.FC = () => {
                         <div id={`create-project-view-priority-cards-list-5-${prop.id}`} className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                           <div id={`create-project-view-priority-cards-list-6-${prop.id}`} className="space-y-1.5 flex-1 min-w-0">
                             <div id={`create-project-view-priority-cards-list-7-${prop.id}`} className="flex items-center gap-2 flex-wrap">
-                              <span className="text-[10px] bg-cyan-500 text-slate-950 font-bold px-2 py-0.5 rounded-md">
+                              <span className="text-xs bg-cyan-500 text-slate-950 font-bold px-2 py-0.5 rounded-md">
                                 اولویت پیشنهادی {toPersianDigits(idx + 1)}
                               </span>
-                              <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md border border-slate-200">
+                              <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md border border-slate-200">
                                 {prop.categoryFa}
                               </span>
-                              <span className="text-[10px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded-md border border-amber-200 font-medium">
+                              <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-md border border-amber-200 font-medium">
                                 {prop.keyIndicatorBadge}
                               </span>
                             </div>
@@ -1708,11 +1871,11 @@ export const CreateProjectView: React.FC = () => {
                               {prop.demographicRationale}
                             </p>
 
-                            <div id={`create-project-view-priority-cards-list-8-${prop.id}`} className="flex items-center gap-3 text-[11px] text-slate-500 flex-wrap pt-1">
+                            <div id={`create-project-view-priority-cards-list-8-${prop.id}`} className="flex items-center gap-3 text-xs text-slate-500 flex-wrap pt-1">
                               <span>
                                 برآورد بودجه:{' '}
                                 <strong className="text-emerald-600 font-bold">
-                                  {formatToman(prop.estimatedCostToman)}
+                                  <Num {...formatMoneyParts(prop.estimatedCostToman)} />
                                 </strong>
                               </span>
                               <span>•</span>
@@ -1749,9 +1912,95 @@ export const CreateProjectView: React.FC = () => {
             )}
           </div>
 
+          {/* Wizard stepper — the form's six sections become five reviewable steps.
+              Only the active step is mounted, and forward movement is gated by that
+              step's own validation. */}
+          <nav
+            id="create-project-view-wizard-stepper"
+            ref={formTopRef}
+            aria-label="گام‌های ثبت پروژه"
+            className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5 space-y-3 scroll-mt-6"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+              <span className="text-xs font-bold text-slate-500">
+                گام {toPersianDigits(activeStep)} از {toPersianDigits(FORM_STEPS.length)}
+              </span>
+              <span className="text-sm font-black text-slate-900">{FORM_STEPS[activeStep - 1].label}</span>
+              <span className={`text-xs font-bold ${allStepsValid ? 'text-emerald-700' : 'text-warning-strong'}`}>
+                {allStepsValid ? 'همه گام‌ها معتبر است' : `${toPersianDigits(invalidStepCount)} گام نیازمند اصلاح`}
+              </span>
+            </div>
+
+            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden" aria-hidden="true">
+              <div
+                className="h-full bg-blue-600 rounded-full transition-all duration-300"
+                style={{ width: `${((activeStep - 1) / (FORM_STEPS.length - 1)) * 100}%` }}
+              />
+            </div>
+
+            <ol className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+              {FORM_STEPS.map((step) => {
+                const isCurrent = step.id === activeStep;
+                const isDone = step.id < activeStep;
+                const isLocked = step.id > maxReachedStep;
+                const needsFix = !isLocked && hasStepIssues(step.id);
+                const StepIcon = step.icon;
+                return (
+                  <li key={step.id}>
+                    <button
+                      type="button"
+                      onClick={() => goToStep(step.id)}
+                      disabled={isLocked}
+                      aria-current={isCurrent ? 'step' : undefined}
+                      aria-label={`گام ${toPersianDigits(step.id)}: ${step.label}${needsFix ? ' — نیازمند اصلاح' : ''}`}
+                      className={`w-full h-full flex items-start gap-2 rounded-xl border p-2.5 text-start transition-colors ${
+                        isCurrent
+                          ? 'border-blue-500 bg-blue-50 text-blue-900 ring-1 ring-blue-500/30'
+                          : isDone
+                          ? 'border-emerald-200 bg-emerald-50/60 text-emerald-900 hover:border-emerald-300 cursor-pointer'
+                          : isLocked
+                          ? 'border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed'
+                          : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 cursor-pointer'
+                      }`}
+                    >
+                      <span
+                        className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 text-xs font-black ${
+                          isCurrent ? 'bg-blue-600 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-500'
+                        }`}
+                      >
+                        {isDone ? <Check className="w-3.5 h-3.5" aria-hidden="true" /> : toPersianDigits(step.id)}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-xs font-bold leading-snug">{step.label}</span>
+                        <span className="hidden sm:block text-xs text-slate-500 mt-0.5 leading-snug">{step.hint}</span>
+                      </span>
+                      {needsFix ? (
+                        <AlertTriangle className="w-3.5 h-3.5 text-risk shrink-0" aria-hidden="true" />
+                      ) : (
+                        <StepIcon className="w-3.5 h-3.5 text-slate-500 shrink-0 hidden sm:block" aria-hidden="true" />
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+
+            {showStepErrors && hasStepIssues(activeStep) && (
+              <ul role="alert" className="rounded-xl border border-red-200 bg-risk-soft p-3 space-y-1">
+                {stepIssues[activeStep].map((issue) => (
+                  <li key={issue} className="flex items-start gap-1.5 text-xs font-semibold text-risk-strong">
+                    <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" aria-hidden="true" />
+                    {issue}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </nav>
+
           <form onSubmit={handleSubmitProject} className="space-y-6">
-            {/* Section 1: Basic Project Profile */}
-            <div id="create-project-view-section-1-basic-project-profile" className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+            {/* Step ۱ — شناسنامه طرح (Section 1) */}
+            {activeStep === 1 && (
+            <div id="create-project-view-section-1-basic-project-profile" role="group" aria-label="گام ۱: شناسنامه طرح" className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
               <div id="create-project-view-section-1-basic-project-profile-2" className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div id="create-project-view-section-1-basic-project-profile-3" className="flex items-center gap-2">
                   <div id="create-project-view-section-1-basic-project-profile-4" className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
@@ -1808,15 +2057,15 @@ export const CreateProjectView: React.FC = () => {
                     <div id="create-project-view-smart-assistance-recommendation-4">
                       <div id="create-project-view-smart-assistance-recommendation-5" className="text-xs font-bold text-indigo-950 flex items-center gap-2">
                         <span>تشخیص هوشمند مشخصات طرح:</span>
-                        <span className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded text-[11px] font-bold">
+                        <span className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded text-xs font-bold">
                           {smartInference.domainLabel}
                         </span>
-                        <span className="text-slate-500 text-[11px]">|</span>
-                        <span className="text-slate-700 text-[11px]">
+                        <span className="text-slate-500 text-xs">|</span>
+                        <span className="text-slate-700 text-xs">
                           موقعیت: <strong className="text-indigo-900">{smartInference.districtNameFa}</strong>
                         </span>
                       </div>
-                      <div id="create-project-view-smart-assistance-recommendation-6" className="text-[11px] text-slate-600 mt-0.5">
+                      <div id="create-project-view-smart-assistance-recommendation-6" className="text-xs text-slate-600 mt-0.5">
                         پیشنهاد جمعیت بهره‌بردار: <strong className="text-indigo-700">{formatNumber(smartInference.suggestedBeneficiaries)} نفر</strong> ({smartInference.suggestedBeneficiariesReason})
                       </div>
                     </div>
@@ -1832,7 +2081,7 @@ export const CreateProjectView: React.FC = () => {
                 </div>
               ) : (
                 <div id="create-project-view-smart-assistance-recommendation-7" className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
-                  <div id="create-project-view-smart-assistance-recommendation-8" className="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
+                  <div id="create-project-view-smart-assistance-recommendation-8" className="text-xs font-semibold text-slate-500 flex items-center gap-1">
                     <Sparkles className="w-3 h-3 text-indigo-500" />
                     <span>نمونه‌های آماده طرح‌های محوری {selectedLocation.city} جهت بررسی و اعمال هوشمند:</span>
                   </div>
@@ -1850,7 +2099,7 @@ export const CreateProjectView: React.FC = () => {
                         key={idx}
                         type="button"
                         onClick={() => handleLoadSampleProject(sample.t, sample.d, sample.a)}
-                        className="text-[11px] px-2 py-1 bg-white hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 text-slate-700 border border-slate-200 rounded-lg transition-colors text-right"
+                        className="text-xs px-2 py-1 bg-white hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 text-slate-700 border border-slate-200 rounded-lg transition-colors text-right"
                       >
                         {sample.t}
                       </button>
@@ -1900,13 +2149,15 @@ export const CreateProjectView: React.FC = () => {
                 />
               </div>
             </div>
+            )}
 
-            {/* Section 2: Department Governance & Multi-Department Collaboration */}
-            <div id="create-project-view-section-2-department-governance" className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+            {/* Step ۵ (بخش نخست) — حکمرانی دستگاهی (Section 2) */}
+            {activeStep === 5 && (
+            <div id="create-project-view-section-2-department-governance" role="group" aria-label="گام ۵: حکمرانی دستگاهی" className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
               <div id="create-project-view-section-2-department-governance-2" className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div id="create-project-view-section-2-department-governance-3" className="flex items-center gap-2">
                   <div id="create-project-view-section-2-department-governance-4" className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm">
-                    ۲
+                    ۵
                   </div>
                   <div id="create-project-view-section-2-department-governance-5">
                     <h2 className="text-sm font-bold text-slate-900">حکمرانی دستگاهی و پروژه‌های چنداداره‌ای</h2>
@@ -1928,7 +2179,7 @@ export const CreateProjectView: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setRequestingDeptId(smartInference.suggestedDeptId)}
-                        className="inline-flex items-center gap-1 text-[10px] text-indigo-700 hover:text-indigo-900 font-bold bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 text-xs text-indigo-700 hover:text-indigo-900 font-bold bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
                       >
                         <Sparkles className="w-2.5 h-2.5 text-indigo-600" />
                         <span>پیشنهاد: {smartInference.suggestedDept.categoryFa}</span>
@@ -1957,7 +2208,7 @@ export const CreateProjectView: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setPrimaryDeptId(smartInference.suggestedDeptId)}
-                        className="inline-flex items-center gap-1 text-[10px] text-indigo-700 hover:text-indigo-900 font-bold bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 text-xs text-indigo-700 hover:text-indigo-900 font-bold bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
                       >
                         <Sparkles className="w-2.5 h-2.5 text-indigo-600" />
                         <span>پیشنهاد هوشمند: {smartInference.suggestedDept.name.split(' ')[0]} {smartInference.suggestedDept.name.split(' ')[1] || ''}</span>
@@ -1994,7 +2245,7 @@ export const CreateProjectView: React.FC = () => {
                     </label>
                   </div>
                   {isMultiDept && (
-                    <span className="text-[11px] font-bold text-indigo-700 bg-indigo-100 px-2.5 py-0.5 rounded-full">
+                    <span className="text-xs font-bold text-indigo-700 bg-indigo-100 px-2.5 py-0.5 rounded-full">
                       {toPersianDigits(contributingDepts.length)} اداره همکار اضافه شده
                     </span>
                   )}
@@ -2002,14 +2253,14 @@ export const CreateProjectView: React.FC = () => {
 
                 {isMultiDept && (
                   <div id="create-project-view-multi-department-toggle-4" className="space-y-3 pt-2 border-t border-indigo-200/50">
-                    <p className="text-[11px] text-indigo-800">
+                    <p className="text-xs text-indigo-800">
                       برای تسهیم اعتبارات و جلوگیری از ادعای همزمان چند دستگاه بر سر یک پروژه، سهم هر اداره و وظیفه اجرایی را معین نمایید:
                     </p>
 
                     {/* Add Contributing Department Row */}
                     <div id="create-project-view-add-contributing-department-row" className="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-white p-3 rounded-xl border border-indigo-200">
                       <div id="create-project-view-add-contributing-department-row-2" className="md:col-span-4">
-                        <label className="block text-[10px] font-bold text-slate-600 mb-1">انتخاب اداره همکار</label>
+                        <label className="block text-xs font-bold text-slate-600 mb-1">انتخاب اداره همکار</label>
                         <select
                           value={newContribDeptId}
                           onChange={(e) => setNewContribDeptId(e.target.value)}
@@ -2026,7 +2277,7 @@ export const CreateProjectView: React.FC = () => {
                       </div>
 
                       <div id="create-project-view-add-contributing-department-row-3" className="md:col-span-3">
-                        <label className="block text-[10px] font-bold text-slate-600 mb-1">درصد سهم / مشارکت (٪)</label>
+                        <label className="block text-xs font-bold text-slate-600 mb-1">درصد سهم / مشارکت (٪)</label>
                         <input
                           type="number"
                           min="1"
@@ -2038,7 +2289,7 @@ export const CreateProjectView: React.FC = () => {
                       </div>
 
                       <div id="create-project-view-add-contributing-department-row-4" className="md:col-span-4">
-                        <label className="block text-[10px] font-bold text-slate-600 mb-1">مسئولیت و شرح اقدام</label>
+                        <label className="block text-xs font-bold text-slate-600 mb-1">مسئولیت و شرح اقدام</label>
                         <input
                           type="text"
                           value={newContribRole}
@@ -2075,16 +2326,16 @@ export const CreateProjectView: React.FC = () => {
                                 <Building2 className="w-4 h-4 text-indigo-600 shrink-0" />
                                 <div id={`create-project-view-contributing-departments-list-4-${c.departmentId}`}>
                                   <span className="font-bold text-slate-800">{c.departmentName}</span>
-                                  <span className="text-slate-400 mx-2">|</span>
-                                  <span className="text-slate-500 text-[11px]">{c.roleDescription}</span>
+                                  <span className="text-slate-500 mx-2">|</span>
+                                  <span className="text-slate-500 text-xs">{c.roleDescription}</span>
                                 </div>
                               </div>
 
                               <div id={`create-project-view-contributing-departments-list-5-${c.departmentId}`} className="flex items-center gap-4">
                                 <div id={`create-project-view-contributing-departments-list-6-${c.departmentId}`} className="text-left">
                                   <span className="font-bold text-indigo-700">{toPersianDigits(c.sharePercentage)}٪</span>
-                                  <span className="text-[11px] text-slate-500 mr-2">
-                                    ({formatToman(deptShareToman)})
+                                  <span className="text-xs text-slate-500 mr-2">
+                                    (<Num {...formatMoneyParts(deptShareToman)} />)
                                   </span>
                                 </div>
                                 <button
@@ -2104,13 +2355,15 @@ export const CreateProjectView: React.FC = () => {
                 )}
               </div>
             </div>
+            )}
 
-            {/* Section 3: Strategic Priorities & Crisis Alignment */}
-            <div id="create-project-view-section-3-strategic-priorities" className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+            {/* Step ۴ — اولویت‌ها و بحران‌ها (Section 3) */}
+            {activeStep === 4 && (
+            <div id="create-project-view-section-3-strategic-priorities" role="group" aria-label="گام ۴: اولویت‌ها و بحران‌ها" className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
               <div id="create-project-view-section-3-strategic-priorities-2" className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div id="create-project-view-section-3-strategic-priorities-3" className="flex items-center gap-2">
                   <div id="create-project-view-section-3-strategic-priorities-4" className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-sm">
-                    ۳
+                    ۴
                   </div>
                   <div id="create-project-view-section-3-strategic-priorities-5">
                     <h2 className="text-sm font-bold text-slate-900">ارتباط با اولویت‌های توسعه و بحران‌های هدف</h2>
@@ -2132,7 +2385,7 @@ export const CreateProjectView: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setSelectedCrisisId(smartInference.suggestedCrisisId)}
-                        className="inline-flex items-center gap-1 text-[10px] text-rose-700 hover:text-rose-900 font-bold bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 text-xs text-rose-700 hover:text-rose-900 font-bold bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
                       >
                         <Sparkles className="w-2.5 h-2.5 text-rose-600" />
                         <span>پیشنهاد: {smartInference.suggestedCrisis.title.slice(0, 24)}...</span>
@@ -2151,7 +2404,7 @@ export const CreateProjectView: React.FC = () => {
                     ))}
                   </select>
                   {selectedCrisis && (
-                    <div id="create-project-view-section-3-strategic-priorities-9" className="mt-1.5 flex items-center gap-2 text-[11px] text-slate-500">
+                    <div id="create-project-view-section-3-strategic-priorities-9" className="mt-1.5 flex items-center gap-2 text-xs text-slate-500">
                       <span className="font-semibold text-slate-700">علت ریشه‌ای:</span> {selectedCrisis.primaryCause}
                     </div>
                   )}
@@ -2166,7 +2419,7 @@ export const CreateProjectView: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setSelectedPriorityId(smartInference.suggestedPriorityId)}
-                        className="inline-flex items-center gap-1 text-[10px] text-purple-700 hover:text-purple-900 font-bold bg-purple-50 border border-purple-200 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 text-xs text-purple-700 hover:text-purple-900 font-bold bg-purple-50 border border-purple-200 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
                       >
                         <Sparkles className="w-2.5 h-2.5 text-purple-600" />
                         <span>پیشنهاد: {smartInference.suggestedPriority.category}</span>
@@ -2185,7 +2438,7 @@ export const CreateProjectView: React.FC = () => {
                     ))}
                   </select>
                   {selectedPriority && (
-                    <div id="create-project-view-section-3-strategic-priorities-12" className="mt-1.5 flex items-center gap-2 text-[11px] text-slate-500">
+                    <div id="create-project-view-section-3-strategic-priorities-12" className="mt-1.5 flex items-center gap-2 text-xs text-slate-500">
                       <span className="font-semibold text-slate-700">دسته استراتژیک:</span> {selectedPriority.category}
                     </div>
                   )}
@@ -2193,12 +2446,12 @@ export const CreateProjectView: React.FC = () => {
                   {/* Contextual Demographic Priority Quick Suggestions */}
                   {demographicPrioritySuggestions.length > 0 && (
                     <div id="create-project-view-contextual-demographic-priority" className="mt-3 p-2.5 bg-purple-50/70 border border-purple-200/80 rounded-xl space-y-1.5">
-                      <div id="create-project-view-contextual-demographic-priority-2" className="flex items-center justify-between text-[11px] font-bold text-purple-900">
+                      <div id="create-project-view-contextual-demographic-priority-2" className="flex items-center justify-between text-xs font-bold text-purple-900">
                         <span className="flex items-center gap-1">
                           <Sparkles className="w-3 h-3 text-purple-600" />
                           <span>اولویت‌های پیشنهادی دموگرافیک برای {district.split(' ')[1] || district}:</span>
                         </span>
-                        <span className="text-[10px] text-purple-600 font-normal">کلیک جهت اعمال آنی</span>
+                        <span className="text-xs text-purple-600 font-normal">کلیک جهت اعمال آنی</span>
                       </div>
                       <div id="create-project-view-contextual-demographic-priority-3" className="flex flex-wrap gap-1.5 pt-0.5">
                         {demographicPrioritySuggestions.map((prop) => (
@@ -2206,8 +2459,8 @@ export const CreateProjectView: React.FC = () => {
                             key={prop.id}
                             type="button"
                             onClick={() => handleApplyDemographicPriority(prop)}
-                            className="text-[11px] px-2 py-1 rounded-lg bg-white hover:bg-purple-100 text-purple-900 border border-purple-200 font-medium shadow-xs transition-colors flex items-center gap-1 cursor-pointer"
-                            title={`برآورد: ${formatToman(prop.estimatedCostToman)} | ذینفعان: ${formatNumber(prop.beneficiariesCount)} نفر`}
+                            className="text-xs px-2 py-1 rounded-lg bg-white hover:bg-purple-100 text-purple-900 border border-purple-200 font-medium shadow-xs transition-colors flex items-center gap-1 cursor-pointer"
+                            title={`برآورد: ${formatMoney(prop.estimatedCostToman)} | ذینفعان: ${formatNumber(prop.beneficiariesCount)} نفر`}
                           >
                             <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
                             <span className="font-semibold">{prop.title}</span>
@@ -2242,13 +2495,15 @@ export const CreateProjectView: React.FC = () => {
                 </div>
               </div>
             </div>
+            )}
 
-            {/* Section 4: Multi-Source Budgeting (CSR vs Government vs Dehyari vs Facilities) */}
-            <div id="create-project-view-section-4-multi-source" className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+            {/* Step ۳ — تأمین مالی چندمنبعی (Section 4) */}
+            {activeStep === 3 && (
+            <div id="create-project-view-section-4-multi-source" role="group" aria-label="گام ۳: تأمین مالی چندمنبعی" className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
               <div id="create-project-view-section-4-multi-source-2" className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div id="create-project-view-section-4-multi-source-3" className="flex items-center gap-2">
                   <div id="create-project-view-section-4-multi-source-4" className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm">
-                    ۴
+                    ۳
                   </div>
                   <div id="create-project-view-section-4-multi-source-5">
                     <h2 className="text-sm font-bold text-slate-900">مدل ترکیبی تأمین مالی و بودجه چندمنبعی</h2>
@@ -2284,10 +2539,10 @@ export const CreateProjectView: React.FC = () => {
                           setEstimatedCostToman(smartInference.suggestedCostToman);
                           setCurrentYearAllocatedToman(Math.round(smartInference.suggestedCostToman * 0.6));
                         }}
-                        className="inline-flex items-center gap-1 text-[10px] text-emerald-700 hover:text-emerald-900 font-bold bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 text-xs text-emerald-700 hover:text-emerald-900 font-bold bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
                       >
                         <Sparkles className="w-2.5 h-2.5 text-emerald-600" />
-                        <span>پیشنهاد: {formatToman(smartInference.suggestedCostToman)}</span>
+                        <span className="flex items-center gap-1">پیشنهاد: <Num {...formatMoneyParts(smartInference.suggestedCostToman)} /></span>
                       </button>
                     )}
                   </div>
@@ -2298,8 +2553,8 @@ export const CreateProjectView: React.FC = () => {
                     onChange={(e) => setEstimatedCostToman(Number(e.target.value))}
                     className="w-full text-xs font-bold text-slate-900 bg-white border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-emerald-500"
                   />
-                  <span className="text-[11px] text-emerald-700 font-semibold block mt-1">
-                    {formatToman(estimatedCostToman)}
+                  <span className="text-xs text-emerald-700 font-semibold block mt-1">
+                    <Num {...formatMoneyParts(estimatedCostToman)} />
                   </span>
                 </div>
 
@@ -2312,8 +2567,8 @@ export const CreateProjectView: React.FC = () => {
                     onChange={(e) => setCurrentYearAllocatedToman(Number(e.target.value))}
                     className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3 py-2"
                   />
-                  <span className="text-[11px] text-slate-500 block mt-1">
-                    {formatToman(currentYearAllocatedToman)}
+                  <span className="text-xs text-slate-500 block mt-1">
+                    <Num {...formatMoneyParts(currentYearAllocatedToman)} />
                   </span>
                 </div>
 
@@ -2350,7 +2605,7 @@ export const CreateProjectView: React.FC = () => {
                           setBankSharePct(smartInference.suggestedBudget.bank);
                           setCharitySharePct(smartInference.suggestedBudget.charity);
                         }}
-                        className="inline-flex items-center gap-1 text-[10px] text-emerald-800 hover:text-emerald-950 font-bold bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-md transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 text-xs text-emerald-800 hover:text-emerald-950 font-bold bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-md transition-colors cursor-pointer"
                         title="اعمال درصد‌های استاندارد این دسته از طرح‌ها"
                       >
                         <Sparkles className="w-2.5 h-2.5 text-emerald-600" />
@@ -2394,8 +2649,8 @@ export const CreateProjectView: React.FC = () => {
                       onChange={(e) => setCsrSharePct(Number(e.target.value))}
                       className="w-full accent-emerald-600 cursor-pointer"
                     />
-                    <div id="create-project-view-shares-inputs-grid-4" className="text-[10px] text-emerald-700 font-semibold mt-1">
-                      {formatToman(Math.round((estimatedCostToman * csrSharePct) / 100))}
+                    <div id="create-project-view-shares-inputs-grid-4" className="text-xs text-emerald-700 font-semibold mt-1">
+                      <Num {...formatMoneyParts(Math.round((estimatedCostToman * csrSharePct) / 100))} />
                     </div>
                   </div>
 
@@ -2412,8 +2667,8 @@ export const CreateProjectView: React.FC = () => {
                       onChange={(e) => setGovSharePct(Number(e.target.value))}
                       className="w-full accent-blue-600 cursor-pointer"
                     />
-                    <div id="create-project-view-shares-inputs-grid-7" className="text-[10px] text-blue-700 font-semibold mt-1">
-                      {formatToman(Math.round((estimatedCostToman * govSharePct) / 100))}
+                    <div id="create-project-view-shares-inputs-grid-7" className="text-xs text-blue-700 font-semibold mt-1">
+                      <Num {...formatMoneyParts(Math.round((estimatedCostToman * govSharePct) / 100))} />
                     </div>
                   </div>
 
@@ -2430,8 +2685,8 @@ export const CreateProjectView: React.FC = () => {
                       onChange={(e) => setDehyariSharePct(Number(e.target.value))}
                       className="w-full accent-amber-600 cursor-pointer"
                     />
-                    <div id="create-project-view-shares-inputs-grid-10" className="text-[10px] text-amber-700 font-semibold mt-1">
-                      {formatToman(Math.round((estimatedCostToman * dehyariSharePct) / 100))}
+                    <div id="create-project-view-shares-inputs-grid-10" className="text-xs text-amber-700 font-semibold mt-1">
+                      <Num {...formatMoneyParts(Math.round((estimatedCostToman * dehyariSharePct) / 100))} />
                     </div>
                   </div>
 
@@ -2448,8 +2703,8 @@ export const CreateProjectView: React.FC = () => {
                       onChange={(e) => setBankSharePct(Number(e.target.value))}
                       className="w-full accent-purple-600 cursor-pointer"
                     />
-                    <div id="create-project-view-shares-inputs-grid-13" className="text-[10px] text-purple-700 font-semibold mt-1">
-                      {formatToman(Math.round((estimatedCostToman * bankSharePct) / 100))}
+                    <div id="create-project-view-shares-inputs-grid-13" className="text-xs text-purple-700 font-semibold mt-1">
+                      <Num {...formatMoneyParts(Math.round((estimatedCostToman * bankSharePct) / 100))} />
                     </div>
                   </div>
 
@@ -2466,20 +2721,22 @@ export const CreateProjectView: React.FC = () => {
                       onChange={(e) => setCharitySharePct(Number(e.target.value))}
                       className="w-full accent-rose-600 cursor-pointer"
                     />
-                    <div id="create-project-view-shares-inputs-grid-16" className="text-[10px] text-rose-700 font-semibold mt-1">
-                      {formatToman(Math.round((estimatedCostToman * charitySharePct) / 100))}
+                    <div id="create-project-view-shares-inputs-grid-16" className="text-xs text-rose-700 font-semibold mt-1">
+                      <Num {...formatMoneyParts(Math.round((estimatedCostToman * charitySharePct) / 100))} />
                     </div>
                   </div>
                 </div>
               </div>
             </div>
+            )}
 
-            {/* Section 5: Demographics, Beneficiaries & Geography */}
-            <div id="create-project-view-section-5-demographics" className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+            {/* Step ۲ — مکان و جامعه هدف (Section 5) */}
+            {activeStep === 2 && (
+            <div id="create-project-view-section-5-demographics" role="group" aria-label="گام ۲: مکان و جامعه هدف" className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
               <div id="create-project-view-section-5-demographics-2" className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div id="create-project-view-section-5-demographics-3" className="flex items-center gap-2">
                   <div id="create-project-view-section-5-demographics-4" className="w-8 h-8 rounded-lg bg-cyan-50 text-cyan-600 flex items-center justify-center font-bold text-sm">
-                    ۵
+                    ۲
                   </div>
                   <div id="create-project-view-section-5-demographics-5">
                     <h2 className="text-sm font-bold text-slate-900">موقعیت مکانی، افراد بهره‌بردار و جامعه هدف</h2>
@@ -2499,7 +2756,7 @@ export const CreateProjectView: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setDistrict(smartInference.inferredDistrict)}
-                        className="inline-flex items-center gap-1 text-[10px] text-indigo-700 hover:text-indigo-900 font-bold bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 text-xs text-indigo-700 hover:text-indigo-900 font-bold bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
                       >
                         <Sparkles className="w-2.5 h-2.5 text-indigo-600" />
                         <span>پیشنهاد عنوان: {smartInference.inferredDistrict.split(' ')[1] || ''}</span>
@@ -2539,7 +2796,7 @@ export const CreateProjectView: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setBeneficiariesCount(smartInference.suggestedBeneficiaries)}
-                        className="inline-flex items-center gap-1 text-[10px] text-cyan-800 hover:text-cyan-950 font-bold bg-cyan-50 hover:bg-cyan-100 border border-cyan-200 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 text-xs text-cyan-800 hover:text-cyan-950 font-bold bg-cyan-50 hover:bg-cyan-100 border border-cyan-200 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
                         title="اعمال برآورد هوشمند جمعیت ذینفع این منطقه"
                       >
                         <Sparkles className="w-2.5 h-2.5 text-cyan-600" />
@@ -2555,7 +2812,7 @@ export const CreateProjectView: React.FC = () => {
                     className="w-full text-xs font-bold bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
                   />
                   {smartInference.hasSignal && smartInference.suggestedBeneficiariesReason && (
-                    <div id="create-project-view-section-5-demographics-12" className="text-[10px] text-cyan-800 bg-cyan-50/70 border border-cyan-100 rounded-lg px-2 py-1 mt-1.5 flex items-center justify-between">
+                    <div id="create-project-view-section-5-demographics-12" className="text-xs text-cyan-800 bg-cyan-50/70 border border-cyan-100 rounded-lg px-2 py-1 mt-1.5 flex items-center justify-between">
                       <span className="truncate">تحلیل: {smartInference.suggestedBeneficiariesReason}</span>
                       <button
                         type="button"
@@ -2568,11 +2825,11 @@ export const CreateProjectView: React.FC = () => {
                   )}
                   {/* Demographic Quick Chips */}
                   <div id="create-project-view-demographic-quick-chips" className="flex items-center gap-1 mt-1.5 flex-wrap">
-                    <span className="text-[10px] text-slate-400">گزینه‌ها:</span>
+                    <span className="text-xs text-slate-500">گزینه‌ها:</span>
                     <button
                       type="button"
                       onClick={() => setBeneficiariesCount(smartInference.suggestedBeneficiaries)}
-                      className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-50 hover:bg-cyan-100 text-cyan-800 font-bold border border-cyan-200 transition-colors cursor-pointer"
+                      className="text-xs px-1.5 py-0.5 rounded bg-cyan-50 hover:bg-cyan-100 text-cyan-800 font-bold border border-cyan-200 transition-colors cursor-pointer"
                       title="جمعیت هدف محاسبه‌شده بر اساس نوع و مکان طرح"
                     >
                       پیشنهاد طرح ({formatNumber(smartInference.suggestedBeneficiaries)})
@@ -2580,7 +2837,7 @@ export const CreateProjectView: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setBeneficiariesCount(smartInference.districtTotalPop)}
-                      className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors cursor-pointer"
+                      className="text-xs px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors cursor-pointer"
                       title={`کل جمعیت ثبت‌شده این محدوده در ${selectedLocation.city}`}
                     >
                       کل بخش ({formatNumber(smartInference.districtTotalPop)})
@@ -2589,16 +2846,16 @@ export const CreateProjectView: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setBeneficiariesCount(smartInference.districtVulnerablePop)}
-                        className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 hover:bg-amber-100 text-amber-800 font-medium border border-amber-200 transition-colors cursor-pointer"
+                        className="text-xs px-1.5 py-0.5 rounded bg-amber-50 hover:bg-amber-100 text-amber-800 font-medium border border-amber-200 transition-colors cursor-pointer"
                         title="جمعیت اقشار آسیب‌پذیر و مددجویان این بخش"
                       >
                         آسیب‌پذیر ({formatNumber(smartInference.districtVulnerablePop)})
                       </button>
                     )}
                   </div>
-                  <div id="create-project-view-demographic-quick-chips-2" className="flex items-center justify-between text-[11px] text-slate-500 mt-2 pt-1 border-t border-slate-100">
+                  <div id="create-project-view-demographic-quick-chips-2" className="flex items-center justify-between text-xs text-slate-500 mt-2 pt-1 border-t border-slate-100">
                     <span>هزینه سرانه هر نفر:</span>
-                    <span className="font-bold text-blue-700">{formatToman(costPerBeneficiary)}</span>
+                    <Num {...formatMoneyParts(costPerBeneficiary)} className="font-bold text-blue-700" />
                   </div>
                 </div>
               </div>
@@ -2613,7 +2870,7 @@ export const CreateProjectView: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setSelectedBeneficiaryGroups(smartInference.suggestedGroups)}
-                      className="inline-flex items-center gap-1 text-[10px] text-cyan-800 hover:text-cyan-950 font-bold bg-cyan-50 hover:bg-cyan-100 border border-cyan-200 px-2 py-0.5 rounded-md transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1 text-xs text-cyan-800 hover:text-cyan-950 font-bold bg-cyan-50 hover:bg-cyan-100 border border-cyan-200 px-2 py-0.5 rounded-md transition-colors cursor-pointer"
                     >
                       <Sparkles className="w-2.5 h-2.5 text-cyan-600" />
                       <span>اعمال جامعه هدف مرتبط با این طرح</span>
@@ -2649,13 +2906,17 @@ export const CreateProjectView: React.FC = () => {
                 </div>
               </div>
             </div>
+            )}
 
-            {/* Section 6: Execution & Contracting Partner */}
-            <div id="create-project-view-section-6-execution-contracting" className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+            {/* Step ۵ (بخش دوم) — مجری و پیمانکار (Section 6) */}
+            {activeStep === 5 && (
+            <div id="create-project-view-section-6-execution-contracting" role="group" aria-label="گام ۵: مجری و پیمانکار" className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
               <div id="create-project-view-section-6-execution-contracting-2" className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div id="create-project-view-section-6-execution-contracting-3" className="flex items-center gap-2">
-                  <div id="create-project-view-section-6-execution-contracting-4" className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-sm">
-                    ۶
+                  {/* Shares the last step with the governance card, so it wears the
+                      step's icon instead of a second number. */}
+                  <div id="create-project-view-section-6-execution-contracting-4" className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center" aria-hidden="true">
+                    <HardHat className="w-4 h-4" />
                   </div>
                   <div id="create-project-view-section-6-execution-contracting-5">
                     <h2 className="text-sm font-bold text-slate-900">تعیین دستگاه مجری و پیمانکار واجد صلاحیت</h2>
@@ -2677,7 +2938,7 @@ export const CreateProjectView: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setExecutorId(smartInference.suggestedExecutorId)}
-                        className="inline-flex items-center gap-1 text-[10px] text-amber-800 hover:text-amber-950 font-bold bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 text-xs text-amber-800 hover:text-amber-950 font-bold bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
                       >
                         <Sparkles className="w-2.5 h-2.5 text-amber-600" />
                         <span>پیشنهاد: {smartInference.suggestedExecutor.name.split(' ')[0]} {smartInference.suggestedExecutor.name.split(' ')[1] || ''}</span>
@@ -2696,7 +2957,7 @@ export const CreateProjectView: React.FC = () => {
                     ))}
                   </select>
                   {selectedExecutor && (
-                    <div id="create-project-view-section-6-execution-contracting-9" className="mt-1 text-[11px] text-slate-500">
+                    <div id="create-project-view-section-6-execution-contracting-9" className="mt-1 text-xs text-slate-500">
                       مدیرمسئول: {selectedExecutor.managingDirector} | تماس: {selectedExecutor.contactPhone}
                     </div>
                   )}
@@ -2711,7 +2972,7 @@ export const CreateProjectView: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setContractorId(smartInference.suggestedContractorId)}
-                        className="inline-flex items-center gap-1 text-[10px] text-amber-800 hover:text-amber-950 font-bold bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 text-xs text-amber-800 hover:text-amber-950 font-bold bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
                       >
                         <Sparkles className="w-2.5 h-2.5 text-amber-600" />
                         <span>پیشنهاد: {smartInference.suggestedContractor.companyName}</span>
@@ -2731,43 +2992,221 @@ export const CreateProjectView: React.FC = () => {
                     ))}
                   </select>
                   {selectedContractor && (
-                    <div id="create-project-view-section-6-execution-contracting-12" className="mt-1 text-[11px] text-slate-500">
+                    <div id="create-project-view-section-6-execution-contracting-12" className="mt-1 text-xs text-slate-500">
                       مدیرعامل: {selectedContractor.ceoName} | امتیاز عملکرد: {toPersianDigits(selectedContractor.performanceScore)} از ۱۰۰
                     </div>
                   )}
                 </div>
               </div>
             </div>
+            )}
 
-            {/* Submit Action Bar */}
-            <div id="create-project-view-submit-action-bar" className="bg-slate-900 text-white rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
-              <div id="create-project-view-submit-action-bar-2">
-                <div id="create-project-view-submit-action-bar-3" className="text-xs font-semibold text-slate-400">اعتبارسنجی نهایی و ثبت در تمام ماژول‌ها</div>
-                <div id="create-project-view-submit-action-bar-4" className="text-sm font-bold text-white mt-0.5">
-                  ارزش کل طرح: {formatToman(estimatedCostToman)} | بهره‌برداران: {formatNumber(beneficiariesCount)} نفر
+            {/* Final review — the last step's executor fields sit above it, so nothing
+                is submitted that has not just been read back on this screen. */}
+            {activeStep === 5 && (
+              <section
+                id="create-project-view-final-review"
+                aria-label="بازبینی نهایی طرح"
+                className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <CheckCheck className="w-4 h-4 text-emerald-600" aria-hidden="true" />
+                    <h2 className="text-sm font-bold text-slate-900">بازبینی نهایی و تأیید اطلاعات</h2>
+                  </div>
+                  <span className={`text-xs font-bold ${allStepsValid ? 'text-emerald-700' : 'text-warning-strong'}`}>
+                    {allStepsValid ? 'همه گام‌ها معتبر است' : `${toPersianDigits(invalidStepCount)} گام نیازمند اصلاح`}
+                  </span>
                 </div>
+
+                <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+                  {reviewRow('عنوان طرح', title.trim() || '—', 1)}
+                  {reviewRow(
+                    'کد و بازه اجرا',
+                    `${code} · ${toPersianDigits(startYear)} تا ${toPersianDigits(endYear)} · ${toPersianDigits(durationMonths)} ماه`,
+                    1
+                  )}
+                  {reviewRow('وضعیت فرآیندی', STATUS_LABELS[status] ?? status, 1)}
+                  {reviewRow(
+                    'محدوده اجرا',
+                    district ? `${district}${targetArea ? ` — ${targetArea}` : ''}` : '—',
+                    2
+                  )}
+                  {reviewRow(
+                    'بهره‌برداران',
+                    <Num
+                      value={formatNumber(beneficiariesCount, true, 0)}
+                      unit="نفر"
+                      unitClassName="text-[0.85em] font-bold text-slate-500 ms-1"
+                    />,
+                    2
+                  )}
+                  {reviewRow(
+                    'گروه‌های هدف',
+                    selectedBeneficiaryGroups.length ? selectedBeneficiaryGroups.join('، ') : '—',
+                    2
+                  )}
+                  {reviewRow('ارزش کل طرح', <Num {...formatMoneyParts(estimatedCostToman)} />, 3)}
+                  {reviewRow('منبع مالی اصلی', primaryBudgetSource?.title ?? '—', 3)}
+                  {reviewRow(
+                    'ترکیب منابع',
+                    `CSR ${toPersianDigits(csrSharePct)}٪ · دولتی ${toPersianDigits(govSharePct)}٪ · دهیاری ${toPersianDigits(dehyariSharePct)}٪ · بانکی ${toPersianDigits(bankSharePct)}٪ · خیرین ${toPersianDigits(charitySharePct)}٪`,
+                    3
+                  )}
+                  {reviewRow('اولویت راهبردی', selectedPriority?.title ?? '—', 4)}
+                  {reviewRow('کانون بحران', selectedCrisis?.title ?? '—', 4)}
+                  {reviewRow('درجه فوریت', URGENCY_LABELS[urgency], 4)}
+                  {reviewRow('اداره متقاضی', requestingDept?.name ?? '—', 5)}
+                  {reviewRow('دستگاه اجرایی اصلی', primaryDept?.name ?? '—', 5)}
+                  {reviewRow(
+                    'مجری و پیمانکار',
+                    selectedExecutor
+                      ? `${selectedExecutor.name}${selectedContractor ? ` · ${selectedContractor.companyName}` : ' · بدون پیمانکار اختصاصی'}`
+                      : '—',
+                    5
+                  )}
+                </dl>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-1">
+                    <span className="text-slate-500 font-semibold block">سرانه هر بهره‌بردار</span>
+                    <Num {...formatMoneyParts(costPerBeneficiary)} className="font-black text-slate-900" />
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-1">
+                    <span className="text-slate-500 font-semibold block">تخصیص سال جاری / سال‌های آینده</span>
+                    <span className="flex flex-wrap items-center gap-1">
+                      <Num {...formatMoneyParts(currentYearAllocatedToman)} className="font-bold text-slate-900" />
+                      <span className="text-slate-500">/</span>
+                      <Num {...formatMoneyParts(futureYearsAllocatedToman)} className="font-bold text-slate-900" />
+                    </span>
+                  </div>
+                  <div
+                    className={`rounded-xl border p-3 space-y-1 ${
+                      potentialDuplicates.length > 0
+                        ? 'border-red-200 bg-risk-soft'
+                        : 'border-emerald-200 bg-success-soft'
+                    }`}
+                  >
+                    <span
+                      className={`font-semibold block ${
+                        potentialDuplicates.length > 0 ? 'text-risk-strong' : 'text-emerald-700'
+                      }`}
+                    >
+                      {potentialDuplicates.length > 0 ? 'هشدار همپوشانی' : 'موازی‌سنجی'}
+                    </span>
+                    <span
+                      className={`font-bold ${
+                        potentialDuplicates.length > 0 ? 'text-risk-strong' : 'text-emerald-700'
+                      }`}
+                    >
+                      {potentialDuplicates.length > 0
+                        ? `${toPersianDigits(potentialDuplicates.length)} پروژه با محدوده یا بحران مشابه`
+                        : 'بدون همپوشانی با پروژه‌های موجود'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100">
+                  <span className="text-xs text-slate-500 block mb-2">
+                    این طرح پس از ثبت در این ماژول‌ها منتشر می‌شود:
+                  </span>
+                  <ul className="flex flex-wrap gap-2 text-xs">
+                    {PUBLISH_MODULES.map((module) => {
+                      const ModuleIcon = module.icon;
+                      return (
+                        <li
+                          key={module.label}
+                          className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-slate-700"
+                        >
+                          <ModuleIcon className="w-3.5 h-3.5 text-slate-500" aria-hidden="true" />
+                          {module.label}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              </section>
+            )}
+
+            {/* Step navigation — one primary action per step, and only the last step
+                can submit the plan. Below `lg` the bar sticks to the bottom of the
+                workspace so «گام بعد» stays reachable on a long step. */}
+            <div
+              id="create-project-view-step-navigation"
+              className="bg-slate-900 text-white rounded-2xl p-5 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 shadow-xl max-lg:sticky max-lg:bottom-0 max-lg:z-10"
+            >
+              <div className="space-y-1">
+                <div className="text-xs font-semibold text-slate-300">
+                  گام {toPersianDigits(activeStep)} از {toPersianDigits(FORM_STEPS.length)} — {FORM_STEPS[activeStep - 1].label}
+                </div>
+                <div className="text-sm font-bold text-white flex flex-wrap items-center gap-1.5">
+                  <span>ارزش کل طرح:</span>
+                  <Num
+                    {...formatMoneyParts(estimatedCostToman)}
+                    unitClassName="text-[0.7em] font-bold text-slate-300 ms-1"
+                  />
+                  <span className="text-slate-500" aria-hidden="true">|</span>
+                  <span>بهره‌برداران:</span>
+                  <Num
+                    value={formatNumber(beneficiariesCount, true, 0)}
+                    unit="نفر"
+                    unitClassName="text-[0.8em] font-bold text-slate-300 ms-1"
+                  />
+                </div>
+                {!allStepsValid && activeStep === FORM_STEPS.length && (
+                  <div className="text-xs font-semibold text-amber-300 flex items-center gap-1.5 pt-0.5">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    برای ثبت نهایی، گام‌های دارای هشدار را کامل کنید.
+                  </div>
+                )}
               </div>
 
-              <div id="create-project-view-submit-action-bar-5" className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handlePrevStep}
+                  disabled={activeStep === 1}
+                  className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5 ${
+                    activeStep === 1
+                      ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                      : 'bg-slate-800 hover:bg-slate-700 text-slate-200 cursor-pointer'
+                  }`}
+                >
+                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                  گام قبل
+                </button>
+
                 <button
                   type="button"
                   onClick={handleResetForm}
-                  className="w-full sm:w-auto px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition-colors"
+                  className="px-4 py-2.5 text-xs font-bold rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
                 >
-                  انصراف و پاکسازی فرم
+                  انصراف و پاکسازی
                 </button>
-                <button
-                  type="submit"
-                  disabled={!isBudgetShareValid}
-                  className={`w-full sm:w-auto px-6 py-2.5 text-xs font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 ${
-                    isBudgetShareValid
-                      ? 'bg-blue-600 hover:bg-blue-500 text-white cursor-pointer'
-                      : 'bg-slate-700 text-slate-400 cursor-not-allowed'
-                  }`}
-                >
-                  <Send className="w-4 h-4" />
-                  ثبت نهایی و انتشار در کلیه تب‌ها
-                </button>
+
+                {activeStep < FORM_STEPS.length ? (
+                  <button
+                    type="button"
+                    onClick={handleNextStep}
+                    className="px-6 py-2.5 text-xs font-bold rounded-xl shadow-lg bg-blue-600 hover:bg-blue-500 text-white transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    گام بعد
+                    <ArrowRight className="w-4 h-4 rtl:rotate-180" aria-hidden="true" />
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={!isBudgetShareValid}
+                    className={`px-6 py-2.5 text-xs font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 ${
+                      isBudgetShareValid
+                        ? 'bg-blue-600 hover:bg-blue-500 text-white cursor-pointer'
+                        : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                    }`}
+                  >
+                    <Send className="w-4 h-4" aria-hidden="true" />
+                    ثبت نهایی و انتشار در کلیه تب‌ها
+                  </button>
+                )}
               </div>
             </div>
           </form>
@@ -2804,12 +3243,12 @@ export const CreateProjectView: React.FC = () => {
                   سیستم متوجه شد طرح دیگری با بحران یا موقعیت مکانی مشابه در حال پیگیری است:
                 </p>
                 <div id="create-project-view-anti-overlap-intelligence-card-4" className="bg-white/80 p-2.5 rounded-xl border border-amber-200 text-slate-800">
-                  <div id="create-project-view-anti-overlap-intelligence-card-5" className="font-bold text-[11px] text-slate-900">{potentialDuplicates[0].title}</div>
-                  <div id="create-project-view-anti-overlap-intelligence-card-6" className="text-[10px] text-slate-500 mt-1">
+                  <div id="create-project-view-anti-overlap-intelligence-card-5" className="font-bold text-xs text-slate-900">{potentialDuplicates[0].title}</div>
+                  <div id="create-project-view-anti-overlap-intelligence-card-6" className="text-xs text-slate-500 mt-1">
                     متولی: {potentialDuplicates[0].departmentName} | کد: {potentialDuplicates[0].code}
                   </div>
                 </div>
-                <p className="text-[11px] text-amber-700 font-semibold">
+                <p className="text-xs text-amber-700 font-semibold">
                   توصیه هوشمند: پیشنهاد می‌شود سهم‌های هر دو دستگاه را در قالب این پروژه مشترک ادغام نمایید تا از هدررفت بودجه جلوگیری شود.
                 </p>
               </div>
@@ -2823,7 +3262,7 @@ export const CreateProjectView: React.FC = () => {
           {/* Live Passport Card */}
           <div id="create-project-view-live-passport-card" className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden sticky top-6">
             <div id="create-project-view-live-passport-card-2" className="bg-gradient-to-r from-slate-900 to-indigo-950 p-4 text-white">
-              <div id="create-project-view-live-passport-card-3" className="flex items-center justify-between text-[11px] text-slate-300 mb-1">
+              <div id="create-project-view-live-passport-card-3" className="flex items-center justify-between text-xs text-slate-300 mb-1">
                 <span>پیش‌نمایش زنده شناسنامه پروژه</span>
                 <span className="font-mono bg-white/10 px-2 py-0.5 rounded text-indigo-200">{code}</span>
               </div>
@@ -2869,9 +3308,9 @@ export const CreateProjectView: React.FC = () => {
               <div id="create-project-view-budget-composition-breakdown" className="space-y-2 border-b border-slate-100 pb-3">
                 <div id="create-project-view-budget-composition-breakdown-2" className="flex items-center justify-between">
                   <span className="text-slate-500 font-bold">برآورد کل بودجه:</span>
-                  <span className="font-black text-slate-900 text-sm">{formatToman(estimatedCostToman)}</span>
+                  <Num {...formatMoneyParts(estimatedCostToman)} className="font-black text-slate-900 text-sm" />
                 </div>
-                <div id="create-project-view-budget-composition-breakdown-3" className="space-y-1 text-[11px] pt-1">
+                <div id="create-project-view-budget-composition-breakdown-3" className="space-y-1 text-xs pt-1">
                   <div id="create-project-view-budget-composition-breakdown-4" className="flex items-center justify-between text-emerald-800">
                     <span>سهم مسئولیت اجتماعی (CSR مس):</span>
                     <span className="font-bold">{toPersianDigits(csrSharePct)}٪</span>
@@ -2912,13 +3351,13 @@ export const CreateProjectView: React.FC = () => {
                 <div id="create-project-view-demographics-per-capita-4" className="flex items-center justify-between">
                   <span className="text-slate-500">هزینه سرانه هر نفر:</span>
                   <span className="font-black text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
-                    {formatToman(costPerBeneficiary)}
+                    <Num {...formatMoneyParts(costPerBeneficiary)} />
                   </span>
                 </div>
               </div>
 
               {/* Implementation Partner */}
-              <div id="create-project-view-implementation-partner" className="space-y-1 text-[11px]">
+              <div id="create-project-view-implementation-partner" className="space-y-1 text-xs">
                 <div id="create-project-view-implementation-partner-2" className="flex items-center justify-between">
                   <span className="text-slate-500">دستگاه مجری:</span>
                   <span className="font-semibold text-slate-800">{selectedExecutor?.name || '-'}</span>
@@ -2974,18 +3413,18 @@ export const CreateProjectView: React.FC = () => {
                 <tr key={proj.id} className="hover:bg-slate-50/80 transition-colors">
                   <td className="p-3">
                     <div id={`create-project-view-connected-projects-registry-5-${proj.id}`} className="font-bold text-slate-900">{proj.title}</div>
-                    <div id={`create-project-view-connected-projects-registry-6-${proj.id}`} className="text-[11px] text-slate-400 font-mono mt-0.5">{proj.code}</div>
+                    <div id={`create-project-view-connected-projects-registry-6-${proj.id}`} className="text-xs text-slate-500 font-mono mt-0.5">{proj.code}</div>
                   </td>
                   <td className="p-3">
                     <div id={`create-project-view-connected-projects-registry-7-${proj.id}`} className="font-semibold text-slate-800">{proj.departmentName}</div>
                     {proj.isMultiDepartment && (
-                      <span className="inline-block mt-0.5 text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">
+                      <span className="inline-block mt-0.5 text-xs font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">
                         مشترک بین‌دستگاهی
                       </span>
                     )}
                   </td>
                   <td className="p-3">
-                    <div id={`create-project-view-connected-projects-registry-8-${proj.id}`} className="flex items-center gap-1 text-[11px]">
+                    <div id={`create-project-view-connected-projects-registry-8-${proj.id}`} className="flex items-center gap-1 text-xs">
                       <span className="text-emerald-700 font-bold">CSR: {toPersianDigits(proj.csrSharePercentage || 0)}٪</span>
                       <span className="text-slate-300">|</span>
                       <span className="text-blue-700 font-bold">دولت: {toPersianDigits(proj.governmentSharePercentage || 0)}٪</span>
@@ -2993,19 +3432,19 @@ export const CreateProjectView: React.FC = () => {
                   </td>
                   <td className="p-3">
                     <div id={`create-project-view-connected-projects-registry-9-${proj.id}`} className="text-slate-800 font-medium">{proj.district}</div>
-                    <div id={`create-project-view-connected-projects-registry-10-${proj.id}`} className="text-[11px] text-slate-500 font-semibold">
+                    <div id={`create-project-view-connected-projects-registry-10-${proj.id}`} className="text-xs text-slate-500 font-semibold">
                       {formatNumber(proj.beneficiariesCount)} نفر
                     </div>
                   </td>
                   <td className="p-3 font-bold text-slate-900">
-                    {formatToman(proj.estimatedCostToman)}
+                    <Num {...formatMoneyParts(proj.estimatedCostToman)} />
                   </td>
                   <td className="p-3 font-bold text-blue-700">
-                    {formatToman(proj.costPerBeneficiaryToman)}
+                    <Num {...formatMoneyParts(proj.costPerBeneficiaryToman)} />
                   </td>
                   <td className="p-3">
                     <span
-                      className={`inline-block px-2 py-1 rounded-md text-[10px] font-bold ${
+                      className={`inline-block px-2 py-1 rounded-md text-xs font-bold ${
                         proj.status === 'COMPLETED'
                           ? 'bg-emerald-100 text-emerald-800'
                           : proj.status === 'IN_PROGRESS'
