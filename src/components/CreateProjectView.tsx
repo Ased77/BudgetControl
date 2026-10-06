@@ -2277,10 +2277,18 @@ export const CreateProjectView: React.FC = () => {
               </span>
             </div>
 
-            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden" aria-hidden="true">
+            <div
+              className="h-1.5 bg-slate-100 rounded-full overflow-hidden"
+              role="progressbar"
+              aria-label="پیشرفت ثبت پروژه"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round((activeStep / FORM_STEPS.length) * 100)}
+              aria-valuetext={`گام ${toPersianDigits(activeStep)} از ${toPersianDigits(FORM_STEPS.length)}`}
+            >
               <div
                 className="h-full bg-blue-600 rounded-full transition-all duration-300"
-                style={{ width: `${((activeStep - 1) / (FORM_STEPS.length - 1)) * 100}%` }}
+                style={{ width: `${(activeStep / FORM_STEPS.length) * 100}%` }}
               />
             </div>
 

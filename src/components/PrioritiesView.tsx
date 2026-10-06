@@ -142,8 +142,8 @@ export const PrioritiesView: React.FC = () => {
       <PageHeader
         id="priorities-view-page-header"
         icon={ListChecks}
-        title="اولویت‌ها و ضرایب وزنی تخصیص بودجه"
-        subtitle={`انطباق زنده با شاخص‌های محرومیت ${selectedLocation.province} (${selectedLocation.county})`}
+        title="اولویت‌ها"
+        subtitle={`اولویت‌ها و ضرایب وزنی تخصیص بودجه — انطباق زنده با شاخص‌های محرومیت ${selectedLocation.province} (${selectedLocation.county})`}
         tone="text-purple-600"
       />
 
