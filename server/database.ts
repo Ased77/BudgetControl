@@ -282,6 +282,38 @@ function seed(): void {
 
 seed();
 
+const PRIORITY_TITLE_MIGRATIONS: Record<string, { previous: string; current: string }> = {
+  p1: { previous: 'توسعه زیرساخت‌های عمومی، عمران و خدمات شهری/روستایی', current: 'توسعه و عمران' },
+  p2: { previous: 'اشتغال‌زایی بازدارنده، کارآفرینی و توانمندسازی اقتصادی جوانان', current: 'اشتغال‌زایی و کارآفرینی' },
+  p3: { previous: 'حمایت از آسیب‌پذیران، جوانی جمعیت و فرزندآوری، تسهیل ازدواج و بازپروری بزهکاران', current: 'تسهیل ازدواج و فرزندآوری' },
+  p4: { previous: 'بهداشت، درمان، مقابله با سوءمصرف الکل و مسمومیت متانول، سلامت روان و خودکشی', current: 'بهداشت و درمان' },
+  p5: { previous: 'محیط‌زیست، هوای پاک و کیفیت زندگی', current: 'محیط زیست' },
+  p6: { previous: 'تحکیم بنیان خانواده، پیشگیری از طلاق، مشاوره ازدواج و نشاط اجتماعی', current: 'تحکیم خانواده' },
+  p7: { previous: 'آموزش، توسعه مدارس روستایی و بورسیه دانش‌آموزان مستعد', current: 'آموزش و پرورش' },
+  p8: { previous: 'مشارکت مدنی، نظارت مردمی و شفافیت هزینه‌کرد بودجه', current: 'مشارکت مدنی' },
+  p9: { previous: 'مدیریت بحران، پدافند غیرعامل و ایمنی', current: 'مدیریت بحران' },
+  p10: { previous: 'عدالت محلی، ساماندهی سکونتگاه‌های غیررسمی و بافت‌های حاشیه‌ای', current: 'عدالت محلی' },
+  p11: { previous: 'دانش‌بنیان، نوآوری و فناوری‌های حل مسائل اجتماعی/عمرانی', current: 'دانش‌بنیان' },
+};
+
+const migratePriorityTitles = db.transaction(() => {
+  const findPriority = db.prepare('SELECT payload FROM priorities WHERE id = ?');
+  const updatePriority = db.prepare('UPDATE priorities SET title = ?, payload = ? WHERE id = ?');
+
+  for (const [id, titles] of Object.entries(PRIORITY_TITLE_MIGRATIONS)) {
+    const row = findPriority.get(id) as Payload<CsrPriority> | undefined;
+    if (!row) continue;
+
+    const priority = JSON.parse(row.payload) as CsrPriority;
+    if (priority.title !== titles.previous) continue;
+
+    const updated = { ...priority, title: titles.current };
+    updatePriority.run(updated.title, JSON.stringify(updated), id);
+  }
+});
+
+migratePriorityTitles();
+
 /* =========================================================================
    Typed accessors
    ========================================================================= */
