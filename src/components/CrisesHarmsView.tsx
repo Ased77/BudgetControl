@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { formatNumber, toPersianDigits } from '../utils/numberUtils';
 import { useConfirmDelete } from './ConfirmDeleteModal';
+import { Num } from './Num';
 
 export const CrisesHarmsView: React.FC = () => {
   const {
@@ -230,6 +231,77 @@ export const CrisesHarmsView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <section
+        id="national-dashboard-view-card-2-critical-crises"
+        className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5"
+        aria-labelledby="national-dashboard-view-card-2-critical-crises-title"
+      >
+        <div id="national-dashboard-view-card-2-critical-crises-2">
+          <div id="national-dashboard-view-card-2-critical-crises-3" className="mb-4 flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
+            <div id="national-dashboard-view-card-2-critical-crises-4" className="flex min-w-0 items-center gap-2">
+              <Flame className="h-5 w-5 shrink-0 text-risk" aria-hidden="true" />
+              <h2 id="national-dashboard-view-card-2-critical-crises-title" className="text-sm font-bold text-slate-900">
+                کانون‌های بحرانی و آسیب‌های دارای فوریت بالا
+              </h2>
+            </div>
+            <a
+              href="#crises-harms-view-crises-grid"
+              className="flex shrink-0 items-center gap-1 text-xs font-bold text-risk-strong hover:underline"
+            >
+              <span>مشاهده همه</span>
+              <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" aria-hidden="true" />
+            </a>
+          </div>
+
+          <div id="national-dashboard-view-card-2-critical-crises-5" className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            {crisesHarms
+              .filter((crisis) => crisis.urgency === 'CRITICAL' || crisis.urgency === 'HIGH')
+              .slice(0, 4)
+              .map((crisis) => (
+                <div
+                  id={`national-dashboard-view-card-2-critical-crises-6-${crisis.id}`}
+                  key={crisis.id}
+                  className="space-y-1.5 rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs"
+                >
+                  <div id={`national-dashboard-view-card-2-critical-crises-7-${crisis.id}`} className="flex items-center justify-between gap-2">
+                    <span className="font-bold text-slate-900">{crisis.title}</span>
+                    <span
+                      className={`shrink-0 rounded px-2 py-0.5 text-xs font-bold ${
+                        crisis.urgency === 'CRITICAL'
+                          ? 'border border-red-200 bg-risk-soft text-risk-strong'
+                          : 'border border-amber-200 bg-warning-soft text-warning-strong'
+                      }`}
+                    >
+                      {crisis.urgency === 'CRITICAL' ? 'بحرانی' : 'شدت بالا'}
+                    </span>
+                  </div>
+
+                  <div id={`national-dashboard-view-card-2-critical-crises-8-${crisis.id}`} className="flex items-center justify-between text-xs text-slate-500">
+                    <span>{crisis.county} ({crisis.districtOrVillage})</span>
+                    <span>
+                      متأثرین: <Num value={formatNumber(crisis.affectedPopulation)} unit="نفر" className="font-bold text-slate-700" unitClassName="ms-0.5 text-slate-500" />
+                    </span>
+                  </div>
+
+                  <p className="line-clamp-1 text-xs text-slate-600" title={crisis.recommendedIntervention}>
+                    {crisis.recommendedIntervention}
+                  </p>
+                </div>
+              ))}
+          </div>
+        </div>
+
+        <div id="national-dashboard-view-card-2-critical-crises-9" className="mt-4 flex items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs">
+          <span className="text-slate-500">تعداد کانون‌های بحرانی حل‌نشده:</span>
+          <Num
+            value={formatNumber(criticalCount, true, 0)}
+            unit="کانون فعال"
+            className="font-black text-risk-strong"
+            unitClassName="ms-1 text-[0.9em] font-bold text-risk-strong"
+          />
+        </div>
+      </section>
 
       {/* Filter and Search Bar */}
       <div id="crises-harms-view-filter-and-search-bar" className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">

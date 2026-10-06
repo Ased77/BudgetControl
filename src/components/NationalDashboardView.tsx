@@ -58,11 +58,6 @@ export const NationalDashboardView: React.FC = () => {
     () => projects.reduce((s, p) => s + p.estimatedCostToman, 0),
     [projects]
   );
-  const criticalCrisesCount = useMemo(
-    () => crisesHarms.filter((c) => c.urgency === 'CRITICAL').length,
-    [crisesHarms]
-  );
-
   // The engine reports the budget its duplicate-detection actually prevented
   // from being wasted. Zero (or no projects yet) means "not calculated yet" —
   // the card then renders the empty state below instead of a fake ۰ figure.
@@ -117,6 +112,63 @@ export const NationalDashboardView: React.FC = () => {
           <span>مشاهده رصد پروژه‌ها</span>
         </button>
       </PageHeader>
+
+      {/* Quick Navigation Cards to All System Pillars */}
+      <div id="national-dashboard-view-quick-navigation-cards-to-all" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <button
+          onClick={() => setActiveTab('DEPARTMENTS')}
+          className="bg-white p-4 rounded-xl border border-slate-200 hover:border-indigo-400 transition-colors text-start group"
+        >
+          <Building2 className="w-5 h-5 text-slate-500 group-hover:text-indigo-600 mb-2 transition-colors" aria-hidden="true" />
+          <span className="font-bold text-xs text-slate-900 block">نهادها و ادارات</span>
+          <span className="text-xs text-slate-500 mt-0.5 block">{formatNumber(departments.length)} متولی</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('BUDGET_SOURCES')}
+          className="bg-white p-4 rounded-xl border border-slate-200 hover:border-emerald-400 transition-colors text-start group"
+        >
+          <Wallet className="w-5 h-5 text-slate-500 group-hover:text-emerald-600 mb-2 transition-colors" aria-hidden="true" />
+          <span className="font-bold text-xs text-slate-900 block">منابع و بودجه</span>
+          <span className="text-xs text-slate-500 mt-0.5 block">{formatNumber(budgetSources.length)} سرفصل مالی</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('EXECUTORS')}
+          className="bg-white p-4 rounded-xl border border-slate-200 hover:border-cyan-400 transition-colors text-start group"
+        >
+          <Users2 className="w-5 h-5 text-slate-500 group-hover:text-cyan-600 mb-2 transition-colors" aria-hidden="true" />
+          <span className="font-bold text-xs text-slate-900 block">مجریان طرح‌ها</span>
+          <span className="text-xs text-slate-500 mt-0.5 block">{formatNumber(executors.length)} نهاد مجری</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('CONTRACTORS')}
+          className="bg-white p-4 rounded-xl border border-slate-200 hover:border-amber-400 transition-colors text-start group"
+        >
+          <HardHat className="w-5 h-5 text-slate-500 group-hover:text-amber-600 mb-2 transition-colors" aria-hidden="true" />
+          <span className="font-bold text-xs text-slate-900 block">پیمانکاران ذیصلاح</span>
+          <span className="text-xs text-slate-500 mt-0.5 block">{formatNumber(contractors.length)} شرکت معتبر</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('PRIORITIES')}
+          className="bg-white p-4 rounded-xl border border-slate-200 hover:border-purple-400 transition-colors text-start group"
+        >
+          <Scale className="w-5 h-5 text-slate-500 group-hover:text-purple-600 mb-2 transition-colors" aria-hidden="true" />
+          <span className="font-bold text-xs text-slate-900 block">اولویت‌های توسعه</span>
+          <span className="text-xs text-slate-500 mt-0.5 block">{formatNumber(priorities.length)} سرفصل اولویت</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('CRISES_HARMS')}
+          className="bg-white p-4 rounded-xl border border-slate-200 hover:border-rose-400 transition-colors text-start group"
+        >
+          <Flame className="w-5 h-5 text-slate-500 group-hover:text-rose-600 mb-2 transition-colors" aria-hidden="true" />
+          <span className="font-bold text-xs text-slate-900 block">آسیب‌ها و بحران‌ها</span>
+          <span className="text-xs text-slate-500 mt-0.5 block">{formatNumber(crisesHarms.length)} مورد ثبت‌شده</span>
+        </button>
+      </div>
 
       {/* Primary Macro KPI Cards — compact strip so the forecast chart below
           stays visible on a 1080p screen without scrolling. */}
@@ -223,74 +275,6 @@ export const NationalDashboardView: React.FC = () => {
 
       {/* Predictive Analysis Engine Module */}
       <DashboardPredictiveEngine />
-
-      {/* Critical crises requiring intervention */}
-      <div id="national-dashboard-view-two-column-grid-multi-source" className="grid grid-cols-1 gap-6">
-        {/* Card 2: Critical Crises Requiring Intervention — risk semantics */}
-        <div id="national-dashboard-view-card-2-critical-crises" className="bg-white rounded-2xl p-5 border border-slate-200 flex flex-col justify-between">
-          <div id="national-dashboard-view-card-2-critical-crises-2">
-            <div id="national-dashboard-view-card-2-critical-crises-3" className="flex items-center justify-between gap-3 pb-3 border-b border-slate-100 mb-4">
-              <div id="national-dashboard-view-card-2-critical-crises-4" className="flex items-center gap-2 min-w-0">
-                <Flame className="w-5 h-5 text-risk shrink-0" aria-hidden="true" />
-                <h3 className="font-bold text-sm text-slate-900">
-                  کانون‌های بحرانی و آسیب‌های دارای فوریت بالا
-                </h3>
-              </div>
-              <button
-                onClick={() => setActiveTab('CRISES_HARMS')}
-                className="text-xs text-risk-strong font-bold hover:underline flex items-center gap-1 shrink-0"
-              >
-                <span>مشاهده همه</span>
-                <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" aria-hidden="true" />
-              </button>
-            </div>
-
-            <div id="national-dashboard-view-card-2-critical-crises-5" className="space-y-3">
-              {crisesHarms.slice(0, 4).map((crisis) => (
-                <div
-                  id={`national-dashboard-view-card-2-critical-crises-6-${crisis.id}`}
-                  key={crisis.id}
-                  className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs space-y-1.5"
-                >
-                  <div id={`national-dashboard-view-card-2-critical-crises-7-${crisis.id}`} className="flex items-center justify-between gap-2">
-                    <span className="font-bold text-slate-900">{crisis.title}</span>
-                    <span
-                      className={`px-2 py-0.5 rounded text-xs font-bold shrink-0 ${
-                        crisis.urgency === 'CRITICAL'
-                          ? 'bg-risk-soft text-risk-strong border border-red-200'
-                          : 'bg-warning-soft text-warning-strong border border-amber-200'
-                      }`}
-                    >
-                      {crisis.urgency === 'CRITICAL' ? 'بحرانی' : 'شدت بالا'}
-                    </span>
-                  </div>
-
-                  <div id={`national-dashboard-view-card-2-critical-crises-8-${crisis.id}`} className="flex items-center justify-between text-xs text-slate-500">
-                    <span>
-                      {crisis.county} ({crisis.districtOrVillage})
-                    </span>
-                    <span>
-                      متأثرین: <Num value={formatNumber(crisis.affectedPopulation)} unit="نفر" className="font-bold text-slate-700" unitClassName="text-slate-500 ms-0.5" />
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-slate-600 line-clamp-1" title={crisis.recommendedIntervention}>{crisis.recommendedIntervention}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div id="national-dashboard-view-card-2-critical-crises-9" className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
-            <span className="text-slate-500">تعداد کانون‌های بحرانی حل‌نشده:</span>
-            <Num
-              value={formatNumber(criticalCrisesCount, true, 0)}
-              unit="کانون فعال"
-              className="font-black text-risk-strong"
-              unitClassName="text-[0.9em] font-bold text-risk-strong ms-1"
-            />
-          </div>
-        </div>
-      </div>
 
       {isBudgetSourcesModalOpen && (
         <div
@@ -439,62 +423,6 @@ export const NationalDashboardView: React.FC = () => {
         </div>
       )}
 
-      {/* Quick Navigation Cards to All System Pillars */}
-      <div id="national-dashboard-view-quick-navigation-cards-to-all" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        <button
-          onClick={() => setActiveTab('DEPARTMENTS')}
-          className="bg-white p-4 rounded-xl border border-slate-200 hover:border-indigo-400 transition-colors text-start group"
-        >
-          <Building2 className="w-5 h-5 text-slate-500 group-hover:text-indigo-600 mb-2 transition-colors" aria-hidden="true" />
-          <span className="font-bold text-xs text-slate-900 block">نهادها و ادارات</span>
-          <span className="text-xs text-slate-500 mt-0.5 block">{formatNumber(departments.length)} متولی</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('BUDGET_SOURCES')}
-          className="bg-white p-4 rounded-xl border border-slate-200 hover:border-emerald-400 transition-colors text-start group"
-        >
-          <Wallet className="w-5 h-5 text-slate-500 group-hover:text-emerald-600 mb-2 transition-colors" aria-hidden="true" />
-          <span className="font-bold text-xs text-slate-900 block">منابع و بودجه</span>
-          <span className="text-xs text-slate-500 mt-0.5 block">{formatNumber(budgetSources.length)} سرفصل مالی</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('EXECUTORS')}
-          className="bg-white p-4 rounded-xl border border-slate-200 hover:border-cyan-400 transition-colors text-start group"
-        >
-          <Users2 className="w-5 h-5 text-slate-500 group-hover:text-cyan-600 mb-2 transition-colors" aria-hidden="true" />
-          <span className="font-bold text-xs text-slate-900 block">مجریان طرح‌ها</span>
-          <span className="text-xs text-slate-500 mt-0.5 block">{formatNumber(executors.length)} نهاد مجری</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('CONTRACTORS')}
-          className="bg-white p-4 rounded-xl border border-slate-200 hover:border-amber-400 transition-colors text-start group"
-        >
-          <HardHat className="w-5 h-5 text-slate-500 group-hover:text-amber-600 mb-2 transition-colors" aria-hidden="true" />
-          <span className="font-bold text-xs text-slate-900 block">پیمانکاران ذیصلاح</span>
-          <span className="text-xs text-slate-500 mt-0.5 block">{formatNumber(contractors.length)} شرکت معتبر</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('PRIORITIES')}
-          className="bg-white p-4 rounded-xl border border-slate-200 hover:border-purple-400 transition-colors text-start group"
-        >
-          <Scale className="w-5 h-5 text-slate-500 group-hover:text-purple-600 mb-2 transition-colors" aria-hidden="true" />
-          <span className="font-bold text-xs text-slate-900 block">اولویت‌های توسعه</span>
-          <span className="text-xs text-slate-500 mt-0.5 block">{formatNumber(priorities.length)} سرفصل اولویت</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('CRISES_HARMS')}
-          className="bg-white p-4 rounded-xl border border-slate-200 hover:border-rose-400 transition-colors text-start group"
-        >
-          <Flame className="w-5 h-5 text-slate-500 group-hover:text-rose-600 mb-2 transition-colors" aria-hidden="true" />
-          <span className="font-bold text-xs text-slate-900 block">آسیب‌ها و بحران‌ها</span>
-          <span className="text-xs text-slate-500 mt-0.5 block">{formatNumber(crisesHarms.length)} مورد ثبت‌شده</span>
-        </button>
-      </div>
     </div>
   );
 };
