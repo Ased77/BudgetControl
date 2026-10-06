@@ -28,6 +28,20 @@ import {
 } from 'lucide-react';
 import { HelpTooltip } from './HelpTooltip';
 
+const FULL_PRIORITY_TITLES: Record<number, string> = {
+  1: 'توسعه زیرساخت‌های عمومی، عمران و خدمات شهری/روستایی',
+  2: 'اشتغال‌زایی بازدارنده، کارآفرینی و توانمندسازی اقتصادی جوانان',
+  3: 'حمایت از آسیب‌پذیران، جوانی جمعیت و فرزندآوری، تسهیل ازدواج و بازپروری بزهکاران',
+  4: 'بهداشت، درمان، مقابله با سوءمصرف الکل و مسمومیت متانول، سلامت روان و خودکشی',
+  5: 'محیط‌زیست، هوای پاک و کیفیت زندگی',
+  6: 'تحکیم بنیان خانواده، پیشگیری از طلاق، مشاوره ازدواج و نشاط اجتماعی',
+  7: 'آموزش، توسعه مدارس روستایی و بورسیه دانش‌آموزان مستعد',
+  8: 'مشارکت مدنی، نظارت مردمی و شفافیت هزینه‌کرد بودجه',
+  9: 'مدیریت بحران، پدافند غیرعامل و ایمنی',
+  10: 'عدالت محلی، ساماندهی سکونتگاه‌های غیررسمی و بافت‌های حاشیه‌ای',
+  11: 'دانش‌بنیان، نوآوری و فناوری‌های حل مسائل اجتماعی/عمرانی',
+};
+
 export const PrioritiesView: React.FC = () => {
   const {
     priorities,
@@ -300,7 +314,7 @@ export const PrioritiesView: React.FC = () => {
                         <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight min-w-0 flex-1 break-words">{p.title}</h3>
                         <HelpTooltip text={p.description} label="مشاهده توضیح اولویت" size="sm" />
                       </div>
-                      <p className="mt-1 text-[10px] leading-relaxed text-slate-500 dark:text-slate-400 break-words">{p.description}</p>
+                      <p className="mt-1 text-[10px] leading-relaxed text-slate-500 dark:text-slate-400 break-words">{FULL_PRIORITY_TITLES[p.code] ?? p.title}</p>
                     </div>
                   </div>
 
