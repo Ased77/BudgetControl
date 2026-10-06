@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useState, useMemo, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useState, useMemo, useEffect, useRef } from 'react';
 import {
   LocationData,
   LocalIndicators,
@@ -102,6 +102,38 @@ function persistTab(tab: string) {
   } catch {
     /* ignore — the tab still works for this session */
   }
+}
+
+/** Real paths (not hashes) for each tab, so a page can be bookmarked, shared and
+ *  reloaded. Both servers fall back to index.html for unknown paths: Vite's dev
+ *  middleware and the production build's `app.get('*')`. */
+const TAB_PATHS: Record<string, string> = {
+  DASHBOARD: '/dashboard',
+  POPULATION: '/population',
+  DEPARTMENTS: '/departments',
+  BUDGET_SOURCES: '/budget-sources',
+  PRIORITIES: '/priorities',
+  CRISES_HARMS: '/crises-harms',
+  EXECUTORS: '/executors',
+  CONTRACTORS: '/contractors',
+  CREATE_PROJECT: '/create-project',
+  PROJECTS: '/projects',
+  CHARTS: '/charts',
+  LOCATIONS: '/locations',
+  ROLES_PERMISSIONS: '/roles-permissions',
+};
+
+function pathForTab(tab: string): string {
+  return TAB_PATHS[tab] ?? TAB_PATHS.DASHBOARD;
+}
+
+/** The inverse lookup, tolerant of a trailing slash and of any base path the app
+ *  is served under (a reverse-proxy prefix leaves extra leading segments). */
+function tabFromPath(pathname: string): string | null {
+  const segments = pathname.split('/').filter(Boolean);
+  const last = segments[segments.length - 1];
+  if (!last) return null;
+  return VALID_TABS.find((tab) => TAB_PATHS[tab] === `/${last}`) ?? null;
 }
 
 interface AppContextType {
@@ -235,11 +267,62 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() =>
     INITIAL_USERS.some((u) => u.id === readPersistedUserId())
   );
-  const [activeTab, setActiveTabState] = useState<string>(() => readPersistedTab() ?? 'DASHBOARD');
+  // The active tab is mirrored into the URL, so the browser's back and forward
+  // buttons walk the pages the user actually visited and every page is
+  // addressable. Precedence on first load: deep link → last session → home.
+  const [activeTab, setActiveTabState] = useState<string>(() => {
+    const fromUrl = tabFromPath(window.location.pathname);
+    return fromUrl ?? readPersistedTab() ?? 'DASHBOARD';
+  });
+  // Mirrors `activeTab` for the history helpers below: they are called from
+  // handlers and listeners that must not re-push the page already on screen,
+  // and they must agree with each other before React re-renders.
+  const activeTabRef = useRef(activeTab);
+
+  // Selecting a tab records a history entry, so the back and forward buttons walk
+  // the pages the user actually visited. Re-selecting the page already on screen
+  // records nothing, so a view that re-asserts its own tab on mount cannot leave a
+  // duplicate entry behind.
   const setActiveTab = (tab: string) => {
+    const changed = tab !== activeTabRef.current;
+    activeTabRef.current = tab;
     setActiveTabState(tab);
     persistTab(tab);
+    // A tab with no page of its own has no URL to record; the state change is
+    // still allowed, exactly as it was before the URL tracked the tab.
+    if (!changed || !VALID_TABS.includes(tab)) return;
+    window.history.pushState({ tab }, '', `${pathForTab(tab)}${window.location.search}`);
   };
+
+  // Give the entry the app was opened on a page path of its own: the root URL (or
+  // an unknown one) is rewritten to the resolved tab, while a deep link that
+  // already names a page is left exactly as it was. Replacing rather than pushing
+  // keeps the first back press leaving the app, instead of landing on the same
+  // page twice.
+  useEffect(() => {
+    if (tabFromPath(window.location.pathname)) return;
+    const tab = activeTabRef.current;
+    window.history.replaceState({ tab }, '', `${pathForTab(tab)}${window.location.search}`);
+  }, []);
+
+  // Back and forward adopt the tab of the entry being shown. An entry carries
+  // `state` when the app created it, and only a path when the URL was typed,
+  // bookmarked or restored by the browser.
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      const fromState = (event.state as { tab?: unknown } | null)?.tab;
+      const tab =
+        typeof fromState === 'string' && VALID_TABS.includes(fromState)
+          ? fromState
+          : tabFromPath(window.location.pathname);
+      if (!tab) return;
+      activeTabRef.current = tab;
+      setActiveTabState(tab);
+      persistTab(tab);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // --- SQLite backend sync ---------------------------------------------------
   // Hydrate all entity state from the server on mount. The bundled INITIAL_*

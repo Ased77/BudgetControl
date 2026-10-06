@@ -261,6 +261,21 @@ function clearProjectDraft() {
   }
 }
 
+/** Whether a draft is worth keeping. Every wizard field starts with a sensible
+ *  default, so the only proof that a person filled the form is one of the three
+ *  that start empty — otherwise merely opening the page would store a "draft". */
+function draftHasContent(draft: {
+  title?: string;
+  description?: string;
+  contributingDepts?: unknown[];
+}): boolean {
+  return (
+    (draft.title ?? '').trim().length > 0 ||
+    (draft.description ?? '').trim().length > 0 ||
+    (draft.contributingDepts?.length ?? 0) > 0
+  );
+}
+
 /** HH:MM in Persian digits, e.g. «۱۴:۰۵», for the autosave indicator. */
 function formatDraftTime(timestamp: number): string {
   const date = new Date(timestamp);
@@ -833,7 +848,10 @@ export const CreateProjectView: React.FC = () => {
   useEffect(() => {
     if (draftReady) return;
     const draft = initialDraft;
-    if (!draft) {
+    // An untouched form has nothing to restore; drop such a draft instead of
+    // announcing it, so the notice only ever describes real answers.
+    if (!draft || !draftHasContent(draft)) {
+      clearProjectDraft();
       setDraftReady(true);
       return;
     }
@@ -941,9 +959,7 @@ export const CreateProjectView: React.FC = () => {
     const timer = window.setTimeout(() => {
       // Nothing worth restoring yet (a fresh or just-reset form): drop any stored
       // draft rather than persisting an empty one, and hide the saved indicator.
-      const hasContent =
-        title.trim().length > 0 || description.trim().length > 0 || estimatedCostToman > 0;
-      if (!hasContent) {
+      if (!draftHasContent({ title, description, contributingDepts })) {
         clearProjectDraft();
         setDraftSavedAt(null);
         return;
