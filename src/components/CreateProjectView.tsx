@@ -51,6 +51,7 @@ import {
   ChevronUp,
   Info,
   Pencil,
+  Save,
 } from 'lucide-react';
 
 export type ProjectCategoryKey =
@@ -168,6 +169,106 @@ const PUBLISH_MODULES: { label: string; icon: React.ComponentType<{ className?: 
   { label: 'تب جمعیت: افراد ذینفع', icon: Users },
 ];
 
+const ADMIN_LEVELS: AdministrativeLevel[] = ['NATIONAL', 'PROVINCIAL', 'COUNTY', 'RURAL_DISTRICT'];
+
+/** True when `value` is one of `list` — used to reject stale draft values. */
+const isOneOf = <T extends string>(value: unknown, list: readonly T[]): value is T =>
+  typeof value === 'string' && (list as readonly string[]).includes(value);
+
+/**
+ * The autosaved draft of the project form.
+ *
+ * The wizard is long enough that losing it to a refresh or a stray tab switch
+ * hurts, so every answer it must be able to restore is mirrored into
+ * localStorage — along with the step the user had reached. Nothing derived is
+ * stored, and every value is re-checked on the way back in (see the restore
+ * effect), because a draft written before a data refresh can name a department
+ * or crisis that no longer exists, and a dead id would leave a select looking
+ * empty while still travelling in the payload.
+ */
+type ProjectDraft = {
+  v: 1;
+  savedAt: number;
+  title?: string;
+  code?: string;
+  description?: string;
+  status?: ProjectStatus;
+  startYear?: number;
+  endYear?: number;
+  durationMonths?: number;
+  requestingDeptId?: string;
+  primaryDeptId?: string;
+  isMultiDept?: boolean;
+  contributingDepts?: ContributingDepartment[];
+  selectedCrisisId?: string;
+  urgency?: UrgencyLevel;
+  selectedPriorityId?: string;
+  adminLevel?: AdministrativeLevel;
+  province?: string;
+  county?: string;
+  district?: string;
+  targetArea?: string;
+  beneficiariesCount?: number;
+  selectedBeneficiaryGroups?: string[];
+  primaryBudgetSourceId?: string;
+  estimatedCostToman?: number;
+  currentYearAllocatedToman?: number;
+  futureYearsAllocatedToman?: number;
+  csrSharePct?: number;
+  govSharePct?: number;
+  dehyariSharePct?: number;
+  bankSharePct?: number;
+  charitySharePct?: number;
+  executorId?: string;
+  contractorId?: string;
+  selectedCategory?: ProjectCategoryKey;
+  activeStep?: number;
+  maxReachedStep?: number;
+};
+
+/** Same `csr.<area>.<field>` shape the rest of the app persists under. */
+const DRAFT_STORAGE_KEY = 'csr.createProject.draft';
+/** Writes are debounced: a burst of typing is one write, not twenty. */
+const DRAFT_SAVE_DELAY_MS = 600;
+
+/** Storage may be unavailable (private mode, quota) — the form still works. */
+function readProjectDraft(): ProjectDraft | null {
+  try {
+    const raw = window.localStorage.getItem(DRAFT_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
+    const draft = parsed as ProjectDraft;
+    return draft.v === 1 ? draft : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeProjectDraft(draft: ProjectDraft) {
+  try {
+    window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+  } catch {
+    // Quota or privacy mode: this session simply goes on unsaved.
+  }
+}
+
+function clearProjectDraft() {
+  try {
+    window.localStorage.removeItem(DRAFT_STORAGE_KEY);
+  } catch {
+    // Nothing to do — there was no stored draft to remove.
+  }
+}
+
+/** HH:MM in Persian digits, e.g. «۱۴:۰۵», for the autosave indicator. */
+function formatDraftTime(timestamp: number): string {
+  const date = new Date(timestamp);
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return toPersianDigits(`${hours}:${minutes}`);
+}
+
 export const CreateProjectView: React.FC = () => {
   const {
     projects,
@@ -255,6 +356,15 @@ export const CreateProjectView: React.FC = () => {
   const [activeStep, setActiveStep] = useState<number>(1);
   const [maxReachedStep, setMaxReachedStep] = useState<number>(1);
   const [showStepErrors, setShowStepErrors] = useState<boolean>(false);
+
+  // --- Draft autosave ---
+  // `initialDraft` is read exactly once, on first render, and `draftReady` gates
+  // autosaving until the restore pass below has committed — without that gate the
+  // empty first render would overwrite a stored draft with the form's defaults.
+  const [initialDraft] = useState(() => readProjectDraft());
+  const [draftReady, setDraftReady] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
+  const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
   const formTopRef = useRef<HTMLElement | null>(null);
   // Tracks the step the scroll effect last acted on. Comparing against it (rather
   // than a "first run" flag) keeps the effect from firing on mount — React's
@@ -714,6 +824,211 @@ export const CreateProjectView: React.FC = () => {
     setDistrict(selectedLocation.city);
     setTargetArea(selectedLocation.district);
   }, [selectedLocation.id]);
+
+  // Restore an autosaved draft, deliberately AFTER the location effect above:
+  // that one seeds the geography from the global selector on mount and would
+  // otherwise overwrite the draft's own geography. The body runs once — the
+  // collections in its dependencies can change identity after an API refresh,
+  // and re-applying the draft then would clobber whatever the user had typed.
+  useEffect(() => {
+    if (draftReady) return;
+    const draft = initialDraft;
+    if (!draft) {
+      setDraftReady(true);
+      return;
+    }
+
+    const numberOrNull = (value: unknown): number | null =>
+      typeof value === 'number' && Number.isFinite(value) ? value : null;
+    // An empty collection means the data has not arrived yet, not that the id is
+    // unknown — validating against it would drop perfectly good answers.
+    const knownId = (value: unknown, ids: string[]): value is string =>
+      typeof value === 'string' && (ids.length === 0 || ids.includes(value));
+
+    if (typeof draft.title === 'string') setTitle(draft.title);
+    if (typeof draft.code === 'string') setCode(draft.code);
+    if (typeof draft.description === 'string') setDescription(draft.description);
+    if (isOneOf(draft.status, Object.keys(STATUS_LABELS) as ProjectStatus[])) setStatus(draft.status);
+    const restoredStartYear = numberOrNull(draft.startYear);
+    if (restoredStartYear !== null) setStartYear(restoredStartYear);
+    const restoredEndYear = numberOrNull(draft.endYear);
+    if (restoredEndYear !== null) setEndYear(restoredEndYear);
+    const restoredDuration = numberOrNull(draft.durationMonths);
+    if (restoredDuration !== null) setDurationMonths(restoredDuration);
+
+    if (knownId(draft.requestingDeptId, departments.map((d) => d.id))) setRequestingDeptId(draft.requestingDeptId);
+    if (knownId(draft.primaryDeptId, departments.map((d) => d.id))) setPrimaryDeptId(draft.primaryDeptId);
+    if (typeof draft.isMultiDept === 'boolean') setIsMultiDept(draft.isMultiDept);
+    if (Array.isArray(draft.contributingDepts)) {
+      setContributingDepts(draft.contributingDepts.filter((c) => Boolean(c) && typeof c.departmentId === 'string'));
+    }
+
+    if (knownId(draft.selectedCrisisId, crisesHarms.map((c) => c.id))) setSelectedCrisisId(draft.selectedCrisisId);
+    if (isOneOf(draft.urgency, Object.keys(URGENCY_LABELS) as UrgencyLevel[])) setUrgency(draft.urgency);
+    if (knownId(draft.selectedPriorityId, priorities.map((p) => p.id))) setSelectedPriorityId(draft.selectedPriorityId);
+
+    if (isOneOf(draft.adminLevel, ADMIN_LEVELS)) setAdminLevel(draft.adminLevel);
+    if (typeof draft.province === 'string') setProvince(draft.province);
+    if (typeof draft.county === 'string') setCounty(draft.county);
+    if (typeof draft.district === 'string') setDistrict(draft.district);
+    if (typeof draft.targetArea === 'string') setTargetArea(draft.targetArea);
+    const restoredBeneficiaries = numberOrNull(draft.beneficiariesCount);
+    if (restoredBeneficiaries !== null) setBeneficiariesCount(restoredBeneficiaries);
+    if (Array.isArray(draft.selectedBeneficiaryGroups)) {
+      setSelectedBeneficiaryGroups(
+        draft.selectedBeneficiaryGroups.filter((group): group is string => typeof group === 'string')
+      );
+    }
+
+    if (knownId(draft.primaryBudgetSourceId, budgetSources.map((b) => b.id))) {
+      setPrimaryBudgetSourceId(draft.primaryBudgetSourceId);
+    }
+    const restoredCost = numberOrNull(draft.estimatedCostToman);
+    if (restoredCost !== null) setEstimatedCostToman(restoredCost);
+    const restoredCurrentYear = numberOrNull(draft.currentYearAllocatedToman);
+    if (restoredCurrentYear !== null) setCurrentYearAllocatedToman(restoredCurrentYear);
+    const restoredFutureYears = numberOrNull(draft.futureYearsAllocatedToman);
+    if (restoredFutureYears !== null) setFutureYearsAllocatedToman(restoredFutureYears);
+    const restoredCsr = numberOrNull(draft.csrSharePct);
+    if (restoredCsr !== null) setCsrSharePct(restoredCsr);
+    const restoredGov = numberOrNull(draft.govSharePct);
+    if (restoredGov !== null) setGovSharePct(restoredGov);
+    const restoredDehyari = numberOrNull(draft.dehyariSharePct);
+    if (restoredDehyari !== null) setDehyariSharePct(restoredDehyari);
+    const restoredBank = numberOrNull(draft.bankSharePct);
+    if (restoredBank !== null) setBankSharePct(restoredBank);
+    const restoredCharity = numberOrNull(draft.charitySharePct);
+    if (restoredCharity !== null) setCharitySharePct(restoredCharity);
+
+    if (knownId(draft.executorId, executors.map((e) => e.id))) setExecutorId(draft.executorId);
+    if (knownId(draft.contractorId, contractors.map((c) => c.id))) setContractorId(draft.contractorId);
+    if (isOneOf(draft.selectedCategory, PROJECT_CATEGORIES.map((c) => c.key))) {
+      setSelectedCategory(draft.selectedCategory);
+    }
+
+    // Resume on the step the draft was saved from — and tell the scroll effect
+    // that this step is already where it should be, so restoring does not scroll.
+    const restoredStep = Math.min(
+      Math.max(1, Math.floor(numberOrNull(draft.activeStep) ?? 1)),
+      FORM_STEPS.length
+    );
+    const restoredReached = Math.min(
+      Math.max(restoredStep, Math.floor(numberOrNull(draft.maxReachedStep) ?? restoredStep)),
+      FORM_STEPS.length
+    );
+    setActiveStep(restoredStep);
+    setMaxReachedStep(restoredReached);
+    lastScrolledStep.current = restoredStep;
+    setDraftRestored(true);
+    setDraftSavedAt(numberOrNull(draft.savedAt) ?? Date.now());
+    setDraftReady(true);
+  }, [
+    draftReady,
+    initialDraft,
+    departments,
+    crisesHarms,
+    priorities,
+    budgetSources,
+    executors,
+    contractors,
+  ]);
+
+  // Autosave the answers, debounced so a burst of typing is a single write. This
+  // stays silent until `draftReady`, which the restore pass raises once it has
+  // committed the saved values into state.
+  useEffect(() => {
+    if (!draftReady) return;
+    const timer = window.setTimeout(() => {
+      // Nothing worth restoring yet (a fresh or just-reset form): drop any stored
+      // draft rather than persisting an empty one, and hide the saved indicator.
+      const hasContent =
+        title.trim().length > 0 || description.trim().length > 0 || estimatedCostToman > 0;
+      if (!hasContent) {
+        clearProjectDraft();
+        setDraftSavedAt(null);
+        return;
+      }
+      const savedAt = Date.now();
+      writeProjectDraft({
+        v: 1,
+        savedAt,
+        title,
+        code,
+        description,
+        status,
+        startYear,
+        endYear,
+        durationMonths,
+        requestingDeptId,
+        primaryDeptId,
+        isMultiDept,
+        contributingDepts,
+        selectedCrisisId,
+        urgency,
+        selectedPriorityId,
+        adminLevel,
+        province,
+        county,
+        district,
+        targetArea,
+        beneficiariesCount,
+        selectedBeneficiaryGroups,
+        primaryBudgetSourceId,
+        estimatedCostToman,
+        currentYearAllocatedToman,
+        futureYearsAllocatedToman,
+        csrSharePct,
+        govSharePct,
+        dehyariSharePct,
+        bankSharePct,
+        charitySharePct,
+        executorId,
+        contractorId,
+        selectedCategory,
+        activeStep,
+        maxReachedStep,
+      });
+      setDraftSavedAt(savedAt);
+    }, DRAFT_SAVE_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, [
+    draftReady,
+    title,
+    code,
+    description,
+    status,
+    startYear,
+    endYear,
+    durationMonths,
+    requestingDeptId,
+    primaryDeptId,
+    isMultiDept,
+    contributingDepts,
+    selectedCrisisId,
+    urgency,
+    selectedPriorityId,
+    adminLevel,
+    province,
+    county,
+    district,
+    targetArea,
+    beneficiariesCount,
+    selectedBeneficiaryGroups,
+    primaryBudgetSourceId,
+    estimatedCostToman,
+    currentYearAllocatedToman,
+    futureYearsAllocatedToman,
+    csrSharePct,
+    govSharePct,
+    dehyariSharePct,
+    bankSharePct,
+    charitySharePct,
+    executorId,
+    contractorId,
+    selectedCategory,
+    activeStep,
+    maxReachedStep,
+  ]);
 
   // محدوده‌های قابل انتخاب همان شهرستان برای دراپ‌داون مکان اجرا.
   const selectableAreas = useMemo(
@@ -1564,6 +1879,11 @@ export const CreateProjectView: React.FC = () => {
 
     handleAddProject(newProjectData);
     setSubmittedSuccess(true);
+    // The answers now live in the database — drop the local draft so the next
+    // visit starts from a clean form instead of resurrecting this submission.
+    clearProjectDraft();
+    setDraftRestored(false);
+    setDraftSavedAt(null);
   };
 
   const handleResetForm = () => {
@@ -1577,6 +1897,16 @@ export const CreateProjectView: React.FC = () => {
     setActiveStep(1);
     setMaxReachedStep(1);
     setShowStepErrors(false);
+    clearProjectDraft();
+    setDraftRestored(false);
+    setDraftSavedAt(null);
+  };
+
+  /** Drop the stored draft but keep what is on screen; the next edit re-saves. */
+  const handleDiscardDraft = () => {
+    clearProjectDraft();
+    setDraftRestored(false);
+    setDraftSavedAt(null);
   };
 
   return (
@@ -1984,6 +2314,53 @@ export const CreateProjectView: React.FC = () => {
                 );
               })}
             </ol>
+
+            {/* Draft autosave status — proves the answers survive a reload, and
+                gives the user a way out of a draft they no longer want. */}
+            {(draftRestored || draftSavedAt !== null) && (
+              <div
+                id="create-project-view-draft-status"
+                className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"
+              >
+                <div className="flex items-start gap-2 text-xs font-semibold text-slate-600">
+                  {draftRestored ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-emerald-600" aria-hidden="true" />
+                      <span className="leading-relaxed">
+                        پیش‌نویس ذخیره‌شده بازیابی شد؛ می‌توانید از همین گام ادامه دهید.
+                        {draftSavedAt !== null && (
+                          <>
+                            {' '}
+                            (آخرین ذخیره:{' '}
+                            <bdi className="tabular-nums">{formatDraftTime(draftSavedAt)}</bdi>)
+                          </>
+                        )}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mt-0.5 shrink-0 text-slate-500" aria-hidden="true" />
+                      <span className="leading-relaxed">
+                        پیش‌نویس خودکار ذخیره شد
+                        {draftSavedAt !== null && (
+                          <>
+                            {' '}
+                            — ساعت <bdi className="tabular-nums">{formatDraftTime(draftSavedAt)}</bdi>
+                          </>
+                        )}
+                      </span>
+                    </>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={draftRestored ? handleResetForm : handleDiscardDraft}
+                  className="shrink-0 text-xs font-bold text-slate-500 hover:text-risk-strong underline underline-offset-2 cursor-pointer"
+                >
+                  {draftRestored ? 'حذف پیش‌نویس و شروع دوباره' : 'حذف پیش‌نویس'}
+                </button>
+              </div>
+            )}
 
             {showStepErrors && hasStepIssues(activeStep) && (
               <ul role="alert" className="rounded-xl border border-red-200 bg-risk-soft p-3 space-y-1">
