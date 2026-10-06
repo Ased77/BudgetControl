@@ -1,14 +1,19 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { formatToman, formatNumber, toPersianDigits } from '../utils/numberUtils';
+import {
+  formatHemmat,
+  formatMoney,
+  formatMoneyParts,
+  formatNumber,
+  formatPercent,
+} from '../utils/numberUtils';
+import { Num } from './Num';
 import {
   runDashboardPredictiveAnalysis,
   ForecastScenario,
   SectorDevelopmentForecast,
 } from '../utils/predictiveAnalysisEngine';
 import {
-  LineChart,
-  Line,
   AreaChart,
   Area,
   BarChart,
@@ -17,7 +22,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts';
@@ -78,6 +82,78 @@ const AUDIT_ACTION_LABELS: Record<string, { label: string; badge: string }> = {
   LOGOUT: { label: 'خروج از سامانه', badge: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' },
 };
 
+/**
+ * Scenario switcher metadata — short label for the button, active-button
+ * classes and the chip used inside the chart title. Colors follow the semantic
+ * status tokens: neutral/blue for the baseline trend, risk red for crisis
+ * stress, success green for full containment.
+ */
+const SCENARIO_META: Record<
+  ForecastScenario,
+  { label: string; activeButton: string; chip: string }
+> = {
+  BASE: {
+    label: 'تداوم روند',
+    activeButton: 'bg-blue-600 text-white',
+    chip: 'bg-blue-50 text-blue-700 border-blue-200',
+  },
+  CRISIS_STRESS: {
+    label: 'تشدید بحران‌های حاد',
+    activeButton: 'bg-risk text-white',
+    chip: 'bg-risk-soft text-risk-strong border-red-200',
+  },
+  ACCELERATED_DEVELOPMENT: {
+    label: 'مهار ۱۰۰٪ محرومیت',
+    activeButton: 'bg-emerald-600 text-white',
+    chip: 'bg-success-soft text-emerald-700 border-emerald-200',
+  },
+};
+
+const SCENARIO_ORDER: ForecastScenario[] = ['BASE', 'CRISIS_STRESS', 'ACCELERATED_DEVELOPMENT'];
+
+/**
+ * A signed همت value for the tooltip's difference row: `+۰٫۴۲` / `−۰٫۱۸`.
+ * The minus is U+2212 (the same glyph `formatPercent` uses), never the Latin
+ * hyphen that `Intl` would print, so the sign matches the app's other negatives.
+ */
+const signedHemmat = (amountToman: number): string =>
+  `${amountToman > 0 ? '+' : amountToman < 0 ? '\u2212' : ''}${formatHemmat(Math.abs(amountToman), 2)}`;
+
+/**
+ * Stacked need-by-sector series for the «روند تفکیکی بخش‌ها» view. Keeping the
+ * series in one place lets the bars and the legend read from the same source,
+ * so a legend swatch can never drift from the color the chart draws.
+ */
+const SECTOR_BAR_SERIES = [
+  { dataKey: 'waterNeedToman', label: 'آبرسانی و تنش آبی', color: '#0284c7' },
+  { dataKey: 'infrastructureNeedToman', label: 'عمران و راه روستایی', color: '#d97706' },
+  { dataKey: 'healthNeedToman', label: 'بهداشت، درمان و فوریت‌ها', color: '#e11d48' },
+  { dataKey: 'employmentNeedToman', label: 'اشتغال و توانمندسازی', color: '#059669' },
+  { dataKey: 'educationAndSocialToman', label: 'آموزش و حمایت اجتماعی', color: '#7c3aed' },
+] as const;
+
+/**
+ * Legend entries — plain-language Persian labels in the exact colors the chart
+ * draws, so the shaded need band and the dashed current-year marker are
+ * explained instead of left to guesswork.
+ */
+const CHART_LEGEND: Record<
+  'BUDGET_VS_NEED' | 'SECTOR_TRENDS',
+  { color: string; label: string; kind: 'line' | 'band' | 'dashed' }[]
+> = {
+  BUDGET_VS_NEED: [
+    { color: '#059669', label: 'بودجه مصوب و تخصیص‌یافته (خط سبز)', kind: 'line' },
+    { color: '#4f46e5', label: 'تقاضای توسعه‌ای پیش‌بینی‌شده (خط بنفش)', kind: 'line' },
+    { color: '#a5b4fc', label: 'باند سایه‌دار: فاصله تقاضا از اعتبارات', kind: 'band' },
+    { color: '#f59e0b', label: 'خط‌چین نارنجی: مرز سال مالی جاری (۱۴۰۳)', kind: 'dashed' },
+  ],
+  SECTOR_TRENDS: SECTOR_BAR_SERIES.map((series) => ({
+    color: series.color,
+    label: series.label,
+    kind: 'line' as const,
+  })),
+};
+
 export const DashboardPredictiveEngine: React.FC = () => {
   const {
     priorities,
@@ -94,6 +170,8 @@ export const DashboardPredictiveEngine: React.FC = () => {
   const [scenario, setScenario] = useState<ForecastScenario>('BASE');
   const [chartType, setChartType] = useState<'BUDGET_VS_NEED' | 'SECTOR_TRENDS'>('BUDGET_VS_NEED');
   const [filterUrgency, setFilterUrgency] = useState<string>('ALL');
+  // Brief skeleton while the chart transitions to a new scenario or view.
+  const [isChartLoading, setIsChartLoading] = useState(false);
 
   // Sector detail modal
   const [detailSector, setDetailSector] = useState<SectorDevelopmentForecast | null>(null);
@@ -126,6 +204,36 @@ export const DashboardPredictiveEngine: React.FC = () => {
     selectedLocation,
     scenario,
   ]);
+
+  // Baseline run kept only for the tooltip: it surfaces the per-year
+  // difference between the active scenario and «تداوم روند». Same inputs, same
+  // engine — no new or invented data.
+  const basePredictiveData = useMemo(
+    () =>
+      runDashboardPredictiveAnalysis(
+        priorities,
+        currentPercentages,
+        budgetSources,
+        projects,
+        auditLogs,
+        crisesHarms,
+        selectedLocation,
+        'BASE'
+      ),
+    [priorities, currentPercentages, budgetSources, projects, auditLogs, crisesHarms, selectedLocation]
+  );
+  const baseNeedByYear = useMemo(
+    () => new Map(basePredictiveData.timelineTrends.map((p) => [p.yearNum, p.projectedNeedToman])),
+    [basePredictiveData]
+  );
+
+  // Show the skeleton while a scenario/view transition is in flight; the chart
+  // then animates in, which reads as a smooth switch rather than a snap.
+  useEffect(() => {
+    setIsChartLoading(true);
+    const timer = window.setTimeout(() => setIsChartLoading(false), 320);
+    return () => window.clearTimeout(timer);
+  }, [scenario, chartType]);
 
   const { timelineTrends, sectorForecasts, summaryMetrics, executiveInsight } = predictiveData;
 
@@ -161,183 +269,198 @@ export const DashboardPredictiveEngine: React.FC = () => {
     }
   };
 
-  // Recharts Custom Tooltip
-  const CustomChartTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div id="dashboard-predictive-engine-root" className="bg-white/95 backdrop-blur-md p-3.5 rounded-xl border border-slate-200 shadow-xl text-xs space-y-1.5 font-sans z-50">
-          <span className="font-bold text-slate-900 block pb-1 border-b border-slate-100 font-mono">
-            سال مالی {label}
-          </span>
-          {payload.map((entry: any, index: number) => (
-            <div id={`dashboard-predictive-engine-div-2-${index}`} key={`tooltip-${index}`} className="flex items-center justify-between gap-4">
-              <span className="flex items-center gap-1.5" style={{ color: entry.color }}>
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-                <span>{entry.name}:</span>
-              </span>
-              <span className="font-bold font-mono text-slate-800">
-                {formatToman(entry.value)}
-              </span>
-            </div>
-          ))}
+  // Chart tooltip: exact values per year (همت), the need-vs-budget gap, and
+  // the difference between the active scenario and the baseline trend.
+  const CustomChartTooltip = ({ active, payload }: any) => {
+    if (!active || !payload || payload.length === 0) return null;
+    const point = payload[0]?.payload;
+    if (!point) return null;
+    const baseNeed = baseNeedByYear.get(point.yearNum);
+    const scenarioDelta =
+      scenario !== 'BASE' && baseNeed !== undefined ? point.projectedNeedToman - baseNeed : null;
+
+    return (
+      <div
+        id="dashboard-predictive-engine-root"
+        className="bg-white/95 backdrop-blur-md p-3 rounded-xl border border-slate-200 shadow-xl text-xs space-y-1.5 z-50"
+        dir="rtl"
+      >
+        {/* One unit for the whole tooltip: the figures print bare and «همت» is
+            declared once here, so a column of values can never mix units. */}
+        <div className="flex items-center justify-between gap-4 pb-1 border-b border-slate-100">
+          <span className="font-bold text-slate-900">سال مالی {point.year}</span>
+          <span className="text-slate-500 font-semibold">واحد: همت</span>
         </div>
-      );
-    }
-    return null;
+        {payload.map((entry: any, index: number) => (
+          <div id={`dashboard-predictive-engine-div-2-${index}`} key={`tooltip-${index}`} className="flex items-center justify-between gap-6">
+            <span className="flex items-center gap-1.5" style={{ color: entry.color ?? entry.stroke }}>
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color ?? entry.stroke }} />
+              <span className="text-slate-600">{entry.name}:</span>
+            </span>
+            <Num value={formatHemmat(entry.value ?? 0, 2)} className="font-bold text-slate-800" />
+          </div>
+        ))}
+
+        {point.deficitGapToman !== undefined && (
+          <div className="flex items-center justify-between gap-6 pt-1.5 border-t border-slate-100">
+            <span className="flex items-center gap-1.5 font-bold text-risk-strong">
+              <span className="w-2 h-2 rounded-full bg-risk" aria-hidden="true" />
+              شکاف نیاز و بودجه:
+            </span>
+            <Num value={formatHemmat(point.deficitGapToman, 2)} className="font-black text-risk-strong" />
+          </div>
+        )}
+
+        {/* Only shown when the active scenario actually differs from the baseline:
+            an always-present «۰» row would read as a broken feature. */}
+        {scenarioDelta !== null && scenarioDelta !== 0 && (
+          <div className="flex items-center justify-between gap-6">
+            <span className="text-slate-500">اختلاف با سناریوی مبنا:</span>
+            <Num value={signedHemmat(scenarioDelta)} className="font-bold text-slate-700" />
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
     <div id="dashboard-predictive-engine-div-3" className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-6">
-      {/* Engine Header & Scenario Selector (Light Theme) */}
-      <div id="dashboard-predictive-engine-engine-header-scenario-selector" className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-200">
-        <div id="dashboard-predictive-engine-engine-header-scenario-selector-2" className="space-y-1">
-          <div id="dashboard-predictive-engine-engine-header-scenario-selector-3" className="flex flex-wrap items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 border border-indigo-200 flex items-center gap-1">
-              <BrainCircuit className="w-3.5 h-3.5 text-indigo-600" />
+      {/* Engine Header — the scenario switcher now lives next to the chart it
+          controls (see the chart section below), not in this header. */}
+      <div id="dashboard-predictive-engine-engine-header" className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-200">
+        <div id="dashboard-predictive-engine-engine-header-2" className="space-y-1">
+          <div id="dashboard-predictive-engine-engine-header-3" className="flex flex-wrap items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center gap-1">
+              <BrainCircuit className="w-3.5 h-3.5" aria-hidden="true" />
               موتور تحلیل پیش‌بین تقاضای توسعه‌ای
             </span>
             <span className="text-xs text-slate-500 font-medium">
-              بر پایه تحلیل {toPersianDigits(summaryMetrics.totalLogInterventionsAnalyzed)} لاگ ممیزی و بودجه‌های تخصیص‌یافته
+              بر پایه تحلیل {formatNumber(summaryMetrics.totalLogInterventionsAnalyzed)} لاگ ممیزی و بودجه‌های تخصیص‌یافته
             </span>
           </div>
 
-          <h2 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-indigo-600" />
+          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-indigo-600" aria-hidden="true" />
             پیش‌بینی نیازهای توسعه‌ای و اعتبارات سال آینده (۱۴۰۴-۱۴۰۵)
           </h2>
         </div>
-
-        {/* Scenario Controls */}
-        <div id="dashboard-predictive-engine-scenario-controls" className="bg-slate-50 p-2 rounded-xl border border-slate-200 shrink-0 space-y-1.5 self-start lg:self-auto">
-          <div id="dashboard-predictive-engine-scenario-controls-2" className="flex items-center justify-between text-[11px] text-slate-600 font-bold px-1">
-            <span>سناریوی مدل پیش‌بین:</span>
-            <Sliders className="w-3 h-3 text-indigo-600" />
-          </div>
-          <div id="dashboard-predictive-engine-scenario-controls-3" className="flex items-center gap-1">
-            <button
-              onClick={() => setScenario('BASE')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                scenario === 'BASE'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
-              }`}
-            >
-              سناریوی مبنا (تداوم روند)
-            </button>
-            <button
-              onClick={() => setScenario('CRISIS_STRESS')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                scenario === 'CRISIS_STRESS'
-                  ? 'bg-rose-600 text-white shadow-xs'
-                  : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
-              }`}
-            >
-              تشدید بحران‌های حاد
-            </button>
-            <button
-              onClick={() => setScenario('ACCELERATED_DEVELOPMENT')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                scenario === 'ACCELERATED_DEVELOPMENT'
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
-              }`}
-            >
-              مهار ۱۰۰٪ محرومیت
-            </button>
-          </div>
-        </div>
       </div>
 
-      {/* 4 Macro Forecast KPI Cards */}
-      <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards-2" className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200">
-          <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards-3" className="flex items-center justify-between text-slate-500 text-xs font-semibold mb-1">
+      {/* 4 Macro Forecast KPI Cards — color carries meaning: neutral ink for
+          regular figures, amber for growth pressure, and the financial gap as
+          THE prominent alert in the risk color. Equal heights via stretch. */}
+      <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
+        <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards-2" className="bg-white rounded-xl p-4 border border-slate-200 flex flex-col gap-1.5 h-full">
+          <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards-3" className="flex items-center justify-between text-slate-500 text-xs font-semibold">
             <span>برآورد کل نیاز بودجه‌ای ۱۴۰۴</span>
-            <Calendar className="w-3.5 h-3.5 text-indigo-600" />
+            <Calendar className="w-3.5 h-3.5 text-slate-500" aria-hidden="true" />
           </div>
-          <span className="text-xl font-black text-indigo-700 block font-mono">
-            {formatToman(summaryMetrics.projectedNextYearNeedToman)}
-          </span>
-          <span className="text-[11px] text-slate-500 mt-1 block">
+          <Num
+            {...formatMoneyParts(summaryMetrics.projectedNextYearNeedToman)}
+            className="text-xl font-black text-slate-900 leading-none"
+          />
+          <span className="text-xs text-slate-500">
             پوشش تقاضای واقعی مناطق محروم
           </span>
         </div>
 
-        <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards-4" className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200">
-          <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards-5" className="flex items-center justify-between text-slate-500 text-xs font-semibold mb-1">
+        <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards-4" className="bg-white rounded-xl p-4 border border-slate-200 flex flex-col gap-1.5 h-full">
+          <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards-5" className="flex items-center justify-between text-slate-500 text-xs font-semibold">
             <span>نرخ رشد سالانه تقاضا</span>
-            <ArrowUpRight className="w-3.5 h-3.5 text-amber-600" />
+            <ArrowUpRight className="w-3.5 h-3.5 text-amber-600" aria-hidden="true" />
           </div>
-          <span className="text-xl font-black text-amber-700 block font-mono">
-            +{toPersianDigits(summaryMetrics.forecastedTotalGrowthPct)}٪
-          </span>
-          <span className="text-[11px] text-slate-500 mt-1 block">
+          <Num
+            value={formatPercent(summaryMetrics.forecastedTotalGrowthPct, { signed: true })}
+            className="text-xl font-black text-amber-700 leading-none"
+          />
+          <span className="text-xs text-slate-500">
             نسبت به بودجه مصوب جاری (۱۴۰۳)
           </span>
         </div>
 
-        <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards-6" className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200">
-          <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards-7" className="flex items-center justify-between text-slate-500 text-xs font-semibold mb-1">
+        <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards-6" className="bg-white rounded-xl p-4 border border-slate-200 flex flex-col gap-1.5 h-full">
+          <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards-7" className="flex items-center justify-between text-slate-500 text-xs font-semibold">
             <span>بیشترین کانون جهش تقاضا</span>
-            <Flame className="w-3.5 h-3.5 text-rose-600" />
+            <Flame className="w-3.5 h-3.5 text-risk" aria-hidden="true" />
           </div>
-          <span className="text-sm font-black text-rose-700 block truncate" title={summaryMetrics.highestPressureSector}>
+          {/* Full sector title wraps to two lines; the tooltip carries it for
+              assistive tech and hover alike. */}
+          <span
+            className="text-sm font-black text-slate-900 leading-snug line-clamp-2"
+            title={summaryMetrics.highestPressureSector}
+          >
             {summaryMetrics.highestPressureSector}
           </span>
-          <span className="text-[11px] text-rose-700 font-mono mt-1 block font-semibold">
-            رشد پیش‌بینی: +{toPersianDigits(summaryMetrics.highestGrowthPct)}٪
+          <span className="text-xs text-slate-500 flex items-center gap-1">
+            رشد پیش‌بینی:
+            <Num value={formatPercent(summaryMetrics.highestGrowthPct, { signed: true })} className="font-black text-risk-strong" />
           </span>
         </div>
 
-        <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards-8" className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200">
-          <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards-9" className="flex items-center justify-between text-slate-500 text-xs font-semibold mb-1">
+        {/* Financial gap — the most important alert on the page: risk color,
+            tinted surface, double border, largest numeral. */}
+        <div
+          id="dashboard-predictive-engine-4-macro-forecast-kpi-cards-8"
+          className="bg-risk-soft rounded-xl p-4 border-2 border-red-300 flex flex-col gap-1.5 h-full"
+          role="status"
+          aria-label={`شکاف مالی پیش‌بینی‌شده ${formatMoney(summaryMetrics.estimatedDeficitGapToman)}`}
+        >
+          <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards-9" className="flex items-center justify-between text-xs font-bold text-risk-strong">
             <span>شکاف مالی پیش‌بینی‌شده</span>
-            <AlertTriangle className="w-3.5 h-3.5 text-purple-600" />
+            <AlertTriangle className="w-4 h-4 text-risk" aria-hidden="true" />
           </div>
-          <span className="text-xl font-black text-purple-700 block font-mono">
-            {formatToman(summaryMetrics.estimatedDeficitGapToman)}
-          </span>
-          <span className="text-[11px] text-slate-500 mt-1 block">
+          <Num
+            {...formatMoneyParts(summaryMetrics.estimatedDeficitGapToman)}
+            className="text-2xl font-black text-risk-strong leading-none"
+          />
+          <span className="text-xs text-red-800 font-medium">
             نیاز به جذب منابع مسئولیت اجتماعی و خیرین
           </span>
         </div>
       </div>
 
-      {/* Main Interactive Trend Chart Section */}
+      {/* Main Interactive Trend Chart Section — the scenario switcher moved
+          here, right above the chart it drives, and the active scenario is
+          echoed in the title. */}
       <div id="dashboard-predictive-engine-main-interactive-trend-chart" className="bg-slate-50/50 rounded-2xl p-4 md:p-5 border border-slate-200 space-y-4">
-        <div id="dashboard-predictive-engine-main-interactive-trend-chart-2" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
-          <div id="dashboard-predictive-engine-main-interactive-trend-chart-3" className="flex items-center gap-2">
-            <span className="p-1.5 bg-indigo-100 text-indigo-700 rounded-lg">
-              <TrendingUp className="w-4 h-4" />
+        <div id="dashboard-predictive-engine-main-interactive-trend-chart-2" className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+          <div id="dashboard-predictive-engine-main-interactive-trend-chart-3" className="flex items-start gap-2">
+            <span className="p-1.5 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-200">
+              <TrendingUp className="w-4 h-4" aria-hidden="true" />
             </span>
             <div id="dashboard-predictive-engine-main-interactive-trend-chart-4">
-              <h3 className="font-bold text-sm text-slate-900">
-                نمودار روند چندساله اعتبارات مصوب در برابر تقاضای واقعی پیش‌بینی‌شده
+              <h3 className="font-bold text-sm text-slate-900 flex flex-wrap items-center gap-2">
+                نمودار روند چندساله اعتبارات مصوب در برابر تقاضای واقعی
+                <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${SCENARIO_META[scenario].chip}`}>
+                  سناریوی فعال: {SCENARIO_META[scenario].label}
+                </span>
               </h3>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-xs text-slate-500">
                 سوابق سنواتی (۱۴۰۱ و ۱۴۰۲)، سال مالی جاری (۱۴۰۳)، پیش‌بینی سال آینده (۱۴۰۴) و افق دو ساله (۱۴۰۵)
               </span>
             </div>
           </div>
 
           {/* Chart Type Toggle */}
-          <div id="dashboard-predictive-engine-chart-type-toggle" className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 self-start sm:self-auto shadow-2xs">
+          <div id="dashboard-predictive-engine-chart-type-toggle" role="group" aria-label="نوع نمودار" className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 self-start sm:self-auto">
             <button
               onClick={() => setChartType('BUDGET_VS_NEED')}
+              aria-pressed={chartType === 'BUDGET_VS_NEED'}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 chartType === 'BUDGET_VS_NEED'
-                  ? 'bg-indigo-600 text-white shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-indigo-600 text-white'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               مقایسه بودجه و نیاز
             </button>
             <button
               onClick={() => setChartType('SECTOR_TRENDS')}
+              aria-pressed={chartType === 'SECTOR_TRENDS'}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 chartType === 'SECTOR_TRENDS'
-                  ? 'bg-indigo-600 text-white shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-indigo-600 text-white'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               روند تفکیکی بخش‌ها
@@ -345,8 +468,60 @@ export const DashboardPredictiveEngine: React.FC = () => {
           </div>
         </div>
 
+        {/* Scenario switcher — closer to the chart it controls */}
+        <div id="dashboard-predictive-engine-scenario-controls" role="group" aria-label="سناریوی مدل پیش‌بین" className="flex flex-wrap items-center gap-2">
+          <span className="flex items-center gap-1.5 text-xs font-bold text-slate-500">
+            <Sliders className="w-3.5 h-3.5 text-indigo-600" aria-hidden="true" />
+            سناریو:
+          </span>
+          <div className="flex flex-wrap items-center gap-1 bg-white p-1 rounded-xl border border-slate-200">
+            {SCENARIO_ORDER.map((s) => (
+              <button
+                key={s}
+                onClick={() => setScenario(s)}
+                aria-pressed={scenario === s}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  scenario === s
+                    ? `${SCENARIO_META[s].activeButton} shadow-xs`
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                }`}
+              >
+                {SCENARIO_META[s].label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Axis unit title — declared once for the whole axis, so the tick
+            labels stay short and the unit is never repeated under every tick. */}
+        <div className="flex items-center gap-2 -mb-2" dir="rtl">
+          <span className="text-xs font-bold text-slate-500">واحد محور عمودی: همت</span>
+        </div>
+
         {/* Chart Canvas */}
-        <div id="dashboard-predictive-engine-chart-canvas" className="h-72 md:h-80 w-full" dir="ltr">
+        <div
+          id="dashboard-predictive-engine-chart-canvas"
+          className="relative h-72 md:h-80 w-full"
+          dir="ltr"
+        >
+          {isChartLoading ? (
+            <div
+              id="dashboard-predictive-engine-chart-skeleton"
+              role="status"
+              aria-live="polite"
+              aria-label="در حال به‌روزرسانی نمودار"
+              className="absolute inset-0 z-20 flex items-end gap-3 rounded-xl bg-white/75 backdrop-blur-[2px] px-6 pt-8 pb-9"
+            >
+              {[58, 42, 76, 54, 86].map((height, index) => (
+                <span
+                  key={`chart-skeleton-${index}`}
+                  className="flex-1 rounded-t-lg bg-slate-200/90 animate-pulse"
+                  style={{ height: `${height}%` }}
+                  aria-hidden="true"
+                />
+              ))}
+            </div>
+          ) : null}
           <ResponsiveContainer width="100%" height="100%">
             {chartType === 'BUDGET_VS_NEED' ? (
               <AreaChart data={timelineTrends} margin={{ top: 10, right: 30, left: 10, bottom: 0 }}>
@@ -361,19 +536,19 @@ export const DashboardPredictiveEngine: React.FC = () => {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="year" stroke="#64748b" tick={{ fontSize: 12, fill: '#64748b' }} />
-                <YAxis
-                   stroke="#64748b"
-                   tickFormatter={(val) => `${toPersianDigits((val / 1_000_000_000_000).toFixed(1))} همت`}
-                   tick={{ fontSize: 11, fill: '#64748b' }}
-                 />
-                <Tooltip content={<CustomChartTooltip />} />
-                <Legend
-                  wrapperStyle={{ paddingTop: 10, fontSize: 12 }}
-                  formatter={(value) => (
-                    <span className="font-sans font-bold text-slate-700 px-1">{value}</span>
-                  )}
+                <XAxis
+                  dataKey="year"
+                  stroke="#94a3b8"
+                  tick={{ fontSize: 12, fill: '#475569' }}
+                  tickMargin={8}
                 />
+                <YAxis
+                  stroke="#94a3b8"
+                  width={54}
+                  tickFormatter={(val) => formatHemmat(val)}
+                  tick={{ fontSize: 12, fill: '#475569' }}
+                />
+                <Tooltip content={<CustomChartTooltip />} />
                 <ReferenceLine
                   x="۱۴۰۳ (جاری)"
                   stroke="#f59e0b"
@@ -409,43 +584,78 @@ export const DashboardPredictiveEngine: React.FC = () => {
             ) : (
               <BarChart data={timelineTrends} margin={{ top: 10, right: 30, left: 10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="year" stroke="#64748b" tick={{ fontSize: 12, fill: '#64748b' }} />
-                <YAxis
-                   stroke="#64748b"
-                   tickFormatter={(val) => `${toPersianDigits((val / 1_000_000_000_000).toFixed(1))} همت`}
-                   tick={{ fontSize: 11, fill: '#64748b' }}
-                 />
-                <Tooltip content={<CustomChartTooltip />} />
-                <Legend
-                  wrapperStyle={{ paddingTop: 10, fontSize: 12 }}
-                  formatter={(value) => (
-                    <span className="font-sans font-bold text-slate-700 px-1">{value}</span>
-                  )}
+                <XAxis
+                  dataKey="year"
+                  stroke="#94a3b8"
+                  tick={{ fontSize: 12, fill: '#475569' }}
+                  tickMargin={8}
                 />
-                <Bar dataKey="waterNeedToman" name="آبرسانی و تنش آبی" stackId="a" fill="#0284c7" />
-                <Bar dataKey="infrastructureNeedToman" name="عمران و راه روستایی" stackId="a" fill="#d97706" />
-                <Bar dataKey="healthNeedToman" name="بهداشت، درمان و فوریت‌ها" stackId="a" fill="#e11d48" />
-                <Bar dataKey="employmentNeedToman" name="اشتغال و توانمندسازی" stackId="a" fill="#059669" />
-                <Bar dataKey="educationAndSocialToman" name="آموزش و حمایت اجتماعی" stackId="a" fill="#7c3aed" />
+                <YAxis
+                  stroke="#94a3b8"
+                  width={54}
+                  tickFormatter={(val) => formatHemmat(val)}
+                  tick={{ fontSize: 12, fill: '#475569' }}
+                />
+                <Tooltip content={<CustomChartTooltip />} />
+                {SECTOR_BAR_SERIES.map((series) => (
+                  <Bar
+                    key={series.dataKey}
+                    dataKey={series.dataKey}
+                    name={series.label}
+                    stackId="a"
+                    fill={series.color}
+                    isAnimationActive
+                    animationDuration={450}
+                  />
+                ))}
               </BarChart>
             )}
           </ResponsiveContainer>
         </div>
 
-        {/* Legend annotation */}
-        <div id="dashboard-predictive-engine-legend-annotation" className="flex flex-wrap items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-200">
-          <div id="dashboard-predictive-engine-legend-annotation-2" className="flex items-center gap-4">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-indigo-600" />
-              منحنی پیش‌بین حاصل ترکیب لاگ‌های تاریخی، تورم ساخت و نیازهای معوقه است.
+        {/* Chart legend — spells out every visual element in the chart colors */}
+        <div
+          id="dashboard-predictive-engine-chart-legend"
+          className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-3 border-t border-slate-200 text-xs font-semibold text-slate-600"
+        >
+          {CHART_LEGEND[chartType].map((item) => (
+            <span key={item.label} className="flex items-center gap-1.5">
+              {item.kind === 'band' ? (
+                <span
+                  className="w-3.5 h-3.5 rounded-sm border border-slate-300"
+                  style={{ backgroundColor: `${item.color}80` }}
+                  aria-hidden="true"
+                />
+              ) : item.kind === 'dashed' ? (
+                <span
+                  className="w-4 border-t-2 border-dashed"
+                  style={{ borderColor: item.color }}
+                  aria-hidden="true"
+                />
+              ) : (
+                <span
+                  className="w-4 border-t-2"
+                  style={{ borderColor: item.color }}
+                  aria-hidden="true"
+                />
+              )}
+              {item.label}
             </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
-              بخش سبز نشان‌دهنده خط روند اعتبارات تصویب‌شده قطعی است.
-            </span>
-          </div>
-          <span className="text-slate-400 font-mono">واحد ارقام: میلیارد و هزار میلیارد تومان</span>
+          ))}
         </div>
+
+        {chartType === 'BUDGET_VS_NEED' ? (
+          <p className="text-xs text-slate-500 leading-relaxed">
+            منحنی تقاضا از ترکیب لاگ‌های تاریخی، فشار بحران‌های فعال و نیازهای
+            معوقه برآورد شده و خط سبز روند اعتبارات مصوب قطعی است؛ فاصله دو منحنی
+            همان شکاف مالی کارت بالای صفحه است.
+          </p>
+        ) : (
+          <p className="text-xs text-slate-500 leading-relaxed">
+            ستون‌ها برآورد نیاز سال آینده را به تفکیک سرفصل توسعه‌ای نشان می‌دهند و
+            ارتفاع کل هر ستون با برآورد کل نیاز بودجه‌ای یکسان است.
+          </p>
+        )}
       </div>
 
       {/* Sector Forecast Details & Log-Derived Rationales */}
@@ -459,7 +669,7 @@ export const DashboardPredictiveEngine: React.FC = () => {
               <h3 className="font-black text-sm text-slate-900 leading-snug">
                 تفکیک برآورد نیازهای توسعه‌ای سال آینده به همراه دلایل مستخرج از لاگ‌ها
               </h3>
-              <span className="text-[11px] text-slate-500 block mt-0.5">
+              <span className="text-xs text-slate-500 block mt-0.5">
                 ارزیابی هوشمند اولویت‌ها بر اساس مداخلات ثبت‌شده و هشدارهای موازی‌کاری — برای جزئیات کامل، روی هر کارت بزنید
               </span>
             </div>
@@ -476,8 +686,8 @@ export const DashboardPredictiveEngine: React.FC = () => {
               }`}
             >
               <span>همه سرفصل‌ها</span>
-              <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-mono ${filterUrgency === 'ALL' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}`}>
-                {toPersianDigits(urgencyCounts.ALL)}
+              <span className={`px-1.5 py-0.5 rounded-md text-xs tabular-nums ${filterUrgency === 'ALL' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                <Num value={formatNumber(urgencyCounts.ALL, true, 0)} />
               </span>
             </button>
             <button
@@ -489,8 +699,8 @@ export const DashboardPredictiveEngine: React.FC = () => {
               }`}
             >
               <span>جهش بحرانی</span>
-              <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-mono ${filterUrgency === 'CRITICAL_SURGE' ? 'bg-white/20 text-white' : 'bg-rose-50 text-rose-600'}`}>
-                {toPersianDigits(urgencyCounts.CRITICAL_SURGE)}
+              <span className={`px-1.5 py-0.5 rounded-md text-xs tabular-nums ${filterUrgency === 'CRITICAL_SURGE' ? 'bg-white/20 text-white' : 'bg-rose-50 text-rose-600'}`}>
+                <Num value={formatNumber(urgencyCounts.CRITICAL_SURGE, true, 0)} />
               </span>
             </button>
             <button
@@ -502,8 +712,8 @@ export const DashboardPredictiveEngine: React.FC = () => {
               }`}
             >
               <span>رشد شتابان</span>
-              <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-mono ${filterUrgency === 'HIGH_GROWTH' ? 'bg-white/20 text-white' : 'bg-amber-50 text-amber-600'}`}>
-                {toPersianDigits(urgencyCounts.HIGH_GROWTH)}
+              <span className={`px-1.5 py-0.5 rounded-md text-xs tabular-nums ${filterUrgency === 'HIGH_GROWTH' ? 'bg-white/20 text-white' : 'bg-amber-50 text-amber-600'}`}>
+                <Num value={formatNumber(urgencyCounts.HIGH_GROWTH, true, 0)} />
               </span>
             </button>
           </div>
@@ -530,12 +740,12 @@ export const DashboardPredictiveEngine: React.FC = () => {
                       {getSectorIcon(sector.code)}
                     </span>
                     <div id={`dashboard-predictive-engine-sector-cards-grid-6-${sector.priorityId}`} className="min-w-0">
-                      <span className="text-[11px] text-slate-500 truncate block">{sector.category}</span>
+                      <span className="text-xs text-slate-500 leading-snug line-clamp-2 block" title={sector.category}>{sector.category}</span>
                     </div>
                   </div>
 
                   <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold shrink-0 ${
+                    className={`px-2 py-0.5 rounded text-xs font-bold shrink-0 ${
                       sector.urgencyStatus === 'CRITICAL_SURGE'
                         ? 'bg-rose-100 text-rose-800 border border-rose-200'
                         : sector.urgencyStatus === 'HIGH_GROWTH'
@@ -556,10 +766,10 @@ export const DashboardPredictiveEngine: React.FC = () => {
                 {sector.titleFa}
               </h4>
 
-              <div id={`dashboard-predictive-engine-log-derived-rationale-3-${sector.priorityId}`} className="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px] text-slate-500">
+              <div id={`dashboard-predictive-engine-log-derived-rationale-3-${sector.priorityId}`} className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-500">
                 <span className="flex items-center gap-1">
                   <FileClock className="w-3 h-3 text-indigo-500" />
-                  {toPersianDigits(sector.logInterventionCount)} لاگ ممیزی
+                  <Num value={formatNumber(sector.logInterventionCount, true, 0)} unit="لاگ ممیزی" unitClassName="text-[0.9em] font-semibold text-slate-500 ms-1" />
                 </span>
                 <span className="flex items-center gap-1 text-indigo-500 font-bold group-hover:text-indigo-700 transition-colors">
                   جزئیات
@@ -572,10 +782,10 @@ export const DashboardPredictiveEngine: React.FC = () => {
         ) : (
           <div id="dashboard-predictive-engine-sector-cards-grid-empty" className="flex flex-col items-center justify-center gap-2 py-10 bg-white rounded-xl border border-dashed border-slate-300 text-center">
             <span className="p-2.5 rounded-full bg-slate-100">
-              <Layers className="w-4 h-4 text-slate-400" />
+              <Layers className="w-4 h-4 text-slate-500" />
             </span>
-            <span className="text-xs font-bold text-slate-600">هیچ سرفصلی در این وضعیت فوریت یافت نشد.</span>
-            <span className="text-[11px] text-slate-400">فیلتر وضعیت فوریت را تغییر دهید تا سایر بخش‌ها نمایش داده شوند.</span>
+            <span className="text-xs text-slate-500 font-bold">هیچ سرفصلی در این وضعیت فوریت یافت نشد.</span>
+            <span className="text-xs text-slate-500">فیلتر وضعیت فوریت را تغییر دهید تا سایر بخش‌ها نمایش داده شوند.</span>
           </div>
         )}
       </div>
@@ -648,7 +858,7 @@ export const DashboardPredictiveEngine: React.FC = () => {
               <button
                 onClick={() => setDetailSector(null)}
                 aria-label="بستن"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -673,21 +883,29 @@ export const DashboardPredictiveEngine: React.FC = () => {
             {/* Full financial breakdown */}
             <div id="dashboard-predictive-engine-sector-detail-modal-7" className="grid grid-cols-2 gap-3">
               <div id="dashboard-predictive-engine-sector-detail-modal-8" className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-center">
-                <span className="text-[11px] text-slate-500 block mb-1">تخصیص جاری (۱۴۰۳)</span>
-                <span className="text-base font-black font-mono text-slate-800 block">
-                  {formatToman(detailSector.currentAllocatedToman)}
-                </span>
-                <span className="text-[10px] text-slate-500 block mt-1">
-                  سهم تخصیص: {toPersianDigits(detailSector.currentPercentage)}٪
+                <span className="text-xs font-semibold text-slate-600 block mb-1">تخصیص جاری (۱۴۰۳)</span>
+                <Num
+                  {...formatMoneyParts(detailSector.currentAllocatedToman)}
+                  className="text-base font-black text-slate-800 block"
+                />
+                <span className="text-xs text-slate-600 block mt-1">
+                  سهم تخصیص:{' '}
+                  <Num value={formatPercent(detailSector.currentPercentage)} className="font-bold text-slate-700" />
                 </span>
               </div>
               <div id="dashboard-predictive-engine-sector-detail-modal-9" className="p-3.5 bg-indigo-50/70 rounded-xl border border-indigo-200 text-center">
-                <span className="text-[11px] text-indigo-700 block mb-1">برآورد نیاز (۱۴۰۴)</span>
-                <span className="text-base font-black font-mono text-indigo-700 block">
-                  {formatToman(detailSector.projectedNeedNextYearToman)}
-                </span>
-                <span className="text-[10px] text-indigo-700 block mt-1 font-semibold">
-                  رشد نیاز: +{toPersianDigits(detailSector.growthRatePct)}٪
+                <span className="text-xs font-semibold text-indigo-800 block mb-1">برآورد نیاز (۱۴۰۴)</span>
+                <Num
+                  {...formatMoneyParts(detailSector.projectedNeedNextYearToman)}
+                  className="text-base font-black text-indigo-700 block"
+                  unitClassName="text-[0.6em] font-bold text-indigo-600 ms-1"
+                />
+                <span className="text-xs text-indigo-800 block mt-1 font-semibold">
+                  رشد نیاز:{' '}
+                  <Num
+                    value={formatPercent(detailSector.growthRatePct, { signed: true })}
+                    className="font-black text-indigo-700"
+                  />
                 </span>
               </div>
             </div>
@@ -695,22 +913,28 @@ export const DashboardPredictiveEngine: React.FC = () => {
             {/* Deficit, log pressure & crises */}
             <div id="dashboard-predictive-engine-sector-detail-modal-10" className="grid grid-cols-3 gap-3">
               <div id="dashboard-predictive-engine-sector-detail-modal-11" className="p-3 bg-rose-50/70 rounded-xl border border-rose-200 text-center">
-                <span className="text-[10px] text-rose-700 block mb-1">کسری پیش‌بینی‌شده</span>
-                <span className="text-xs font-black font-mono text-rose-800 block">
-                  {formatToman(detailSector.forecastedDeficitToman)}
-                </span>
+                <span className="text-xs font-semibold text-rose-800 block mb-1">کسری پیش‌بینی‌شده</span>
+                <Num
+                  {...formatMoneyParts(detailSector.forecastedDeficitToman)}
+                  className="text-sm font-black text-rose-800 block"
+                  unitClassName="text-[0.6em] font-bold text-rose-700 ms-1"
+                />
               </div>
               <div id="dashboard-predictive-engine-sector-detail-modal-12" className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center">
-                <span className="text-[10px] text-slate-500 block mb-1">ضریب فشار لاگ</span>
-                <span className="text-xs font-black font-mono text-slate-800 block">
-                  ×{toPersianDigits(detailSector.logPressureFactor.toFixed(2))}
-                </span>
+                <span className="text-xs font-semibold text-slate-600 block mb-1">ضریب فشار لاگ</span>
+                <Num
+                  value={`×${formatNumber(detailSector.logPressureFactor, true, 2)}`}
+                  className="text-sm font-black text-slate-800 block"
+                />
               </div>
               <div id="dashboard-predictive-engine-sector-detail-modal-13" className="p-3 bg-amber-50/70 rounded-xl border border-amber-200 text-center">
-                <span className="text-[10px] text-amber-700 block mb-1">بحران‌های حل‌نشده</span>
-                <span className="text-xs font-black font-mono text-amber-800 block">
-                  {toPersianDigits(detailSector.unresolvedCrisesCount)} کانون
-                </span>
+                <span className="text-xs font-semibold text-amber-800 block mb-1">بحران‌های حل‌نشده</span>
+                <Num
+                  value={formatNumber(detailSector.unresolvedCrisesCount, true, 0)}
+                  unit="کانون"
+                  className="text-sm font-black text-amber-800 block"
+                  unitClassName="text-[0.7em] font-bold text-amber-700 ms-1"
+                />
               </div>
             </div>
 
@@ -722,14 +946,14 @@ export const DashboardPredictiveEngine: React.FC = () => {
                   <span>لاگ‌های ممیزی مرتبط با این بخش:</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] font-mono font-bold text-indigo-600 dark:text-indigo-300">
-                    {toPersianDigits(detailSector.logInterventionCount)} لاگ ممیزی
+                  <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300">
+                    <Num value={formatNumber(detailSector.logInterventionCount, true, 0)} unit="لاگ ممیزی" unitClassName="text-[0.9em] font-semibold ms-1" />
                   </span>
                   {detailSector.relatedAuditLogs.length > 0 && (
                     <>
                       <span className="w-1 h-1 rounded-full bg-indigo-300 dark:bg-indigo-600" />
-                      <span className="text-[10px] font-mono text-indigo-500 dark:text-indigo-400">
-                        {toPersianDigits(detailSector.relatedAuditLogs.length)} سوابق
+                      <span className="text-xs text-indigo-600 dark:text-indigo-400">
+                        <Num value={formatNumber(detailSector.relatedAuditLogs.length, true, 0)} unit="سوابق" unitClassName="text-[0.9em] font-semibold ms-1" />
                       </span>
                     </>
                   )}
@@ -757,17 +981,17 @@ export const DashboardPredictiveEngine: React.FC = () => {
                           className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-right hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
                         >
                           <span className="flex items-center gap-2 min-w-0">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${actionInfo.badge}`}>
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-bold shrink-0 ${actionInfo.badge}`}>
                               {actionInfo.label}
                             </span>
-                            <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 truncate">
+                            <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
                               {log.targetPriorityTitle || log.actionType}
                             </span>
                           </span>
                           <span className="flex items-center gap-1.5 shrink-0">
-                            <span className="text-[10px] font-mono text-slate-400">{log.timestamp}</span>
+                            <span className="text-xs tabular-nums text-slate-500">{log.timestamp}</span>
                             <ChevronDown
-                              className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-150 ${isExpanded ? 'rotate-180' : ''}`}
+                              className={`w-3.5 h-3.5 text-slate-500 transition-transform duration-150 ${isExpanded ? 'rotate-180' : ''}`}
                             />
                           </span>
                         </button>
@@ -777,15 +1001,15 @@ export const DashboardPredictiveEngine: React.FC = () => {
                             className="px-3 pb-3 pt-1 space-y-1.5 bg-slate-50/70 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800"
                           >
                             {(log.oldValue || log.newValue) && (
-                              <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                              <div className="text-xs font-mono text-slate-500 dark:text-slate-500">
                                 {log.oldValue || '-'} ➔ {log.newValue || '-'}
                               </div>
                             )}
                             {log.rationale && (
-                              <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">{log.rationale}</p>
+                              <p className="text-xs text-slate-600 dark:text-slate-500 leading-relaxed">{log.rationale}</p>
                             )}
-                            <div className="flex items-center gap-1 text-[10px] text-slate-400 pt-1 border-t border-slate-200/70 dark:border-slate-800">
-                              <span className="font-bold text-slate-500 dark:text-slate-400">{log.userName}</span>
+                            <div className="flex items-center gap-1 text-xs text-slate-500 pt-1 border-t border-slate-200/70 dark:border-slate-800">
+                              <span className="font-bold text-slate-500 dark:text-slate-500">{log.userName}</span>
                               <span>({log.userRole})</span>
                             </div>
                           </div>
@@ -795,7 +1019,7 @@ export const DashboardPredictiveEngine: React.FC = () => {
                   })}
                 </div>
               ) : (
-                <p id="dashboard-predictive-engine-sector-detail-modal-audit-logs-empty" className="text-[11px] text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2.5">
+                <p id="dashboard-predictive-engine-sector-detail-modal-audit-logs-empty" className="text-xs text-slate-500 dark:text-slate-500 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2.5">
                   لاگ مستقیم مرتبطی در سوابق ممیزی ثبت نشده است؛ فشار این بخش بر پایه شاخص‌های منطقه‌ای و بحران‌های فعال محاسبه شده است.
                 </p>
               )}

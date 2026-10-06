@@ -35,7 +35,7 @@ import {
   INITIAL_ROLES_PERMISSIONS,
 } from '../data/initialData';
 import { calculateSmartRecommendations } from '../utils/recommendationEngine';
-import { formatNumber, roundPercentage, toPersianDigits } from '../utils/numberUtils';
+import { formatMoney, formatNumber, roundPercentage, toPersianDigits } from '../utils/numberUtils';
 import { analyzeProjectDuplicatesAndEfficiency, OptimizationMetrics } from '../utils/antiDuplicationEngine';
 import { api } from '../services/api';
 
@@ -670,7 +670,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     setProjects((prev) => [proj, ...prev]);
     api.projects.create(proj).catch(console.error);
-    addAuditLog('PROJECT_ADD', newP.title, 'تعریف اولیه', `${toPersianDigits((newP.estimatedCostToman / 1_000_000_000).toFixed(1))} میلیارد تومان`, `ثبت پروژه توسط ${newP.departmentName}`);
+    addAuditLog('PROJECT_ADD', newP.title, 'تعریف اولیه', formatMoney(newP.estimatedCostToman), `ثبت پروژه توسط ${newP.departmentName}`);
   };
 
   const handleUpdateProject = (updated: ExecutiveProject) => {
@@ -709,7 +709,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const handleUpdateDepartment = (dept: Department) => {
     setDepartments((prev) => prev.map((d) => (d.id === dept.id ? dept : d)));
     api.departments.update(dept).catch(console.error);
-    addAuditLog('DEPARTMENT_EDIT', dept.name, 'ویرایش', `${toPersianDigits((dept.allocatedBudgetToman / 1_000_000_000).toFixed(0))} م.ت`, 'ویرایش مشخصات نهاد');
+    addAuditLog('DEPARTMENT_EDIT', dept.name, 'ویرایش', formatMoney(dept.allocatedBudgetToman), 'ویرایش مشخصات نهاد');
   };
 
   const handleDeleteDepartment = (departmentId: string) => {
@@ -724,13 +724,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const newSrc: BudgetSource = { ...source, id: `src-${Date.now()}` };
     setBudgetSources((prev) => [...prev, newSrc]);
     api.budgetSources.create(newSrc).catch(console.error);
-    addAuditLog('BUDGET_SOURCE_ADD', source.title, 'سرفصل جدید', `${toPersianDigits((source.totalAmountToman / 1_000_000_000).toFixed(0))} م.ت`, `تعریف منبع بودجه جدید (${source.sourceTypeFa})`);
+    addAuditLog('BUDGET_SOURCE_ADD', source.title, 'سرفصل جدید', formatMoney(source.totalAmountToman), `تعریف منبع بودجه جدید (${source.sourceTypeFa})`);
   };
 
   const handleUpdateBudgetSource = (source: BudgetSource) => {
     setBudgetSources((prev) => prev.map((s) => (s.id === source.id ? source : s)));
     api.budgetSources.update(source).catch(console.error);
-    addAuditLog('BUDGET_SOURCE_EDIT', source.title, 'ویرایش', `${toPersianDigits((source.totalAmountToman / 1_000_000_000).toFixed(0))} م.ت`, 'به‌روزرسانی منبع مالی');
+    addAuditLog('BUDGET_SOURCE_EDIT', source.title, 'ویرایش', formatMoney(source.totalAmountToman), 'به‌روزرسانی منبع مالی');
   };
 
   const handleDeleteBudgetSource = (sourceId: string) => {

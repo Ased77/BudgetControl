@@ -228,7 +228,20 @@ function AppContent() {
           margin (the workspace's `md:p-6` plus the space `PageHeader` publishes),
           so the panel begins on the line where the page's content begins rather
           than above the page title. */}
+      {/* Mobile drawer scrim — tapping outside the panel closes it, and the
+          scrim is itself a keyboard-reachable close control. Hidden from `lg`
+          up, where the sidebar is a static column. */}
+      {sidebarOpen ? (
+        <button
+          type="button"
+          aria-label="بستن منوی دسترسی"
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 z-30 bg-slate-900/40 lg:hidden cursor-default"
+        />
+      ) : null}
+
       <aside
+        aria-label="ناوبری اصلی سامانه"
         className={`fixed inset-y-0 right-0 z-40 w-72 p-3 flex flex-col transition-transform duration-300 lg:static lg:translate-x-0 lg:pt-[calc(1.5rem+var(--app-page-header-space))] ${
           sidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
         }`}
@@ -245,7 +258,7 @@ function AppContent() {
               </div>
               <div id="app-brand-header-4" className="min-w-0">
                 <h1 className="font-black text-sm text-blue-700 tracking-tight truncate">سامانه توسعه ملی</h1>
-                <p className="text-[10px] text-slate-400 truncate">توسعه هوشمند روستایی و شهری</p>
+                <p className="text-xs text-slate-500 truncate">توسعه هوشمند روستایی و شهری</p>
               </div>
             </div>
             <button
@@ -271,12 +284,12 @@ function AppContent() {
                 <MapPin className="w-4 h-4" />
               </span>
               <span id="app-quick-location-anti-overlap-2" className="flex-1 min-w-0">
-                <span className="block text-[9px] font-bold text-slate-400">موقعیت فعال سامانه</span>
-                <span className="block text-[11px] font-bold text-slate-800 truncate">
+                <span className="block text-xs font-bold text-slate-500">موقعیت فعال سامانه</span>
+                <span className="block text-[13px] font-bold text-slate-800 truncate">
                   {selectedLocation.province} — {selectedLocation.county}
                 </span>
               </span>
-              <span className="text-[10px] font-bold text-blue-700 px-1.5 py-0.5 bg-blue-50 border border-blue-100 rounded-md shrink-0">
+              <span className="text-xs font-bold text-blue-700 px-1.5 py-0.5 bg-blue-50 border border-blue-100 rounded-md shrink-0">
                 تغییر
               </span>
             </button>
@@ -341,7 +354,7 @@ function AppContent() {
                 </span>
                 <span id="app-sidebar-footer-user-role-5" className="min-w-0 flex-1">
                   <span id="app-sidebar-footer-user-role-6" className="block font-bold text-slate-800 text-xs truncate">{currentUser.name}</span>
-                  <span id="app-sidebar-footer-user-role-7" className="block text-[10px] text-slate-400 truncate">{currentUser.roleFa}</span>
+                  <span id="app-sidebar-footer-user-role-7" className="block text-xs text-slate-500 truncate">{currentUser.roleFa}</span>
                 </span>
               </button>
 

@@ -54,6 +54,24 @@
      `body` here and by the app shell as `bg-app-page`; change it in this one
      place only. */
   --color-app-page: #f1f5f9;
+
+  /* -------------------------------------------------------------------------
+     Semantic status tokens — color carries MEANING, not decoration.
+     Regular KPI figures stay neutral ink; red/amber is reserved for risk,
+     gaps and warnings; green marks positive outcomes. Components read these
+     as utilities (text-risk, bg-risk-soft, border-warning, ...) and recharts
+     reads the raw hexes, so recolor a status in one place only.
+     ------------------------------------------------------------------------- */
+  --color-risk: #dc2626;         /* red-600 — deficits, critical crises      */
+  --color-risk-strong: #b91c1c;  /* red-700 — risk numerals (AA on red-50)   */
+  --color-risk-soft: #fef2f2;    /* red-50  — risk surfaces                  */
+  --color-warning: #d97706;      /* amber-600 — deprivation, growth pressure */
+  --color-warning-strong: #b45309; /* amber-700 — warning numerals (AA)      */
+  --color-warning-soft: #fffbeb; /* amber-50 — warning surfaces              */
+  --color-success: #059669;      /* emerald-600 — positive outcomes          */
+  --color-success-soft: #ecfdf5; /* emerald-50 — success surfaces            */
+  --color-ink: #0f172a;          /* slate-900 — neutral KPI numerals         */
+  --color-ink-muted: #64748b;    /* slate-500 — AA-safe secondary text       */
 }
 
 :root {
@@ -71,6 +89,19 @@ body {
 body {
   background-color: var(--color-app-page);
   color: #0f172a;
+  /* Persian body copy reads comfortably around 1.7; dense numeric blocks
+     still tighten via their own leading utilities. */
+  line-height: 1.7;
+}
+
+/* -------------------------------------------------------------------------
+   Visible keyboard focus, app-wide. Drawn with `:where()` so any component
+   that declares its own focus-visible ring keeps full specificity to win.
+   ------------------------------------------------------------------------- */
+:where(button, a, [role='button'], input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  border-radius: 0.5rem;
 }
 
 /* -------------------------------------------------------------------------
