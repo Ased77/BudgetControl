@@ -1,15 +1,43 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { LocationData, LocalIndicators } from '../types';
 import { toPersianDigits } from '../utils/numberUtils';
-import { MapPin, Sliders, CheckCircle2, Search, Filter, Globe, BarChart2 } from 'lucide-react';
+import { MapPin, Sliders, CheckCircle2, Search, Filter, Globe, Pencil, X } from 'lucide-react';
+import { useOutsideClick } from '../hooks/useOutsideClick';
 import { ComparativeHarmsTable } from './ComparativeHarmsTable';
 import { PageHeader } from './PageHeader';
+
+/**
+ * The eleven local indicators every location record carries, in the order the
+ * edit modal lays them out. `max: null` marks a head count rather than a 0-100
+ * score, so the modal renders it as a plain number field instead of a slider.
+ */
+const LOCATION_INDICATOR_FIELDS: Array<{
+  key: keyof LocalIndicators;
+  label: string;
+  hint: string;
+  max: number | null;
+  unit: string;
+}> = [
+  { key: 'povertyRate', label: 'نرخ فقر و محرومیت', hint: 'خانوار زیر خط فقر نسبی', max: 100, unit: '٪' },
+  { key: 'marginalizationRate', label: 'درصد حاشیه‌نشینی', hint: 'سکونتگاه‌های غیررسمی', max: 100, unit: '٪' },
+  { key: 'unemploymentRate', label: 'نرخ بیکاری محلی', hint: 'جوانان جویای کار منطقه', max: 100, unit: '٪' },
+  { key: 'socialHarmsIndex', label: 'شاخص آسیب‌های اجتماعی', hint: 'اعتیاد، طلاق و بزهکاری', max: 100, unit: 'از ۱۰۰' },
+  { key: 'healthAccessDeficit', label: 'کمبود دسترسی درمان و بهداشت', hint: 'تخت و کلینیک به ازای جمعیت', max: 100, unit: 'از ۱۰۰' },
+  { key: 'educationDropOutRate', label: 'نرخ ترک تحصیل', hint: 'بازماندگی دانش‌آموزان', max: 100, unit: '٪' },
+  { key: 'infrastructureDeficit', label: 'کمبود زیرساخت عمرانی', hint: 'راه، آب شرب و تأسیسات پایه', max: 100, unit: 'از ۱۰۰' },
+  { key: 'culturalDeficitScore', label: 'کمبود زیرساخت فرهنگی و نشاط', hint: 'ورزش، فرهنگ‌سرا و مشاوره', max: 100, unit: 'از ۱۰۰' },
+  { key: 'crisisVulnerabilityScore', label: 'آسیب‌پذیری در برابر بحران', hint: 'زلزله، سیلاب و آمادگی امداد', max: 100, unit: 'از ۱۰۰' },
+  { key: 'environmentalRiskScore', label: 'ریسک آلودگی زیست‌محیطی', hint: 'فلر، پساب و فضای سبز', max: 100, unit: 'از ۱۰۰' },
+  { key: 'vulnerableGroupsPopulation', label: 'جمعیت گروه‌های آسیب‌پذیر', hint: 'افراد نیازمند حمایت مستقیم', max: null, unit: 'نفر' },
+];
 
 interface LocationModuleProps {
   locations: LocationData[];
   selectedLocation: LocationData;
   onSelectLocation: (loc: LocationData) => void;
   onUpdateIndicators: (indicators: LocalIndicators) => void;
+  /** Saves a whole edited location record, whichever card it came from. */
+  onUpdateLocation: (loc: LocationData) => void;
 }
 
 export const LocationModule: React.FC<LocationModuleProps> = ({
@@ -17,10 +45,54 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
   selectedLocation,
   onSelectLocation,
   onUpdateIndicators,
+  onUpdateLocation,
 }) => {
   // Province filter state (defaults to selectedLocation.province)
   const [selectedProvinceFilter, setSelectedProvinceFilter] = useState<string>(selectedLocation.province);
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Card click opens this dialog instead of re-scoping the whole system: the
+  // active location only changes from the card's own selection control.
+  const [editingLocation, setEditingLocation] = useState<LocationData | null>(null);
+  const [draftIndicators, setDraftIndicators] = useState<LocalIndicators | null>(null);
+  const [draftPopulation, setDraftPopulation] = useState<number>(0);
+  const editDialogRef = useRef<HTMLDivElement>(null);
+
+  const closeLocationEditor = () => {
+    setEditingLocation(null);
+    setDraftIndicators(null);
+  };
+
+  const openLocationEditor = (loc: LocationData) => {
+    setEditingLocation(loc);
+    setDraftIndicators({ ...loc.indicators });
+    setDraftPopulation(loc.population);
+  };
+
+  const handleDraftIndicatorChange = (key: keyof LocalIndicators, val: number) => {
+    setDraftIndicators((prev) => (prev ? { ...prev, [key]: val } : prev));
+  };
+
+  const handleSaveLocationEdit = () => {
+    if (!editingLocation || !draftIndicators) return;
+    onUpdateLocation({
+      ...editingLocation,
+      population: Math.max(0, Math.round(draftPopulation) || 0),
+      indicators: draftIndicators,
+    });
+    closeLocationEditor();
+  };
+
+  // Escape and outside click dismiss the dialog, matching the app's modals.
+  useEffect(() => {
+    if (!editingLocation) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeLocationEditor();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [editingLocation]);
+  useOutsideClick(editDialogRef, closeLocationEditor);
 
   // Synchronize filter when selectedLocation changes globally
   useEffect(() => {
@@ -157,8 +229,17 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
                 <div
                   id={`location-module-location-cards-grid-3-${loc.id}`}
                   key={loc.id}
-                  onClick={() => onSelectLocation(loc)}
-                  className={`cursor-pointer p-4 rounded-2xl border transition-all text-right flex flex-col justify-between ${
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => openLocationEditor(loc)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      openLocationEditor(loc);
+                    }
+                  }}
+                  title="کلیک برای ویرایش مشخصات و شاخص‌های این لوکیشن"
+                  className={`cursor-pointer p-4 rounded-2xl border transition-all text-right flex flex-col justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
                     isSelected
                       ? 'bg-blue-50/90 border-blue-500 shadow-md ring-2 ring-blue-500/30'
                       : 'bg-white border-slate-200 hover:border-blue-300 hover:shadow-xs'
@@ -175,10 +256,15 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
                       >
                         استان {loc.province}
                       </span>
-                      {isSelected && (
+                      {isSelected ? (
                         <span className="flex items-center gap-1 text-[11px] font-extrabold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-md">
                           <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
                           لوکیشن فعال
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-[11px] font-bold text-slate-400">
+                          <Pencil className="w-3.5 h-3.5" />
+                          ویرایش
                         </span>
                       )}
                     </div>
@@ -208,16 +294,25 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
                       </strong>
                     </div>
 
-                    <button
-                      type="button"
-                      className={`w-full mt-2 py-1.5 rounded-xl text-xs font-bold transition-all text-center ${
-                        isSelected
-                          ? 'bg-blue-600 text-white shadow-xs'
-                          : 'bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200'
-                      }`}
-                    >
-                      {isSelected ? 'لوکیشن فعال سیستم' : 'انتخاب برای کل سامانه'}
-                    </button>
+                    {/* The only control that re-scopes the whole system to this
+                        location. Clicking the card body opens the edit dialog,
+                        so the selection click must not bubble up to it. */}
+                    {isSelected ? (
+                      <span className="block w-full mt-2 py-1.5 rounded-xl text-xs font-bold text-center bg-blue-600 text-white shadow-xs">
+                        لوکیشن فعال سیستم
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onSelectLocation(loc);
+                        }}
+                        className="w-full mt-2 py-1.5 rounded-xl text-xs font-bold transition-all text-center bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200"
+                      >
+                        انتخاب برای کل سامانه
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -365,6 +460,183 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
 
         </div>
       </div>
+
+      {/* Location Edit Dialog — opened by clicking a card in the grid above.
+          It edits the record that card stands for (population + the eleven
+          local indicators) and never re-scopes the system by itself: the only
+          controls that change the active location are the card's selection
+          button and the secondary action in this footer. */}
+      {editingLocation && draftIndicators && (
+        <div
+          id="location-module-edit-modal"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm dir-rtl"
+        >
+          <div
+            ref={editDialogRef}
+            id="location-module-edit-modal-2"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="location-module-edit-modal-title"
+            className="bg-white rounded-2xl w-full max-w-3xl border border-slate-200 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+          >
+            {/* Header */}
+            <div id="location-module-edit-modal-header" className="p-5 border-b border-slate-200 bg-gradient-to-r from-slate-50 via-blue-50/70 to-indigo-50/50 flex items-start justify-between gap-4 shrink-0">
+              <div id="location-module-edit-modal-header-2" className="flex items-center gap-3">
+                <div id="location-module-edit-modal-header-3" className="p-2 bg-blue-100 text-blue-600 rounded-xl border border-blue-200 shrink-0">
+                  <Pencil className="w-5 h-5" />
+                </div>
+                <div id="location-module-edit-modal-header-4">
+                  <h3 id="location-module-edit-modal-title" className="font-extrabold text-sm text-slate-900">
+                    ویرایش لوکیشن — {editingLocation.county}
+                  </h3>
+                  <p id="location-module-edit-modal-header-5" className="text-[11px] text-slate-500 mt-0.5">
+                    {editingLocation.city} ({editingLocation.district}) — ذخیره تغییرات، محاسبات همین لوکیشن را به‌روز می‌کند
+                  </p>
+                </div>
+              </div>
+              <button
+                id="location-module-edit-modal-close-button"
+                type="button"
+                onClick={closeLocationEditor}
+                title="بستن پنجره ویرایش لوکیشن"
+                aria-label="بستن"
+                className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-400 hover:text-slate-700 transition-colors shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body: identity, population and the eleven local indicators */}
+            <div id="location-module-edit-modal-body" className="p-5 overflow-y-auto space-y-5">
+              <div id="location-module-edit-modal-identity" className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div id="location-module-edit-modal-identity-province" className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                  <span className="block text-[10px] font-bold text-slate-500">استان</span>
+                  <strong className="block text-xs font-black text-slate-800 mt-0.5">{editingLocation.province}</strong>
+                </div>
+                <div id="location-module-edit-modal-identity-county" className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                  <span className="block text-[10px] font-bold text-slate-500">شهرستان</span>
+                  <strong className="block text-xs font-black text-slate-800 mt-0.5">{editingLocation.county}</strong>
+                </div>
+                <div id="location-module-edit-modal-identity-city" className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                  <span className="block text-[10px] font-bold text-slate-500">شهر / بخش</span>
+                  <strong className="block text-xs font-black text-slate-800 mt-0.5">{editingLocation.city}</strong>
+                </div>
+                <div id="location-module-edit-modal-identity-district" className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                  <span className="block text-[10px] font-bold text-slate-500">محدوده هدف</span>
+                  <strong className="block text-xs font-black text-slate-800 mt-0.5">{editingLocation.district}</strong>
+                </div>
+              </div>
+
+              <div id="location-module-edit-modal-population" className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <div id="location-module-edit-modal-population-2" className="flex items-center justify-between gap-2 mb-1">
+                  <span className="text-xs font-bold text-slate-800">جمعیت محلی</span>
+                  <span className="text-xs font-black text-blue-700">
+                    {toPersianDigits(draftPopulation.toLocaleString('fa-IR'))} نفر
+                  </span>
+                </div>
+                <input
+                  id="location-module-edit-modal-population-input"
+                  type="number"
+                  min={0}
+                  step={100}
+                  value={draftPopulation}
+                  onChange={(event) => {
+                    const next = Number(event.target.value);
+                    setDraftPopulation(Number.isFinite(next) ? Math.max(0, next) : 0);
+                  }}
+                  className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white font-mono"
+                />
+                <p className="text-[10px] text-slate-500 mt-1">
+                  مبنای محاسبه نرخ پوشش و برآورد بهره‌برداران در سامانه
+                </p>
+              </div>
+
+              <div id="location-module-edit-modal-indicators" className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {LOCATION_INDICATOR_FIELDS.map((field) => {
+                  const value = draftIndicators[field.key];
+                  return (
+                    <div
+                      key={field.key}
+                      id={`location-module-edit-modal-indicator-${field.key}`}
+                      className="bg-slate-50 p-3.5 rounded-xl border border-slate-200"
+                    >
+                      <div id={`location-module-edit-modal-indicator-${field.key}-2`} className="flex items-center justify-between gap-2 mb-1">
+                        <span className="text-[11px] font-bold text-slate-800">{field.label}</span>
+                        <span className="text-[11px] font-black text-blue-700">
+                          {toPersianDigits(value)} {field.unit}
+                        </span>
+                      </div>
+                      {field.max !== null ? (
+                        <input
+                          type="range"
+                          min={0}
+                          max={field.max}
+                          value={value}
+                          onChange={(event) =>
+                            handleDraftIndicatorChange(
+                              field.key,
+                              Math.min(field.max ?? 100, Math.max(0, parseFloat(event.target.value) || 0))
+                            )
+                          }
+                          className="w-full accent-blue-600"
+                        />
+                      ) : (
+                        <input
+                          type="number"
+                          min={0}
+                          value={value}
+                          onChange={(event) =>
+                            handleDraftIndicatorChange(field.key, Math.max(0, Number(event.target.value) || 0))
+                          }
+                          className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white font-mono"
+                        />
+                      )}
+                      <p className="text-[10px] text-slate-500 mt-1">{field.hint}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div id="location-module-edit-modal-footer" className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0">
+              <div id="location-module-edit-modal-footer-2">
+                {editingLocation.id !== selectedLocation.id && (
+                  <button
+                    id="location-module-edit-modal-select-button"
+                    type="button"
+                    onClick={() => {
+                      onSelectLocation(editingLocation);
+                      closeLocationEditor();
+                    }}
+                    className="w-full sm:w-auto px-4 py-2 rounded-xl bg-white border border-blue-200 text-blue-700 hover:bg-blue-50 text-xs font-bold transition-colors"
+                  >
+                    انتخاب برای کل سامانه
+                  </button>
+                )}
+              </div>
+              <div id="location-module-edit-modal-footer-3" className="flex items-center gap-2.5 self-end">
+                <button
+                  id="location-module-edit-modal-cancel-button"
+                  type="button"
+                  onClick={closeLocationEditor}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
+                >
+                  انصراف
+                </button>
+                <button
+                  id="location-module-edit-modal-save-button"
+                  type="button"
+                  onClick={handleSaveLocationEdit}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-600/25 transition-colors"
+                >
+                  ذخیره تغییرات لوکیشن
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

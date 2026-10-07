@@ -173,6 +173,7 @@ interface AppContextType {
   setAdministrativeScope: (scope: AdministrativeLevel) => void;
   handleSelectLocation: (newLoc: LocationData) => void;
   handleUpdateIndicators: (newIndicators: LocalIndicators) => void;
+  handleUpdateLocation: (updated: LocationData) => void;
   handlePercentageChange: (priorityId: string, value: number) => void;
   handleToggleLock: (priorityId: string) => void;
   handleApplySmartRecommendations: () => void;
@@ -542,6 +543,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setLocations((prev) => prev.map((l) => (l.id === updatedLoc.id ? updatedLoc : l)));
 
     const newRecs = calculateSmartRecommendations(priorities, newIndicators, updatedLoc.city);
+    setCurrentPercentages(newRecs.scores);
+  };
+
+  // Saving a whole location record. The Locations page edits any card — not
+  // only the active one — so the registry entry is replaced in place, and when
+  // the edited record happens to be the active location the rest of the system
+  // (active picker, smart allocation) follows the new values immediately.
+  const handleUpdateLocation = (updated: LocationData) => {
+    setLocations((prev) => prev.map((l) => (l.id === updated.id ? updated : l)));
+
+    if (updated.id !== selectedLocation.id) return;
+
+    setSelectedLocation(updated);
+    const newRecs = calculateSmartRecommendations(priorities, updated.indicators, updated.city);
     setCurrentPercentages(newRecs.scores);
   };
 
@@ -957,6 +972,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAdministrativeScope,
     handleSelectLocation,
     handleUpdateIndicators,
+    handleUpdateLocation,
     handlePercentageChange,
     handleToggleLock,
     handleApplySmartRecommendations,

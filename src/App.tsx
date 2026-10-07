@@ -132,6 +132,7 @@ function AppContent() {
     setActiveTab,
     handleSelectLocation,
     handleUpdateIndicators,
+    handleUpdateLocation,
     optimizationMetrics,
     addAuditLog,
   } = useAppContext();
@@ -420,6 +421,7 @@ function AppContent() {
               selectedLocation={selectedLocation}
               onSelectLocation={handleSelectLocation}
               onUpdateIndicators={handleUpdateIndicators}
+              onUpdateLocation={handleUpdateLocation}
             />
           )}
 
