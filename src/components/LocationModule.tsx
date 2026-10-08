@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { LocationData, LocalIndicators } from '../types';
 import { toPersianDigits } from '../utils/numberUtils';
-import { MapPin, Sliders, CheckCircle2, Search, Filter, Globe, Pencil, X } from 'lucide-react';
+import { MapPin, Sliders, CheckCircle2, Search, Filter, Globe, Pencil, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useOutsideClick } from '../hooks/useOutsideClick';
 import { ComparativeHarmsTable } from './ComparativeHarmsTable';
 import { PageHeader } from './PageHeader';
@@ -31,6 +31,13 @@ const LOCATION_INDICATOR_FIELDS: Array<{
   { key: 'vulnerableGroupsPopulation', label: 'جمعیت گروه‌های آسیب‌پذیر', hint: 'افراد نیازمند حمایت مستقیم', max: null, unit: 'نفر' },
 ];
 
+/**
+ * Location cards revealed per page of the region grid. From `lg` up the grid
+ * lays out four columns, so a page is three full rows of cards; the pager under
+ * the grid walks the rest of whatever the filters left behind.
+ */
+const LOCATION_PAGE_SIZE = 12;
+
 interface LocationModuleProps {
   locations: LocationData[];
   selectedLocation: LocationData;
@@ -50,6 +57,8 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
   // Province filter state (defaults to selectedLocation.province)
   const [selectedProvinceFilter, setSelectedProvinceFilter] = useState<string>(selectedLocation.province);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  /** Current page of the region grid — 1-based, and clamped to the result set. */
+  const [locationPage, setLocationPage] = useState<number>(1);
 
   // Card click opens this dialog instead of re-scoping the whole system: the
   // active location only changes from the card's own selection control.
@@ -120,6 +129,22 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
     });
   }, [locations, selectedProvinceFilter, searchQuery]);
 
+  // Paging of the region grid: the registry is filtered first and sliced second,
+  // so the pager always speaks about what the filters left behind rather than the
+  // whole country. The page is clamped rather than trusted — a filter can shrink
+  // the set under it — and any narrowing of that set drops the reader back to
+  // page one, so a new filter can never strand them on a page with no rows.
+  const locationPageCount = Math.max(1, Math.ceil(filteredLocations.length / LOCATION_PAGE_SIZE));
+  const safeLocationPage = Math.min(locationPage, locationPageCount);
+  const pagedLocations = useMemo(
+    () => filteredLocations.slice((safeLocationPage - 1) * LOCATION_PAGE_SIZE, safeLocationPage * LOCATION_PAGE_SIZE),
+    [filteredLocations, safeLocationPage]
+  );
+
+  useEffect(() => {
+    setLocationPage(1);
+  }, [searchQuery, selectedProvinceFilter]);
+
   const handleIndicatorChange = (key: keyof LocalIndicators, val: number) => {
     onUpdateIndicators({
       ...selectedLocation.indicators,
@@ -140,80 +165,86 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
 
       {/* Region Selector Grid Header & Controls */}
       <div id="location-module-region-selector-grid-header" className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-4">
-        <div id="location-module-region-selector-grid-header-2" className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-          <div id="location-module-region-selector-grid-header-3">
+        {/* Title and controls share one row — the panel used to open on three
+            stacked blocks (title, province pills, search) before the grid. The
+            hint line stays on a single truncated line and only appears where
+            there is room for it, so nothing wraps the row at desktop widths. */}
+        <div id="location-module-region-selector-grid-header-2" className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div id="location-module-region-selector-grid-header-3" className="min-w-0">
             <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-              <Globe className="w-5 h-5 text-blue-600" />
-              انتخاب و پایش لوکیشن‌های محلی (هدف CSR)
+              <Globe className="w-5 h-5 text-blue-600 shrink-0" />
+              <span className="whitespace-nowrap">انتخاب و پایش لوکیشن‌های محلی (هدف CSR)</span>
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p
+              className="hidden xl:block text-[11px] text-slate-500 mt-0.5 truncate"
+              title="با انتخاب هر لوکیشن، تمام محاسبات بودجه، نمودارها و فرمول‌های AI در سراسر سامانه به‌صورت آنی به‌روز می‌شوند"
+            >
               با انتخاب هر لوکیشن، تمام محاسبات بودجه، نمودارها و فرمول‌های AI در سراسر سامانه به‌صورت آنی به‌روز می‌شوند
             </p>
           </div>
 
-        </div>
+          {/* Filter and Search Bar — rides the title's row from `xl` up. */}
+          <div id="location-module-filter-and-search-bar" className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 min-w-0">
 
-        {/* Filter and Search Bar */}
-        <div id="location-module-filter-and-search-bar" className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
-          
-          {/* Province Filter Pills */}
-          <div id="location-module-province-filter-pills" className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
-            <span className="text-xs font-bold text-slate-500 flex items-center gap-1 shrink-0 ml-1">
-              <Filter className="w-3.5 h-3.5 text-slate-400" />
-              فیلتر استان:
-            </span>
+            {/* Province Filter Pills */}
+            <div id="location-module-province-filter-pills" className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+              <span className="text-xs font-bold text-slate-500 flex items-center gap-1 shrink-0 ml-1">
+                <Filter className="w-3.5 h-3.5 text-slate-400" />
+                فیلتر استان:
+              </span>
 
-            <button
-              onClick={() => setSelectedProvinceFilter(selectedLocation.province)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
-                selectedProvinceFilter === selectedLocation.province
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-              }`}
-            >
-              استان {selectedLocation.province} (فعال)
-            </button>
+              <button
+                onClick={() => setSelectedProvinceFilter(selectedLocation.province)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                  selectedProvinceFilter === selectedLocation.province
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
+              >
+                استان {selectedLocation.province} (فعال)
+              </button>
 
-            <button
-              onClick={() => setSelectedProvinceFilter('ALL')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
-                selectedProvinceFilter === 'ALL'
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-              }`}
-            >
-              همه استان‌ها ({toPersianDigits(locations.length)})
-            </button>
+              <button
+                onClick={() => setSelectedProvinceFilter('ALL')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                  selectedProvinceFilter === 'ALL'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
+              >
+                همه استان‌ها ({toPersianDigits(locations.length)})
+              </button>
 
-            {provinces
-              .filter((p) => p !== selectedLocation.province)
-              .map((prov) => (
-                <button
-                  key={prov}
-                  onClick={() => setSelectedProvinceFilter(prov)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
-                    selectedProvinceFilter === prov
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                  }`}
-                >
-                  {prov}
-                </button>
-              ))}
+              {provinces
+                .filter((p) => p !== selectedLocation.province)
+                .map((prov) => (
+                  <button
+                    key={prov}
+                    onClick={() => setSelectedProvinceFilter(prov)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                      selectedProvinceFilter === prov
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                    }`}
+                  >
+                    {prov}
+                  </button>
+                ))}
+            </div>
+
+            {/* Search Box */}
+            <div id="location-module-search-box" className="relative w-full sm:w-64">
+              <Search className="w-4 h-4 text-slate-400 absolute right-3 top-2.5" />
+              <input
+                type="text"
+                placeholder="جستجوی شهرستان یا محله..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-3 pr-9 py-1.5 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50"
+              />
+            </div>
+
           </div>
-
-          {/* Search Box */}
-          <div id="location-module-search-box" className="relative w-full sm:w-64">
-            <Search className="w-4 h-4 text-slate-400 absolute right-3 top-2.5" />
-            <input
-              type="text"
-              placeholder="جستجوی شهرستان یا محله..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-3 pr-9 py-1.5 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50"
-            />
-          </div>
-
         </div>
 
         {/* Location Cards Grid */}
@@ -223,7 +254,7 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
               هیچ لوکیشنی با مشخصات جستجو شده یافت نشد
             </div>
           ) : (
-            filteredLocations.map((loc) => {
+            pagedLocations.map((loc) => {
               const isSelected = loc.id === selectedLocation.id;
               return (
                 <div
@@ -272,12 +303,6 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
                     <h3 className="font-extrabold text-slate-900 text-sm mt-1">
                       شهرستان {loc.county}
                     </h3>
-                    <p className="text-xs text-slate-600 mt-1 flex items-start gap-1 leading-snug">
-                      <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-                      <span>
-                        {loc.city} ({loc.district})
-                      </span>
-                    </p>
                   </div>
 
                   <div id={`location-module-location-cards-grid-6-${loc.id}`} className="mt-3 pt-2 border-t border-slate-100 space-y-1.5">
@@ -319,6 +344,73 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
             })
           )}
         </div>
+
+        {/* Pager — drawn only when the filtered set spills past one page, so a
+            short result list keeps the panel as quiet as it was before. */}
+        {locationPageCount > 1 && (
+          <div
+            id="location-module-region-selector-pagination"
+            className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-slate-100"
+          >
+            <span
+              id="location-module-region-selector-pagination-summary"
+              className="text-[11px] font-bold text-slate-500"
+            >
+              نمایش {toPersianDigits((safeLocationPage - 1) * LOCATION_PAGE_SIZE + 1)} تا{' '}
+              {toPersianDigits(Math.min(safeLocationPage * LOCATION_PAGE_SIZE, filteredLocations.length))} از{' '}
+              {toPersianDigits(filteredLocations.length)} لوکیشن
+            </span>
+
+            <div id="location-module-region-selector-pagination-controls" className="flex items-center gap-1.5 flex-wrap">
+              <button
+                id="location-module-region-selector-pagination-prev"
+                type="button"
+                onClick={() => setLocationPage((page) => Math.max(1, page - 1))}
+                disabled={safeLocationPage === 1}
+                title="صفحه قبلی"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold border border-slate-200 bg-slate-50 text-slate-600 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-50"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+                قبلی
+              </button>
+
+              {locationPageCount <= 7 ? (
+                Array.from({ length: locationPageCount }, (_, index) => index + 1).map((page) => (
+                  <button
+                    id={`location-module-region-selector-pagination-page-${page}`}
+                    key={page}
+                    type="button"
+                    onClick={() => setLocationPage(page)}
+                    aria-current={safeLocationPage === page ? 'page' : undefined}
+                    className={`min-w-8 px-2 py-1.5 rounded-xl text-xs font-bold border transition-colors ${
+                      safeLocationPage === page
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                        : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    {toPersianDigits(page)}
+                  </button>
+                ))
+              ) : (
+                <span id="location-module-region-selector-pagination-position" className="px-1 text-xs font-bold text-slate-600">
+                  صفحه {toPersianDigits(safeLocationPage)} از {toPersianDigits(locationPageCount)}
+                </span>
+              )}
+
+              <button
+                id="location-module-region-selector-pagination-next"
+                type="button"
+                onClick={() => setLocationPage((page) => Math.min(locationPageCount, page + 1))}
+                disabled={safeLocationPage === locationPageCount}
+                title="صفحه بعدی"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold border border-slate-200 bg-slate-50 text-slate-600 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-50"
+              >
+                بعدی
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Comparative Social Harms Table (Local vs Province & National) */}
