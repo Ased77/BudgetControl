@@ -337,28 +337,13 @@ function AppContent() {
             />
           </div>
 
-          {/* Account & sign-out — divided from the nav and tinted red, per the reference. */}
+          {/* Sign-out only — the account chip it used to sit beside now rides at
+              the top of the scrollable workspace, so the footer keeps the divider
+              and the red sign-out row. */}
           <div id="app-sidebar-footer-user-role" className="shrink-0">
             <div id="app-sidebar-footer-divider" className="h-px bg-slate-100 mx-5" />
 
-            <div className="p-3 space-y-1">
-              <button
-                id="app-sidebar-footer-user-role-2"
-                onClick={() => {
-                  setActiveTab('ROLES_PERMISSIONS');
-                  setSidebarOpen(false);
-                }}
-                className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-slate-50 transition-colors text-right"
-              >
-                <span id="app-sidebar-footer-user-role-4" className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-xs text-white shadow-xs shrink-0">
-                  {currentUser.name.charAt(0)}
-                </span>
-                <span id="app-sidebar-footer-user-role-5" className="min-w-0 flex-1">
-                  <span id="app-sidebar-footer-user-role-6" className="block font-bold text-slate-800 text-xs truncate">{currentUser.name}</span>
-                  <span id="app-sidebar-footer-user-role-7" className="block text-xs text-slate-500 truncate">{currentUser.roleFa}</span>
-                </span>
-              </button>
-
+            <div className="p-3">
               <button
                 id="app-sidebar-footer-user-role-8"
                 onClick={logout}
@@ -374,8 +359,9 @@ function AppContent() {
       </aside>
 
       {/* Main Content Area.
-          No workspace header: each page renders its own title block at the top
-          of its content (see `PageHeader`). */}
+          No workspace header of its own: each page renders its own title block at
+          the top of its content (see `PageHeader`), and the account chip rides in
+          the page itself — see the identity bar at the top of the workspace. */}
       <div id="app-main-content-area" className="flex-1 flex flex-col h-full overflow-hidden">
         {/* Global Location Selector Modal — opened from the sidebar location button */}
         {showLocationDrawer && (
@@ -390,6 +376,30 @@ function AppContent() {
         {/* Scrollable Main Workspace */}
         <ShellChromeContext.Provider value={shellChrome}>
         <div id="app-scrollable-main-workspace" ref={mainWorkspaceRef} className="scrollbar-none flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+          {/* Identity bar — the signed-in account rides at the very top of the page
+              it governs and scrolls away with the rest of the content, in normal
+              flow: nothing above the workspace reserves room for it and nothing
+              sits over the workspace. Only the chip moved out of the sidebar;
+              sign-out stayed behind in the sidebar footer. */}
+          <div id="app-workspace-identity-bar" className="flex justify-end">
+            <button
+              id="app-sidebar-footer-user-role-2"
+              onClick={() => {
+                setActiveTab('ROLES_PERMISSIONS');
+                setSidebarOpen(false);
+              }}
+              className="inline-flex items-center gap-3 max-w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 bg-white shadow-2xs transition-colors hover:border-blue-200 hover:bg-blue-50 focus-visible:border-blue-400 text-right"
+            >
+              <span id="app-sidebar-footer-user-role-4" className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-xs text-white shadow-xs shrink-0">
+                {currentUser.name.charAt(0)}
+              </span>
+              <span id="app-sidebar-footer-user-role-5" className="min-w-0 flex-1">
+                <span id="app-sidebar-footer-user-role-6" className="block font-bold text-slate-800 text-xs truncate">{currentUser.name}</span>
+                <span id="app-sidebar-footer-user-role-7" className="block text-xs text-slate-500 truncate">{currentUser.roleFa}</span>
+              </span>
+            </button>
+          </div>
+
           {activeTab === 'DASHBOARD' && <NationalDashboardView />}
 
           {activeTab === 'POPULATION' && <PopulationView />}
