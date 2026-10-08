@@ -5,6 +5,7 @@ import { useOutsideClick } from '../hooks/useOutsideClick';
 import { PageHeader } from './PageHeader';
 import {
   AlertTriangle,
+  AlertCircle,
   Plus,
   Search,
   Filter,
@@ -18,10 +19,125 @@ import {
   Trash2,
   X,
   Activity,
-  ChevronDown,
+  Gauge,
+  ShieldCheck,
+  FolderGit2,
+  ListChecks,
 } from 'lucide-react';
-import { formatNumber, toPersianDigits } from '../utils/numberUtils';
+import { formatNumber, formatToman, toPersianDigits } from '../utils/numberUtils';
+import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
 import { useConfirmDelete } from './ConfirmDeleteModal';
+
+/**
+ * Card gauge geometry — a 56px frame with the stroke centred on a 22px radius,
+ * which leaves room for the six-pixel stroke and its round cap. It is the same
+ * frame the departments page draws its absorption ring in, so the metric strips
+ * of the two pages line up when they sit side by side.
+ */
+const GAUGE_RADIUS = 22;
+/** Radius of the enlarged gauge that heads the drill-down modal. */
+const DETAIL_GAUGE_RADIUS = 32;
+
+/**
+ * Order of the urgency chip strip — worst first. Mirrors the `UrgencyLevel`
+ * union the add/edit form uses, so the chips and the form agree on what "first"
+ * means.
+ */
+const URGENCY_ORDER: UrgencyLevel[] = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
+
+/**
+ * Per-urgency visual identity: icon, emblem tile, badge tint and the active
+ * filter chip, shaped like `DEPARTMENT_CATEGORY_STYLE` in DepartmentsView so a
+ * "state of a record" looks the same on both pages. It deliberately carries no
+ * ring token: the gauge colour reports the severity score itself and is derived
+ * at render time, never the urgency.
+ */
+const URGENCY_STYLE: Record<
+  UrgencyLevel,
+  {
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    tile: string;
+    soft: string;
+    chip: string;
+  }
+> = {
+  CRITICAL: {
+    label: 'بحرانی و فوری',
+    icon: Flame,
+    tile: 'bg-rose-50 dark:bg-rose-950/50 border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400',
+    soft: 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800',
+    chip: 'bg-rose-600 text-white border-rose-600 shadow-sm shadow-rose-600/25',
+  },
+  HIGH: {
+    label: 'شدت بالا',
+    icon: AlertTriangle,
+    tile: 'bg-amber-50 dark:bg-amber-950/50 border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400',
+    soft: 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+    chip: 'bg-amber-500 text-white border-amber-500 shadow-sm shadow-amber-500/25',
+  },
+  MEDIUM: {
+    label: 'شدت متوسط',
+    icon: Gauge,
+    tile: 'bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400',
+    soft: 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800',
+    chip: 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/25',
+  },
+  LOW: {
+    label: 'قابل پایش',
+    icon: ShieldCheck,
+    tile: 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400',
+    soft: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+    chip: 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/25',
+  },
+};
+
+const ADMIN_LEVEL_LABELS: Record<AdministrativeLevel, string> = {
+  NATIONAL: 'ملی / کشوری',
+  PROVINCIAL: 'استانی',
+  COUNTY: 'شهرستانی',
+  RURAL_DISTRICT: 'بخشداری / دهیاری',
+};
+
+/**
+ * Severity gauge colour follows the score itself — how deprived the area is,
+ * which is a health reading — rather than the row's urgency, exactly as the
+ * departments absorption ring follows the absorbed share rather than the
+ * department's category: ۷۰ and up writes rose, ۵۰–۶۹ amber, below that emerald.
+ */
+function severityGaugeTone(severityScore: number): string {
+  if (severityScore >= 70) return 'stroke-rose-500 dark:stroke-rose-400';
+  if (severityScore >= 50) return 'stroke-amber-500 dark:stroke-amber-400';
+  return 'stroke-emerald-500 dark:stroke-emerald-400';
+}
+
+/**
+ * Status pill for a crisis — label, icon and tint from one helper, because the
+ * card's meta row and the drill-down header both show it and a crisis under
+ * intervention must never look unresolved in one of them. The number of
+ * projects tied to the record is part of the label while it is being worked on.
+ */
+function crisisStatusMeta(status: CrisisHarmItem['status'], projectCount: number) {
+  if (status === 'UNDER_INTERVENTION') {
+    return {
+      icon: Clock,
+      label: `پروژه فعال (${toPersianDigits(projectCount)})`,
+      className: 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300',
+    };
+  }
+  if (status === 'CONTROLLED') {
+    return {
+      icon: CheckCircle2,
+      label: 'مهار شده',
+      className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300',
+    };
+  }
+  return {
+    icon: AlertCircle,
+    label: 'بدون مداخله',
+    className: 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300',
+  };
+}
 
 export const CrisesHarmsView: React.FC = () => {
   const {
@@ -45,6 +161,13 @@ export const CrisesHarmsView: React.FC = () => {
   const [editingCrisis, setEditingCrisis] = useState<CrisisHarmItem | null>(null);
   const { confirmDelete, modal: deleteConfirmModal } = useConfirmDelete();
 
+  // Read-only drill-down of a single crisis — the record's own page, opened from
+  // its card. Cause, intervention and the linked projects live here rather than
+  // on the grid, which is what keeps the grid scannable.
+  const [detailCrisis, setDetailCrisis] = useState<CrisisHarmItem | null>(null);
+  const detailModalRef = useRef<HTMLDivElement>(null);
+  useOutsideClick(detailModalRef, () => setDetailCrisis(null));
+
   // Form State
   const [formTitle, setFormTitle] = useState('');
   const [formCode, setFormCode] = useState('');
@@ -60,28 +183,9 @@ export const CrisesHarmsView: React.FC = () => {
   const [formSolution, setFormSolution] = useState('');
   const [formStatus, setFormStatus] = useState<CrisisHarmItem['status']>('UNRESOLVED');
   const [formDeficitIndex, setFormDeficitIndex] = useState('');
-  // Cause and intervention are the only long text a crisis card owns, so they sit
-  // behind one disclosure per card and start closed: the page then reads as a
-  // list of situations — title, scope, two numbers, status — and a row nobody
-  // opens costs one clamped line instead of two paragraphs.
-  const [expandedCardIds, setExpandedCardIds] = useState<string[]>([]);
-  const toggleCardDetails = (id: string) =>
-    setExpandedCardIds((current) =>
-      current.includes(id) ? current.filter((openId) => openId !== id) : [...current, id]
-    );
 
   const userPerm = getUserPermissions(currentUser);
   const canManage = userPerm ? userPerm.canManageCrises : true;
-
-  // One urgency token set feeds the whole card: the badge beside the title and
-  // the bar under the numbers both read their colour from here, so the two can
-  // never disagree about how urgent a row is.
-  const urgencyLabels: Record<UrgencyLevel, { label: string; color: string; badge: string; bar: string }> = {
-    CRITICAL: { label: 'بحرانی و فوری', color: 'text-rose-600', bar: 'bg-rose-500', badge: 'bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-300 border-rose-200 dark:border-rose-800' },
-    HIGH: { label: 'شدت بالا', color: 'text-amber-600', bar: 'bg-amber-500', badge: 'bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border-amber-200 dark:border-amber-800' },
-    MEDIUM: { label: 'شدت متوسط', color: 'text-blue-600', bar: 'bg-blue-500', badge: 'bg-blue-100 text-blue-800 dark:bg-blue-950/70 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
-    LOW: { label: 'قابل پایش', color: 'text-emerald-600', bar: 'bg-emerald-500', badge: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' },
-  };
 
   const handleOpenAdd = () => {
     setEditingCrisis(null);
@@ -179,33 +283,152 @@ export const CrisesHarmsView: React.FC = () => {
     });
   }, [crisesHarms, searchQuery, selectedUrgency, selectedStatus]);
 
-  // Aggregate stats
+  // Aggregate stats — the four numbers that head the page
   const criticalCount = useMemo(() => crisesHarms.filter((c) => c.urgency === 'CRITICAL').length, [crisesHarms]);
   const totalAffected = useMemo(() => crisesHarms.reduce((s, c) => s + c.affectedPopulation, 0), [crisesHarms]);
-  const underInterventionCount = useMemo(() => crisesHarms.filter((c) => c.status === 'UNDER_INTERVENTION').length, [crisesHarms]);
+  const underInterventionCount = useMemo(
+    () => crisesHarms.filter((c) => c.status === 'UNDER_INTERVENTION').length,
+    [crisesHarms]
+  );
+
+  // Urgency distribution drives the chip strip: a chip for an urgency no record
+  // carries would only be a filter that can never match.
+  const urgencyCounts = useMemo(() => {
+    const counts: Partial<Record<UrgencyLevel, number>> = {};
+    crisesHarms.forEach((c) => {
+      counts[c.urgency] = (counts[c.urgency] || 0) + 1;
+    });
+    return counts;
+  }, [crisesHarms]);
+
+  const resetFilters = () => {
+    setSearchQuery('');
+    setSelectedUrgency('ALL');
+    setSelectedStatus('ALL');
+  };
+
+  const kpiCards = [
+    {
+      id: 'total',
+      label: 'کل موارد ثبت‌شده',
+      value: `${toPersianDigits(crisesHarms.length)} مورد`,
+      icon: ListChecks,
+      card: 'border-cyan-200 dark:border-cyan-900/70 bg-cyan-50/40 dark:bg-cyan-950/20',
+      tile: 'bg-cyan-100 dark:bg-cyan-950/60 border-cyan-200 dark:border-cyan-800 text-cyan-700 dark:text-cyan-300',
+      valueClass: 'text-cyan-800 dark:text-cyan-300',
+    },
+    {
+      id: 'critical',
+      label: 'کانون‌های بحرانی',
+      value: `${toPersianDigits(criticalCount)} کانون`,
+      icon: Flame,
+      card: 'border-rose-200 dark:border-rose-900/70 bg-rose-50/40 dark:bg-rose-950/20',
+      tile: 'bg-rose-100 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300',
+      valueClass: 'text-rose-800 dark:text-rose-300',
+    },
+    {
+      id: 'affected',
+      label: 'جمعیت متأثر',
+      value: `${formatNumber(totalAffected)} نفر`,
+      icon: Users,
+      card: 'border-amber-200 dark:border-amber-900/70 bg-amber-50/40 dark:bg-amber-950/20',
+      tile: 'bg-amber-100 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300',
+      valueClass: 'text-amber-800 dark:text-amber-300',
+    },
+    {
+      id: 'intervention',
+      label: 'در حال مداخله',
+      value: `${toPersianDigits(underInterventionCount)} مورد`,
+      icon: FolderGit2,
+      card: 'border-emerald-200 dark:border-emerald-900/70 bg-emerald-50/40 dark:bg-emerald-950/20',
+      tile: 'bg-emerald-100 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300',
+      valueClass: 'text-emerald-800 dark:text-emerald-300',
+    },
+  ];
 
   return (
-    <div id="crises-harms-view-root" className="space-y-6">
-      {/* Page title block — above the banner, per the page-header reference. */}
+    <div id="crises-harms-view-root" className="space-y-5">
       <PageHeader
         id="crises-harms-view-page-header"
         icon={AlertTriangle}
         title="آسیب‌ها، بحران‌ها و نیازسنجی محلی / منطقه‌ای"
-        subtitle="مبنای هوشمند سنجش اولویت و توجیه پروژه‌ها"
+        subtitle={`${toPersianDigits(crisesHarms.length)} مورد ثبت‌شده — ${toPersianDigits(criticalCount)} کانون بحرانی و ${formatNumber(totalAffected)} نفر جمعیت متأثر در ${selectedLocation.province} - ${selectedLocation.county}`}
         tone="text-rose-600"
       />
 
-      {/* Banner — the add action and the aggregate KPI strip. The label pill that
-          used to lead this row restated the page title almost word for word, so
-          the row is now the button alone and the numbers below carry the story. */}
-      <div id="crises-harms-view-header-banner-light-theme" className="bg-gradient-to-r from-rose-50/90 via-pink-50/70 to-slate-50 rounded-2xl p-6 text-slate-900 border border-rose-200/80 shadow-2xs relative overflow-hidden">
-        <div id="crises-harms-view-header-banner-light-theme-2" className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-end">
-          <div id="crises-harms-view-header-banner-light-theme-5" className="flex items-center gap-3 self-start md:self-auto">
+      {/* Macro KPI Cards — totals across every registered crisis and harm */}
+      <div id="crises-harms-view-kpi-cards" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {kpiCards.map((kpi) => {
+          const KpiIcon = kpi.icon;
+          return (
+            <div
+              id={`crises-harms-view-kpi-card-${kpi.id}`}
+              key={kpi.id}
+              className={`rounded-2xl border p-4 shadow-2xs flex items-center gap-3 ${kpi.card}`}
+            >
+              <div
+                id={`crises-harms-view-kpi-card-tile-${kpi.id}`}
+                className={`w-11 h-11 rounded-2xl border flex items-center justify-center shrink-0 ${kpi.tile}`}
+              >
+                <KpiIcon className="w-5 h-5" />
+              </div>
+              <div id={`crises-harms-view-kpi-card-body-${kpi.id}`} className="min-w-0">
+                <span className={`block text-base font-black leading-tight truncate ${kpi.valueClass}`}>{kpi.value}</span>
+                <span className="block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{kpi.label}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Toolbar — search, result count, status filter, add action and urgency chips */}
+      <div
+        id="crises-harms-view-toolbar"
+        className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs p-4 space-y-3"
+      >
+        <div id="crises-harms-view-toolbar-top-row" className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div id="crises-harms-view-toolbar-search-group" className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div id="crises-harms-view-search-input" className="relative w-full sm:w-72">
+              <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-3" />
+              <input
+                type="text"
+                placeholder="جستجوی عنوان بحران، محدوده یا دسته..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pr-10 pl-3 py-2 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
+              />
+            </div>
+
+            <span
+              id="crises-harms-view-result-count"
+              className="text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 whitespace-nowrap"
+            >
+              <ListChecks className="w-3.5 h-3.5 text-rose-500" />
+              {toPersianDigits(filteredCrises.length)} مورد یافت شد
+            </span>
+          </div>
+
+          <div id="crises-harms-view-toolbar-actions" className="flex items-center gap-2 flex-wrap">
+            <div id="crises-harms-view-status-filter" className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+              <Filter className="w-3.5 h-3.5" />
+              <span>وضعیت مداخله:</span>
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-rose-500"
+              >
+                <option value="ALL">همه وضعیت‌ها</option>
+                <option value="UNRESOLVED">حل نشده / بدون پروژه</option>
+                <option value="UNDER_INTERVENTION">تحت مداخله با پروژه فعال</option>
+                <option value="CONTROLLED">مهار شده / تثبیت وضعیت</option>
+              </select>
+            </div>
+
             {canManage && (
               <button
                 id="btn-add-crisis"
                 onClick={handleOpenAdd}
-                className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-md shadow-rose-600/25 transition-all hover:scale-105 active:scale-95"
+                className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-xl font-bold text-xs shadow-md shadow-rose-600/25 transition-all hover:scale-105 active:scale-95"
               >
                 <Plus className="w-4 h-4" />
                 <span>ثبت آسیب یا بحران جدید</span>
@@ -214,258 +437,563 @@ export const CrisesHarmsView: React.FC = () => {
           </div>
         </div>
 
-        {/* Aggregate KPI Strip */}
-        <div id="crises-harms-view-aggregate-kpi-strip" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-rose-200/60">
-          <div id="crises-harms-view-aggregate-kpi-strip-2" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
-            <span className="text-xs text-slate-500 block">کل موارد</span>
-            <span className="text-xl font-black text-slate-900 mt-0.5 block font-mono">{toPersianDigits(crisesHarms.length)} مورد</span>
-          </div>
-          <div id="crises-harms-view-aggregate-kpi-strip-3" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
-            <span className="text-xs text-slate-500 block">بحران‌های حاد</span>
-            <span className="text-xl font-black text-rose-700 mt-0.5 block flex items-center gap-1 font-mono">
-              <Flame className="w-4 h-4 text-rose-600" />
-              {toPersianDigits(criticalCount)} کانون بحرانی
-            </span>
-          </div>
-          <div id="crises-harms-view-aggregate-kpi-strip-4" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
-            <span className="text-xs text-slate-500 block">جمعیت متأثر</span>
-            <span className="text-xl font-black text-amber-700 mt-0.5 block font-mono">{formatNumber(totalAffected)} نفر</span>
-          </div>
-          <div id="crises-harms-view-aggregate-kpi-strip-5" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
-            <span className="text-xs text-slate-500 block">در حال مداخله</span>
-            <span className="text-xl font-black text-emerald-700 mt-0.5 block font-mono">{toPersianDigits(underInterventionCount)} مورد</span>
-          </div>
+        {/* Urgency chips */}
+        <div
+          id="crises-harms-view-urgency-chips"
+          className="flex items-center gap-1.5 flex-wrap pt-3 border-t border-slate-100 dark:border-slate-800"
+        >
+          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 ml-1">سطح فوریت:</span>
+          <button
+            id="crises-harms-view-urgency-chip-ALL"
+            type="button"
+            onClick={() => setSelectedUrgency('ALL')}
+            className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
+              selectedUrgency === 'ALL'
+                ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100 shadow-sm'
+                : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
+            }`}
+          >
+            همه ({toPersianDigits(crisesHarms.length)})
+          </button>
+
+          {URGENCY_ORDER.filter((urgency) => (urgencyCounts[urgency] || 0) > 0).map((urgency) => {
+            const style = URGENCY_STYLE[urgency];
+            const ChipIcon = style.icon;
+            const isSelected = selectedUrgency === urgency;
+            return (
+              <button
+                id={`crises-harms-view-urgency-chip-${urgency}`}
+                key={urgency}
+                type="button"
+                onClick={() => setSelectedUrgency(urgency)}
+                className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                  isSelected
+                    ? style.chip
+                    : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
+                }`}
+              >
+                <ChipIcon className="w-3.5 h-3.5 shrink-0" />
+                <span>{style.label}</span>
+                <span className={`text-[10px] ${isSelected ? 'opacity-80' : 'text-slate-400'}`}>
+                  ({toPersianDigits(urgencyCounts[urgency] || 0)})
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div id="crises-harms-view-filter-and-search-bar" className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
-        <div id="crises-harms-view-filter-and-search-bar-2" className="relative w-full md:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-3" />
-          <input
-            type="text"
-            placeholder="جستجوی عنوان بحران، محدوده یا علت..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pr-10 pl-3 py-2 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
-          />
+      {/* Crises Grid — every card is a door into the record's own page, so the
+          grid only has to carry the identity, the state and three numbers. */}
+      {filteredCrises.length > 0 ? (
+        <div id="crises-harms-view-crises-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {filteredCrises.map((item) => {
+            const style = URGENCY_STYLE[item.urgency];
+            const UrgencyIcon = style.icon;
+            const matchedProjects = projects.filter((p) => p.crisisHarmId === item.id);
+            const status = crisisStatusMeta(item.status, matchedProjects.length);
+            const StatusIcon = status.icon;
+
+            return (
+              <article
+                id={`crises-harms-view-card-${item.id}`}
+                key={item.id}
+                onClick={() => setDetailCrisis(item)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setDetailCrisis(item);
+                  }
+                }}
+                title="کلیک برای مشاهده جزئیات بحران"
+                className="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs hover:shadow-md cursor-pointer transition-all flex flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+              >
+                {/* Identity — the urgency emblem over the crisis title. The badge
+                    spells the urgency out and the muted chip carries the subject
+                    area, so the two never have to be told apart by colour alone. */}
+                <div
+                  id={`crises-harms-view-card-identity-${item.id}`}
+                  className="p-5 pb-4 flex flex-col items-center text-center"
+                >
+                  <div
+                    id={`crises-harms-view-card-emblem-${item.id}`}
+                    className={`w-20 h-20 rounded-2xl border flex items-center justify-center shrink-0 ${style.tile}`}
+                  >
+                    <UrgencyIcon className="w-10 h-10" />
+                  </div>
+
+                  <div id={`crises-harms-view-card-title-${item.id}`} className="flex items-start justify-center gap-1 mt-3 w-full min-w-0">
+                    <h3
+                      className="font-black text-base text-slate-900 dark:text-slate-100 leading-tight min-w-0 line-clamp-2 group-hover:text-rose-700 dark:group-hover:text-rose-300 transition-colors"
+                      title={item.title}
+                    >
+                      {item.title}
+                    </h3>
+                  </div>
+
+                  <div className="flex items-center justify-center gap-1.5 flex-wrap mt-2">
+                    <span
+                      id={`crises-harms-view-card-urgency-${item.id}`}
+                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border whitespace-nowrap ${style.soft}`}
+                    >
+                      {style.label}
+                    </span>
+                    <span
+                      id={`crises-harms-view-card-category-${item.id}`}
+                      className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 whitespace-nowrap"
+                    >
+                      {item.category}
+                    </span>
+                  </div>
+
+                  <div
+                    id={`crises-harms-view-card-meta-${item.id}`}
+                    className="flex items-center justify-center gap-3 mt-3 text-[10px] text-slate-500 dark:text-slate-400 w-full min-w-0"
+                  >
+                    <span className="flex items-center gap-1 min-w-0">
+                      <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                      <span className="truncate" title={`${item.province} - ${item.county} (${item.districtOrVillage})`}>
+                        {item.county} ({item.districtOrVillage})
+                      </span>
+                    </span>
+                    <span
+                      id={`crises-harms-view-card-status-${item.id}`}
+                      className={`flex items-center gap-1 whitespace-nowrap px-2 py-0.5 rounded-full font-bold ${status.className}`}
+                    >
+                      <StatusIcon className="w-3 h-3 shrink-0" />
+                      {status.label}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Three-metric strip: severity gauge / affected population / active projects */}
+                <div
+                  id={`crises-harms-view-card-metrics-${item.id}`}
+                  className="mt-auto grid grid-cols-3 items-stretch border-y border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30 rounded-b-2xl"
+                >
+                  <div
+                    id={`crises-harms-view-card-gauge-${item.id}`}
+                    className="flex items-center justify-center py-3"
+                  >
+                    <div className="relative w-14 h-14">
+                      <svg viewBox="0 0 56 56" className="w-14 h-14 -rotate-90">
+                        <circle
+                          cx="28"
+                          cy="28"
+                          r={GAUGE_RADIUS}
+                          fill="none"
+                          strokeWidth="6"
+                          className="stroke-slate-200 dark:stroke-slate-700"
+                        />
+                        <circle
+                          cx="28"
+                          cy="28"
+                          r={GAUGE_RADIUS}
+                          fill="none"
+                          strokeWidth="6"
+                          strokeLinecap="round"
+                          className={`transition-all duration-500 ${severityGaugeTone(item.severityScore)}`}
+                          strokeDasharray={2 * Math.PI * GAUGE_RADIUS}
+                          strokeDashoffset={2 * Math.PI * GAUGE_RADIUS * (1 - item.severityScore / 100)}
+                        />
+                      </svg>
+                      <span className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-sm font-black text-slate-800 dark:text-slate-100 leading-none">
+                          {toPersianDigits(item.severityScore)}
+                        </span>
+                        <span className="text-[9px] text-slate-400 mt-0.5">از ۱۰۰</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div
+                    id={`crises-harms-view-card-population-metric-${item.id}`}
+                    className="flex flex-col items-center justify-center gap-0.5 px-1 py-3 border-x border-slate-100 dark:border-slate-800 text-center"
+                  >
+                    <span className="text-sm font-black text-slate-900 dark:text-slate-100 leading-none">
+                      {formatNumber(item.affectedPopulation)}
+                    </span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
+                      <Users className="w-3 h-3 text-slate-400" />
+                      نفر متأثر
+                    </span>
+                  </div>
+
+                  <div
+                    id={`crises-harms-view-card-projects-metric-${item.id}`}
+                    className="flex flex-col items-center justify-center gap-0.5 px-1 py-3 text-center"
+                  >
+                    <span className="text-sm font-black text-slate-900 dark:text-slate-100 leading-none">
+                      {toPersianDigits(matchedProjects.length)}
+                    </span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
+                      <FolderGit2 className="w-3 h-3 text-slate-400" />
+                      پروژه فعال
+                    </span>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
         </div>
-
-        <div id="crises-harms-view-filter-and-search-bar-3" className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          <div id="crises-harms-view-filter-and-search-bar-4" className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-            <Filter className="w-3.5 h-3.5" />
-            <span>سطح فوریت:</span>
-          </div>
-          <select
-            value={selectedUrgency}
-            onChange={(e) => setSelectedUrgency(e.target.value)}
-            className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-rose-500"
+      ) : (
+        <div
+          id="crises-harms-view-empty-state"
+          className="bg-white dark:bg-slate-900 rounded-2xl p-12 text-center border border-slate-200 dark:border-slate-800"
+        >
+          <AlertCircle className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+          <h3 className="font-bold text-slate-700 dark:text-slate-200 text-sm">هیچ بحران یا آسیبی با این مشخصات یافت نشد</h3>
+          <p className="text-xs text-slate-400 mt-1">لطفاً عبارت جستجو یا فیلترهای خود را تغییر دهید.</p>
+          <button
+            id="btn-reset-crisis-filters"
+            type="button"
+            onClick={resetFilters}
+            className="mt-4 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-[11px] font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
           >
-            <option value="ALL">همه سطوح فوریت ({crisesHarms.length})</option>
-            <option value="CRITICAL">بحرانی و فوری</option>
-            <option value="HIGH">شدت بالا</option>
-            <option value="MEDIUM">شدت متوسط</option>
-            <option value="LOW">قابل پایش</option>
-          </select>
-
-          <select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-rose-500"
-          >
-            <option value="ALL">همه وضعیت‌ها</option>
-            <option value="UNRESOLVED">حل نشده / بدون پروژه</option>
-            <option value="UNDER_INTERVENTION">تحت مداخله با پروژه فعال</option>
-            <option value="CONTROLLED">مهار شده / تثبیت وضعیت</option>
-          </select>
+            <X className="w-3.5 h-3.5" />
+            پاک‌سازی جستجو و فیلترها
+          </button>
         </div>
-      </div>
+      )}
 
-      {/* Crises Grid */}
-      <div id="crises-harms-view-crises-grid" className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filteredCrises.map((item) => {
-          const urgencyInfo = urgencyLabels[item.urgency];
-          const matchedProjects = projects.filter((p) => p.crisisHarmId === item.id);
-          const cardExpanded = expandedCardIds.includes(item.id);
+      {/* Crisis Drill-down Modal — the record's own page: readings, the two prose
+          panels and the projects that answer it. */}
+      {detailCrisis &&
+        (() => {
+          const style = URGENCY_STYLE[detailCrisis.urgency];
+          const UrgencyIcon = style.icon;
+          const matchedProjects = projects.filter((p) => p.crisisHarmId === detailCrisis.id);
+          const status = crisisStatusMeta(detailCrisis.status, matchedProjects.length);
+          const StatusIcon = status.icon;
 
           return (
             <div
-              id="crises-harms-view-crises-grid-card"
-              key={item.id}
-              className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+              id="crises-harms-view-detail-modal"
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
             >
-              <div id={`crises-harms-view-crises-grid-3-${item.id}`}>
-                <div id={`crises-harms-view-crises-grid-4-${item.id}`} className="flex items-start justify-between gap-2 mb-3">
-                  <div id={`crises-harms-view-crises-grid-5-${item.id}`} className="flex items-center gap-2.5">
-                    <div id={`crises-harms-view-crises-grid-6-${item.id}`} className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
-                      <AlertTriangle className="w-5 h-5" />
+              <div
+                id="crises-harms-view-detail-modal-panel"
+                ref={detailModalRef}
+                className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col"
+              >
+                {/* Header */}
+                <div
+                  id="crises-harms-view-detail-modal-header"
+                  className="flex items-start justify-between gap-3 p-5 border-b border-slate-200 dark:border-slate-800"
+                >
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div
+                      id="crises-harms-view-detail-modal-icon"
+                      className={`w-12 h-12 rounded-2xl border flex items-center justify-center shrink-0 ${style.tile}`}
+                    >
+                      <UrgencyIcon className="w-6 h-6" />
                     </div>
-                    <div id={`crises-harms-view-crises-grid-7-${item.id}`}>
-                      <span className="text-[10px] font-mono text-slate-400 tracking-wider block">{item.code}</span>
-                      <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight">{item.title}</h3>
-                    </div>
-                  </div>
-
-                  <span
-                    className={`px-2.5 py-1 rounded-full text-xs font-bold border whitespace-nowrap ${urgencyInfo.badge}`}
-                  >
-                    {urgencyInfo.label}
-                  </span>
-                </div>
-
-                <div id={`crises-harms-view-crises-grid-8-${item.id}`} className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-3">
-                  <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  {/* Clamped, not printed in full: the district string is a list
-                      of villages on some rows and a two-line block on others, so
-                      one clamped line keeps every card the same height while the
-                      tooltip still carries the whole scope. */}
-                  <span
-                    className="min-w-0 line-clamp-1"
-                    title={`${item.province} - ${item.county} (${item.districtOrVillage})`}
-                  >
-                    {item.province} - {item.county} ({item.districtOrVillage})
-                  </span>
-                </div>
-
-                {/* Measures — one label-and-number line each, no framed box. The
-                    bar under the severity row lets the eye rank cards without
-                    reading the digits, and its colour is the row's urgency. */}
-                <div id={`crises-harms-view-score-affected-population-${item.id}`} className="space-y-2.5 mb-3">
-                  <div id={`crises-harms-view-score-affected-population-2-${item.id}`} className="flex items-center justify-between gap-3 text-[11px] text-slate-500 dark:text-slate-400">
-                    <span className="inline-flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                      جمعیت متأثر
-                    </span>
-                    <span className="font-bold text-slate-800 dark:text-slate-100">{formatNumber(item.affectedPopulation)} نفر</span>
-                  </div>
-                  <div id={`crises-harms-view-score-affected-population-3-${item.id}`}>
-                    <div className="flex items-center justify-between gap-3 text-[11px] text-slate-500 dark:text-slate-400">
-                      <span className="inline-flex items-center gap-1.5">
-                        <Activity className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                        شاخص شدت محرومیت
-                      </span>
-                      <span className="font-bold text-slate-800 dark:text-slate-100">{toPersianDigits(item.severityScore)} از ۱۰۰</span>
-                    </div>
-                    <div className="mt-1.5 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                      <div className={`h-full rounded-full ${urgencyInfo.bar}`} style={{ width: `${item.severityScore}%` }} />
+                    <div className="min-w-0">
+                      <span className="text-[10px] font-mono text-slate-400 tracking-wider block">{detailCrisis.code}</span>
+                      <h3 className="font-black text-base text-slate-900 dark:text-slate-100 leading-tight">
+                        {detailCrisis.title}
+                      </h3>
+                      <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${style.soft}`}>
+                          {style.label}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 ${status.className}`}
+                        >
+                          <StatusIcon className="w-3 h-3" />
+                          {status.label}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          {detailCrisis.province} - {detailCrisis.county}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-
-                {/* Cause and Intervention — the card's only prose, so it hides
-                    behind one disclosure. Collapsed, a single clamped line of the
-                    recommended intervention stands in as the teaser; opened, both
-                    paragraphs appear in full, amber for the cause and emerald for
-                    the cure so the two read apart at a glance. */}
-                <div id={`crises-harms-view-cause-and-intervention-${item.id}`} className="mb-4">
                   <button
-                    type="button"
-                    onClick={() => toggleCardDetails(item.id)}
-                    aria-expanded={cardExpanded}
-                    aria-controls={`crises-harms-view-cause-and-intervention-panel-${item.id}`}
-                    className="w-full text-right rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 px-3 py-2 transition-colors hover:border-rose-200 dark:hover:border-rose-900 hover:bg-rose-50/40 dark:hover:bg-rose-950/20"
+                    id="btn-close-crisis-details"
+                    onClick={() => setDetailCrisis(null)}
+                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 shrink-0"
+                    title="بستن"
                   >
-                    <span className="flex items-center justify-between gap-2 text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                      <span>ریشه مشکل و مداخله پیشنهادی</span>
-                      <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform duration-200 ${cardExpanded ? 'rotate-180' : ''}`} />
-                    </span>
-                    {!cardExpanded && (
-                      <span className="mt-1 line-clamp-1 text-[11px] text-slate-500 dark:text-slate-400">
-                        {item.recommendedIntervention}
-                      </span>
-                    )}
+                    <X className="w-5 h-5" />
                   </button>
+                </div>
 
-                  {cardExpanded && (
-                    <div id={`crises-harms-view-cause-and-intervention-panel-${item.id}`} className="mt-2 space-y-2 text-xs text-slate-600 dark:text-slate-300">
-                      <div id={`crises-harms-view-cause-and-intervention-2-${item.id}`} className="bg-amber-50/50 dark:bg-amber-950/20 rounded-lg p-2.5 border border-amber-200/50 dark:border-amber-900/40">
-                        <span className="font-bold text-amber-900 dark:text-amber-300 block mb-0.5">ریشه و علت اصلی:</span>
-                        <p className="text-slate-700 dark:text-slate-300 text-[11px] leading-relaxed">{item.primaryCause}</p>
+                <div id="crises-harms-view-detail-modal-body" className="p-5 space-y-4 text-xs">
+                  {/* Assessment panel — the severity gauge beside the readings
+                      that qualify it, the same shape the departments page gives
+                      its budget absorption. */}
+                  <div
+                    id="crises-harms-view-detail-modal-assessment"
+                    className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                        <Activity className="w-3.5 h-3.5 text-rose-500" />
+                        شاخص‌های سنجش بحران
+                      </span>
+                      <span className="text-[10px] text-slate-400">ارزیابی نیازسنجی محلی</span>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <div className="relative w-20 h-20 shrink-0">
+                        <svg viewBox="0 0 80 80" className="w-20 h-20 -rotate-90">
+                          <circle
+                            cx="40"
+                            cy="40"
+                            r={DETAIL_GAUGE_RADIUS}
+                            fill="none"
+                            strokeWidth="8"
+                            className="stroke-slate-200 dark:stroke-slate-700"
+                          />
+                          <circle
+                            cx="40"
+                            cy="40"
+                            r={DETAIL_GAUGE_RADIUS}
+                            fill="none"
+                            strokeWidth="8"
+                            strokeLinecap="round"
+                            className={`transition-all duration-500 ${severityGaugeTone(detailCrisis.severityScore)}`}
+                            strokeDasharray={2 * Math.PI * DETAIL_GAUGE_RADIUS}
+                            strokeDashoffset={2 * Math.PI * DETAIL_GAUGE_RADIUS * (1 - detailCrisis.severityScore / 100)}
+                          />
+                        </svg>
+                        <span className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className="text-sm font-black text-slate-800 dark:text-slate-100">
+                            {toPersianDigits(detailCrisis.severityScore)}
+                          </span>
+                          <span className="text-[9px] text-slate-400">از ۱۰۰</span>
+                        </span>
                       </div>
-                      <div id={`crises-harms-view-cause-and-intervention-3-${item.id}`} className="bg-emerald-50/50 dark:bg-emerald-950/20 rounded-lg p-2.5 border border-emerald-200/50 dark:border-emerald-900/40">
-                        <span className="font-bold text-emerald-900 dark:text-emerald-300 block mb-0.5">مداخله و راهکار پیشنهادی:</span>
-                        <p className="text-slate-700 dark:text-slate-300 text-[11px] leading-relaxed">{item.recommendedIntervention}</p>
+
+                      <div className="flex-1 space-y-2 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-slate-500 dark:text-slate-400 text-[11px]">جمعیت متأثر</span>
+                          <span className="font-black text-slate-900 dark:text-slate-100">
+                            {formatNumber(detailCrisis.affectedPopulation)} نفر
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-slate-500 dark:text-slate-400 text-[11px]">پروژه‌های در حال اجرا</span>
+                          <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                            {toPersianDigits(matchedProjects.length)} پروژه
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+                          <span className="text-slate-500 dark:text-slate-400 text-[11px]">شاخص کمبود محلی</span>
+                          <span className="font-bold text-slate-700 dark:text-slate-300 truncate" title={detailCrisis.deficitIndexFa}>
+                            {detailCrisis.deficitIndexFa}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
 
-              {/* Status & Actions */}
-              <div id={`crises-harms-view-status-actions-${item.id}`} className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                <div id={`crises-harms-view-status-actions-2-${item.id}`} className="flex items-center gap-2">
-                  <span
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${
-                      item.status === 'UNDER_INTERVENTION'
-                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300'
-                        : item.status === 'CONTROLLED'
-                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
-                        : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
-                    }`}
-                  >
-                    {item.status === 'UNDER_INTERVENTION' ? (
-                      <>
-                        <Clock className="w-3 h-3" />
-                        <span>پروژه فعال ({matchedProjects.length})</span>
-                      </>
-                    ) : item.status === 'CONTROLLED' ? (
-                      <>
-                        <CheckCircle2 className="w-3 h-3" />
-                        <span>مهار شده</span>
-                      </>
+                  {/* Identity and scope */}
+                  <div id="crises-harms-view-detail-modal-facts" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div
+                      id="crises-harms-view-detail-modal-fact-category"
+                      className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2"
+                    >
+                      <span className="text-slate-400 text-[11px] flex items-center gap-1 shrink-0">
+                        <Flame className="w-3.5 h-3.5" />
+                        دسته آسیب و موضوع
+                      </span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200 truncate">{detailCrisis.category}</span>
+                    </div>
+                    <div
+                      id="crises-harms-view-detail-modal-fact-level"
+                      className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2"
+                    >
+                      <span className="text-slate-400 text-[11px] flex items-center gap-1 shrink-0">
+                        <Gauge className="w-3.5 h-3.5" />
+                        سطح اداری
+                      </span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200 truncate">
+                        {ADMIN_LEVEL_LABELS[detailCrisis.level]}
+                      </span>
+                    </div>
+                    <div
+                      id="crises-harms-view-detail-modal-fact-location"
+                      className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2"
+                    >
+                      <span className="text-slate-400 text-[11px] flex items-center gap-1 shrink-0">
+                        <MapPin className="w-3.5 h-3.5" />
+                        محدوده ثبت‌شده
+                      </span>
+                      <span
+                        className="font-bold text-slate-800 dark:text-slate-200 truncate"
+                        title={`${detailCrisis.province} - ${detailCrisis.county} (${detailCrisis.districtOrVillage})`}
+                      >
+                        {detailCrisis.county} ({detailCrisis.districtOrVillage})
+                      </span>
+                    </div>
+                    <div
+                      id="crises-harms-view-detail-modal-fact-status"
+                      className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2"
+                    >
+                      <span className="text-slate-400 text-[11px] flex items-center gap-1 shrink-0">
+                        <Activity className="w-3.5 h-3.5" />
+                        وضعیت مداخله
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 ${status.className}`}>
+                        <StatusIcon className="w-3 h-3" />
+                        {status.label}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Cause */}
+                  <div id="crises-harms-view-detail-modal-cause">
+                    <span className="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5 mb-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                      ریشه و علت اصلی
+                    </span>
+                    <p className="text-slate-600 dark:text-slate-300 leading-relaxed bg-amber-50/50 dark:bg-amber-950/20 rounded-xl p-3 border border-amber-200/50 dark:border-amber-900/40">
+                      {detailCrisis.primaryCause}
+                    </p>
+                  </div>
+
+                  {/* Intervention */}
+                  <div id="crises-harms-view-detail-modal-intervention">
+                    <span className="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5 mb-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                      مداخله و راهکار پیشنهادی
+                    </span>
+                    <p className="text-slate-600 dark:text-slate-300 leading-relaxed bg-emerald-50/50 dark:bg-emerald-950/20 rounded-xl p-3 border border-emerald-200/50 dark:border-emerald-900/40">
+                      {detailCrisis.recommendedIntervention}
+                    </p>
+                  </div>
+
+                  {/* Linked projects */}
+                  <div id="crises-harms-view-detail-modal-projects">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                        <FolderGit2 className="w-3.5 h-3.5 text-indigo-500" />
+                        پروژه‌های پاسخ‌دهنده به این بحران
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        {toPersianDigits(matchedProjects.length)} پروژه ثبت‌شده
+                      </span>
+                    </div>
+
+                    {matchedProjects.length === 0 ? (
+                      <div className="text-center py-6 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+                        <AlertCircle className="w-6 h-6 text-slate-300 dark:text-slate-600 mx-auto mb-1.5" />
+                        <p className="text-[11px] text-slate-400">
+                          هنوز پروژه‌ای برای مداخله در این بحران ثبت نشده است.
+                        </p>
+                      </div>
                     ) : (
-                      <>
-                        <AlertTriangle className="w-3 h-3" />
-                        <span>بدون مداخله</span>
-                      </>
+                      <div className="space-y-2">
+                        {matchedProjects.map((proj) => (
+                          <div
+                            id={`crises-harms-view-detail-modal-project-${proj.id}`}
+                            key={proj.id}
+                            className="bg-white dark:bg-slate-900 rounded-xl p-3 border border-slate-200 dark:border-slate-800"
+                          >
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <div className="min-w-0">
+                                <span className="text-[10px] font-mono text-slate-400 block">{proj.code}</span>
+                                <span className="font-bold text-slate-800 dark:text-slate-200 text-[11px] leading-tight block">
+                                  {proj.title}
+                                </span>
+                              </div>
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap shrink-0 ${
+                                  PROJECT_STATUS_META[proj.status].className
+                                }`}
+                              >
+                                {PROJECT_STATUS_META[proj.status].label}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full ${
+                                    proj.progressPercentage >= 100 ? 'bg-emerald-500' : 'bg-blue-500'
+                                  }`}
+                                  style={{ width: `${Math.min(100, proj.progressPercentage)}%` }}
+                                />
+                              </div>
+                              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 w-9 text-left shrink-0">
+                                {toPersianDigits(proj.progressPercentage)}٪
+                              </span>
+                              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono shrink-0">
+                                {formatToman(proj.estimatedCostToman)}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     )}
-                  </span>
+                  </div>
                 </div>
 
-                <div id={`crises-harms-view-status-actions-3-${item.id}`} className="flex items-center gap-1">
-                  <button
-                    onClick={() => setActiveTab('PROJECTS')}
-                    className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 font-bold px-2 py-1 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-colors"
-                  >
-                    <span>مشاهده پروژه‌ها</span>
-                    <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
-                  </button>
-
-                  {canManage && (
-                    <>
+                {/* Footer */}
+                <div
+                  id="crises-harms-view-detail-modal-footer"
+                  className="sticky bottom-0 flex items-center justify-between gap-3 p-5 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
+                >
+                  <span className="text-[10px] text-slate-400 font-mono truncate">
+                    شناسه سیستمی: {detailCrisis.code}
+                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      id="btn-open-crisis-projects"
+                      type="button"
+                      onClick={() => {
+                        setDetailCrisis(null);
+                        setActiveTab('PROJECTS');
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-[11px] border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                    >
+                      پروژه‌ها
+                      <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
+                    </button>
+                    {canManage && (
                       <button
-                        onClick={() => handleOpenEdit(item)}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                        title="ویرایش بحران"
+                        id="btn-edit-crisis-from-details"
+                        type="button"
+                        onClick={() => {
+                          const target = detailCrisis;
+                          setDetailCrisis(null);
+                          handleOpenEdit(target);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-bold text-[11px] border border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-950/70 transition-colors"
                       >
                         <Edit className="w-3.5 h-3.5" />
+                        ویرایش مشخصات
                       </button>
+                    )}
+                    {canManage && (
                       <button
-                        onClick={() =>
-                          confirmDelete(`آیا از حذف بحران «${item.title}» مطمئن هستید؟ این عملیات قابل بازگشت نیست.`, () =>
-                            handleDeleteCrisisHarm(item.id)
-                          )
-                        }
-                        className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                        title="حذف بحران"
+                        id="btn-delete-crisis-from-details"
+                        type="button"
+                        onClick={() => {
+                          const target = detailCrisis;
+                          setDetailCrisis(null);
+                          confirmDelete(
+                            `آیا از حذف بحران «${target.title}» مطمئن هستید؟ این عملیات قابل بازگشت نیست.`,
+                            () => handleDeleteCrisisHarm(target.id)
+                          );
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-600 text-white font-bold text-[11px] hover:bg-rose-700 transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
+                        حذف
                       </button>
-                    </>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
           );
-        })}
-
-        {filteredCrises.length === 0 && (
-          <div id="crises-harms-view-empty-state" className="md:col-span-2 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-8 text-center">
-            <p className="text-sm font-bold text-slate-600 dark:text-slate-300">موردی با این فیلترها پیدا نشد</p>
-            <p className="mt-1 text-xs text-slate-400">جستجو را کوتاه‌تر کنید یا فیلتر فوریت و وضعیت را روی «همه» بگذارید.</p>
-          </div>
-        )}
-      </div>
+        })()}
 
       {/* CRUD Modal */}
       {isModalOpen && (
