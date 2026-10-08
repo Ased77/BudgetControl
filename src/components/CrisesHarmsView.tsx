@@ -17,12 +17,11 @@ import {
   Edit,
   Trash2,
   X,
-  Layers,
   Activity,
+  ChevronDown,
 } from 'lucide-react';
 import { formatNumber, toPersianDigits } from '../utils/numberUtils';
 import { useConfirmDelete } from './ConfirmDeleteModal';
-import { Num } from './Num';
 
 export const CrisesHarmsView: React.FC = () => {
   const {
@@ -61,15 +60,27 @@ export const CrisesHarmsView: React.FC = () => {
   const [formSolution, setFormSolution] = useState('');
   const [formStatus, setFormStatus] = useState<CrisisHarmItem['status']>('UNRESOLVED');
   const [formDeficitIndex, setFormDeficitIndex] = useState('');
+  // Cause and intervention are the only long text a crisis card owns, so they sit
+  // behind one disclosure per card and start closed: the page then reads as a
+  // list of situations — title, scope, two numbers, status — and a row nobody
+  // opens costs one clamped line instead of two paragraphs.
+  const [expandedCardIds, setExpandedCardIds] = useState<string[]>([]);
+  const toggleCardDetails = (id: string) =>
+    setExpandedCardIds((current) =>
+      current.includes(id) ? current.filter((openId) => openId !== id) : [...current, id]
+    );
 
   const userPerm = getUserPermissions(currentUser);
   const canManage = userPerm ? userPerm.canManageCrises : true;
 
-  const urgencyLabels: Record<UrgencyLevel, { label: string; color: string; badge: string }> = {
-    CRITICAL: { label: 'بحرانی و فوری', color: 'text-rose-600', badge: 'bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-300 border-rose-200 dark:border-rose-800' },
-    HIGH: { label: 'شدت بالا', color: 'text-amber-600', badge: 'bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border-amber-200 dark:border-amber-800' },
-    MEDIUM: { label: 'شدت متوسط', color: 'text-blue-600', badge: 'bg-blue-100 text-blue-800 dark:bg-blue-950/70 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
-    LOW: { label: 'قابل پایش', color: 'text-emerald-600', badge: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' },
+  // One urgency token set feeds the whole card: the badge beside the title and
+  // the bar under the numbers both read their colour from here, so the two can
+  // never disagree about how urgent a row is.
+  const urgencyLabels: Record<UrgencyLevel, { label: string; color: string; badge: string; bar: string }> = {
+    CRITICAL: { label: 'بحرانی و فوری', color: 'text-rose-600', bar: 'bg-rose-500', badge: 'bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-300 border-rose-200 dark:border-rose-800' },
+    HIGH: { label: 'شدت بالا', color: 'text-amber-600', bar: 'bg-amber-500', badge: 'bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border-amber-200 dark:border-amber-800' },
+    MEDIUM: { label: 'شدت متوسط', color: 'text-blue-600', bar: 'bg-blue-500', badge: 'bg-blue-100 text-blue-800 dark:bg-blue-950/70 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
+    LOW: { label: 'قابل پایش', color: 'text-emerald-600', bar: 'bg-emerald-500', badge: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' },
   };
 
   const handleOpenAdd = () => {
@@ -184,16 +195,11 @@ export const CrisesHarmsView: React.FC = () => {
         tone="text-rose-600"
       />
 
-      {/* Banner — section label, actions and the aggregate KPI strip. */}
+      {/* Banner — the add action and the aggregate KPI strip. The label pill that
+          used to lead this row restated the page title almost word for word, so
+          the row is now the button alone and the numbers below carry the story. */}
       <div id="crises-harms-view-header-banner-light-theme" className="bg-gradient-to-r from-rose-50/90 via-pink-50/70 to-slate-50 rounded-2xl p-6 text-slate-900 border border-rose-200/80 shadow-2xs relative overflow-hidden">
-        <div id="crises-harms-view-header-banner-light-theme-2" className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div id="crises-harms-view-header-banner-light-theme-4" className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-200 flex items-center gap-1">
-              <Flame className="w-3.5 h-3.5 text-rose-600" />
-              پایگاه داده آسیب‌ها، بحران‌ها و نیازهای واقعی
-            </span>
-          </div>
-
+        <div id="crises-harms-view-header-banner-light-theme-2" className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-end">
           <div id="crises-harms-view-header-banner-light-theme-5" className="flex items-center gap-3 self-start md:self-auto">
             {canManage && (
               <button
@@ -211,97 +217,26 @@ export const CrisesHarmsView: React.FC = () => {
         {/* Aggregate KPI Strip */}
         <div id="crises-harms-view-aggregate-kpi-strip" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-rose-200/60">
           <div id="crises-harms-view-aggregate-kpi-strip-2" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
-            <span className="text-xs text-slate-500 block">کل موارد ثبت‌شده</span>
+            <span className="text-xs text-slate-500 block">کل موارد</span>
             <span className="text-xl font-black text-slate-900 mt-0.5 block font-mono">{toPersianDigits(crisesHarms.length)} مورد</span>
           </div>
           <div id="crises-harms-view-aggregate-kpi-strip-3" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
-            <span className="text-xs text-slate-500 block">بحران‌های حاد و اضطراری</span>
+            <span className="text-xs text-slate-500 block">بحران‌های حاد</span>
             <span className="text-xl font-black text-rose-700 mt-0.5 block flex items-center gap-1 font-mono">
               <Flame className="w-4 h-4 text-rose-600" />
               {toPersianDigits(criticalCount)} کانون بحرانی
             </span>
           </div>
           <div id="crises-harms-view-aggregate-kpi-strip-4" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
-            <span className="text-xs text-slate-500 block">جمعیت تحت تأثیر مستقیم</span>
+            <span className="text-xs text-slate-500 block">جمعیت متأثر</span>
             <span className="text-xl font-black text-amber-700 mt-0.5 block font-mono">{formatNumber(totalAffected)} نفر</span>
           </div>
           <div id="crises-harms-view-aggregate-kpi-strip-5" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
-            <span className="text-xs text-slate-500 block">طرح‌های در حال مداخله</span>
-            <span className="text-xl font-black text-emerald-700 mt-0.5 block font-mono">{toPersianDigits(underInterventionCount)} بحران</span>
+            <span className="text-xs text-slate-500 block">در حال مداخله</span>
+            <span className="text-xl font-black text-emerald-700 mt-0.5 block font-mono">{toPersianDigits(underInterventionCount)} مورد</span>
           </div>
         </div>
       </div>
-
-      <section
-        id="national-dashboard-view-card-2-critical-crises"
-        className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5"
-        aria-labelledby="national-dashboard-view-card-2-critical-crises-title"
-      >
-        <div id="national-dashboard-view-card-2-critical-crises-2">
-          <div id="national-dashboard-view-card-2-critical-crises-3" className="mb-4 flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
-            <div id="national-dashboard-view-card-2-critical-crises-4" className="flex min-w-0 items-center gap-2">
-              <Flame className="h-5 w-5 shrink-0 text-risk" aria-hidden="true" />
-              <h2 id="national-dashboard-view-card-2-critical-crises-title" className="text-sm font-bold text-slate-900">
-                کانون‌های بحرانی و آسیب‌های دارای فوریت بالا
-              </h2>
-            </div>
-            <a
-              href="#crises-harms-view-crises-grid"
-              className="flex shrink-0 items-center gap-1 text-xs font-bold text-risk-strong hover:underline"
-            >
-              <span>مشاهده همه</span>
-              <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" aria-hidden="true" />
-            </a>
-          </div>
-
-          <div id="national-dashboard-view-card-2-critical-crises-5" className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            {crisesHarms
-              .filter((crisis) => crisis.urgency === 'CRITICAL' || crisis.urgency === 'HIGH')
-              .slice(0, 4)
-              .map((crisis) => (
-                <div
-                  id={`national-dashboard-view-card-2-critical-crises-6-${crisis.id}`}
-                  key={crisis.id}
-                  className="space-y-1.5 rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs"
-                >
-                  <div id={`national-dashboard-view-card-2-critical-crises-7-${crisis.id}`} className="flex items-center justify-between gap-2">
-                    <span className="font-bold text-slate-900">{crisis.title}</span>
-                    <span
-                      className={`shrink-0 rounded px-2 py-0.5 text-xs font-bold ${
-                        crisis.urgency === 'CRITICAL'
-                          ? 'border border-red-200 bg-risk-soft text-risk-strong'
-                          : 'border border-amber-200 bg-warning-soft text-warning-strong'
-                      }`}
-                    >
-                      {crisis.urgency === 'CRITICAL' ? 'بحرانی' : 'شدت بالا'}
-                    </span>
-                  </div>
-
-                  <div id={`national-dashboard-view-card-2-critical-crises-8-${crisis.id}`} className="flex items-center justify-between text-xs text-slate-500">
-                    <span>{crisis.county} ({crisis.districtOrVillage})</span>
-                    <span>
-                      متأثرین: <Num value={formatNumber(crisis.affectedPopulation)} unit="نفر" className="font-bold text-slate-700" unitClassName="ms-0.5 text-slate-500" />
-                    </span>
-                  </div>
-
-                  <p className="line-clamp-1 text-xs text-slate-600" title={crisis.recommendedIntervention}>
-                    {crisis.recommendedIntervention}
-                  </p>
-                </div>
-              ))}
-          </div>
-        </div>
-
-        <div id="national-dashboard-view-card-2-critical-crises-9" className="mt-4 flex items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs">
-          <span className="text-slate-500">تعداد کانون‌های بحرانی حل‌نشده:</span>
-          <Num
-            value={formatNumber(criticalCount, true, 0)}
-            unit="کانون فعال"
-            className="font-black text-risk-strong"
-            unitClassName="ms-1 text-[0.9em] font-bold text-risk-strong"
-          />
-        </div>
-      </section>
 
       {/* Filter and Search Bar */}
       <div id="crises-harms-view-filter-and-search-bar" className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
@@ -351,6 +286,7 @@ export const CrisesHarmsView: React.FC = () => {
         {filteredCrises.map((item) => {
           const urgencyInfo = urgencyLabels[item.urgency];
           const matchedProjects = projects.filter((p) => p.crisisHarmId === item.id);
+          const cardExpanded = expandedCardIds.includes(item.id);
 
           return (
             <div
@@ -379,39 +315,79 @@ export const CrisesHarmsView: React.FC = () => {
 
                 <div id={`crises-harms-view-crises-grid-8-${item.id}`} className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-3">
                   <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  <span>
+                  {/* Clamped, not printed in full: the district string is a list
+                      of villages on some rows and a two-line block on others, so
+                      one clamped line keeps every card the same height while the
+                      tooltip still carries the whole scope. */}
+                  <span
+                    className="min-w-0 line-clamp-1"
+                    title={`${item.province} - ${item.county} (${item.districtOrVillage})`}
+                  >
                     {item.province} - {item.county} ({item.districtOrVillage})
                   </span>
                 </div>
 
-                {/* Score & Affected Population */}
-                <div id={`crises-harms-view-score-affected-population-${item.id}`} className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 text-xs mb-3 border border-slate-100 dark:border-slate-800">
-                  <div id={`crises-harms-view-score-affected-population-2-${item.id}`}>
-                    <span className="text-slate-400 text-[11px] block">شاخص شدت محرومیت:</span>
-                    <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 mt-0.5">
-                      <Activity className="w-3.5 h-3.5 text-rose-500" />
-                      {toPersianDigits(item.severityScore)} از ۱۰۰
+                {/* Measures — one label-and-number line each, no framed box. The
+                    bar under the severity row lets the eye rank cards without
+                    reading the digits, and its colour is the row's urgency. */}
+                <div id={`crises-harms-view-score-affected-population-${item.id}`} className="space-y-2.5 mb-3">
+                  <div id={`crises-harms-view-score-affected-population-2-${item.id}`} className="flex items-center justify-between gap-3 text-[11px] text-slate-500 dark:text-slate-400">
+                    <span className="inline-flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                      جمعیت متأثر
                     </span>
+                    <span className="font-bold text-slate-800 dark:text-slate-100">{formatNumber(item.affectedPopulation)} نفر</span>
                   </div>
                   <div id={`crises-harms-view-score-affected-population-3-${item.id}`}>
-                    <span className="text-slate-400 text-[11px] block">جمعیت متأثر:</span>
-                    <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 mt-0.5">
-                      <Users className="w-3.5 h-3.5 text-blue-500" />
-                      {formatNumber(item.affectedPopulation)} نفر
-                    </span>
+                    <div className="flex items-center justify-between gap-3 text-[11px] text-slate-500 dark:text-slate-400">
+                      <span className="inline-flex items-center gap-1.5">
+                        <Activity className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                        شاخص شدت محرومیت
+                      </span>
+                      <span className="font-bold text-slate-800 dark:text-slate-100">{toPersianDigits(item.severityScore)} از ۱۰۰</span>
+                    </div>
+                    <div className="mt-1.5 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                      <div className={`h-full rounded-full ${urgencyInfo.bar}`} style={{ width: `${item.severityScore}%` }} />
+                    </div>
                   </div>
                 </div>
 
-                {/* Cause and Intervention */}
-                <div id={`crises-harms-view-cause-and-intervention-${item.id}`} className="space-y-2 text-xs text-slate-600 dark:text-slate-300 mb-4">
-                  <div id={`crises-harms-view-cause-and-intervention-2-${item.id}`} className="bg-amber-50/50 dark:bg-amber-950/20 rounded-lg p-2.5 border border-amber-200/50 dark:border-amber-900/40">
-                    <span className="font-bold text-amber-900 dark:text-amber-300 block mb-0.5">ریشه و علت اصلی:</span>
-                    <p className="text-slate-700 dark:text-slate-300 text-[11px] leading-relaxed">{item.primaryCause}</p>
-                  </div>
-                  <div id={`crises-harms-view-cause-and-intervention-3-${item.id}`} className="bg-emerald-50/50 dark:bg-emerald-950/20 rounded-lg p-2.5 border border-emerald-200/50 dark:border-emerald-900/40">
-                    <span className="font-bold text-emerald-900 dark:text-emerald-300 block mb-0.5">مداخله و راهکار پیشنهادی:</span>
-                    <p className="text-slate-700 dark:text-slate-300 text-[11px] leading-relaxed">{item.recommendedIntervention}</p>
-                  </div>
+                {/* Cause and Intervention — the card's only prose, so it hides
+                    behind one disclosure. Collapsed, a single clamped line of the
+                    recommended intervention stands in as the teaser; opened, both
+                    paragraphs appear in full, amber for the cause and emerald for
+                    the cure so the two read apart at a glance. */}
+                <div id={`crises-harms-view-cause-and-intervention-${item.id}`} className="mb-4">
+                  <button
+                    type="button"
+                    onClick={() => toggleCardDetails(item.id)}
+                    aria-expanded={cardExpanded}
+                    aria-controls={`crises-harms-view-cause-and-intervention-panel-${item.id}`}
+                    className="w-full text-right rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 px-3 py-2 transition-colors hover:border-rose-200 dark:hover:border-rose-900 hover:bg-rose-50/40 dark:hover:bg-rose-950/20"
+                  >
+                    <span className="flex items-center justify-between gap-2 text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                      <span>ریشه مشکل و مداخله پیشنهادی</span>
+                      <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform duration-200 ${cardExpanded ? 'rotate-180' : ''}`} />
+                    </span>
+                    {!cardExpanded && (
+                      <span className="mt-1 line-clamp-1 text-[11px] text-slate-500 dark:text-slate-400">
+                        {item.recommendedIntervention}
+                      </span>
+                    )}
+                  </button>
+
+                  {cardExpanded && (
+                    <div id={`crises-harms-view-cause-and-intervention-panel-${item.id}`} className="mt-2 space-y-2 text-xs text-slate-600 dark:text-slate-300">
+                      <div id={`crises-harms-view-cause-and-intervention-2-${item.id}`} className="bg-amber-50/50 dark:bg-amber-950/20 rounded-lg p-2.5 border border-amber-200/50 dark:border-amber-900/40">
+                        <span className="font-bold text-amber-900 dark:text-amber-300 block mb-0.5">ریشه و علت اصلی:</span>
+                        <p className="text-slate-700 dark:text-slate-300 text-[11px] leading-relaxed">{item.primaryCause}</p>
+                      </div>
+                      <div id={`crises-harms-view-cause-and-intervention-3-${item.id}`} className="bg-emerald-50/50 dark:bg-emerald-950/20 rounded-lg p-2.5 border border-emerald-200/50 dark:border-emerald-900/40">
+                        <span className="font-bold text-emerald-900 dark:text-emerald-300 block mb-0.5">مداخله و راهکار پیشنهادی:</span>
+                        <p className="text-slate-700 dark:text-slate-300 text-[11px] leading-relaxed">{item.recommendedIntervention}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -440,7 +416,7 @@ export const CrisesHarmsView: React.FC = () => {
                     ) : (
                       <>
                         <AlertTriangle className="w-3 h-3" />
-                        <span>فاقد مداخله اجرایی</span>
+                        <span>بدون مداخله</span>
                       </>
                     )}
                   </span>
@@ -482,6 +458,13 @@ export const CrisesHarmsView: React.FC = () => {
             </div>
           );
         })}
+
+        {filteredCrises.length === 0 && (
+          <div id="crises-harms-view-empty-state" className="md:col-span-2 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-8 text-center">
+            <p className="text-sm font-bold text-slate-600 dark:text-slate-300">موردی با این فیلترها پیدا نشد</p>
+            <p className="mt-1 text-xs text-slate-400">جستجو را کوتاه‌تر کنید یا فیلتر فوریت و وضعیت را روی «همه» بگذارید.</p>
+          </div>
+        )}
       </div>
 
       {/* CRUD Modal */}

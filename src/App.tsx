@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AppProvider, useAppContext } from './context/AppContext';
-import { ShellChromeContext } from './context/ShellContext';
 import { exportToCsv } from './utils/excelExport';
 import { triggerPrintPdf } from './utils/pdfExport';
 import { formatToman, toPersianDigits } from './utils/numberUtils';
@@ -50,6 +49,7 @@ import {
   HelpCircle,
   Bell,
   LogOut,
+  Menu,
 } from 'lucide-react';/**
  * Row icons keep the hue they wore before the branched menu took over the rail.
  * The hue is handed to the menu as a token rather than baked onto the glyph, so
@@ -163,8 +163,6 @@ function AppContent() {
       ? [...openMenuSections, hoveredMenuSection]
       : openMenuSections;
 
-  // Handed to each page's title block so the mobile nav toggle can live there.
-  const shellChrome = useMemo(() => ({ openSidebar: () => setSidebarOpen(true) }), []);
   const exportDropdownRef = useRef<HTMLDivElement>(null);
   const mainWorkspaceRef = useRef<HTMLDivElement>(null);
 
@@ -373,22 +371,40 @@ function AppContent() {
           />
         )}
 
-        {/* Scrollable Main Workspace */}
-        <ShellChromeContext.Provider value={shellChrome}>
+        {/* Scrollable Main Workspace — the identity bar is its first row, so the
+            account chip and, below `lg`, the mobile nav toggle ride in the page
+            itself. */}
         <div id="app-scrollable-main-workspace" ref={mainWorkspaceRef} className="scrollbar-none flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-          {/* Identity bar — the signed-in account rides at the very top of the page
-              it governs and scrolls away with the rest of the content, in normal
-              flow: nothing above the workspace reserves room for it and nothing
-              sits over the workspace. Only the chip moved out of the sidebar;
-              sign-out stayed behind in the sidebar footer. */}
-          <div id="app-workspace-identity-bar" className="flex justify-end">
+          {/* Identity bar — the signed-in account and, below `lg`, the mobile nav
+              toggle share this row, so the hamburger sits level with the account
+              chip instead of on a row of its own under the page title. The row
+              is the first block of the page it governs and scrolls away with the
+              rest of the content, in normal flow: nothing above the workspace
+              reserves room for it and nothing sits over the workspace. Only the
+              chip moved out of the sidebar; sign-out stayed behind in the
+              sidebar footer. */}
+          <div id="app-workspace-identity-bar" className="flex items-center gap-3">
+            {/* Mobile nav toggle — the bordered square the page titles used to
+                carry. Hidden from `lg` up, where the sidebar is a static column;
+                the chip's `ms-auto` pins the two ends to the row's edges, so
+                neither control moves when the toggle appears. */}
+            <button
+              id="app-sidebar-open-button"
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              title="باز کردن منوی دسترسی"
+              aria-label="باز کردن منوی دسترسی"
+              className="lg:hidden shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-xl border border-slate-200 bg-white text-slate-600 shadow-2xs transition-all duration-150 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 active:scale-95 active:border-blue-300 active:bg-blue-50 active:text-blue-700 active:shadow-none focus:outline-none focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/45 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
             <button
               id="app-sidebar-footer-user-role-2"
               onClick={() => {
                 setActiveTab('ROLES_PERMISSIONS');
                 setSidebarOpen(false);
               }}
-              className="inline-flex items-center gap-3 max-w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 bg-white shadow-2xs transition-colors hover:border-blue-200 hover:bg-blue-50 focus-visible:border-blue-400 text-right"
+              className="ms-auto inline-flex items-center gap-3 max-w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 bg-white shadow-2xs transition-colors hover:border-blue-200 hover:bg-blue-50 focus-visible:border-blue-400 text-right"
             >
               <span id="app-sidebar-footer-user-role-4" className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-xs text-white shadow-xs shrink-0">
                 {currentUser.name.charAt(0)}
@@ -437,7 +453,6 @@ function AppContent() {
 
           {activeTab === 'ROLES_PERMISSIONS' && <RolesAndAccessView />}
         </div>
-        </ShellChromeContext.Provider>
       </div>
 
       {/* AI Analysis Modal */}
