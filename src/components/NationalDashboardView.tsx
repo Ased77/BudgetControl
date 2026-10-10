@@ -15,7 +15,6 @@ import {
   Flame,
   CheckCircle2,
   Sparkles,
-  ChevronLeft,
   Scale,
   Activity,
   X,
@@ -76,18 +75,6 @@ export const NationalDashboardView: React.FC = () => {
         title="داشبورد ملی توسعه متوازن"
         subtitle={`پایش کلان منابع، شاخص‌های محرومیت و تخصیص بهینه اعتبارات`}
         tone="text-blue-600"
-        breadcrumb={
-          <nav aria-label="محدوده جغرافیایی داده‌ها" className="flex flex-wrap items-center gap-1">
-            <span>کشور</span>
-            <ChevronLeft className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
-            <span>{selectedLocation.province}</span>
-            <ChevronLeft className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
-            <span className="font-bold text-slate-700">{selectedLocation.county}</span>
-            <span className="ms-2 rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-xs font-bold text-amber-700">
-              داده‌های این صفحه محدود به همین شهرستان است
-            </span>
-          </nav>
-        }
         adornment={
           <span className="hidden md:flex items-center gap-2 text-xs font-bold text-slate-500 border border-slate-200 rounded-full px-2.5 py-1 bg-white">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />

@@ -50,6 +50,8 @@ import {
   Bell,
   LogOut,
   Menu,
+  ChevronDown,
+  ChevronLeft,
 } from 'lucide-react';/**
  * Row icons keep the hue they wore before the branched menu took over the rail.
  * The hue is handed to the menu as a token rather than baked onto the glyph, so
@@ -273,27 +275,10 @@ function AppContent() {
 
           <div id="app-sidebar-top-divider" className="h-px bg-slate-100 mx-5 shrink-0" />
 
-          {/* Quick Location Switcher */}
-          <div id="app-quick-location-anti-overlap" className="px-3 pt-3 shrink-0">
-            <button
-              onClick={() => setShowLocationDrawer(!showLocationDrawer)}
-              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-2xl bg-slate-50 hover:bg-slate-100 text-xs transition-colors text-right group"
-            >
-              <span className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 group-hover:bg-emerald-100 transition-colors">
-                <MapPin className="w-4 h-4" />
-              </span>
-              <span id="app-quick-location-anti-overlap-2" className="flex-1 min-w-0">
-                <span className="block text-xs font-bold text-slate-500">موقعیت فعال سامانه</span>
-                <span className="block text-[13px] font-bold text-slate-800 truncate">
-                  {selectedLocation.province} — {selectedLocation.county}
-                </span>
-              </span>
-              <span className="text-xs font-bold text-blue-700 px-1.5 py-0.5 bg-blue-50 border border-blue-100 rounded-md shrink-0">
-                تغییر
-              </span>
-            </button>
-
-          </div>
+          {/* The quick location switcher that used to sit here has moved into the
+              identity bar at the top of the workspace: the nav rail is now brand →
+              nav → sign-out, and the active scope is stated once — in the session
+              strip every page shares — instead of twice on the same screen. */}
 
           {/* Navigation — the branched menu owns the fold, the accent line and the
               selection marker; the app owns which sections are open
@@ -375,19 +360,21 @@ function AppContent() {
             account chip and, below `lg`, the mobile nav toggle ride in the page
             itself. */}
         <div id="app-scrollable-main-workspace" ref={mainWorkspaceRef} className="scrollbar-none flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-          {/* Identity bar — the signed-in account and, below `lg`, the mobile nav
-              toggle share this row, so the hamburger sits level with the account
-              chip instead of on a row of its own under the page title. The row
-              is the first block of the page it governs and scrolls away with the
-              rest of the content, in normal flow: nothing above the workspace
-              reserves room for it and nothing sits over the workspace. Only the
-              chip moved out of the sidebar; sign-out stayed behind in the
+          {/* Identity bar — the session strip that states the two facets of the
+              active session: WHERE the operator is working (the geographic scope
+              every page is filtered to) at the start of the row, and WHO they are
+              signed in as at the end. Below `lg` the mobile nav toggle shares the
+              row, so the hamburger sits level with the identity block instead of
+              on a row of its own under the page title.
+
+              The row is the first block of the page it governs and scrolls away
+              with the rest of the content, in normal flow: nothing above the
+              workspace reserves room for it and nothing sits over the workspace.
+              Only identity moved out of the sidebar; sign-out stayed behind in the
               sidebar footer. */}
-          <div id="app-workspace-identity-bar" className="flex items-center gap-3">
+          <div id="app-workspace-identity-bar" className="flex items-center gap-2 sm:gap-3">
             {/* Mobile nav toggle — the bordered square the page titles used to
-                carry. Hidden from `lg` up, where the sidebar is a static column;
-                the chip's `ms-auto` pins the two ends to the row's edges, so
-                neither control moves when the toggle appears. */}
+                carry. Hidden from `lg` up, where the sidebar is a static column. */}
             <button
               id="app-sidebar-open-button"
               type="button"
@@ -398,21 +385,58 @@ function AppContent() {
             >
               <Menu className="w-5 h-5" />
             </button>
+
+            {/* Where — the geographic scope every page's data is filtered to, and
+                the one control that changes it: choosing it opens the location
+                picker, which the sidebar used to launch before the switcher moved
+                up here. It stays on phones too, where the sidebar is a drawer and
+                the active county would otherwise be a tap away: the province/county
+                line is the one that never hides. */}
             <button
-              id="app-sidebar-footer-user-role-2"
+              id="app-workspace-identity-bar-scope"
+              type="button"
+              onClick={() => setShowLocationDrawer(true)}
+              title="مشاهده و تغییر محدوده جغرافیایی فعال"
+              aria-haspopup="dialog"
+              className="group inline-flex min-w-0 items-center gap-2.5 rounded-2xl border border-slate-200 bg-white py-1.5 ps-1.5 pe-2.5 shadow-2xs transition-colors hover:border-emerald-300 hover:bg-emerald-50/50 focus:outline-none focus-visible:border-emerald-400"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 transition-colors group-hover:bg-emerald-100">
+                <MapPin className="h-4 w-4" />
+              </span>
+              <span className="min-w-0 max-w-[9rem] text-right leading-tight sm:max-w-[15rem]">
+                <span className="hidden text-[10px] font-bold text-slate-400 md:block">محدوده فعال سامانه</span>
+                <span className="block truncate text-xs font-bold text-slate-800">
+                  {selectedLocation.province} — {selectedLocation.county}
+                </span>
+              </span>
+              <span className="hidden shrink-0 items-center gap-1 rounded-lg border border-emerald-100 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700 transition-colors group-hover:border-emerald-200 group-hover:bg-emerald-100 sm:inline-flex">
+                <ChevronDown className="h-3 w-3" aria-hidden="true" />
+                تغییر
+              </span>
+            </button>
+
+            {/* Who — the signed-in identity. `ms-auto` pins it to the far end of
+                the row so it holds its place whether or not the scope pill and the
+                mobile toggle are present; on phones it drops to the avatar and the
+                name. Choosing it opens the roles & access page, where the identity
+                and its permissions are managed. */}
+            <button
+              id="app-workspace-identity-bar-user"
               onClick={() => {
                 setActiveTab('ROLES_PERMISSIONS');
                 setSidebarOpen(false);
               }}
-              className="ms-auto inline-flex items-center gap-3 max-w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 bg-white shadow-2xs transition-colors hover:border-blue-200 hover:bg-blue-50 focus-visible:border-blue-400 text-right"
+              title={`${currentUser.roleTitleFa} — مشاهده نقش‌ها و سطوح دسترسی`}
+              className="group ms-auto inline-flex min-w-0 max-w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white py-1.5 ps-1.5 pe-2.5 shadow-2xs transition-colors hover:border-blue-200 hover:bg-blue-50 focus:outline-none focus-visible:border-blue-400 text-right"
             >
-              <span id="app-sidebar-footer-user-role-4" className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-xs text-white shadow-xs shrink-0">
+              <span id="app-workspace-identity-bar-avatar" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-sm font-black text-white shadow-sm shadow-blue-500/20">
                 {currentUser.name.charAt(0)}
               </span>
-              <span id="app-sidebar-footer-user-role-5" className="min-w-0 flex-1">
-                <span id="app-sidebar-footer-user-role-6" className="block font-bold text-slate-800 text-xs truncate">{currentUser.name}</span>
-                <span id="app-sidebar-footer-user-role-7" className="block text-xs text-slate-500 truncate">{currentUser.roleFa}</span>
+              <span id="app-workspace-identity-bar-who" className="min-w-0 leading-tight">
+                <span id="app-workspace-identity-bar-name" className="block truncate text-xs font-bold text-slate-800">{currentUser.name}</span>
+                <span id="app-workspace-identity-bar-role" className="hidden truncate text-[10px] font-medium text-slate-500 sm:block">{currentUser.roleFa}</span>
               </span>
+              <ChevronLeft className="hidden h-4 w-4 shrink-0 text-slate-300 transition-colors group-hover:text-blue-400 sm:block" aria-hidden="true" />
             </button>
           </div>
 

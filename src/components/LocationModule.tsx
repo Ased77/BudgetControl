@@ -32,9 +32,10 @@ const LOCATION_INDICATOR_FIELDS: Array<{
 ];
 
 /**
- * Location cards revealed per page of the region grid. From `lg` up the grid
- * lays out four columns, so a page is three full rows of cards; the pager under
- * the grid walks the rest of whatever the filters left behind.
+ * Location cards revealed per page of the region grid. The grid is a single
+ * horizontal row of fixed-width cards that scrolls sideways rather than wrapping
+ * into columns, so a page fills that row's own track; the pager under the grid
+ * walks the rest of whatever the filters left behind.
  */
 const LOCATION_PAGE_SIZE = 12;
 
@@ -247,10 +248,16 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
           </div>
         </div>
 
-        {/* Location Cards Grid */}
-        <div id="location-module-location-cards-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+        {/* Location Cards Grid — one row of fixed-width cards that scrolls
+            sideways instead of wrapping into columns, so every region sits on the
+            same line and the strip's height stays constant however many a page
+            holds. The cards are `shrink-0` so the row scrolls rather than
+            squashing them; `scrollbar-none` hides the track, matching the
+            province pill row above and the sidebar nav. The `py-3` keeps the
+            selected card's ring and the hover shadow from being clipped. */}
+        <div id="location-module-location-cards-grid" className="flex gap-4 py-3 overflow-x-auto scrollbar-none">
           {filteredLocations.length === 0 ? (
-            <div id="location-module-location-cards-grid-2" className="col-span-full text-center py-8 text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+            <div id="location-module-location-cards-grid-2" className="w-full text-center py-8 text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200">
               هیچ لوکیشنی با مشخصات جستجو شده یافت نشد
             </div>
           ) : (
@@ -270,7 +277,7 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
                     }
                   }}
                   title="کلیک برای ویرایش مشخصات و شاخص‌های این لوکیشن"
-                  className={`cursor-pointer p-4 rounded-2xl border transition-all text-right flex flex-col justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
+                  className={`shrink-0 w-64 cursor-pointer p-4 rounded-2xl border transition-all text-right flex flex-col justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
                     isSelected
                       ? 'bg-blue-50/90 border-blue-500 shadow-md ring-2 ring-blue-500/30'
                       : 'bg-white border-slate-200 hover:border-blue-300 hover:shadow-xs'
