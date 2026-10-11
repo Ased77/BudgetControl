@@ -377,6 +377,10 @@ export type AuditActionType =
   | 'EXPORT_REPORT'
   | 'LOCATION_CHANGE'
   | 'DUPLICATE_FLAGGED'
+  | 'ANALYSIS_SOURCE_ADD'
+  | 'ANALYSIS_SOURCE_EDIT'
+  | 'ANALYSIS_SOURCE_DELETE'
+  | 'ANALYSIS_SOURCE_REVIEW'
   | 'LOGIN'
   | 'LOGOUT';
 
@@ -454,4 +458,53 @@ export interface SmartRecommendationResult {
   overallVulnerabilityIndex: number;
   universalCriticalCount?: number;
   localHotspotCount?: number;
+}
+
+/* =========================================================================
+   ۱۱. منابع تحلیل و داده‌های ورودی موتور تحلیل (Analysis Sources)
+   ========================================================================= */
+
+/** Who produced the item — an automated pipeline/model or a person. */
+export type AnalysisSourceOrigin = 'AI' | 'HUMAN';
+
+/** What kind of evidence the item carries. */
+export type AnalysisSourceKind =
+  | 'NEWS'            // خبر و گزارش رسانه‌ای
+  | 'OFFICIAL_STAT'   // آمار و سند رسمی
+  | 'FIELD_REPORT'    // گزارش میدانی و بازدید
+  | 'SATELLITE'       // تصویر ماهواره‌ای / سنجش از دور
+  | 'INTERVIEW'       // مصاحبه و اظهارنظر کارشناسی
+  | 'SOCIAL_MEDIA';   // رصد فضای مجازی
+
+/** Human-in-the-loop review state. */
+export type AnalysisSourceStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+/**
+ * One input that feeds the system's analytical engine (predictive model,
+ * prioritisation, crisis sensing). Every item records whether it was produced
+ * by an AI pipeline or supplied by a person, and carries a review state so an
+ * operator can approve or reject it before it is trusted as evidence.
+ */
+export interface AnalysisSource {
+  id: string;
+  title: string;
+  /** Short plain-language description of what this input contributes. */
+  summary: string;
+  origin: AnalysisSourceOrigin;
+  kind: AnalysisSourceKind;
+  /** Producing model (for AI) or person/organisation (for human input). */
+  provider: string;
+  sourceUrl?: string;
+  /** Publication/collection date as a display string (e.g. «۱۴۰۴/۰۵/۱۲»). */
+  publishedAt: string;
+  /** Analytical modules that consume this input. */
+  linkedAreas: string[];
+  /** 0–100 confidence/credibility score. */
+  reliabilityScore: number;
+  status: AnalysisSourceStatus;
+  reviewedBy?: string;
+  reviewNote?: string;
+  province: string;
+  county: string;
+  createdAt: string;
 }

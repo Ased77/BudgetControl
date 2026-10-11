@@ -35,7 +35,6 @@ import {
   PieChart,
   ShieldCheck,
   Check,
-  ExternalLink,
   Droplets,
   Stethoscope,
   Compass,
@@ -1927,43 +1926,23 @@ export const CreateProjectView: React.FC = () => {
 
   return (
     <div id="create-project-view-root" className="space-y-6 pb-16">
-      {/* Page title block — above the banner, per the page-header reference. */}
+      {/* Page title block — the header banner was folded into the page header,
+          so the title row now carries its own trailing action. */}
       <PageHeader
         id="create-project-view-page-header"
         icon={FolderPlus}
         title="سامانه جامع تعریف، تجمیع و ثبت هوشمند پروژه"
         subtitle="ثبت یکپارچه پرونده پروژه با پیوند منابع، ادارات، مجریان و جامعه هدف"
         tone="text-indigo-600"
-      />
-
-      <div id="create-project-view-header-banner" className="bg-gradient-to-l from-indigo-50/90 via-blue-50/70 to-slate-50 text-slate-900 rounded-2xl p-6 border border-indigo-200/80 shadow-2xs relative overflow-hidden">
-        <div id="create-project-view-header-banner-2" className="absolute top-0 left-0 w-80 h-80 bg-blue-500/10 rounded-full filter blur-3xl pointer-events-none" />
-        <div id="create-project-view-header-banner-3" className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div id="create-project-view-header-banner-5" className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-100 rounded-lg text-xs font-semibold text-indigo-800 border border-indigo-200">
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            موتور هوشمند تجمیع و پیوند تمامی تب‌ها
-          </div>
-
-          <div id="create-project-view-header-banner-6" className="flex items-center gap-3 shrink-0">
-            <button
-              onClick={() => setActiveTab('PROJECTS')}
-              className="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-xl border border-slate-300 shadow-2xs transition-colors flex items-center gap-2"
-            >
-              <Eye className="w-4 h-4 text-indigo-600" />
-              مشاهده رصد پروژه‌ها ({projects.length})
-            </button>
-          </div>
-        </div>
-
-        {/* Interconnected Tabs Legend */}
-        {/* One line instead of six chips: the banner no longer pushes the first
-            field of the form below the fold, and the full list of destination
-            modules lives in the review card next to the submit button. */}
-        <p id="create-project-view-interconnected-tabs-legend" className="mt-4 pt-4 border-t border-indigo-200/60 text-xs text-slate-700 leading-relaxed">
-          ماژول‌های مقصد ثبت این طرح: تب ادارات · تب بودجه (چندمنبعی) · تب اولویت‌ها · تب بحران ·
-          تب مجریان و پیمانکاران · تب جمعیت — فهرست کامل در گام بازبینی نهایی.
-        </p>
-      </div>
+      >
+        <button
+          onClick={() => setActiveTab('PROJECTS')}
+          className="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-xl border border-slate-300 shadow-2xs transition-colors flex items-center gap-2"
+        >
+          <Eye className="w-4 h-4 text-indigo-600" />
+          مشاهده رصد پروژه‌ها ({projects.length})
+        </button>
+      </PageHeader>
 
       {/* Success Modal / Banner */}
       {submittedSuccess && (
@@ -2001,263 +1980,6 @@ export const CreateProjectView: React.FC = () => {
       <div id="create-project-view-main-grid-form-live-project" className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Main Form (8 Columns) */}
         <div id="create-project-view-main-form-8-columns" className="lg:col-span-8 space-y-6">
-          {/* Smart Demographic Priority Recommendations Panel */}
-          <div id="create-project-view-smart-demographic-priority" className="bg-gradient-to-br from-cyan-50/80 via-blue-50/60 to-slate-50 text-slate-900 rounded-2xl p-5 shadow-sm border border-cyan-200/70 relative overflow-hidden">
-            {/* Subtle decorative background glow */}
-            <div id="create-project-view-subtle-decorative-background" className="absolute -left-12 -top-12 w-48 h-48 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
-            <div id="create-project-view-subtle-decorative-background-2" className="absolute -right-12 -bottom-12 w-48 h-48 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
-
-            {/* Header Row */}
-            <div id="create-project-view-header-row" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-cyan-200/60 pb-4 relative z-10">
-              <div id="create-project-view-header-row-2" className="flex items-center gap-3">
-                <div id="create-project-view-header-row-3" className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-cyan-500/20 shrink-0">
-                  <Sparkles className="w-5 h-5 text-white" />
-                </div>
-                <div id="create-project-view-header-row-4">
-                  <div id="create-project-view-header-row-5" className="flex items-center gap-2">
-                    <h2 className="text-sm font-bold text-slate-900 tracking-tight">
-                      دستیار برنامه‌ریزی دموگرافیک و اولویت‌های پیشنهادی منطقه
-                    </h2>
-                    <span className="text-xs bg-cyan-100 text-cyan-800 px-2 py-0.5 rounded-full border border-cyan-200 font-semibold">
-                      هوشمند آمایشی
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    بر اساس داده‌های جمعیتی، محرومیت و زیرساخت هر منطقه، اولویت‌های پیشنهادی متناسب نمایش داده می‌شوند.
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setPlannerExpanded(!plannerExpanded)}
-                className="inline-flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer self-start sm:self-auto"
-              >
-                {plannerExpanded ? (
-                  <>
-                    <span>جمع‌کردن پنل</span>
-                    <ChevronUp className="w-3.5 h-3.5" />
-                  </>
-                ) : (
-                  <>
-                    <span>نمایش اولویت‌های پیشنهادی</span>
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  </>
-                )}
-              </button>
-            </div>
-
-            {/* Applied Priority Notification Banner */}
-            {appliedPriorityNotice && (
-              <div id="create-project-view-applied-priority-notification" className="mt-3 p-3 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center justify-between text-xs text-emerald-800 animate-in fade-in slide-in-from-top-2 duration-300 relative z-10">
-                <div id="create-project-view-applied-priority-notification-2" className="flex items-center gap-2">
-                  <CheckCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>
-                    اولویت <strong>«{appliedPriorityNotice}»</strong> با موفقیت در فرم اعمال شد (عنوان، بودجه، سهم CSR، جمعیت هدف و دستگاه متولی تنظیم گردید).
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setAppliedPriorityNotice(null)}
-                  className="text-emerald-600 hover:text-emerald-800 text-xs font-bold mr-2 cursor-pointer"
-                >
-                  بستن
-                </button>
-              </div>
-            )}
-
-            {/* Expanded Content */}
-            {plannerExpanded && (
-              <div id="create-project-view-expanded-content" className="mt-4 space-y-4 relative z-10">
-                {/* Filter Controls: Location Selector + Category Selector */}
-                <div id="create-project-view-filter-controls-location" className="grid grid-cols-1 md:grid-cols-12 gap-3">
-                  {/* Location Select (5 cols) */}
-                  <div id="create-project-view-location-select-5-cols" className="md:col-span-5 bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-cyan-600" />
-                      <span>مکان اجرای پروژه (بخش هدف):</span>
-                    </label>
-                    <select
-                      value={district}
-                      onChange={(e) => setDistrict(e.target.value)}
-                      className="w-full text-xs font-bold bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-cyan-500 cursor-pointer"
-                    >
-                      {selectableAreas.map((area) => (
-                        <option key={area.id} value={area.city}>
-                          {area.city} (جمعیت: {formatNumber(area.population)})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Project Category / Domain Selector (7 cols) */}
-                  <div id="create-project-view-project-category-domain" className="md:col-span-7 bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
-                      <div id="create-project-view-project-category-domain-2" className="flex items-center gap-1.5">
-                        <Layers className="w-3.5 h-3.5 text-blue-600" />
-                        <span>نوع پروژه و حوزه مأموریت:</span>
-                      </div>
-                      <span className="text-xs text-slate-500">یک حوزه را انتخاب کنید</span>
-                    </label>
-                    <div id="create-project-view-project-category-domain-3" className="flex items-center gap-1.5 flex-wrap">
-                      {PROJECT_CATEGORIES.map((cat) => {
-                        const IconComponent = cat.icon;
-                        const isSelected = selectedCategory === cat.key;
-                        return (
-                          <button
-                            key={cat.key}
-                            type="button"
-                            onClick={() => setSelectedCategory(cat.key)}
-                            className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer ${
-                              isSelected
-                                ? `${cat.activeBg} border-transparent shadow-md`
-                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-900'
-                            }`}
-                          >
-                            <IconComponent className="w-3.5 h-3.5 shrink-0" />
-                            <span>{cat.labelFa}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Regional Demographic Snapshot Bar */}
-                <div id="create-project-view-regional-demographic-snapshot" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
-                  <div id="create-project-view-regional-demographic-snapshot-2" className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                      <Activity className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>شناسنامه شاخص‌های دموگرافیک {activeLocationData?.nameFa || district}:</span>
-                    </span>
-                    <span className="text-xs text-slate-500">منبع داده: سرشماری و اطلس محرومیت {selectedLocation.county}</span>
-                  </div>
-                  <div id="create-project-view-regional-demographic-snapshot-3" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-center">
-                    <div id="create-project-view-regional-demographic-snapshot-4" className="bg-slate-50 p-2 rounded-lg border border-slate-200">
-                      <div id="create-project-view-regional-demographic-snapshot-5" className="text-xs text-slate-500">جمعیت کل</div>
-                      <div id="create-project-view-regional-demographic-snapshot-6" className="text-xs font-bold text-slate-900 mt-0.5">
-                        {formatNumber(activeLocationData?.totalPopulation || 0)} نفر
-                      </div>
-                    </div>
-                    <div id="create-project-view-regional-demographic-snapshot-7" className="bg-slate-50 p-2 rounded-lg border border-slate-200">
-                      <div id="create-project-view-regional-demographic-snapshot-8" className="text-xs text-amber-600">اقشار آسیب‌پذیر</div>
-                      <div id="create-project-view-regional-demographic-snapshot-9" className="text-xs font-bold text-amber-600 mt-0.5">
-                        {formatNumber(activeLocationData?.vulnerablePopulation || 0)} نفر
-                      </div>
-                    </div>
-                    <div id="create-project-view-regional-demographic-snapshot-10" className="bg-slate-50 p-2 rounded-lg border border-slate-200">
-                      <div id="create-project-view-regional-demographic-snapshot-11" className="text-xs text-rose-600">کمبود زیرساخت</div>
-                      <div id="create-project-view-regional-demographic-snapshot-12" className="text-xs font-bold text-rose-600 mt-0.5">
-                        {toPersianDigits(activeLocationData?.indicators.infrastructureDeficitPct)}٪
-                      </div>
-                    </div>
-                    <div id="create-project-view-regional-demographic-snapshot-13" className="bg-slate-50 p-2 rounded-lg border border-slate-200">
-                      <div id="create-project-view-regional-demographic-snapshot-14" className="text-xs text-cyan-600">کمبود دسترسی سلامت</div>
-                      <div id="create-project-view-regional-demographic-snapshot-15" className="text-xs font-bold text-cyan-600 mt-0.5">
-                        {toPersianDigits(activeLocationData?.indicators.healthAccessDeficitPct)}٪
-                      </div>
-                    </div>
-                    <div id="create-project-view-regional-demographic-snapshot-16" className="bg-slate-50 p-2 rounded-lg border border-slate-200">
-                      <div id="create-project-view-regional-demographic-snapshot-17" className="text-xs text-purple-600">نرخ فقر / بیکاری</div>
-                      <div id="create-project-view-regional-demographic-snapshot-18" className="text-xs font-bold text-purple-600 mt-0.5">
-                        {toPersianDigits(activeLocationData?.indicators.povertyRatePct)}٪
-                      </div>
-                    </div>
-                    <div id="create-project-view-regional-demographic-snapshot-19" className="bg-slate-50 p-2 rounded-lg border border-slate-200">
-                      <div id="create-project-view-regional-demographic-snapshot-20" className="text-xs text-emerald-600">ریسک محیط‌زیستی</div>
-                      <div id="create-project-view-regional-demographic-snapshot-21" className="text-xs font-bold text-emerald-600 mt-0.5">
-                        {toPersianDigits(activeLocationData?.indicators.environmentalRiskScore)}٪
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Priority Cards List */}
-                <div id="create-project-view-priority-cards-list" className="space-y-2.5">
-                  <div id="create-project-view-priority-cards-list-2" className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-cyan-700 flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-cyan-600" />
-                      <span>
-                        اولویت‌های پیشنهادی هوشمند برای {district} (حوزه{' '}
-                        {PROJECT_CATEGORIES.find((c) => c.key === selectedCategory)?.labelFa}):
-                      </span>
-                    </span>
-                    <span className="text-xs text-slate-500">
-                      {toPersianDigits(demographicPrioritySuggestions.length)} پروژه اولویت‌دار شناسایی شد
-                    </span>
-                  </div>
-
-                  <div id="create-project-view-priority-cards-list-3" className="grid grid-cols-1 gap-2.5">
-                    {demographicPrioritySuggestions.map((prop, idx) => (
-                      <div
-                        id={`create-project-view-priority-cards-list-4-${prop.id}`}
-                        key={prop.id}
-                        className="bg-white hover:bg-white/90 transition-all rounded-xl p-3.5 border border-slate-200 hover:border-cyan-300 shadow-sm hover:shadow-md relative group"
-                      >
-                        <div id={`create-project-view-priority-cards-list-5-${prop.id}`} className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                          <div id={`create-project-view-priority-cards-list-6-${prop.id}`} className="space-y-1.5 flex-1 min-w-0">
-                            <div id={`create-project-view-priority-cards-list-7-${prop.id}`} className="flex items-center gap-2 flex-wrap">
-                              <span className="text-xs bg-cyan-500 text-slate-950 font-bold px-2 py-0.5 rounded-md">
-                                اولویت پیشنهادی {toPersianDigits(idx + 1)}
-                              </span>
-                              <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md border border-slate-200">
-                                {prop.categoryFa}
-                              </span>
-                              <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-md border border-amber-200 font-medium">
-                                {prop.keyIndicatorBadge}
-                              </span>
-                            </div>
-
-                            <h3 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-cyan-700 transition-colors">
-                              {prop.title}
-                            </h3>
-
-                            <p className="text-xs text-slate-600 leading-relaxed">
-                              <strong className="text-cyan-700 font-semibold">تحلیل دموگرافیک: </strong>
-                              {prop.demographicRationale}
-                            </p>
-
-                            <div id={`create-project-view-priority-cards-list-8-${prop.id}`} className="flex items-center gap-3 text-xs text-slate-500 flex-wrap pt-1">
-                              <span>
-                                برآورد بودجه:{' '}
-                                <strong className="text-emerald-600 font-bold">
-                                  <Num {...formatMoneyParts(prop.estimatedCostToman)} />
-                                </strong>
-                              </span>
-                              <span>•</span>
-                              <span>
-                                جمعیت هدف مستقیم:{' '}
-                                <strong className="text-slate-900 font-bold">
-                                  {formatNumber(prop.beneficiariesCount)} نفر
-                                </strong>
-                              </span>
-                              <span>•</span>
-                              <span>
-                                محل تمرکز: <strong className="text-slate-700">{prop.targetArea}</strong>
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Apply Button */}
-                          <div id={`create-project-view-apply-button-${prop.id}`} className="shrink-0 flex sm:flex-col items-end justify-between gap-2 border-t sm:border-t-0 sm:border-r sm:border-slate-200 pt-2 sm:pt-0 sm:pr-3">
-                            <button
-                              type="button"
-                              onClick={() => handleApplyDemographicPriority(prop)}
-                              className="w-full sm:w-auto px-3.5 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                            >
-                              <Sparkles className="w-3.5 h-3.5 text-slate-950" />
-                              <span>اعمال در فرم پروژه</span>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
           {/* Wizard stepper — the form's six sections become five reviewable steps.
               Only the active step is mounted, and forward movement is gated by that
               step's own validation. */}
@@ -3529,6 +3251,121 @@ export const CreateProjectView: React.FC = () => {
               </section>
             )}
 
+            {/* Live Passport Card — shown on the final step as the confirm & submit preview. */}
+            {activeStep === 5 && (
+              <div id="create-project-view-live-passport-card" className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div id="create-project-view-live-passport-card-2" className="bg-gradient-to-r from-slate-900 to-indigo-950 p-4 text-white">
+                  <div id="create-project-view-live-passport-card-3" className="flex items-center justify-between text-xs text-slate-300 mb-1">
+                    <span>پیش‌نمایش زنده شناسنامه پروژه</span>
+                    <span className="font-mono bg-white/10 px-2 py-0.5 rounded text-indigo-200">{code}</span>
+                  </div>
+                  <h3 className="text-sm font-black leading-snug line-clamp-2">
+                    {title.trim() || 'عنوان پروژه پس از درج در فرم نمایش داده می‌شود'}
+                  </h3>
+                </div>
+
+                <div id="create-project-view-live-passport-card-4" className="p-4 space-y-4 text-xs">
+                  {/* Core Attributes */}
+                  <div id="create-project-view-core-attributes" className="space-y-2 border-b border-slate-100 pb-3">
+                    <div id="create-project-view-core-attributes-2" className="flex items-center justify-between">
+                      <span className="text-slate-500">دستگاه متولی اصلی:</span>
+                      <span className="font-bold text-slate-800 text-left">{primaryDept?.name || '-'}</span>
+                    </div>
+                    <div id="create-project-view-core-attributes-3" className="flex items-center justify-between">
+                      <span className="text-slate-500">اداره متقاضی:</span>
+                      <span className="font-medium text-slate-700 text-left">{requestingDept?.name || '-'}</span>
+                    </div>
+                    {isMultiDept && (
+                      <div id="create-project-view-core-attributes-4" className="flex items-center justify-between">
+                        <span className="text-slate-500">مشارکت بین‌دستگاهی:</span>
+                        <span className="font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+                          {toPersianDigits(contributingDepts.length)} اداره همکار
+                        </span>
+                      </div>
+                    )}
+                    <div id="create-project-view-core-attributes-5" className="flex items-center justify-between">
+                      <span className="text-slate-500">اولویت استراتژیک:</span>
+                      <span className="font-medium text-purple-700 text-left line-clamp-1 max-w-[180px]">
+                        {selectedPriority?.title || '-'}
+                      </span>
+                    </div>
+                    <div id="create-project-view-core-attributes-6" className="flex items-center justify-between">
+                      <span className="text-slate-500">کانون بحران:</span>
+                      <span className="font-medium text-rose-700 text-left line-clamp-1 max-w-[180px]">
+                        {selectedCrisis?.title || '-'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Budget Composition Breakdown */}
+                  <div id="create-project-view-budget-composition-breakdown" className="space-y-2 border-b border-slate-100 pb-3">
+                    <div id="create-project-view-budget-composition-breakdown-2" className="flex items-center justify-between">
+                      <span className="text-slate-500 font-bold">برآورد کل بودجه:</span>
+                      <Num {...formatMoneyParts(estimatedCostToman)} className="font-black text-slate-900 text-sm" />
+                    </div>
+                    <div id="create-project-view-budget-composition-breakdown-3" className="space-y-1 text-xs pt-1">
+                      <div id="create-project-view-budget-composition-breakdown-4" className="flex items-center justify-between text-emerald-800">
+                        <span>سهم مسئولیت اجتماعی (CSR مس):</span>
+                        <span className="font-bold">{toPersianDigits(csrSharePct)}٪</span>
+                      </div>
+                      <div id="create-project-view-budget-composition-breakdown-5" className="flex items-center justify-between text-blue-800">
+                        <span>سهم بودجه دولتی:</span>
+                        <span className="font-bold">{toPersianDigits(govSharePct)}٪</span>
+                      </div>
+                      <div id="create-project-view-budget-composition-breakdown-6" className="flex items-center justify-between text-amber-800">
+                        <span>سهم دهیاری / عوارض آلایندگی:</span>
+                        <span className="font-bold">{toPersianDigits(dehyariSharePct)}٪</span>
+                      </div>
+                      {bankSharePct > 0 && (
+                        <div id="create-project-view-budget-composition-breakdown-7" className="flex items-center justify-between text-purple-800">
+                          <span>تسهیلات بانکی و تبصره ۲:</span>
+                          <span className="font-bold">{toPersianDigits(bankSharePct)}٪</span>
+                        </div>
+                      )}
+                      {charitySharePct > 0 && (
+                        <div id="create-project-view-budget-composition-breakdown-8" className="flex items-center justify-between text-rose-800">
+                          <span>مشارکت خیرین:</span>
+                          <span className="font-bold">{toPersianDigits(charitySharePct)}٪</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Demographics & Per Capita */}
+                  <div id="create-project-view-demographics-per-capita" className="space-y-2 border-b border-slate-100 pb-3">
+                    <div id="create-project-view-demographics-per-capita-2" className="flex items-center justify-between">
+                      <span className="text-slate-500">محدوده مکانی:</span>
+                      <span className="font-semibold text-slate-800">{district}</span>
+                    </div>
+                    <div id="create-project-view-demographics-per-capita-3" className="flex items-center justify-between">
+                      <span className="text-slate-500">جمعیت بهره‌بردار مستقیم:</span>
+                      <span className="font-bold text-slate-800">{formatNumber(beneficiariesCount)} نفر</span>
+                    </div>
+                    <div id="create-project-view-demographics-per-capita-4" className="flex items-center justify-between">
+                      <span className="text-slate-500">هزینه سرانه هر نفر:</span>
+                      <span className="font-black text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
+                        <Num {...formatMoneyParts(costPerBeneficiary)} />
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Implementation Partner */}
+                  <div id="create-project-view-implementation-partner" className="space-y-1 text-xs">
+                    <div id="create-project-view-implementation-partner-2" className="flex items-center justify-between">
+                      <span className="text-slate-500">دستگاه مجری:</span>
+                      <span className="font-semibold text-slate-800">{selectedExecutor?.name || '-'}</span>
+                    </div>
+                    <div id="create-project-view-implementation-partner-3" className="flex items-center justify-between">
+                      <span className="text-slate-500">پیمانکار ذیصلاح:</span>
+                      <span className="font-semibold text-slate-800">
+                        {selectedContractor?.companyName || 'امانی'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Step navigation — one primary action per step, and only the last step
                 can submit the plan. Below `lg` the bar sticks to the bottom of the
                 workspace so «گام بعد» stays reachable on a long step. */}
@@ -3611,6 +3448,263 @@ export const CreateProjectView: React.FC = () => {
               </div>
             </div>
           </form>
+
+          {/* Smart Demographic Priority Recommendations Panel */}
+          <div id="create-project-view-smart-demographic-priority" className="bg-gradient-to-br from-cyan-50/80 via-blue-50/60 to-slate-50 text-slate-900 rounded-2xl p-5 shadow-sm border border-cyan-200/70 relative overflow-hidden">
+            {/* Subtle decorative background glow */}
+            <div id="create-project-view-subtle-decorative-background" className="absolute -left-12 -top-12 w-48 h-48 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
+            <div id="create-project-view-subtle-decorative-background-2" className="absolute -right-12 -bottom-12 w-48 h-48 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
+
+            {/* Header Row */}
+            <div id="create-project-view-header-row" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-cyan-200/60 pb-4 relative z-10">
+              <div id="create-project-view-header-row-2" className="flex items-center gap-3">
+                <div id="create-project-view-header-row-3" className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-cyan-500/20 shrink-0">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <div id="create-project-view-header-row-4">
+                  <div id="create-project-view-header-row-5" className="flex items-center gap-2">
+                    <h2 className="text-sm font-bold text-slate-900 tracking-tight">
+                      دستیار برنامه‌ریزی دموگرافیک و اولویت‌های پیشنهادی منطقه
+                    </h2>
+                    <span className="text-xs bg-cyan-100 text-cyan-800 px-2 py-0.5 rounded-full border border-cyan-200 font-semibold">
+                      هوشمند آمایشی
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    بر اساس داده‌های جمعیتی، محرومیت و زیرساخت هر منطقه، اولویت‌های پیشنهادی متناسب نمایش داده می‌شوند.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setPlannerExpanded(!plannerExpanded)}
+                className="inline-flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer self-start sm:self-auto"
+              >
+                {plannerExpanded ? (
+                  <>
+                    <span>جمع‌کردن پنل</span>
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  </>
+                ) : (
+                  <>
+                    <span>نمایش اولویت‌های پیشنهادی</span>
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Applied Priority Notification Banner */}
+            {appliedPriorityNotice && (
+              <div id="create-project-view-applied-priority-notification" className="mt-3 p-3 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center justify-between text-xs text-emerald-800 animate-in fade-in slide-in-from-top-2 duration-300 relative z-10">
+                <div id="create-project-view-applied-priority-notification-2" className="flex items-center gap-2">
+                  <CheckCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>
+                    اولویت <strong>«{appliedPriorityNotice}»</strong> با موفقیت در فرم اعمال شد (عنوان، بودجه، سهم CSR، جمعیت هدف و دستگاه متولی تنظیم گردید).
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAppliedPriorityNotice(null)}
+                  className="text-emerald-600 hover:text-emerald-800 text-xs font-bold mr-2 cursor-pointer"
+                >
+                  بستن
+                </button>
+              </div>
+            )}
+
+            {/* Expanded Content */}
+            {plannerExpanded && (
+              <div id="create-project-view-expanded-content" className="mt-4 space-y-4 relative z-10">
+                {/* Filter Controls: Location Selector + Category Selector */}
+                <div id="create-project-view-filter-controls-location" className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                  {/* Location Select (5 cols) */}
+                  <div id="create-project-view-location-select-5-cols" className="md:col-span-5 bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-cyan-600" />
+                      <span>مکان اجرای پروژه (بخش هدف):</span>
+                    </label>
+                    <select
+                      value={district}
+                      onChange={(e) => setDistrict(e.target.value)}
+                      className="w-full text-xs font-bold bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-cyan-500 cursor-pointer"
+                    >
+                      {selectableAreas.map((area) => (
+                        <option key={area.id} value={area.city}>
+                          {area.city} (جمعیت: {formatNumber(area.population)})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Project Category / Domain Selector (7 cols) */}
+                  <div id="create-project-view-project-category-domain" className="md:col-span-7 bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                      <div id="create-project-view-project-category-domain-2" className="flex items-center gap-1.5">
+                        <Layers className="w-3.5 h-3.5 text-blue-600" />
+                        <span>نوع پروژه و حوزه مأموریت:</span>
+                      </div>
+                      <span className="text-xs text-slate-500">یک حوزه را انتخاب کنید</span>
+                    </label>
+                    <div id="create-project-view-project-category-domain-3" className="flex items-center gap-1.5 flex-wrap">
+                      {PROJECT_CATEGORIES.map((cat) => {
+                        const IconComponent = cat.icon;
+                        const isSelected = selectedCategory === cat.key;
+                        return (
+                          <button
+                            key={cat.key}
+                            type="button"
+                            onClick={() => setSelectedCategory(cat.key)}
+                            className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                              isSelected
+                                ? `${cat.activeBg} border-transparent shadow-md`
+                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-900'
+                            }`}
+                          >
+                            <IconComponent className="w-3.5 h-3.5 shrink-0" />
+                            <span>{cat.labelFa}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Regional Demographic Snapshot Bar */}
+                <div id="create-project-view-regional-demographic-snapshot" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
+                  <div id="create-project-view-regional-demographic-snapshot-2" className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                      <Activity className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>شناسنامه شاخص‌های دموگرافیک {activeLocationData?.nameFa || district}:</span>
+                    </span>
+                    <span className="text-xs text-slate-500">منبع داده: سرشماری و اطلس محرومیت {selectedLocation.county}</span>
+                  </div>
+                  <div id="create-project-view-regional-demographic-snapshot-3" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-center">
+                    <div id="create-project-view-regional-demographic-snapshot-4" className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                      <div id="create-project-view-regional-demographic-snapshot-5" className="text-xs text-slate-500">جمعیت کل</div>
+                      <div id="create-project-view-regional-demographic-snapshot-6" className="text-xs font-bold text-slate-900 mt-0.5">
+                        {formatNumber(activeLocationData?.totalPopulation || 0)} نفر
+                      </div>
+                    </div>
+                    <div id="create-project-view-regional-demographic-snapshot-7" className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                      <div id="create-project-view-regional-demographic-snapshot-8" className="text-xs text-amber-600">اقشار آسیب‌پذیر</div>
+                      <div id="create-project-view-regional-demographic-snapshot-9" className="text-xs font-bold text-amber-600 mt-0.5">
+                        {formatNumber(activeLocationData?.vulnerablePopulation || 0)} نفر
+                      </div>
+                    </div>
+                    <div id="create-project-view-regional-demographic-snapshot-10" className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                      <div id="create-project-view-regional-demographic-snapshot-11" className="text-xs text-rose-600">کمبود زیرساخت</div>
+                      <div id="create-project-view-regional-demographic-snapshot-12" className="text-xs font-bold text-rose-600 mt-0.5">
+                        {toPersianDigits(activeLocationData?.indicators.infrastructureDeficitPct)}٪
+                      </div>
+                    </div>
+                    <div id="create-project-view-regional-demographic-snapshot-13" className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                      <div id="create-project-view-regional-demographic-snapshot-14" className="text-xs text-cyan-600">کمبود دسترسی سلامت</div>
+                      <div id="create-project-view-regional-demographic-snapshot-15" className="text-xs font-bold text-cyan-600 mt-0.5">
+                        {toPersianDigits(activeLocationData?.indicators.healthAccessDeficitPct)}٪
+                      </div>
+                    </div>
+                    <div id="create-project-view-regional-demographic-snapshot-16" className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                      <div id="create-project-view-regional-demographic-snapshot-17" className="text-xs text-purple-600">نرخ فقر / بیکاری</div>
+                      <div id="create-project-view-regional-demographic-snapshot-18" className="text-xs font-bold text-purple-600 mt-0.5">
+                        {toPersianDigits(activeLocationData?.indicators.povertyRatePct)}٪
+                      </div>
+                    </div>
+                    <div id="create-project-view-regional-demographic-snapshot-19" className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                      <div id="create-project-view-regional-demographic-snapshot-20" className="text-xs text-emerald-600">ریسک محیط‌زیستی</div>
+                      <div id="create-project-view-regional-demographic-snapshot-21" className="text-xs font-bold text-emerald-600 mt-0.5">
+                        {toPersianDigits(activeLocationData?.indicators.environmentalRiskScore)}٪
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Priority Cards List */}
+                <div id="create-project-view-priority-cards-list" className="space-y-2.5">
+                  <div id="create-project-view-priority-cards-list-2" className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-cyan-700 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-cyan-600" />
+                      <span>
+                        اولویت‌های پیشنهادی هوشمند برای {district} (حوزه{' '}
+                        {PROJECT_CATEGORIES.find((c) => c.key === selectedCategory)?.labelFa}):
+                      </span>
+                    </span>
+                    <span className="text-xs text-slate-500">
+                      {toPersianDigits(demographicPrioritySuggestions.length)} پروژه اولویت‌دار شناسایی شد
+                    </span>
+                  </div>
+
+                  <div id="create-project-view-priority-cards-list-3" className="grid grid-cols-1 gap-2.5">
+                    {demographicPrioritySuggestions.map((prop, idx) => (
+                      <div
+                        id={`create-project-view-priority-cards-list-4-${prop.id}`}
+                        key={prop.id}
+                        className="bg-white hover:bg-white/90 transition-all rounded-xl p-3.5 border border-slate-200 hover:border-cyan-300 shadow-sm hover:shadow-md relative group"
+                      >
+                        <div id={`create-project-view-priority-cards-list-5-${prop.id}`} className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                          <div id={`create-project-view-priority-cards-list-6-${prop.id}`} className="space-y-1.5 flex-1 min-w-0">
+                            <div id={`create-project-view-priority-cards-list-7-${prop.id}`} className="flex items-center gap-2 flex-wrap">
+                              <span className="text-xs bg-cyan-500 text-slate-950 font-bold px-2 py-0.5 rounded-md">
+                                اولویت پیشنهادی {toPersianDigits(idx + 1)}
+                              </span>
+                              <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md border border-slate-200">
+                                {prop.categoryFa}
+                              </span>
+                              <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-md border border-amber-200 font-medium">
+                                {prop.keyIndicatorBadge}
+                              </span>
+                            </div>
+
+                            <h3 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-cyan-700 transition-colors">
+                              {prop.title}
+                            </h3>
+
+                            <p className="text-xs text-slate-600 leading-relaxed">
+                              <strong className="text-cyan-700 font-semibold">تحلیل دموگرافیک: </strong>
+                              {prop.demographicRationale}
+                            </p>
+
+                            <div id={`create-project-view-priority-cards-list-8-${prop.id}`} className="flex items-center gap-3 text-xs text-slate-500 flex-wrap pt-1">
+                              <span>
+                                برآورد بودجه:{' '}
+                                <strong className="text-emerald-600 font-bold">
+                                  <Num {...formatMoneyParts(prop.estimatedCostToman)} />
+                                </strong>
+                              </span>
+                              <span>•</span>
+                              <span>
+                                جمعیت هدف مستقیم:{' '}
+                                <strong className="text-slate-900 font-bold">
+                                  {formatNumber(prop.beneficiariesCount)} نفر
+                                </strong>
+                              </span>
+                              <span>•</span>
+                              <span>
+                                محل تمرکز: <strong className="text-slate-700">{prop.targetArea}</strong>
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Apply Button */}
+                          <div id={`create-project-view-apply-button-${prop.id}`} className="shrink-0 flex sm:flex-col items-end justify-between gap-2 border-t sm:border-t-0 sm:border-r sm:border-slate-200 pt-2 sm:pt-0 sm:pr-3">
+                            <button
+                              type="button"
+                              onClick={() => handleApplyDemographicPriority(prop)}
+                              className="w-full sm:w-auto px-3.5 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                              <Sparkles className="w-3.5 h-3.5 text-slate-950" />
+                              <span>اعمال در فرم پروژه</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Live Project Passport Column (4 Columns) */}
@@ -3659,213 +3753,9 @@ export const CreateProjectView: React.FC = () => {
               </p>
             )}
           </div>
-
-          {/* Live Passport Card */}
-          <div id="create-project-view-live-passport-card" className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden sticky top-6">
-            <div id="create-project-view-live-passport-card-2" className="bg-gradient-to-r from-slate-900 to-indigo-950 p-4 text-white">
-              <div id="create-project-view-live-passport-card-3" className="flex items-center justify-between text-xs text-slate-300 mb-1">
-                <span>پیش‌نمایش زنده شناسنامه پروژه</span>
-                <span className="font-mono bg-white/10 px-2 py-0.5 rounded text-indigo-200">{code}</span>
-              </div>
-              <h3 className="text-sm font-black leading-snug line-clamp-2">
-                {title.trim() || 'عنوان پروژه پس از درج در فرم نمایش داده می‌شود'}
-              </h3>
-            </div>
-
-            <div id="create-project-view-live-passport-card-4" className="p-4 space-y-4 text-xs">
-              {/* Core Attributes */}
-              <div id="create-project-view-core-attributes" className="space-y-2 border-b border-slate-100 pb-3">
-                <div id="create-project-view-core-attributes-2" className="flex items-center justify-between">
-                  <span className="text-slate-500">دستگاه متولی اصلی:</span>
-                  <span className="font-bold text-slate-800 text-left">{primaryDept?.name || '-'}</span>
-                </div>
-                <div id="create-project-view-core-attributes-3" className="flex items-center justify-between">
-                  <span className="text-slate-500">اداره متقاضی:</span>
-                  <span className="font-medium text-slate-700 text-left">{requestingDept?.name || '-'}</span>
-                </div>
-                {isMultiDept && (
-                  <div id="create-project-view-core-attributes-4" className="flex items-center justify-between">
-                    <span className="text-slate-500">مشارکت بین‌دستگاهی:</span>
-                    <span className="font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
-                      {toPersianDigits(contributingDepts.length)} اداره همکار
-                    </span>
-                  </div>
-                )}
-                <div id="create-project-view-core-attributes-5" className="flex items-center justify-between">
-                  <span className="text-slate-500">اولویت استراتژیک:</span>
-                  <span className="font-medium text-purple-700 text-left line-clamp-1 max-w-[180px]">
-                    {selectedPriority?.title || '-'}
-                  </span>
-                </div>
-                <div id="create-project-view-core-attributes-6" className="flex items-center justify-between">
-                  <span className="text-slate-500">کانون بحران:</span>
-                  <span className="font-medium text-rose-700 text-left line-clamp-1 max-w-[180px]">
-                    {selectedCrisis?.title || '-'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Budget Composition Breakdown */}
-              <div id="create-project-view-budget-composition-breakdown" className="space-y-2 border-b border-slate-100 pb-3">
-                <div id="create-project-view-budget-composition-breakdown-2" className="flex items-center justify-between">
-                  <span className="text-slate-500 font-bold">برآورد کل بودجه:</span>
-                  <Num {...formatMoneyParts(estimatedCostToman)} className="font-black text-slate-900 text-sm" />
-                </div>
-                <div id="create-project-view-budget-composition-breakdown-3" className="space-y-1 text-xs pt-1">
-                  <div id="create-project-view-budget-composition-breakdown-4" className="flex items-center justify-between text-emerald-800">
-                    <span>سهم مسئولیت اجتماعی (CSR مس):</span>
-                    <span className="font-bold">{toPersianDigits(csrSharePct)}٪</span>
-                  </div>
-                  <div id="create-project-view-budget-composition-breakdown-5" className="flex items-center justify-between text-blue-800">
-                    <span>سهم بودجه دولتی:</span>
-                    <span className="font-bold">{toPersianDigits(govSharePct)}٪</span>
-                  </div>
-                  <div id="create-project-view-budget-composition-breakdown-6" className="flex items-center justify-between text-amber-800">
-                    <span>سهم دهیاری / عوارض آلایندگی:</span>
-                    <span className="font-bold">{toPersianDigits(dehyariSharePct)}٪</span>
-                  </div>
-                  {bankSharePct > 0 && (
-                    <div id="create-project-view-budget-composition-breakdown-7" className="flex items-center justify-between text-purple-800">
-                      <span>تسهیلات بانکی و تبصره ۲:</span>
-                      <span className="font-bold">{toPersianDigits(bankSharePct)}٪</span>
-                    </div>
-                  )}
-                  {charitySharePct > 0 && (
-                    <div id="create-project-view-budget-composition-breakdown-8" className="flex items-center justify-between text-rose-800">
-                      <span>مشارکت خیرین:</span>
-                      <span className="font-bold">{toPersianDigits(charitySharePct)}٪</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Demographics & Per Capita */}
-              <div id="create-project-view-demographics-per-capita" className="space-y-2 border-b border-slate-100 pb-3">
-                <div id="create-project-view-demographics-per-capita-2" className="flex items-center justify-between">
-                  <span className="text-slate-500">محدوده مکانی:</span>
-                  <span className="font-semibold text-slate-800">{district}</span>
-                </div>
-                <div id="create-project-view-demographics-per-capita-3" className="flex items-center justify-between">
-                  <span className="text-slate-500">جمعیت بهره‌بردار مستقیم:</span>
-                  <span className="font-bold text-slate-800">{formatNumber(beneficiariesCount)} نفر</span>
-                </div>
-                <div id="create-project-view-demographics-per-capita-4" className="flex items-center justify-between">
-                  <span className="text-slate-500">هزینه سرانه هر نفر:</span>
-                  <span className="font-black text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
-                    <Num {...formatMoneyParts(costPerBeneficiary)} />
-                  </span>
-                </div>
-              </div>
-
-              {/* Implementation Partner */}
-              <div id="create-project-view-implementation-partner" className="space-y-1 text-xs">
-                <div id="create-project-view-implementation-partner-2" className="flex items-center justify-between">
-                  <span className="text-slate-500">دستگاه مجری:</span>
-                  <span className="font-semibold text-slate-800">{selectedExecutor?.name || '-'}</span>
-                </div>
-                <div id="create-project-view-implementation-partner-3" className="flex items-center justify-between">
-                  <span className="text-slate-500">پیمانکار ذیصلاح:</span>
-                  <span className="font-semibold text-slate-800">
-                    {selectedContractor?.companyName || 'امانی'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Connected Projects Registry Table */}
-      <div id="create-project-view-connected-projects-registry" className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
-        <div id="create-project-view-connected-projects-registry-2" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-          <div id="create-project-view-connected-projects-registry-3">
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Layers className="w-4 h-4 text-blue-600" />
-              پروژه‌های ثبت‌شده در سامانه و ارتباط متقابل با تب‌ها ({toPersianDigits(projects.length)} پروژه)
-            </h3>
-            <p className="text-xs text-slate-500 mt-1">
-              جدول زیر ارتباط هر طرح را با دستگاه متقاضی، سهم منابع بودجه و جامعه هدف مستند نشان می‌دهد.
-            </p>
-          </div>
-          <button
-            onClick={() => setActiveTab('PROJECTS')}
-            className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 shrink-0"
-          >
-            مشاهده کامل در رصد پروژه‌ها
-            <ExternalLink className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        <div id="create-project-view-connected-projects-registry-4" className="overflow-x-auto">
-          <table className="w-full text-xs text-right border-collapse">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-600">
-                <th className="p-3 font-bold">کد و عنوان پروژه</th>
-                <th className="p-3 font-bold">دستگاه متولی و متقاضی</th>
-                <th className="p-3 font-bold">سهم منابع مالی</th>
-                <th className="p-3 font-bold">محدوده و بهره‌برداران</th>
-                <th className="p-3 font-bold">کل برآورد</th>
-                <th className="p-3 font-bold">سرانه هر نفر</th>
-                <th className="p-3 font-bold">وضعیت</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {projects.slice(0, 6).map((proj) => (
-                <tr key={proj.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="p-3">
-                    <div id={`create-project-view-connected-projects-registry-5-${proj.id}`} className="font-bold text-slate-900">{proj.title}</div>
-                    <div id={`create-project-view-connected-projects-registry-6-${proj.id}`} className="text-xs text-slate-500 font-mono mt-0.5">{proj.code}</div>
-                  </td>
-                  <td className="p-3">
-                    <div id={`create-project-view-connected-projects-registry-7-${proj.id}`} className="font-semibold text-slate-800">{proj.departmentName}</div>
-                    {proj.isMultiDepartment && (
-                      <span className="inline-block mt-0.5 text-xs font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">
-                        مشترک بین‌دستگاهی
-                      </span>
-                    )}
-                  </td>
-                  <td className="p-3">
-                    <div id={`create-project-view-connected-projects-registry-8-${proj.id}`} className="flex items-center gap-1 text-xs">
-                      <span className="text-emerald-700 font-bold">CSR: {toPersianDigits(proj.csrSharePercentage || 0)}٪</span>
-                      <span className="text-slate-300">|</span>
-                      <span className="text-blue-700 font-bold">دولت: {toPersianDigits(proj.governmentSharePercentage || 0)}٪</span>
-                    </div>
-                  </td>
-                  <td className="p-3">
-                    <div id={`create-project-view-connected-projects-registry-9-${proj.id}`} className="text-slate-800 font-medium">{proj.district}</div>
-                    <div id={`create-project-view-connected-projects-registry-10-${proj.id}`} className="text-xs text-slate-500 font-semibold">
-                      {formatNumber(proj.beneficiariesCount)} نفر
-                    </div>
-                  </td>
-                  <td className="p-3 font-bold text-slate-900">
-                    <Num {...formatMoneyParts(proj.estimatedCostToman)} />
-                  </td>
-                  <td className="p-3 font-bold text-blue-700">
-                    <Num {...formatMoneyParts(proj.costPerBeneficiaryToman)} />
-                  </td>
-                  <td className="p-3">
-                    <span
-                      className={`inline-block px-2 py-1 rounded-md text-xs font-bold ${
-                        proj.status === 'COMPLETED'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : proj.status === 'IN_PROGRESS'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-amber-100 text-amber-800'
-                      }`}
-                    >
-                      {proj.status === 'COMPLETED'
-                        ? 'تکمیل‌شده'
-                        : proj.status === 'IN_PROGRESS'
-                        ? 'در حال اجرا'
-                        : 'پیشنهادی/مصوب'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
   );
 };

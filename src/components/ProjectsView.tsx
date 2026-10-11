@@ -20,6 +20,7 @@ import {
   Wallet,
   Users2,
   HardHat,
+  MapPin,
   AlertCircle,
   ShieldAlert,
   Trash2,
@@ -30,7 +31,7 @@ import {
   TrendingDown,
   FolderPlus,
 } from 'lucide-react';
-import { HelpTooltip } from './HelpTooltip';
+import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
 
 export const ProjectsView: React.FC = () => {
   const {
@@ -60,6 +61,15 @@ export const ProjectsView: React.FC = () => {
   const modalRef = useRef<HTMLDivElement>(null);
   useOutsideClick(modalRef, () => setIsModalOpen(false));
   const [editingProject, setEditingProject] = useState<ExecutiveProject | null>(null);
+  // Detail modal holds only the record id so it stays in sync when the
+  // underlying project is edited or its status changes.
+  const [detailProjectId, setDetailProjectId] = useState<string | null>(null);
+  const detailModalRef = useRef<HTMLDivElement>(null);
+  useOutsideClick(detailModalRef, () => setDetailProjectId(null));
+  const detailProject = useMemo(
+    () => projects.find((p) => p.id === detailProjectId) || null,
+    [projects, detailProjectId]
+  );
   const { confirmDelete, modal: deleteConfirmModal } = useConfirmDelete();
 
   // Form State
@@ -369,182 +379,315 @@ export const ProjectsView: React.FC = () => {
         </div>
       </div>
 
-      {/* Projects List */}
+      {/* Projects List — compact summary cards; click opens the full detail modal. */}
       <div id="projects-view-projects-list" className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredProjects.map((proj) => {
           const isWarning = proj.antiOverlapStatus !== 'CLEAR';
+          const statusMeta = PROJECT_STATUS_META[proj.status];
 
           return (
-            <div
+            <article
               id={`projects-view-projects-list-2-${proj.id}`}
               key={proj.id}
-              className={`bg-white dark:bg-slate-900 rounded-2xl p-5 border shadow-sm hover:shadow-md transition-all flex flex-col justify-between ${
+              onClick={() => setDetailProjectId(proj.id)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setDetailProjectId(proj.id);
+                }
+              }}
+              title="کلیک برای مشاهده جزئیات کامل پروژه"
+              className={`group bg-white dark:bg-slate-900 rounded-2xl p-4 border shadow-sm hover:shadow-md cursor-pointer transition-all flex flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
                 isWarning
-                  ? 'border-amber-400/80 dark:border-amber-600/60 bg-amber-50/20 dark:bg-amber-950/10'
-                  : 'border-slate-200 dark:border-slate-800'
+                  ? 'border-amber-400/80 dark:border-amber-600/60 bg-amber-50/20 dark:bg-amber-950/10 hover:border-amber-500'
+                  : 'border-slate-200 dark:border-slate-800 hover:border-blue-300'
               }`}
             >
-              <div id={`projects-view-projects-list-3-${proj.id}`}>
-                <div id={`projects-view-projects-list-4-${proj.id}`} className="flex items-start justify-between gap-2 mb-3">
-                  <div id={`projects-view-projects-list-5-${proj.id}`} className="flex items-center gap-2.5">
-                    <div id={`projects-view-projects-list-6-${proj.id}`} className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
-                      <FolderKanban className="w-5 h-5" />
-                    </div>
-                    <div id={`projects-view-projects-list-7-${proj.id}`}>
-                      <span className="text-[10px] font-mono text-slate-400 tracking-wider block">{proj.code}</span>
-                      <div className="flex items-start gap-1">
-                        <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight min-w-0 flex-1">{proj.title}</h3>
-                        <HelpTooltip text={proj.description} label="مشاهده توضیح پروژه" size="sm" />
-                      </div>
-                    </div>
+              <div id={`projects-view-projects-list-3-${proj.id}`} className="flex items-start justify-between gap-3">
+                <div id={`projects-view-projects-list-5-${proj.id}`} className="flex items-center gap-2.5 min-w-0">
+                  <div id={`projects-view-projects-list-6-${proj.id}`} className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+                    <FolderKanban className="w-5 h-5" />
                   </div>
-
-                  <div id={`projects-view-projects-list-8-${proj.id}`} className="flex flex-col items-end gap-1">
-                    <span
-                      className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold whitespace-nowrap ${
-                        proj.status === 'COMPLETED'
-                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
-                          : proj.status === 'IN_PROGRESS'
-                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300'
-                          : proj.status === 'APPROVED'
-                          ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300'
-                          : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                      }`}
+                  <div id={`projects-view-projects-list-7-${proj.id}`} className="min-w-0">
+                    <span className="text-[10px] font-mono text-slate-400 tracking-wider block">{proj.code}</span>
+                    <h3
+                      className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight line-clamp-2 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors"
+                      title={proj.title}
                     >
-                      {proj.status === 'COMPLETED'
-                        ? 'تکمیل‌شده'
-                        : proj.status === 'IN_PROGRESS'
-                        ? 'در حال اجرا'
-                        : proj.status === 'APPROVED'
-                        ? 'مصوب'
-                        : 'پیشنهادی'}
-                    </span>
-
-                    {isWarning && (
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3" />
-                        نیاز به تدقیق
-                      </span>
-                    )}
+                      {proj.title}
+                    </h3>
                   </div>
                 </div>
 
-                {/* Meta Matrix: Department, Budget, Executor, Contractor */}
-                <div id={`projects-view-meta-matrix-department-budget-${proj.id}`} className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 text-xs mb-3 border border-slate-100 dark:border-slate-800">
-                  <div id={`projects-view-meta-matrix-department-budget-2-${proj.id}`} className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
-                    <Building2 className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                    <span className="truncate">{proj.departmentName}</span>
-                  </div>
-                  <div id={`projects-view-meta-matrix-department-budget-3-${proj.id}`} className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
-                    <Wallet className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span className="truncate">{proj.budgetSourceTitle}</span>
-                  </div>
-                  <div id={`projects-view-meta-matrix-department-budget-4-${proj.id}`} className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
-                    <Users2 className="w-3.5 h-3.5 text-cyan-500 shrink-0" />
-                    <span className="truncate">مجری: {proj.executorName}</span>
-                  </div>
-                  <div id={`projects-view-meta-matrix-department-budget-5-${proj.id}`} className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
-                    <HardHat className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                    <span className="truncate">پیمانکار: {proj.contractorName || 'تعیین نشده'}</span>
-                  </div>
-                </div>
-
-                {/* Financial & Per-Capita Breakdown */}
-                <div id={`projects-view-financial-per-capita-breakdown-${proj.id}`} className="grid grid-cols-3 gap-2 bg-slate-100/70 dark:bg-slate-800/80 rounded-xl p-2.5 text-[11px] mb-3">
-                  <div id={`projects-view-financial-per-capita-breakdown-2-${proj.id}`}>
-                    <span className="text-slate-400 block text-[10px]">کل اعتبار مصوب:</span>
-                    <span className="font-black text-slate-900 dark:text-slate-100">{formatToman(proj.estimatedCostToman)}</span>
-                  </div>
-                  <div id={`projects-view-financial-per-capita-breakdown-3-${proj.id}`}>
-                    <span className="text-slate-400 block text-[10px]">جمعیت بهره‌بردار:</span>
-                    <span className="font-bold text-blue-600 dark:text-blue-400">{formatNumber(proj.beneficiariesCount)} نفر</span>
-                  </div>
-                  <div id={`projects-view-financial-per-capita-breakdown-4-${proj.id}`}>
-                    <span className="text-slate-400 block text-[10px]">سرانه هر نفر:</span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatToman(proj.costPerBeneficiaryToman)}</span>
-                  </div>
-                </div>
-
-                {/* Progress Bar */}
-                <div id={`projects-view-progress-bar-${proj.id}`} className="space-y-1 mb-4">
-                  <div id={`projects-view-progress-bar-2-${proj.id}`} className="flex justify-between items-center text-[11px]">
-                    <span className="text-slate-500 dark:text-slate-400">پیشرفت فیزیکی پروژه:</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200">{toPersianDigits(proj.progressPercentage)}٪</span>
-                  </div>
-                  <div id={`projects-view-progress-bar-3-${proj.id}`} className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                    <div
-                      id={`projects-view-progress-bar-4-${proj.id}`}
-                      className="h-full bg-blue-500 rounded-full transition-all duration-500"
-                      style={{ width: `${proj.progressPercentage}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div id={`projects-view-footer-${proj.id}`} className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                <div id={`projects-view-footer-2-${proj.id}`} className="flex items-center gap-2">
-                  <span className="text-slate-400 text-[11px]">{proj.districtOrVillage}</span>
-                  <span className="text-slate-300 dark:text-slate-700">|</span>
-                  <span className="text-slate-400 font-mono text-[11px]">
-                    {proj.startYear} - {proj.endYear}
+                <div id={`projects-view-projects-list-8-${proj.id}`} className="flex flex-col items-end gap-1 shrink-0">
+                  <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold whitespace-nowrap ${statusMeta.className}`}>
+                    {statusMeta.label}
                   </span>
-                </div>
 
-                <div id={`projects-view-footer-3-${proj.id}`} className="flex items-center gap-1">
-                  {canManage && (
-                    <>
-                      {proj.status === 'PROPOSED' && (
-                        <button
-                          onClick={() => handleToggleProjectStatus(proj.id, 'APPROVED')}
-                          className="px-2 py-1 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 rounded-lg font-bold text-[11px] hover:bg-indigo-100 transition-colors"
-                        >
-                          تصویب طرح
-                        </button>
-                      )}
-                      {proj.status === 'APPROVED' && (
-                        <button
-                          onClick={() => handleToggleProjectStatus(proj.id, 'IN_PROGRESS')}
-                          className="px-2 py-1 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 rounded-lg font-bold text-[11px] hover:bg-blue-100 transition-colors"
-                        >
-                          آغاز عملیات
-                        </button>
-                      )}
-                      {proj.status === 'IN_PROGRESS' && (
-                        <button
-                          onClick={() => handleToggleProjectStatus(proj.id, 'COMPLETED')}
-                          className="px-2 py-1 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 rounded-lg font-bold text-[11px] hover:bg-emerald-100 transition-colors"
-                        >
-                          خاتمه و تحویل
-                        </button>
-                      )}
-
-                      <button
-                        onClick={() => handleOpenEdit(proj)}
-                        className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                        title="ویرایش پروژه"
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() =>
-                          confirmDelete(`آیا از حذف پروژه «${proj.title}» مطمئن هستید؟ این عملیات قابل بازگشت نیست.`, () =>
-                            handleDeleteProject(proj.id)
-                          )
-                        }
-                        className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                        title="حذف پروژه"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </>
+                  {isWarning && (
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3" />
+                      نیاز به تدقیق
+                    </span>
                   )}
                 </div>
               </div>
-            </div>
+
+              {/* Progress + owning department — the remaining fields live in the detail modal. */}
+              <div id={`projects-view-progress-bar-${proj.id}`} className="pt-3 mt-3 border-t border-slate-100 dark:border-slate-800 space-y-1">
+                <div id={`projects-view-progress-bar-2-${proj.id}`} className="flex justify-between items-center text-[11px]">
+                  <span className="text-slate-500 dark:text-slate-400">پیشرفت فیزیکی</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">{toPersianDigits(proj.progressPercentage)}٪</span>
+                </div>
+                <div id={`projects-view-progress-bar-3-${proj.id}`} className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                  <div
+                    id={`projects-view-progress-bar-4-${proj.id}`}
+                    className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                    style={{ width: `${proj.progressPercentage}%` }}
+                  />
+                </div>
+                <div id={`projects-view-footer-${proj.id}`} className="flex items-center justify-between gap-2 pt-1.5 text-[11px]">
+                  <span className="flex items-center gap-1 text-slate-400 min-w-0">
+                    <Building2 className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                    <span className="truncate">{proj.departmentName}</span>
+                  </span>
+                  <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400 font-bold shrink-0 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">
+                    جزئیات
+                    <ArrowUpRight className="w-3.5 h-3.5 rtl:-scale-x-100 group-hover:-translate-x-0.5 group-hover:translate-y-0.5 transition-transform" />
+                  </span>
+                </div>
+              </div>
+            </article>
           );
         })}
       </div>
+
+      {/* Project Detail Modal — full record; edit/delete live here, not on the card. */}
+      {detailProject && (
+        <div
+          id="projects-view-detail-modal"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        >
+          <div
+            id="projects-view-detail-modal-panel"
+            ref={detailModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="projects-view-detail-modal-title"
+            className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col"
+          >
+            {/* Header */}
+            <div id="projects-view-detail-modal-header" className="flex items-start justify-between gap-3 p-5 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-start gap-3 min-w-0">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+                  <FolderKanban className="w-6 h-6" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[10px] font-mono text-slate-400 tracking-wider block">{detailProject.code}</span>
+                  <h3 id="projects-view-detail-modal-title" className="font-black text-base text-slate-900 dark:text-slate-100 leading-tight">
+                    {detailProject.title}
+                  </h3>
+                  <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${PROJECT_STATUS_META[detailProject.status].className}`}>
+                      {PROJECT_STATUS_META[detailProject.status].label}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                      {detailProject.departmentName}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 flex items-center gap-1">
+                      <MapPin className="w-3 h-3" />
+                      {detailProject.province} - {detailProject.county}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <button
+                id="btn-close-project-details"
+                onClick={() => setDetailProjectId(null)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 shrink-0"
+                title="بستن"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div id="projects-view-detail-modal-body" className="p-5 space-y-4 text-xs">
+              {/* Anti-overlap warning */}
+              {detailProject.antiOverlapStatus !== 'CLEAR' && (
+                <div id="projects-view-detail-modal-warning" className="bg-amber-50 dark:bg-amber-950/20 rounded-xl p-3 border border-amber-200 dark:border-amber-900 flex items-start gap-2">
+                  <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <span className="font-bold text-amber-800 dark:text-amber-300 block">نیازمند بازنگری موازی‌کاری / انطباق</span>
+                    <span className="text-amber-700 dark:text-amber-400 leading-relaxed">
+                      {detailProject.overlapWarningDetails || 'این پروژه در پایش هوشمند به‌عنوان نیازمند تدقیق علامت‌گذاری شده است.'}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Meta matrix: department, budget, executor, contractor */}
+              <div id="projects-view-detail-modal-meta" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                  <span className="text-slate-400 text-[11px] flex items-center gap-1 shrink-0">
+                    <Building2 className="w-3.5 h-3.5 text-indigo-500" />
+                    اداره متولی
+                  </span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200 truncate">{detailProject.departmentName}</span>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                  <span className="text-slate-400 text-[11px] flex items-center gap-1 shrink-0">
+                    <Wallet className="w-3.5 h-3.5 text-emerald-500" />
+                    منبع تأمین مالی
+                  </span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200 truncate">{detailProject.budgetSourceTitle}</span>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                  <span className="text-slate-400 text-[11px] flex items-center gap-1 shrink-0">
+                    <Users2 className="w-3.5 h-3.5 text-cyan-500" />
+                    مجری طرح
+                  </span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200 truncate">{detailProject.executorName}</span>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                  <span className="text-slate-400 text-[11px] flex items-center gap-1 shrink-0">
+                    <HardHat className="w-3.5 h-3.5 text-amber-500" />
+                    پیمانکار ذیصلاح
+                  </span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200 truncate">{detailProject.contractorName || 'تعیین نشده'}</span>
+                </div>
+              </div>
+
+              {/* Financial & per-capita breakdown */}
+              <div id="projects-view-detail-modal-financial" className="grid grid-cols-3 gap-3">
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800 text-center">
+                  <span className="text-slate-400 block text-[10px] mb-1">کل اعتبار مصوب</span>
+                  <span className="font-black text-slate-900 dark:text-slate-100">{formatToman(detailProject.estimatedCostToman)}</span>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800 text-center">
+                  <span className="text-slate-400 block text-[10px] mb-1">جمعیت بهره‌بردار</span>
+                  <span className="font-bold text-blue-600 dark:text-blue-400">{formatNumber(detailProject.beneficiariesCount)} نفر</span>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800 text-center">
+                  <span className="text-slate-400 block text-[10px] mb-1">سرانه هر نفر</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatToman(detailProject.costPerBeneficiaryToman)}</span>
+                </div>
+              </div>
+
+              {/* Progress */}
+              <div id="projects-view-detail-modal-progress" className="space-y-1">
+                <div className="flex justify-between items-center text-[11px]">
+                  <span className="text-slate-500 dark:text-slate-400">پیشرفت فیزیکی پروژه</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">{toPersianDigits(detailProject.progressPercentage)}٪</span>
+                </div>
+                <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${detailProject.progressPercentage}%` }} />
+                </div>
+              </div>
+
+              {/* Location & timeline */}
+              <div id="projects-view-detail-modal-location" className="grid grid-cols-2 gap-3">
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800">
+                  <span className="text-slate-400 block text-[10px] mb-1">محدوده جغرافیایی</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                    <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    {detailProject.province} - {detailProject.county} - {detailProject.districtOrVillage}
+                  </span>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800">
+                  <span className="text-slate-400 block text-[10px] mb-1">بازه زمانی اجرا</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200 font-mono">
+                    {toPersianDigits(detailProject.startYear)} - {toPersianDigits(detailProject.endYear)}
+                    {detailProject.durationMonths > 0 && (
+                      <span className="font-sans text-slate-400 font-normal"> ({toPersianDigits(detailProject.durationMonths)} ماه)</span>
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div id="projects-view-detail-modal-description">
+                <span className="font-bold text-slate-700 dark:text-slate-200 block mb-1.5">
+                  شرح اهداف، مشخصات فنی و خروجی‌های ملموس
+                </span>
+                <p className="text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800">
+                  {detailProject.description || 'توضیحی برای این پروژه ثبت نشده است.'}
+                </p>
+              </div>
+            </div>
+
+            {/* Footer — management actions live inside the detail modal */}
+            <div id="projects-view-detail-modal-footer" className="sticky bottom-0 flex flex-wrap items-center justify-between gap-3 p-5 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+              <span className="text-[10px] text-slate-400 font-mono truncate">
+                شناسه سیستمی: {detailProject.code}
+              </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                {canManage && (
+                  <>
+                    {detailProject.status === 'PROPOSED' && (
+                      <button
+                        type="button"
+                        onClick={() => handleToggleProjectStatus(detailProject.id, 'APPROVED')}
+                        className="px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 font-bold text-[11px] border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-950/70 transition-colors"
+                      >
+                        تصویب طرح
+                      </button>
+                    )}
+                    {detailProject.status === 'APPROVED' && (
+                      <button
+                        type="button"
+                        onClick={() => handleToggleProjectStatus(detailProject.id, 'IN_PROGRESS')}
+                        className="px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-bold text-[11px] border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-950/70 transition-colors"
+                      >
+                        آغاز عملیات
+                      </button>
+                    )}
+                    {detailProject.status === 'IN_PROGRESS' && (
+                      <button
+                        type="button"
+                        onClick={() => handleToggleProjectStatus(detailProject.id, 'COMPLETED')}
+                        className="px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold text-[11px] border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-950/70 transition-colors"
+                      >
+                        خاتمه و تحویل
+                      </button>
+                    )}
+                    <button
+                      id="btn-edit-project-from-details"
+                      type="button"
+                      onClick={() => {
+                        const target = detailProject;
+                        setDetailProjectId(null);
+                        handleOpenEdit(target);
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-bold text-[11px] border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-950/70 transition-colors"
+                    >
+                      <Edit className="w-3.5 h-3.5" />
+                      ویرایش مشخصات
+                    </button>
+                    <button
+                      id="btn-delete-project-from-details"
+                      type="button"
+                      onClick={() => {
+                        const target = detailProject;
+                        setDetailProjectId(null);
+                        confirmDelete(
+                          `آیا از حذف پروژه «${target.title}» مطمئن هستید؟ این عملیات قابل بازگشت نیست.`,
+                          () => handleDeleteProject(target.id)
+                        );
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-bold text-[11px] border border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-950/70 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      حذف پروژه
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* CRUD Modal */}
       {isModalOpen && (

@@ -17,10 +17,18 @@ import { LocationModule } from './components/LocationModule';
 import { PopulationView } from './components/PopulationView';
 import { CreateProjectView } from './components/CreateProjectView';
 import { RolesAndAccessView } from './components/RolesAndAccessView';
+import { AnalysisSourcesView } from './components/AnalysisSourcesView';
 import BranchedMenu, { type BranchedMenuItem } from './components/BranchedMenu';
 import { AiAnalysisModal } from './components/AiAnalysisModal';
 import { GlobalLocationSelector } from './components/GlobalLocationSelector';
 import { LoginView } from './components/LoginView';
+import { SystemTour } from './components/SystemTour';
+import {
+  hasSeenSystemTour,
+  hasSeenRelaunchHint,
+  markRelaunchHintShown,
+  markSystemTourSeen,
+} from './utils/systemTour';
 
 import {
   LayoutDashboard,
@@ -40,6 +48,7 @@ import {
   Download,
   FileSpreadsheet,
   FileText,
+  FileSearch,
   X,
   Database,
   Gauge,
@@ -113,6 +122,7 @@ const NAV_MENU_ITEMS: BranchedMenuItem[] = [
     icon: Gauge,
     hue: 'var(--color-violet-700)',
     children: [
+      { value: 'ANALYSIS_SOURCES', label: 'منابع تحلیل', icon: FileSearch, hue: 'var(--color-violet-600)' },
       { value: 'CHARTS', label: 'نمودارها', icon: BarChart3, hue: 'var(--color-indigo-500)' },
       { value: 'ROLES_PERMISSIONS', label: 'نقش‌ها و دسترسی', icon: ShieldCheck, hue: 'var(--color-slate-500)' },
     ],
@@ -143,6 +153,11 @@ function AppContent() {
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [showLocationDrawer, setShowLocationDrawer] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showSystemTour, setShowSystemTour] = useState(false);
+  const [showTourHint, setShowTourHint] = useState(false);
+  // Tells the automatic first-run launch apart from a manual reopening: only the
+  // former earns the "you can relaunch this" hint when it is cut short.
+  const tourAutoLaunchedRef = useRef(false);
 
   // Nav state is owned here rather than inside BranchedMenu, so a selection made
   // anywhere else in the app — a dashboard link, the sidebar footer — keeps the
@@ -193,6 +208,48 @@ function AppContent() {
   useEffect(() => {
     mainWorkspaceRef.current?.scrollTo({ top: 0 });
   }, [activeTab]);
+
+  // First-run tour: a session that has never seen the walkthrough gets it once
+  // after signing in, with no action of its own. Leaving it — finished or not —
+  // records that it was seen, so it never auto-launches again; the identity-bar
+  // button remains the way back in at any time.
+  useEffect(() => {
+    if (!isAuthenticated || hasSeenSystemTour()) return;
+    const timer = setTimeout(() => {
+      tourAutoLaunchedRef.current = true;
+      setShowSystemTour(true);
+    }, 700);
+    return () => clearTimeout(timer);
+  }, [isAuthenticated]);
+
+  // Opening the walkthrough from the identity-bar button. The hint has done its
+  // job the moment the operator follows it back to that button.
+  const handleOpenSystemTour = () => {
+    setShowTourHint(false);
+    tourAutoLaunchedRef.current = false;
+    setShowSystemTour(true);
+  };
+
+  // Leaving the tour. Only an automatic first run that was cut short earns the
+  // one-time hint pointing back at the button — an operator who reopened the
+  // tour by hand already knows the button is there.
+  const handleSystemTourClose = (finished: boolean) => {
+    setShowSystemTour(false);
+    markSystemTourSeen();
+    const wasAutoLaunch = tourAutoLaunchedRef.current;
+    tourAutoLaunchedRef.current = false;
+    if (wasAutoLaunch && !finished && !hasSeenRelaunchHint()) {
+      markRelaunchHintShown();
+      setShowTourHint(true);
+    }
+  };
+
+  // The hint is a nudge, not a panel: it retires itself after a short while.
+  useEffect(() => {
+    if (!showTourHint) return;
+    const timer = setTimeout(() => setShowTourHint(false), 20000);
+    return () => clearTimeout(timer);
+  }, [showTourHint]);
 
   // Exports
   const handleExportPdf = () => {
@@ -361,11 +418,12 @@ function AppContent() {
             itself. */}
         <div id="app-scrollable-main-workspace" ref={mainWorkspaceRef} className="scrollbar-none flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
           {/* Identity bar — the session strip that states the two facets of the
-              active session: WHERE the operator is working (the geographic scope
-              every page is filtered to) at the start of the row, and WHO they are
-              signed in as at the end. Below `lg` the mobile nav toggle shares the
-              row, so the hamburger sits level with the identity block instead of
-              on a row of its own under the page title.
+              active session: WHO the operator is signed in as and WHERE they are
+              working (the geographic scope every page is filtered to). Both pills
+              sit together at the start of the row, and the system guide is pushed
+              to the far end. Below `lg` the mobile nav toggle shares the row, so
+              the hamburger sits level with the identity block instead of on a row
+              of its own under the page title.
 
               The row is the first block of the page it governs and scrolls away
               with the rest of the content, in normal flow: nothing above the
@@ -386,12 +444,39 @@ function AppContent() {
               <Menu className="w-5 h-5" />
             </button>
 
+            {/* Who — the signed-in identity, leading the session cluster at the
+                start of the row (the right edge, in this RTL shell). It and the
+                scope pill beside it travel together, so the two facts every page
+                is governed by — who is working and where — read as one block. On
+                phones it drops to the avatar and the name. Choosing it opens the
+                roles & access page, where the identity and its permissions are
+                managed. */}
+            <button
+              id="app-workspace-identity-bar-user"
+              onClick={() => {
+                setActiveTab('ROLES_PERMISSIONS');
+                setSidebarOpen(false);
+              }}
+              title={`${currentUser.roleTitleFa} — مشاهده نقش‌ها و سطوح دسترسی`}
+              className="group inline-flex min-w-0 max-w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white py-1.5 ps-1.5 pe-2.5 shadow-2xs transition-colors hover:border-blue-200 hover:bg-blue-50 focus:outline-none focus-visible:border-blue-400 text-right"
+            >
+              <span id="app-workspace-identity-bar-avatar" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-sm font-black text-white shadow-sm shadow-blue-500/20">
+                {currentUser.name.charAt(0)}
+              </span>
+              <span id="app-workspace-identity-bar-who" className="min-w-0 leading-tight">
+                <span id="app-workspace-identity-bar-name" className="block truncate text-xs font-bold text-slate-800">{currentUser.name}</span>
+                <span id="app-workspace-identity-bar-role" className="hidden truncate text-[10px] font-medium text-slate-500 sm:block">{currentUser.roleFa}</span>
+              </span>
+              <ChevronLeft className="hidden h-4 w-4 shrink-0 text-slate-300 transition-colors group-hover:text-blue-400 sm:block" aria-hidden="true" />
+            </button>
+
             {/* Where — the geographic scope every page's data is filtered to, and
                 the one control that changes it: choosing it opens the location
                 picker, which the sidebar used to launch before the switcher moved
-                up here. It stays on phones too, where the sidebar is a drawer and
-                the active county would otherwise be a tap away: the province/county
-                line is the one that never hides. */}
+                up here. It sits with the account chip at the start of the row. It
+                stays on phones too, where the sidebar is a drawer and the active
+                county would otherwise be a tap away: the province/county line is
+                the one that never hides. */}
             <button
               id="app-workspace-identity-bar-scope"
               type="button"
@@ -415,29 +500,72 @@ function AppContent() {
               </span>
             </button>
 
-            {/* Who — the signed-in identity. `ms-auto` pins it to the far end of
-                the row so it holds its place whether or not the scope pill and the
-                mobile toggle are present; on phones it drops to the avatar and the
-                name. Choosing it opens the roles & access page, where the identity
-                and its permissions are managed. */}
-            <button
-              id="app-workspace-identity-bar-user"
-              onClick={() => {
-                setActiveTab('ROLES_PERMISSIONS');
-                setSidebarOpen(false);
-              }}
-              title={`${currentUser.roleTitleFa} — مشاهده نقش‌ها و سطوح دسترسی`}
-              className="group ms-auto inline-flex min-w-0 max-w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white py-1.5 ps-1.5 pe-2.5 shadow-2xs transition-colors hover:border-blue-200 hover:bg-blue-50 focus:outline-none focus-visible:border-blue-400 text-right"
-            >
-              <span id="app-workspace-identity-bar-avatar" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-sm font-black text-white shadow-sm shadow-blue-500/20">
-                {currentUser.name.charAt(0)}
-              </span>
-              <span id="app-workspace-identity-bar-who" className="min-w-0 leading-tight">
-                <span id="app-workspace-identity-bar-name" className="block truncate text-xs font-bold text-slate-800">{currentUser.name}</span>
-                <span id="app-workspace-identity-bar-role" className="hidden truncate text-[10px] font-medium text-slate-500 sm:block">{currentUser.roleFa}</span>
-              </span>
-              <ChevronLeft className="hidden h-4 w-4 shrink-0 text-slate-300 transition-colors group-hover:text-blue-400 sm:block" aria-hidden="true" />
-            </button>
+            {/* Guide — the entry point to the first-run walkthrough, pushed to the
+                far end of the row by `ms-auto` so the session cluster keeps the
+                start of the row to itself. The button reopens the tour on demand,
+                and a session that has never seen it also launches it once on
+                sign-in (see the effect in AppContent).
+
+                The wrapper is the flex item (it carries `ms-auto`) and the
+                positioning context for the one-time hint that appears when the
+                walkthrough was left before the end. */}
+            <div className="relative ms-auto shrink-0">
+              <button
+                id="app-workspace-identity-bar-guide"
+                type="button"
+                onClick={handleOpenSystemTour}
+                title="راهنمای سامانه"
+                aria-label="راهنمای سامانه"
+                className="group inline-flex min-w-0 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-slate-600 shadow-2xs transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus-visible:border-blue-400"
+              >
+                <HelpCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span className="hidden truncate text-xs font-bold sm:inline">راهنمای سامانه</span>
+              </button>
+
+              {/* A quiet nudge towards the button while the hint below it is on
+                  screen — the callout explains, this points. */}
+              {showTourHint && (
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -top-0.5 -end-0.5 h-2.5 w-2.5 rounded-full bg-blue-500 ring-2 ring-white"
+                />
+              )}
+
+              {/* One-time relaunch hint. It only ever follows an automatic tour
+                  that was cut short (see `handleSystemTourClose`), it is
+                  recorded as seen the moment it appears, and it retires itself
+                  after a short while so nothing lingers on the page. */}
+              {showTourHint && (
+                <div
+                  id="app-workspace-identity-bar-guide-hint"
+                  role="status"
+                  className="tour-hint-in absolute end-0 top-full z-30 mt-2.5 w-64 max-w-[calc(100vw-2rem)] rounded-2xl border border-blue-100 bg-white p-3 shadow-xl shadow-slate-900/10"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="absolute -top-1 end-3 h-2 w-2 rotate-45 rounded-[2px] border-t border-r border-blue-100 bg-white"
+                  />
+                  <div className="flex items-start gap-2">
+                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                      <HelpCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                    </span>
+                    <p className="min-w-0 flex-1 text-[11px] leading-relaxed text-slate-600">
+                      راهنما را نیمه‌کاره بستید. هر زمان خواستید، از همین دکمه می‌توانید{' '}
+                      <span className="font-bold text-slate-800">راهنمای سامانه</span> را دوباره اجرا کنید.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setShowTourHint(false)}
+                      aria-label="بستن این راهنمایی"
+                      title="بستن"
+                      className="-m-1 shrink-0 rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {activeTab === 'DASHBOARD' && <NationalDashboardView />}
@@ -475,9 +603,16 @@ function AppContent() {
             />
           )}
 
+          {activeTab === 'ANALYSIS_SOURCES' && <AnalysisSourcesView />}
+
           {activeTab === 'ROLES_PERMISSIONS' && <RolesAndAccessView />}
         </div>
       </div>
+
+      {/* Guided tour — the first-run walkthrough, relaunchable from the identity
+          bar. It sits at the shell level so its spotlight can frame the session
+          strip, the sidebar and any page's header without being clipped. */}
+      <SystemTour open={showSystemTour} onClose={handleSystemTourClose} />
 
       {/* AI Analysis Modal */}
       {showAiModal && (

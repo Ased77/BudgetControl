@@ -14,6 +14,7 @@ import {
   ProjectExecutor,
   Contractor,
   SystemRolePermission,
+  AnalysisSource,
 } from '../src/types.js';
 import {
   INITIAL_LOCATIONS,
@@ -28,6 +29,7 @@ import {
   INITIAL_EXECUTORS,
   INITIAL_CONTRACTORS,
   INITIAL_ROLES_PERMISSIONS,
+  INITIAL_ANALYSIS_SOURCES,
 } from '../src/data/initialData.js';
 import { buildCountyDataset, CountyDataset } from '../src/data/countyTemplates.js';
 import { OMIDIYEH_COUNTY } from '../src/data/omidiyehData.js';
@@ -153,6 +155,18 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_audit_logs_created  ON audit_logs(created_at);
   CREATE INDEX IF NOT EXISTS idx_audit_logs_action   ON audit_logs(action_type);
+
+  CREATE TABLE IF NOT EXISTS analysis_sources (
+    id         TEXT PRIMARY KEY,
+    title      TEXT NOT NULL,
+    origin     TEXT NOT NULL,
+    status     TEXT NOT NULL,
+    province   TEXT,
+    county     TEXT,
+    payload    TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_analysis_sources_origin ON analysis_sources(origin);
+  CREATE INDEX IF NOT EXISTS idx_analysis_sources_status ON analysis_sources(status);
 `);
 
 /* =========================================================================
@@ -281,6 +295,35 @@ function seed(): void {
 }
 
 seed();
+
+/**
+ * Analysis sources seed themselves on first run (and after a schema upgrade)
+ * rather than through `seed()`: the main seed is version-gated and rewrites
+ * every table, so folding this in would clobber the operator's existing data.
+ * Its own meta flag keeps the two lifecycles independent.
+ */
+function seedAnalysisSources(): void {
+  const key = 'analysis_sources_seeded';
+  const row = db.prepare('SELECT value FROM app_meta WHERE key = ?').get(key) as { value: string } | undefined;
+  if (row?.value === '1') return;
+
+  const tx = db.transaction(() => {
+    const ins = db.prepare(
+      'INSERT OR REPLACE INTO analysis_sources (id, title, origin, status, province, county, payload) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    );
+    for (const s of INITIAL_ANALYSIS_SOURCES) {
+      ins.run(s.id, s.title, s.origin, s.status, s.province, s.county, JSON.stringify(s));
+    }
+    db.prepare(
+      'INSERT INTO app_meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
+    ).run(key, '1');
+  });
+
+  tx();
+  console.log(`[db] Seeded ${INITIAL_ANALYSIS_SOURCES.length} analysis sources`);
+}
+
+seedAnalysisSources();
 
 const PRIORITY_TITLE_MIGRATIONS: Record<string, { previous: string; current: string }> = {
   p1: { previous: 'توسعه زیرساخت‌های عمومی، عمران و خدمات شهری/روستایی', current: 'توسعه و عمران' },
@@ -557,4 +600,22 @@ export function addAuditLog(entry: AuditLogItem): void {
   db.prepare(
     'INSERT OR REPLACE INTO audit_logs (id, created_at, action_type, user_name, payload) VALUES (?, ?, ?, ?, ?)'
   ).run(entry.id, entry.timestamp, entry.actionType, entry.userName, JSON.stringify(entry));
+}
+
+// --- Analysis Sources -----------------------------------------------------
+
+export function listAnalysisSources(): AnalysisSource[] {
+  const rows = db.prepare('SELECT payload FROM analysis_sources ORDER BY rowid').all() as Payload<AnalysisSource>[];
+  return parseAll(rows);
+}
+
+export function upsertAnalysisSource(s: AnalysisSource): void {
+  db.prepare(
+    'INSERT OR REPLACE INTO analysis_sources (id, title, origin, status, province, county, payload) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  ).run(s.id, s.title, s.origin, s.status, s.province, s.county, JSON.stringify(s));
+}
+
+export function deleteAnalysisSource(id: string): boolean {
+  const info = db.prepare('DELETE FROM analysis_sources WHERE id = ?').run(id);
+  return info.changes > 0;
 }

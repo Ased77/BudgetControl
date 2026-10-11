@@ -32,6 +32,9 @@ import {
   listRolesPermissions,
   listAuditLogs,
   addAuditLog,
+  listAnalysisSources,
+  upsertAnalysisSource,
+  deleteAnalysisSource,
 } from './server/database.js';
 import { calculateSmartRecommendations } from './src/utils/recommendationEngine.js';
 import { toPersianDigits } from './src/utils/numberUtils.js';
@@ -301,6 +304,27 @@ async function startServer() {
   app.post('/api/audit-logs', wrap((req, res) => {
     addAuditLog(req.body);
     res.status(201).json({ ok: true });
+  }));
+
+  // --- Analysis Sources ---
+  // Inputs the analytical engine consumes (AI- or human-produced), managed
+  // through a human-in-the-loop approve/edit workflow.
+  app.get('/api/analysis-sources', wrap((req, res) => {
+    res.json(listAnalysisSources());
+  }));
+  app.post('/api/analysis-sources', wrap((req, res) => {
+    upsertAnalysisSource(req.body);
+    res.status(201).json(req.body);
+  }));
+  app.put('/api/analysis-sources/:id', wrap((req, res) => {
+    if (req.body.id !== req.params.id) return res.status(400).json({ error: 'Body id must match URL id' });
+    upsertAnalysisSource(req.body);
+    res.json(req.body);
+  }));
+  app.delete('/api/analysis-sources/:id', wrap((req, res) => {
+    const ok = deleteAnalysisSource(req.params.id);
+    if (!ok) return res.status(404).json({ error: 'Analysis source not found' });
+    res.json({ ok: true });
   }));
 
   // Executive AI Narrative Report (rule-based, local analysis).

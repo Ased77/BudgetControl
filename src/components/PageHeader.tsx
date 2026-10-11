@@ -10,8 +10,6 @@ interface PageHeaderProps {
   subtitle?: string;
   /** Tailwind classes for the icon colour only (e.g. `text-emerald-600`). */
   tone?: string;
-  /** Scope indicator above the title (e.g. کشور › استان › شهرستان). */
-  breadcrumb?: React.ReactNode;
   /** Optional node pinned beside the title itself (help tooltips, live badges). */
   adornment?: React.ReactNode;
   /** Optional trailing actions, pushed to the far side of the title. */
@@ -50,7 +48,6 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   title,
   subtitle,
   tone = 'text-blue-600',
-  breadcrumb,
   adornment,
   children,
 }) => {
@@ -77,9 +74,6 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   return (
     <div id={id} ref={rootRef} className="flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div className="flex flex-col gap-1.5 min-w-0">
-        {breadcrumb && (
-          <div className="flex items-center gap-1.5 text-xs text-slate-500">{breadcrumb}</div>
-        )}
         <div className="flex items-center gap-3 min-w-0">
           <Icon className={`w-6 h-6 shrink-0 ${tone}`} aria-hidden="true" />
 

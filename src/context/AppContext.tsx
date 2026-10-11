@@ -19,6 +19,8 @@ import {
   AntiDuplicationAlert,
   AuditActionType,
   AdministrativeLevel,
+  AnalysisSource,
+  AnalysisSourceStatus,
 } from '../types';
 import {
   INITIAL_LOCATIONS,
@@ -33,6 +35,7 @@ import {
   INITIAL_EXECUTORS,
   INITIAL_CONTRACTORS,
   INITIAL_ROLES_PERMISSIONS,
+  INITIAL_ANALYSIS_SOURCES,
 } from '../data/initialData';
 import { calculateSmartRecommendations } from '../utils/recommendationEngine';
 import { formatMoney, formatNumber, roundPercentage, toPersianDigits } from '../utils/numberUtils';
@@ -58,6 +61,7 @@ const VALID_TABS = [
   'PROJECTS',
   'CHARTS',
   'LOCATIONS',
+  'ANALYSIS_SOURCES',
   'ROLES_PERMISSIONS',
 ];
 
@@ -120,6 +124,7 @@ const TAB_PATHS: Record<string, string> = {
   PROJECTS: '/projects',
   CHARTS: '/charts',
   LOCATIONS: '/locations',
+  ANALYSIS_SOURCES: '/analysis-sources',
   ROLES_PERMISSIONS: '/roles-permissions',
 };
 
@@ -153,6 +158,7 @@ interface AppContextType {
   crisesHarms: CrisisHarmItem[];
   executors: ProjectExecutor[];
   contractors: Contractor[];
+  analysisSources: AnalysisSource[];
   rolesPermissions: SystemRolePermission[];
   users: UserProfile[];
   currentUser: UserProfile;
@@ -217,6 +223,14 @@ interface AppContextType {
   handleUpdateContractor: (contractor: Contractor) => void;
   handleDeleteContractor: (contractorId: string) => void;
 
+  // Analysis Sources (analysis-engine inputs) CRUD + human-in-the-loop review
+  handleAddAnalysisSource: (
+    source: Omit<AnalysisSource, 'id' | 'status' | 'createdAt' | 'reviewedBy' | 'reviewNote'>
+  ) => void;
+  handleUpdateAnalysisSource: (source: AnalysisSource) => void;
+  handleReviewAnalysisSource: (sourceId: string, status: AnalysisSourceStatus, note?: string) => void;
+  handleDeleteAnalysisSource: (sourceId: string) => void;
+
   // Permissions
   getUserPermissions: (user: UserProfile) => SystemRolePermission | undefined;
   handleToggleUserPermission: (userId: string, field: UserPermissionField) => void;
@@ -256,6 +270,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [executors, setExecutors] = useState<ProjectExecutor[]>(INITIAL_EXECUTORS);
   const [contractors, setContractors] = useState<Contractor[]>(INITIAL_CONTRACTORS);
   const [projects, setProjects] = useState<ExecutiveProject[]>(INITIAL_PROJECTS);
+  const [analysisSources, setAnalysisSources] = useState<AnalysisSource[]>(INITIAL_ANALYSIS_SOURCES);
   const [rolesPermissions, setRolesPermissions] = useState<SystemRolePermission[]>(INITIAL_ROLES_PERMISSIONS);
   // Individual per-user permission overrides, keyed by user id. Only the
   // changed flags are stored; everything else inherits the role default.
@@ -333,7 +348,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const run = async () => {
       try {
-        const [locs, org, prios, projs, depts, sources, crises, execs, cnts, users, roles, logs] = await Promise.all([
+        const [locs, org, prios, projs, depts, sources, crises, execs, cnts, users, roles, logs, analysisSrcs] = await Promise.all([
           api.locations.list(),
           api.organization.get(),
           api.priorities.list(),
@@ -346,6 +361,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           api.users.list(),
           api.rolesPermissions.list(),
           api.auditLogs.list(),
+          api.analysisSources.list(),
         ]);
         if (cancelled) return;
 
@@ -361,6 +377,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setContractors(cnts);
         setRolesPermissions(roles);
         setAuditLogs(logs);
+        setAnalysisSources(analysisSrcs);
         setUserDatabase(users);
         setCurrentUser((prev) => users.find((u) => u.id === prev.id) ?? prev);
       } catch {
@@ -901,6 +918,53 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addAuditLog('CONTRACTOR_DELETE', cnt?.companyName, 'موجود', 'حذف شده', 'حذف پیمانکار');
   };
 
+  // Analysis Sources CRUD + human-in-the-loop review. Every mutation records an
+  // audit entry so the source registry keeps the same governance trail as the
+  // entities it feeds.
+  const handleAddAnalysisSource = (
+    source: Omit<AnalysisSource, 'id' | 'status' | 'createdAt' | 'reviewedBy' | 'reviewNote'>
+  ) => {
+    const now = new Date();
+    const newSource: AnalysisSource = {
+      ...source,
+      id: `src-${Date.now()}`,
+      status: 'PENDING',
+      createdAt: `${now.toLocaleDateString('fa-IR')} - ${now.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' })}`,
+    };
+    setAnalysisSources((prev) => [newSource, ...prev]);
+    api.analysisSources.create(newSource).catch(console.error);
+    addAuditLog('ANALYSIS_SOURCE_ADD', source.title, 'ثبت جدید', source.provider, 'افزودن منبع تحلیل جدید به سامانه');
+  };
+
+  const handleUpdateAnalysisSource = (source: AnalysisSource) => {
+    setAnalysisSources((prev) => prev.map((s) => (s.id === source.id ? source : s)));
+    api.analysisSources.update(source).catch(console.error);
+    addAuditLog('ANALYSIS_SOURCE_EDIT', source.title, 'ویرایش', source.provider, 'ویرایش منبع تحلیل');
+  };
+
+  const handleReviewAnalysisSource = (sourceId: string, status: AnalysisSourceStatus, note?: string) => {
+    const target = analysisSources.find((s) => s.id === sourceId);
+    if (!target) return;
+    const updated: AnalysisSource = {
+      ...target,
+      status,
+      reviewedBy: currentUser.name,
+      reviewNote: note ?? target.reviewNote,
+    };
+    setAnalysisSources((prev) => prev.map((s) => (s.id === sourceId ? updated : s)));
+    api.analysisSources.update(updated).catch(console.error);
+    const verdict =
+      status === 'APPROVED' ? 'تأیید' : status === 'REJECTED' ? 'رد' : 'بازگشت به صف بررسی';
+    addAuditLog('ANALYSIS_SOURCE_REVIEW', target.title, target.status, status, `بازبینی منبع تحلیل: ${verdict}`);
+  };
+
+  const handleDeleteAnalysisSource = (sourceId: string) => {
+    const target = analysisSources.find((s) => s.id === sourceId);
+    setAnalysisSources((prev) => prev.filter((s) => s.id !== sourceId));
+    api.analysisSources.remove(sourceId).catch(console.error);
+    addAuditLog('ANALYSIS_SOURCE_DELETE', target?.title, 'موجود', 'حذف شده', 'حذف منبع تحلیل از سامانه');
+  };
+
   // Effective permissions of an individual user: the role default with that
   // user's stored per-user overrides layered on top.
   const getUserPermissions = (user: UserProfile): SystemRolePermission | undefined => {
@@ -958,6 +1022,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     crisesHarms: scopedCrisesHarms,
     executors: scopedExecutors,
     contractors: scopedContractors,
+    analysisSources,
     rolesPermissions,
     users: scopedUsers,
     currentUser,
@@ -1003,6 +1068,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     handleAddContractor,
     handleUpdateContractor,
     handleDeleteContractor,
+    handleAddAnalysisSource,
+    handleUpdateAnalysisSource,
+    handleReviewAnalysisSource,
+    handleDeleteAnalysisSource,
     getUserPermissions,
     handleToggleUserPermission,
     handleSaveOrgConfig,

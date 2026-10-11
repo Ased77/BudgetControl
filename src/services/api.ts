@@ -46,6 +46,7 @@ import {
   Contractor,
   SystemRolePermission,
   UserProfile,
+  AnalysisSource,
 } from '../types';
 
 export const api = {
@@ -123,5 +124,12 @@ export const api = {
   auditLogs: {
     list: (limit = 200) => get<AuditLogItem[]>(`/api/audit-logs?limit=${limit}`),
     create: (entry: AuditLogItem) => post<{ ok: boolean }>('/api/audit-logs', entry),
+  },
+
+  analysisSources: {
+    list: () => get<AnalysisSource[]>('/api/analysis-sources'),
+    create: (s: AnalysisSource) => post<AnalysisSource>('/api/analysis-sources', s),
+    update: (s: AnalysisSource) => put<AnalysisSource>(`/api/analysis-sources/${s.id}`, s),
+    remove: (id: string) => del<{ ok: boolean }>(`/api/analysis-sources/${id}`),
   },
 };
