@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { UserProfile, UserPermissionField, AuditActionType } from '../types';
+import { UserProfile, UserPermissionField, AuditActionType, AuditLogItem } from '../types';
 import { useOutsideClick } from '../hooks/useOutsideClick';
 import { PageHeader } from './PageHeader';
 import {
@@ -167,6 +167,58 @@ export const RolesAndAccessView: React.FC = () => {
       return matchQ && matchAct;
     });
   }, [auditLogs, logSearch, selectedActionFilter]);
+
+  // Clicking a header sorts by that column; clicking the active one flips the
+  // direction. A newly chosen text column opens ascending, while the timestamp
+  // opens newest-first — "latest activity" is the useful first view of a log.
+  const toggleLogSort = (key: AuditLogSortKey) => {
+    setLogSort((current) =>
+      current.key === key
+        ? { key, direction: current.direction === 'asc' ? 'desc' : 'asc' }
+        : { key, direction: key === 'timestamp' ? 'desc' : 'asc' }
+    );
+  };
+
+  /**
+   * Filtered logs in the chosen order. `actionLabels` is static data declared in
+   * this component, so reading it from the closure cannot go stale; the sort runs
+   * over the filtered rows only (163 on the seeded data).
+   */
+  const sortedLogs = useMemo(() => {
+    const { key, direction } = logSort;
+    const factor = direction === 'asc' ? 1 : -1;
+
+    // Action types order by their displayed Persian label, never the raw enum
+    // key, so the order matches the text the column actually shows.
+    const sortValue = (log: AuditLogItem): number | string => {
+      switch (key) {
+        case 'timestamp':
+          return auditTimestampOrder(log.timestamp);
+        case 'userName':
+          return log.userName;
+        case 'actionType':
+          return actionLabels[log.actionType]?.label ?? log.actionType;
+        case 'targetPriorityTitle':
+          return log.targetPriorityTitle ?? '';
+        case 'value':
+          return `${log.oldValue ?? ''} ${log.newValue ?? ''}`;
+        case 'rationale':
+          return log.rationale ?? '';
+      }
+    };
+
+    return [...filteredLogs].sort((a, b) => {
+      const left = sortValue(a);
+      const right = sortValue(b);
+      if (typeof left === 'number' && typeof right === 'number') {
+        return (left - right) * factor;
+      }
+      return String(left).localeCompare(String(right), 'fa') * factor;
+    });
+  }, [filteredLogs, logSort]);
+
+  const activeSortColumn =
+    AUDIT_LOG_COLUMNS.find((column) => column.key === logSort.key) ?? AUDIT_LOG_COLUMNS[0];
 
   return (
     <div id="roles-and-access-view-root" className="space-y-6">
@@ -338,7 +390,14 @@ export const RolesAndAccessView: React.FC = () => {
           </div>
 
           <div id="roles-and-access-view-sub-tab-2-audit-trail-logs-5" className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-            <div id="roles-and-access-view-sub-tab-2-audit-trail-logs-6" className="overflow-x-auto">
+            {/* One scroll region for both axes with a bounded height, so the
+                sticky header below actually sticks: with `overflow-x-auto` on a
+                wrapper that never scrolls vertically, the header would scroll
+                away with the page instead of holding the top of the table. */}
+            <div
+              id="roles-and-access-view-sub-tab-2-audit-trail-logs-6"
+              className="max-h-[70vh] overflow-auto"
+            >
               {/* Fixed layout with declared column widths. Under the browser's
                   automatic layout the long «مقدار پیشین ➔ مقدار جدید» run (nowrap
                   plus a decades-long value) claimed the widest column, growing it
@@ -349,26 +408,71 @@ export const RolesAndAccessView: React.FC = () => {
                   size. The table keeps a floor width so narrow screens scroll the
                   whole audit list rather than squashing it again. */}
               <table className="w-full min-w-[68rem] table-fixed text-right text-xs">
+                {/* Widths travel as inline styles, not utilities: a class name
+                    assembled at runtime would never reach Tailwind's scanner. */}
                 <colgroup>
-                  <col className="w-[8.5rem]" />
-                  <col className="w-[10rem]" />
-                  <col className="w-[9rem]" />
-                  <col className="w-[12rem]" />
-                  <col className="w-[12rem]" />
-                  <col />
+                  {AUDIT_LOG_COLUMNS.map((column) => (
+                    <col
+                      key={column.key}
+                      style={column.width ? { width: column.width } : undefined}
+                    />
+                  ))}
                 </colgroup>
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-850">
-                    <th className="py-3 px-4 font-bold">زمان رویداد</th>
-                    <th className="py-3 px-4 font-bold">کاربر ثبت‌کننده</th>
-                    <th className="py-3 px-4 font-bold">نوع اقدام</th>
-                    <th className="py-3 px-4 font-bold">موضوع / هدف</th>
-                    <th className="py-3 px-4 font-bold">مقدار پیشین ➔ مقدار جدید</th>
-                    <th className="py-3 px-4 font-bold">شرح و توجیه سیستمی</th>
+                  {/* Each `th` carries the sticky position itself rather than the
+                      row, and paints its own opaque background and bottom rule —
+                      a row-level fill or border would scroll away with the body
+                      and let the rows show through the header. */}
+                  <tr className="text-slate-500 dark:text-slate-400">
+                    {AUDIT_LOG_COLUMNS.map((column) => {
+                      const isActive = logSort.key === column.key;
+                      const ariaSort = isActive
+                        ? logSort.direction === 'asc'
+                          ? 'ascending'
+                          : 'descending'
+                        : 'none';
+
+                      return (
+                        <th
+                          key={column.key}
+                          scope="col"
+                          aria-sort={ariaSort}
+                          className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 py-3 px-4 font-bold border-b border-slate-200 dark:border-slate-800"
+                        >
+                          <button
+                            type="button"
+                            id={`roles-and-access-view-sub-tab-2-audit-trail-logs-sort-${column.key}`}
+                            onClick={() => toggleLogSort(column.key)}
+                            title={
+                              isActive
+                                ? `مرتب‌سازی ${column.label} — تغییر جهت ترتیب`
+                                : `مرتب‌سازی بر اساس ${column.label}`
+                            }
+                            className={`inline-flex items-center gap-1.5 rounded-md transition-colors cursor-pointer hover:text-indigo-700 dark:hover:text-indigo-300 ${
+                              isActive ? 'text-indigo-700 dark:text-indigo-300' : ''
+                            }`}
+                          >
+                            <span>{column.label}</span>
+                            {isActive ? (
+                              logSort.direction === 'asc' ? (
+                                <ArrowUp className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                              ) : (
+                                <ArrowDown className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                              )
+                            ) : (
+                              <ChevronsUpDown
+                                className="w-3.5 h-3.5 shrink-0 text-slate-300 dark:text-slate-600"
+                                aria-hidden="true"
+                              />
+                            )}
+                          </button>
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {filteredLogs.map((log) => {
+                  {sortedLogs.map((log) => {
                     const actionInfo = actionLabels[log.actionType] || {
                       label: log.actionType,
                       badge: 'bg-slate-100 text-slate-700',
@@ -423,6 +527,20 @@ export const RolesAndAccessView: React.FC = () => {
                 </tbody>
               </table>
             </div>
+
+            {sortedLogs.length > 0 && (
+              <div
+                id="roles-and-access-view-sub-tab-2-audit-trail-logs-10"
+                className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400"
+              >
+                <span>
+                  نمایش {sortedLogs.length.toLocaleString('fa-IR')} از {auditLogs.length.toLocaleString('fa-IR')} رویداد
+                </span>
+                <span>
+                  ترتیب: {activeSortColumn.label} — {logSort.direction === 'asc' ? 'صعودی' : 'نزولی'}
+                </span>
+              </div>
+            )}
 
             {filteredLogs.length === 0 && (
               <div id="roles-and-access-view-sub-tab-2-audit-trail-logs-9" className="p-8 text-center text-slate-400 text-xs">هیچ رویدادی با این مشخصات ثبت نشده است.</div>
