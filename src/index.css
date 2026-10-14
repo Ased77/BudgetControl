@@ -117,12 +117,16 @@ body {
 :root {
   --app-canvas-width: 1440px;
 
-  /* The sidebar reserves this much room at the top so its panel starts on the
-     line where a page's content begins: the title block plus the gap its margin
-     leaves beneath it. The value below is only the first-paint default —
-     `PageHeader` measures the real block and overwrites it, so a page whose
-     subtitle wraps still lines up. */
+  /* The sidebar reserves room at the top so its panel starts level with a
+     page's banner. That offset is the workspace's own top padding, the identity
+     bar above the page, the gap below it, and the title block plus the gap its
+     margin leaves. `--app-page-header-space` is the title block — `PageHeader`
+     measures the real block and overwrites this first-paint default, so a page
+     whose subtitle wraps still lines up; `--app-identity-bar-space` is the
+     identity bar's height, written by the shell. Together they let the sidebar
+     clear the title and land on the banner. */
   --app-page-header-space: 76px;
+  --app-identity-bar-space: 0px;
 }
 
 @media (min-width: 1024px) {

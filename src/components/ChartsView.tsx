@@ -2,18 +2,64 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { CsrPriority, SmartRecommendationResult } from '../types';
 import { useAppContext } from '../context/AppContext';
 import { PageHeader } from './PageHeader';
-import { formatCurrency, toPersianDigits } from '../utils/numberUtils';
-import { 
-  PieChart as PieIcon, BarChart3, Radar as RadarIcon, Globe2, 
-  CircleDot, Flame, Sparkles, SlidersHorizontal, AlertTriangle, 
-  CheckCircle2, Info, ArrowUpRight, TrendingUp, X, RefreshCw, RotateCcw,
-  Sliders, Play, Activity, ArrowRight, Zap, Check
+import { Num } from './Num';
+import {
+  ChartCard,
+  TooltipHeading,
+  TooltipRow,
+  TooltipShell,
+  shortLabel,
+} from './ChartCard';
+import {
+  formatHemmat,
+  formatMoneyParts,
+  formatPercent,
+  toPersianDigits,
+} from '../utils/numberUtils';
+import {
+  PieChart as PieIcon,
+  BarChart3,
+  Radar as RadarIcon,
+  Globe2,
+  CircleDot,
+  Flame,
+  Sparkles,
+  AlertTriangle,
+  CheckCircle2,
+  ArrowRight,
+  X,
+  RefreshCw,
+  RotateCcw,
+  Sliders,
+  Play,
+  Zap,
+  MapPin,
+  Gauge,
+  Wallet,
+  ChevronDown,
 } from 'lucide-react';
-import { 
-  ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend, 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Radar, RadarChart, 
-  PolarGrid, PolarAngleAxis, PolarRadiusAxis,
-  ScatterChart, Scatter, ZAxis, ReferenceLine, Label
+import {
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Radar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  ScatterChart,
+  Scatter,
+  ZAxis,
+  ReferenceLine,
+  Label,
 } from 'recharts';
 
 interface ChartsViewProps {
@@ -28,11 +74,42 @@ interface ChartsViewProps {
   onNavigateToDashboard?: () => void;
 }
 
+/**
+ * Palette for the allocation series. A hotspot/universal priority keeps its
+ * semantic rose/purple hue instead (see `bubbleItems`), so colour on this page
+ * always answers "how severe is this, locally?" before "which row is it?".
+ */
 const COLORS = [
-  '#2563eb', '#059669', '#d97706', '#4f46e5', 
-  '#f43f5e', '#0d9488', '#9333ea', '#ea580c', '#0284c7'
+  '#2563eb',
+  '#059669',
+  '#d97706',
+  '#4f46e5',
+  '#f43f5e',
+  '#0d9488',
+  '#9333ea',
+  '#ea580c',
+  '#0284c7',
 ];
 
+/** Quadrant rules of the allocation matrix, declared once for chips and tooltips. */
+const SEVERITY_THRESHOLD = 45;
+const BALANCED_ALLOCATION_PCT = 8.5;
+
+/**
+ * Page layout of the charts surface, in reading order:
+ *
+ *   1. Toolbar — the scope and the two live figures that describe the whole
+ *      page (share total, distance from the smart recommendation).
+ *   2. The allocation matrix — the page's question: is the money where the
+ *      harm is? Bubble size carries the ريال amount, so one glance answers both
+ *      "which priority is starved" and "how much money is that".
+ *   3. The simulation tools, folded away by default: they *change* the
+ *      allocation, so they sit after the analysis that reports it.
+ *   4. Prevalence (4 tiers) — the evidence the matrix's horizontal axis is
+ *      built from.
+ *   5. Composition — the same allocation read as shares, as money, and as a
+ *      manual-vs-smart profile.
+ */
 export const ChartsView: React.FC<ChartsViewProps> = (props) => {
   const context = useAppContext();
 
@@ -45,20 +122,33 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
   const onApplySmartRecommendations = props.onApplySmartRecommendations ?? context.handleApplySmartRecommendations;
   const onResetToDefault = props.onResetToDefault ?? context.handleResetToDefault;
   const onNavigateToDashboard = props.onNavigateToDashboard ?? (() => context.setActiveTab('DASHBOARD'));
-  // Bubble Chart Interactive States
+
+  const { selectedLocation } = context;
+
+  // Matrix controls
   const [yAxisMetric, setYAxisMetric] = useState<'CURRENT' | 'RECOMMENDED'>('CURRENT');
   const [bubbleFilter, setBubbleFilter] = useState<'ALL' | 'HOTSPOTS' | 'DEFICITS'>('ALL');
   const [selectedBubbleId, setSelectedBubbleId] = useState<string | null>(null);
-  const [showLiveAdjuster, setShowLiveAdjuster] = useState<boolean>(false);
-  const [adjusterCategory, setAdjusterCategory] = useState<string>('ALL');
+  // The simulation tools are folded away by default: they are the only controls
+  // on the page that write, and the analysis above them is what most visits are
+  // here for.
+  const [showSimulation, setShowSimulation] = useState(false);
 
   // Live Synchronization Tracking
   const prevPercentagesRef = useRef<Record<string, number>>(currentPercentages);
+  // The provider hydrates the entity payload (and therefore the smart shares)
+  // shortly after boot, which rewrites every share at once. That is a data load,
+  // not an operator decision, so the moments right after mount are treated as
+  // the baseline: the page opens clean instead of lighting up all bubbles with
+  // "changed" halos and +/− badges.
+  const mountedAtRef = useRef<number>(Date.now());
+  const NOTICE_SETTLE_MS = 2500;
   const [recentChanges, setRecentChanges] = useState<Record<string, { delta: number; prevPct: number; newPct: number; timestamp: number }>>({});
   const [lastSyncLog, setLastSyncLog] = useState<{ title: string; prevVal: number; newVal: number; delta: number; time: string } | null>(null);
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
 
-  // Detect live changes arriving from Dashboard or local adjustments
+  // Detect live changes arriving from the dashboard, the priorities page or the
+  // sliders in the simulation panel.
   useEffect(() => {
     const prev = prevPercentagesRef.current;
     const deltas: Record<string, { delta: number; prevPct: number; newPct: number; timestamp: number }> = {};
@@ -83,6 +173,12 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
     });
 
     if (changedCount > 0 && mostRecentPriority) {
+      // Silent re-baseline while the first payload is still landing.
+      if (Date.now() - mountedAtRef.current < NOTICE_SETTLE_MS) {
+        prevPercentagesRef.current = { ...currentPercentages };
+        return;
+      }
+
       setRecentChanges(deltas);
       const timeStr = new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       setLastSyncLog({
@@ -95,8 +191,8 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
 
       setSyncNotice(
         changedCount === 1
-          ? `هماهنگ‌سازی زنده: "${(mostRecentPriority as CsrPriority).title}" از ${toPersianDigits(mostRecentPrev)}٪ به ${toPersianDigits(mostRecentNew)}٪ (${mostRecentDelta > 0 ? '+' : ''}${toPersianDigits(mostRecentDelta)}٪) انتقال یافت.`
-          : `هماهنگ‌سازی زنده: ${toPersianDigits(changedCount)} سرفصل بودجه با داشبورد به‌روزرسانی و متحرک‌سازی شدند.`
+          ? `«${(mostRecentPriority as CsrPriority).title}» از ${toPersianDigits(mostRecentPrev)}٪ به ${toPersianDigits(mostRecentNew)}٪ تغییر کرد (${mostRecentDelta > 0 ? '+' : ''}${toPersianDigits(mostRecentDelta)} واحد درصد).`
+          : `${toPersianDigits(changedCount)} سرفصل بودجه به‌روزرسانی شد و حباب‌های متناظر جابه‌جا شدند.`
       );
 
       const clearTimer = setTimeout(() => {
@@ -116,7 +212,8 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
     prevPercentagesRef.current = { ...currentPercentages };
   }, [currentPercentages, priorities]);
 
-  // Replay live transition animation by triggering temporary delta halos
+  // Replay the movement animation: every bubble gets a temporary delta halo so
+  // the transition can be shown again during a review meeting.
   const handleReplayAnimation = () => {
     const replayDeltas: Record<string, { delta: number; prevPct: number; newPct: number; timestamp: number }> = {};
     priorities.forEach((p) => {
@@ -131,14 +228,15 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
       };
     });
     setRecentChanges(replayDeltas);
-    setSyncNotice('انیمیشن موقعیت و حجم حباب‌ها بازپخش شد.');
+    setSyncNotice('انیمیشن جابه‌جایی و تغییر اندازه حباب‌ها بازپخش شد.');
     setTimeout(() => {
       setRecentChanges({});
       setSyncNotice(null);
     }, 3800);
   };
 
-  // Prepare Bubble Chart Data: Relationship between Deprivation/Harm Index & Budget Allocation
+  // Matrix rows: one per priority, carrying severity, both share options and
+  // the ريال consequence of each.
   const bubbleItems = useMemo(() => {
     return priorities.map((p, idx) => {
       const currentPct = currentPercentages[p.id] ?? p.defaultPercentage;
@@ -157,31 +255,30 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
       const recommendedBudgetToman = Math.round((totalBudgetToman * recommendedPct) / 100);
       const activeBudgetToman = yAxisMetric === 'CURRENT' ? currentBudgetToman : recommendedBudgetToman;
 
-      // 4-Quadrant Policy Matrix Classification:
-      // Severity Threshold = 45%, Balanced Allocation Threshold = 8.5%
+      // 4-Quadrant policy matrix: severity threshold 45٪, balanced allocation
+      // threshold 8.5٪ (both declared above and drawn as reference lines).
       let quadrant: 'HOTSPOT_COVERED' | 'CRITICAL_DEFICIT' | 'PREVENTATIVE' | 'STABLE';
       let quadrantLabel = '';
       let quadrantBadgeClass = '';
 
-      if (localSeverity >= 45 && activePct >= 8.5) {
+      if (localSeverity >= SEVERITY_THRESHOLD && activePct >= BALANCED_ALLOCATION_PCT) {
         quadrant = 'HOTSPOT_COVERED';
-        quadrantLabel = 'پوشش بهینه کانون بحران (آسیب بالا، بودجه کافی)';
+        quadrantLabel = 'پوشش بهینه کانون بحران';
         quadrantBadgeClass = 'bg-emerald-50 text-emerald-800 border-emerald-200';
-      } else if (localSeverity >= 45 && activePct < 8.5) {
+      } else if (localSeverity >= SEVERITY_THRESHOLD && activePct < BALANCED_ALLOCATION_PCT) {
         quadrant = 'CRITICAL_DEFICIT';
-        quadrantLabel = '⚠️ هشدار کسری بودجه (آسیب بالا، بودجه ناکافی)';
+        quadrantLabel = 'کسری بودجه در کانون بحران';
         quadrantBadgeClass = 'bg-rose-50 text-rose-800 border-rose-200';
-      } else if (localSeverity < 45 && activePct >= 8.5) {
+      } else if (localSeverity < SEVERITY_THRESHOLD && activePct >= BALANCED_ALLOCATION_PCT) {
         quadrant = 'PREVENTATIVE';
-        quadrantLabel = 'سرمایه‌گذاری پیشگیرانه/زیربنایی (آسیب کنترل‌شده، بودجه بالا)';
+        quadrantLabel = 'سرمایه‌گذاری پیشگیرانه و زیربنایی';
         quadrantBadgeClass = 'bg-blue-50 text-blue-800 border-blue-200';
       } else {
         quadrant = 'STABLE';
-        quadrantLabel = 'مدیریت پایدار و متعادل (آسیب نرمال، بودجه متناسب)';
+        quadrantLabel = 'مدیریت متعادل و پایدار';
         quadrantBadgeClass = 'bg-slate-50 text-slate-700 border-slate-200';
       }
 
-      // Color scheme
       let bubbleColor = COLORS[idx % COLORS.length];
       if (isHotspot) bubbleColor = '#e11d48';
       else if (isUniversal) bubbleColor = '#9333ea';
@@ -190,7 +287,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
         id: p.id,
         code: p.code,
         title: p.title,
-        shortTitle: p.title.length > 22 ? p.title.substring(0, 22) + '...' : p.title,
+        shortTitle: shortLabel(p.title, 22),
         category: p.category,
         deprivationIndex: localSeverity,
         nationalSeverity,
@@ -203,8 +300,8 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
         currentBudgetToman,
         recommendedBudgetToman,
         activeBudgetToman,
-        // Sizing metric for ZAxis (minimum bubble radius 200, max 1600)
-        bubbleZMetric: Math.max(10, Math.round(activeBudgetToman / 1_000_000_000)), // in Billion Toman
+        // Z axis metric in همت, so bubble diameter reads in the app's money unit.
+        bubbleZMetric: Math.max(0.01, activeBudgetToman / 1_000_000_000_000),
         isHotspot,
         isUniversal,
         tierLabelFa: prev?.tierLabelFa || 'نرمال',
@@ -219,10 +316,9 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
     });
   }, [priorities, currentPercentages, recommendations, totalBudgetToman, yAxisMetric]);
 
-  // Filtered bubbles based on filter chip
   const filteredBubbles = useMemo(() => {
     if (bubbleFilter === 'HOTSPOTS') {
-      return bubbleItems.filter((b) => b.isHotspot || b.isUniversal || b.deprivationIndex >= 45);
+      return bubbleItems.filter((b) => b.isHotspot || b.isUniversal || b.deprivationIndex >= SEVERITY_THRESHOLD);
     }
     if (bubbleFilter === 'DEFICITS') {
       return bubbleItems.filter((b) => b.quadrant === 'CRITICAL_DEFICIT');
@@ -230,13 +326,11 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
     return bubbleItems;
   }, [bubbleItems, bubbleFilter]);
 
-  // Selected bubble for drill-down card
   const activeSelectedBubble = useMemo(() => {
     if (!selectedBubbleId) return null;
     return bubbleItems.find((b) => b.id === selectedBubbleId) || null;
   }, [bubbleItems, selectedBubbleId]);
 
-  // Quadrant summary stats
   const quadrantStats = useMemo(() => {
     const covered = bubbleItems.filter((b) => b.quadrant === 'HOTSPOT_COVERED').length;
     const deficit = bubbleItems.filter((b) => b.quadrant === 'CRITICAL_DEFICIT').length;
@@ -245,173 +339,366 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
     return { covered, deficit, preventative, stable };
   }, [bubbleItems]);
 
-  // Prepare data for Pie & Bar chart
-  const pieData = priorities.map((p) => {
-    const pct = currentPercentages[p.id] || 0;
-    const amountToman = Math.round((totalBudgetToman * pct) / 100);
+  /** Share total and distance from the smart recommendation — the page's two headline figures. */
+  const allocationTotals = useMemo(() => {
+    const sumPct = priorities.reduce(
+      (sum, p) => sum + (currentPercentages[p.id] ?? p.defaultPercentage),
+      0
+    );
+    const deviations = priorities.map((p) =>
+      Math.abs(
+        (currentPercentages[p.id] ?? p.defaultPercentage) -
+          (recommendations.scores[p.id] ?? p.defaultPercentage)
+      )
+    );
+    const meanAbsDeviation = deviations.length
+      ? deviations.reduce((sum, value) => sum + value, 0) / deviations.length
+      : 0;
     return {
-      name: p.title,
-      value: pct,
-      amountToman,
+      sumPct,
+      balanced: Math.abs(sumPct - 100) <= 0.5,
+      meanAbsDeviation,
     };
-  });
+  }, [priorities, currentPercentages, recommendations.scores]);
 
-  // Prepare radar chart comparison data (Manual vs Smart AI vs Default)
-  const radarData = priorities.map((p) => ({
-    subject: p.title.length > 18 ? p.title.substring(0, 18) + '...' : p.title,
-    دستی: currentPercentages[p.id] || 0,
-    پیشنهاد_هوشمند: recommendations.scores[p.id] || p.defaultPercentage,
-    پیش_فرض: p.defaultPercentage,
-  }));
+  // Composition rows: share, current money and recommended money per priority.
+  const allocationRows = useMemo(
+    () =>
+      priorities.map((p, idx) => {
+        const pct = currentPercentages[p.id] ?? p.defaultPercentage;
+        const recPct = recommendations.scores[p.id] ?? p.defaultPercentage;
+        return {
+          id: p.id,
+          code: p.code,
+          title: p.title,
+          shortTitle: shortLabel(p.title, 13),
+          category: p.category,
+          color: bubbleItems[idx]?.color ?? COLORS[idx % COLORS.length],
+          value: pct,
+          recommendedPct: recPct,
+          amountToman: Math.round((totalBudgetToman * pct) / 100),
+          recommendedAmountToman: Math.round((totalBudgetToman * recPct) / 100),
+        };
+      }),
+    [priorities, currentPercentages, recommendations.scores, totalBudgetToman, bubbleItems]
+  );
 
-  // Prepare 4-Tier Prevalence comparison data
-  const prevalenceData = priorities.map((p) => {
-    const prev = recommendations.explainability[p.id]?.prevalence;
-    return {
-      name: p.title.length > 14 ? p.title.substring(0, 14) + '...' : p.title,
-      'میانگین کشوری': prev ? prev.national : 0,
-      'میانگین استانی': prev ? prev.provincial : 0,
-      'میانگین شهرستانی': prev ? prev.county : 0,
-      'کانون محلی پیرامونی': prev ? prev.local : 0,
-    };
-  });
+  // Radar comparison (manual vs smart AI vs default)
+  const radarData = useMemo(
+    () =>
+      priorities.map((p) => ({
+        subject: shortLabel(p.title, 18),
+        دستی: currentPercentages[p.id] ?? p.defaultPercentage,
+        پیشنهاد_هوشمند: recommendations.scores[p.id] ?? p.defaultPercentage,
+        پیش_فرض: p.defaultPercentage,
+      })),
+    [priorities, currentPercentages, recommendations.scores]
+  );
 
-  // Custom Bubble Tooltip
-  const CustomBubbleTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const item = payload[0].payload;
-      return (
-        <div id="charts-view-root" className="bg-white/95 backdrop-blur-md p-3.5 rounded-xl border border-slate-300 shadow-xl text-right text-xs dir-rtl max-w-sm space-y-2.5 z-50">
-          <div id="charts-view-div-2" className="flex items-center justify-between border-b border-slate-100 pb-2">
-            <div id="charts-view-div-3" className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full shrink-0 shadow-xs" style={{ backgroundColor: item.color }} />
-              <span className="font-black text-slate-900 text-xs">{item.title}</span>
-            </div>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
-              {item.category}
+  // 4-tier prevalence comparison
+  const prevalenceData = useMemo(
+    () =>
+      priorities.map((p) => {
+        const prev = recommendations.explainability[p.id]?.prevalence;
+        return {
+          name: shortLabel(p.title, 14),
+          fullTitle: p.title,
+          'میانگین کشوری': prev ? prev.national : 0,
+          'میانگین استانی': prev ? prev.provincial : 0,
+          'میانگین شهرستانی': prev ? prev.county : 0,
+          'کانون محلی پیرامونی': prev ? prev.local : 0,
+        };
+      }),
+    [priorities, recommendations.explainability]
+  );
+
+  // --- Tooltips --------------------------------------------------------------
+
+  const BubbleTooltip = ({ active, payload }: any) => {
+    if (!active || !payload?.length) return null;
+    const item = payload[0].payload;
+    return (
+      <TooltipShell className="max-w-sm space-y-2.5">
+        <TooltipHeading title={item.title} meta={item.category} color={item.color} />
+
+        <div className="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+          <div>
+            <span className="text-slate-500 block text-[10px]">شدت آسیب محلی</span>
+            <Num value={formatPercent(item.deprivationIndex)} className="font-black text-risk-strong" />
+          </div>
+          <div>
+            <span className="text-slate-500 block text-[10px]">میانگین کشور / ضریب LQ</span>
+            <Num
+              value={`${formatPercent(item.nationalSeverity)} / ${toPersianDigits(item.locationQuotient)}`}
+              className="font-bold text-slate-700"
+            />
+          </div>
+          <div>
+            <span className="text-slate-500 block text-[10px]">
+              {yAxisMetric === 'CURRENT' ? 'سهم بودجه کنونی' : 'سهم پیشنهادی AI'}
             </span>
+            <Num value={formatPercent(item.activePct)} className="font-black text-indigo-700" />
           </div>
-
-          <div id="charts-view-div-4" className="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-            <div id="charts-view-div-5">
-              <span className="text-slate-500 block text-[10px]">نرخ محرومیت محلی:</span>
-              <span className="font-extrabold text-rose-700 dir-rtl font-mono text-sm">
-                {toPersianDigits(item.deprivationIndex)}٪
-              </span>
-            </div>
-            <div id="charts-view-div-6">
-              <span className="text-slate-500 block text-[10px]">میانگین کشور / ضریب LQ:</span>
-              <span className="font-bold text-slate-700 dir-rtl font-mono">
-                {toPersianDigits(item.nationalSeverity)}٪ (LQ: {toPersianDigits(item.locationQuotient)})
-              </span>
-            </div>
-            <div id="charts-view-div-7">
-              <span className="text-slate-500 block text-[10px]">
-                {yAxisMetric === 'CURRENT' ? 'سهم بودجه کنونی:' : 'سهم پیشنهادی AI:'}
-              </span>
-              <span className="font-extrabold text-indigo-700 dir-rtl font-mono text-sm">
-                {toPersianDigits(item.activePct)}٪
-              </span>
-            </div>
-            <div id="charts-view-div-8">
-              <span className="text-slate-500 block text-[10px]">مبلغ بودجه مصوب:</span>
-              <span className="font-black text-emerald-700 dir-rtl text-xs">
-                {formatCurrency(item.activeBudgetToman, 'TOMAN', true)}
-              </span>
-            </div>
-          </div>
-
-          <div id="charts-view-div-9" className="pt-1.5 border-t border-slate-100 space-y-1">
-            <div id="charts-view-div-10" className="flex items-center gap-1.5">
-              <span className="text-[10px] font-bold text-slate-500">ماتریس انطباق:</span>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${item.quadrantBadgeClass}`}>
-                {item.quadrantLabel}
-              </span>
-            </div>
-            {item.isHotspot && (
-              <div id="charts-view-div-11" className="flex items-center gap-1.5 text-[10px] text-rose-700 font-bold bg-rose-50 border border-rose-200 px-2 py-1 rounded-md">
-                <Flame className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                <span>کانون بحران حاد منطقه {context.selectedLocation.city} (نیازمند اولویت ۱ بودجه)</span>
-              </div>
-            )}
-            <p className="text-[10px] text-slate-400 text-center pt-0.5">
-              💡 برای بررسی دقیق‌تر روی حباب کلیک کنید
-            </p>
+          <div>
+            <span className="text-slate-500 block text-[10px]">مبلغ متناظر</span>
+            <Num {...formatMoneyParts(item.activeBudgetToman)} className="font-black text-emerald-700" />
           </div>
         </div>
-      );
-    }
-    return null;
+
+        <div className="space-y-1 pt-1.5 border-t border-slate-100">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-bold text-slate-500">ماتریس انطباق:</span>
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${item.quadrantBadgeClass}`}>
+              {item.quadrantLabel}
+            </span>
+          </div>
+          {item.isHotspot ? (
+            <div className="flex items-center gap-1.5 text-[10px] text-rose-700 font-bold bg-rose-50 border border-rose-200 px-2 py-1 rounded-md">
+              <Flame className="w-3.5 h-3.5 text-rose-500 shrink-0" aria-hidden="true" />
+              <span>کانون بحران حاد منطقه {selectedLocation.city} — نیازمند اولویت بودجه</span>
+            </div>
+          ) : null}
+          <p className="text-[10px] text-slate-400 text-center pt-0.5">
+            برای تحلیل تفصیلی روی حباب کلیک کنید
+          </p>
+        </div>
+      </TooltipShell>
+    );
+  };
+
+  const PrevalenceTooltip = ({ active, payload, label }: any) => {
+    if (!active || !payload?.length) return null;
+    const point = payload[0].payload;
+    return (
+      <TooltipShell>
+        <TooltipHeading title={point.fullTitle ?? label} meta={point.category} />
+        {payload.map((entry: any) => (
+          <TooltipRow key={entry.dataKey} label={entry.name} color={entry.color ?? entry.stroke}>
+            <Num value={formatPercent(Number(entry.value) || 0)} />
+          </TooltipRow>
+        ))}
+        <div className="pt-1 text-[11px] text-slate-500 leading-relaxed">
+          هر ستون یک سطح سنجش است؛ بالاتر بودن «کانون محلی» از «میانگین کشوری» یعنی آسیب در این
+          محدوده از الگوی ملی شدیدتر است.
+        </div>
+      </TooltipShell>
+    );
+  };
+
+  const AllocationMoneyTooltip = ({ active, payload }: any) => {
+    if (!active || !payload?.length) return null;
+    const point = payload[0].payload;
+    const deltaToman = point.recommendedAmountToman - point.amountToman;
+    return (
+      <TooltipShell>
+        <TooltipHeading title={point.title} meta={point.category} color={point.color} />
+        <TooltipRow label="مبلغ تخصیص فعلی" color="#2563eb">
+          <Num {...formatMoneyParts(point.amountToman)} />
+        </TooltipRow>
+        <TooltipRow label="مبلغ پیشنهاد هوشمند" color="#9333ea">
+          <Num {...formatMoneyParts(point.recommendedAmountToman)} />
+        </TooltipRow>
+        <TooltipRow label="اختلاف">
+          <Num
+            value={`${deltaToman >= 0 ? '+' : '\u2212'}${formatHemmat(Math.abs(deltaToman), 2)}`}
+            unit="همت"
+          />
+        </TooltipRow>
+        <TooltipRow label="سهم فعلی / پیشنهادی">
+          <Num value={`${formatPercent(point.value)} / ${formatPercent(point.recommendedPct)}`} />
+        </TooltipRow>
+      </TooltipShell>
+    );
+  };
+
+  const AllocationShareTooltip = ({ active, payload }: any) => {
+    if (!active || !payload?.length) return null;
+    const point = payload[0].payload;
+    const share = allocationRows.reduce((sum, row) => sum + row.value, 0);
+    const shareOfTotal = share > 0 ? (point.value / share) * 100 : 0;
+    return (
+      <TooltipShell>
+        <TooltipHeading title={point.title} meta={point.category} color={point.color} />
+        <TooltipRow label="سهم مصوب" color={point.color}>
+          <Num value={formatPercent(point.value)} />
+        </TooltipRow>
+        <TooltipRow label="مبلغ مصوب">
+          <Num {...formatMoneyParts(point.amountToman)} />
+        </TooltipRow>
+        <TooltipRow label="سهم از مجموع تخصیص">
+          <Num value={formatPercent(shareOfTotal)} />
+        </TooltipRow>
+      </TooltipShell>
+    );
   };
 
   return (
-    <div id="charts-view-div-12" className="space-y-6">
+    <div id="charts-view-root" className="space-y-6">
       <PageHeader
         id="charts-view-page-header"
         icon={BarChart3}
-        title="نمودارها و تحلیل زنده تخصیص"
-        subtitle="نمودار حبابی ارتباط شاخص محرومیت با تخصیص بودجه و تحلیل زنده جریان اعتبارات"
+        title="نمودارها و تحلیل تخصیص"
+        subtitle="آیا اعتبارات همان‌جایی نشسته که آسیب هست؟ تحلیل ماتریسی محرومیت و سهم بودجه، فراگیری چهارسطحی و ترکیب سرفصل‌ها"
         tone="text-indigo-600"
-      />
+      >
+        <button
+          type="button"
+          onClick={onApplySmartRecommendations}
+          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-bold text-xs transition-colors cursor-pointer"
+        >
+          <Sparkles className="w-4 h-4" aria-hidden="true" />
+          <span>اعمال پیشنهاد هوشمند AI</span>
+        </button>
 
-      {/* ========================================================================= */}
-      {/* 1. FEATURED ANALYTICAL BUBBLE CHART: DEPRIVATION INDEX VS BUDGET ALLOCATION */}
-      {/* ========================================================================= */}
-      <div id="charts-view-div-13" className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
-        
-        {/* Header & Controls Toolbar */}
-        <div id="charts-view-header-controls-toolbar" className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-          <div id="charts-view-header-controls-toolbar-2">
-            <div id="charts-view-header-controls-toolbar-3" className="flex items-center gap-2 flex-wrap">
-              <div id="charts-view-header-controls-toolbar-4" className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-blue-600 text-white flex items-center justify-center shadow-xs">
-                <CircleDot className="w-4 h-4 text-cyan-200" />
-              </div>
-              <div id="charts-view-header-controls-toolbar-5">
-                <h3 className="font-black text-slate-900 text-base">
-                  نمودار حبابی ماتریس محرومیت و تخصیص بودجه (Bubble Chart)
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  ارتباط بصری دو‌بعدی بین شدت آسیب‌های منطقه (محور افقی) و درصد بودجه مصوب (محور عمودی) • اندازه حباب = مبلغ بودجه (همت)
-                </p>
-              </div>
-            </div>
-          </div>
+        <button
+          type="button"
+          onClick={onNavigateToDashboard}
+          title="رفتن به داشبورد ملی"
+          className="flex items-center gap-2 bg-transparent hover:bg-slate-100 text-slate-700 px-4 py-2 rounded-xl font-bold text-xs border border-slate-300 transition-colors cursor-pointer"
+        >
+          <span>داشبورد</span>
+          <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" aria-hidden="true" />
+        </button>
+      </PageHeader>
 
-          {/* Interactive Toggle Controls */}
-          <div id="charts-view-interactive-toggle-controls" className="flex items-center gap-2 flex-wrap">
-            {/* Y-Axis Metric Switcher */}
-            <div id="charts-view-y-axis-metric-switcher" className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
+      {/* ======================================================================= */}
+      {/* TOOLBAR — the scope and the two figures that describe the whole page    */}
+      {/* ======================================================================= */}
+      <div
+        id="charts-view-toolbar"
+        className="bg-white rounded-2xl px-4 py-3 border border-slate-200 flex flex-wrap items-center gap-x-3 gap-y-2"
+      >
+        <span
+          id="charts-view-toolbar-scope"
+          className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-bold text-slate-700"
+        >
+          <MapPin className="w-3.5 h-3.5 text-emerald-600" aria-hidden="true" />
+          محدوده فعال: {selectedLocation.province} — {selectedLocation.county}
+        </span>
+
+        <span
+          id="charts-view-toolbar-share-total"
+          className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-[11px] font-bold ${
+            allocationTotals.balanced
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+              : 'border-amber-200 bg-amber-50 text-amber-800'
+          }`}
+          title={
+            allocationTotals.balanced
+              ? 'مجموع سهم سرفصل‌ها تراز است'
+              : 'مجموع سهم سرفصل‌ها با ۱۰۰٪ اختلاف دارد؛ از تراز خودکار در ابزار شبیه‌سازی استفاده کنید'
+          }
+        >
+          {allocationTotals.balanced ? (
+            <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+          ) : (
+            <AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" />
+          )}
+          جمع سهم‌ها:
+          <Num value={formatPercent(allocationTotals.sumPct, { fractionDigits: 1 })} />
+        </span>
+
+        <span
+          id="charts-view-toolbar-ai-gap"
+          className="flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-2.5 py-1.5 text-[11px] font-bold text-indigo-800"
+          title="میانگین فاصله سهم مصوب هر سرفصل از پیشنهاد الگوریتم هوشمند"
+        >
+          <Gauge className="w-3.5 h-3.5" aria-hidden="true" />
+          انحراف میانگین از پیشنهاد هوشمند:
+          <Num
+            value={`${toPersianDigits(allocationTotals.meanAbsDeviation.toFixed(1))} واحد درصد`}
+          />
+        </span>
+
+        <span
+          id="charts-view-toolbar-last-change"
+          className="ms-auto flex items-center gap-1.5 text-[11px] text-slate-500"
+        >
+          {lastSyncLog ? (
+            <>
+              <span className="relative flex h-2 w-2" aria-hidden="true">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              </span>
+              آخرین تغییر {lastSyncLog.time} — {shortLabel(lastSyncLog.title, 24)}
+            </>
+          ) : (
+            <>
+              <span className="w-2 h-2 rounded-full bg-slate-300" aria-hidden="true" />
+              در این نشست تغییری در تخصیص ثبت نشده است
+            </>
+          )}
+        </span>
+
+        {/* Transient confirmation of a live change; disappears on its own. */}
+        {syncNotice ? (
+          <p
+            id="charts-view-toolbar-sync-notice"
+            role="status"
+            className="w-full text-[11px] text-indigo-700 bg-indigo-50/70 border border-indigo-100 rounded-xl px-2.5 py-1.5"
+          >
+            {syncNotice}
+          </p>
+        ) : null}
+      </div>
+
+      {/* ======================================================================= */}
+      {/* 1. ALLOCATION MATRIX — severity against share of budget                 */}
+      {/* ======================================================================= */}
+      <ChartCard
+        id="charts-view-allocation-matrix"
+        icon={CircleDot}
+        tone="text-indigo-600"
+        title="ماتریس تخصیص: شدت آسیب منطقه در برابر سهم بودجه"
+        subtitle="محور افقی شاخص محرومیت محلی، محور عمودی سهم بودجه و قطر حباب حجم اعتبار (همت) — برای تحلیل هر سرفصل روی حباب آن بزنید"
+        control={
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Which share the vertical axis reads */}
+            <div
+              id="charts-view-matrix-metric-switcher"
+              role="group"
+              aria-label="معیار محور عمودی"
+              className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold"
+            >
               <button
                 type="button"
                 onClick={() => setYAxisMetric('CURRENT')}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
+                aria-pressed={yAxisMetric === 'CURRENT'}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                   yAxisMetric === 'CURRENT'
                     ? 'bg-white text-indigo-700 shadow-xs font-black'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                تخصیص فعلی کاربر
+                تخصیص فعلی
               </button>
               <button
                 type="button"
                 onClick={() => setYAxisMetric('RECOMMENDED')}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition-all ${
+                aria-pressed={yAxisMetric === 'RECOMMENDED'}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                   yAxisMetric === 'RECOMMENDED'
                     ? 'bg-white text-purple-700 shadow-xs font-black'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <Sparkles className="w-3 h-3 text-amber-500" />
+                <Sparkles className="w-3 h-3 text-amber-500" aria-hidden="true" />
                 <span>پیشنهاد هوشمند AI</span>
               </button>
             </div>
 
-            {/* Quick Filter Selector */}
-            <div id="charts-view-quick-filter-selector" className="flex items-center gap-1 text-xs">
+            {/* Which rows the matrix draws */}
+            <div
+              id="charts-view-matrix-filters"
+              role="group"
+              aria-label="فیلتر سرفصل‌ها"
+              className="flex items-center gap-1 text-xs"
+            >
               <button
                 type="button"
                 onClick={() => setBubbleFilter('ALL')}
-                className={`px-2.5 py-1.5 rounded-lg border font-bold transition-all ${
+                aria-pressed={bubbleFilter === 'ALL'}
+                className={`px-2.5 py-1.5 rounded-lg border font-bold transition-all cursor-pointer ${
                   bubbleFilter === 'ALL'
                     ? 'bg-slate-800 text-white border-slate-700'
                     : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
@@ -423,325 +710,159 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
               <button
                 type="button"
                 onClick={() => setBubbleFilter('HOTSPOTS')}
-                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border font-bold transition-all ${
+                aria-pressed={bubbleFilter === 'HOTSPOTS'}
+                title="سرفصل‌هایی با آسیب بالاتر از مرز بحران محلی"
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border font-bold transition-all cursor-pointer ${
                   bubbleFilter === 'HOTSPOTS'
                     ? 'bg-rose-600 text-white border-rose-500'
                     : 'bg-white text-rose-700 border-rose-200 hover:bg-rose-50'
                 }`}
               >
-                <Flame className="w-3 h-3 text-rose-400" />
-                <span>کانون‌های بحران</span>
+                <Flame className="w-3 h-3" aria-hidden="true" />
+                <span>کانون‌های بحران ({toPersianDigits(bubbleItems.filter((b) => b.deprivationIndex >= SEVERITY_THRESHOLD).length)})</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setBubbleFilter('DEFICITS')}
-                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border font-bold transition-all ${
+                aria-pressed={bubbleFilter === 'DEFICITS'}
+                title="آسیب بالا ولی سهم بودجه کمتر از مرز تخصیص متعادل"
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border font-bold transition-all cursor-pointer ${
                   bubbleFilter === 'DEFICITS'
                     ? 'bg-amber-600 text-white border-amber-500'
                     : 'bg-white text-amber-700 border-amber-200 hover:bg-amber-50'
                 }`}
-                title="اولویت‌هایی با آسیب بالا ولی بودجه کمتر از ۹٪"
               >
-                <AlertTriangle className="w-3 h-3 text-amber-400" />
+                <AlertTriangle className="w-3 h-3" aria-hidden="true" />
                 <span>کسری بودجه ({toPersianDigits(quadrantStats.deficit)})</span>
               </button>
             </div>
           </div>
+        }
+      >
+        {/* Quadrant tally — a compact strip: the chart is the subject, this is its key */}
+        <div
+          id="charts-view-matrix-quadrant-strip"
+          className="flex flex-wrap items-center gap-2 text-[11px]"
+        >
+          <span
+            id="charts-view-matrix-quadrant-covered"
+            title="آسیب بالای مرز بحران و بودجه مکفی (≥ ۸.۵٪)"
+            className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50/70 px-2 py-1 font-bold text-emerald-800"
+          >
+            پوشش کانون بحران
+            <Num value={toPersianDigits(quadrantStats.covered)} className="bg-white px-1.5 rounded border border-emerald-200" />
+          </span>
+          <span
+            id="charts-view-matrix-quadrant-deficit"
+            title="آسیب بالای مرز بحران و بودجه کمتر از ۸.۵٪"
+            className="flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50/70 px-2 py-1 font-bold text-rose-800"
+          >
+            <AlertTriangle className="w-3 h-3" aria-hidden="true" />
+            کسری بودجه
+            <Num value={toPersianDigits(quadrantStats.deficit)} className="bg-white px-1.5 rounded border border-rose-200" />
+          </span>
+          <span
+            id="charts-view-matrix-quadrant-preventative"
+            title="آسیب زیر مرز بحران و بودجه مکفی"
+            className="flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50/70 px-2 py-1 font-bold text-blue-800"
+          >
+            سرمایه‌گذاری پیشگیرانه
+            <Num value={toPersianDigits(quadrantStats.preventative)} className="bg-white px-1.5 rounded border border-blue-200" />
+          </span>
+          <span
+            id="charts-view-matrix-quadrant-stable"
+            title="آسیب زیر مرز بحران و بودجه متناسب"
+            className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 font-bold text-slate-700"
+          >
+            مدیریت پایدار
+            <Num value={toPersianDigits(quadrantStats.stable)} className="bg-white px-1.5 rounded border border-slate-200" />
+          </span>
+          <span className="text-slate-400">
+            نمایش {toPersianDigits(filteredBubbles.length)} از {toPersianDigits(bubbleItems.length)} سرفصل
+          </span>
         </div>
 
-        {/* 4 Quadrants Summary KPI Badges */}
-        <div id="charts-view-4-quadrants-summary-kpi-badges" className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
-          <div id="charts-view-4-quadrants-summary-kpi-badges-2" className="p-2.5 rounded-xl border border-emerald-200 bg-emerald-50/70 flex items-center justify-between">
-            <div id="charts-view-4-quadrants-summary-kpi-badges-3">
-              <span className="text-[10px] font-bold text-emerald-900 block">پوشش بهینه کانون بحران</span>
-              <span className="text-[9px] text-emerald-700">آسیب بالا + بودجه مکفی (≥۹٪)</span>
-            </div>
-            <span className="text-sm font-black text-emerald-800 font-mono bg-white px-2 py-0.5 rounded-lg border border-emerald-200">
-              {toPersianDigits(quadrantStats.covered)}
-            </span>
-          </div>
-
-          <div id="charts-view-4-quadrants-summary-kpi-badges-4" className="p-2.5 rounded-xl border border-rose-200 bg-rose-50/70 flex items-center justify-between">
-            <div id="charts-view-4-quadrants-summary-kpi-badges-5">
-              <span className="text-[10px] font-bold text-rose-900 block flex items-center gap-1">
-                <AlertTriangle className="w-3 h-3 text-rose-600" />
-                هشدار کسری بودجه
-              </span>
-              <span className="text-[9px] text-rose-700">آسیب بالا + بودجه کم (&lt;۹٪)</span>
-            </div>
-            <span className="text-sm font-black text-rose-800 font-mono bg-white px-2 py-0.5 rounded-lg border border-rose-200">
-              {toPersianDigits(quadrantStats.deficit)}
-            </span>
-          </div>
-
-          <div id="charts-view-4-quadrants-summary-kpi-badges-6" className="p-2.5 rounded-xl border border-blue-200 bg-blue-50/70 flex items-center justify-between">
-            <div id="charts-view-4-quadrants-summary-kpi-badges-7">
-              <span className="text-[10px] font-bold text-blue-900 block">سرمایه‌گذاری پیشگیرانه</span>
-              <span className="text-[9px] text-blue-700">آسیب کنترل‌شده + بودجه بالا</span>
-            </div>
-            <span className="text-sm font-black text-blue-800 font-mono bg-white px-2 py-0.5 rounded-lg border border-blue-200">
-              {toPersianDigits(quadrantStats.preventative)}
-            </span>
-          </div>
-
-          <div id="charts-view-4-quadrants-summary-kpi-badges-8" className="p-2.5 rounded-xl border border-slate-200 bg-slate-50/70 flex items-center justify-between">
-            <div id="charts-view-4-quadrants-summary-kpi-badges-9">
-              <span className="text-[10px] font-bold text-slate-800 block">مدیریت متعادل و پایدار</span>
-              <span className="text-[9px] text-slate-600">آسیب عادی + بودجه متناسب</span>
-            </div>
-            <span className="text-sm font-black text-slate-800 font-mono bg-white px-2 py-0.5 rounded-lg border border-slate-200">
-              {toPersianDigits(quadrantStats.stable)}
-            </span>
-          </div>
-        </div>
-
-        {/* Live Synchronization Status & Quick Adjuster Bar */}
-        <div id="charts-view-live-synchronization-status" className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-xl bg-gradient-to-r from-emerald-50/90 via-indigo-50/70 to-slate-50 border border-emerald-200/80 text-xs">
-          <div id="charts-view-live-synchronization-status-2" className="flex items-center gap-2.5 flex-wrap">
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-            </span>
-            <div id="charts-view-live-synchronization-status-3" className="flex items-center gap-1.5">
-              <span className="font-black text-emerald-950">همگام‌سازی زنده فعال:</span>
-              <span className="text-slate-600 font-medium">
-                {syncNotice || 'اتصال بلادرنگ به تخصیص بودجه داشبورد برقرار است. تغییر درصدها، اندازه و ارتفاع حباب‌ها را متحرک می‌کند.'}
-              </span>
-            </div>
-            {lastSyncLog && (
-              <span className="text-[10px] bg-white px-2 py-0.5 rounded-md border border-emerald-200 text-emerald-800 font-bold font-mono">
-                آخرین تغییر: {lastSyncLog.time}
-              </span>
-            )}
-          </div>
-
-          <div id="charts-view-live-synchronization-status-4" className="flex items-center gap-2 flex-wrap">
-            {/* Replay Animation */}
-            <button
-              type="button"
-              onClick={handleReplayAnimation}
-              className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 shadow-2xs transition-all active:scale-95"
-              title="پخش مجدد انیمیشن پرواز و تغییر اندازه حباب‌ها"
-            >
-              <Play className="w-3 h-3 text-indigo-600 fill-indigo-600" />
-              <span>بازپخش انیمیشن</span>
-            </button>
-
-            {/* Live Sliders Toggle */}
-            {onPercentageChange && (
-              <button
-                type="button"
-                onClick={() => setShowLiveAdjuster(!showLiveAdjuster)}
-                className={`flex items-center gap-1 text-[11px] font-bold px-3 py-1.5 rounded-lg border transition-all active:scale-95 ${
-                  showLiveAdjuster
-                    ? 'bg-indigo-600 text-white border-indigo-700 shadow-sm'
-                    : 'bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-50'
-                }`}
-              >
-                <Sliders className="w-3 h-3" />
-                <span>تنظیم زنده اسلایدرها</span>
-                <span className={`w-2 h-2 rounded-full ${showLiveAdjuster ? 'bg-white' : 'bg-indigo-600'}`} />
-              </button>
-            )}
-
-            {/* Quick Link to Dashboard */}
-            {onNavigateToDashboard && (
-              <button
-                type="button"
-                onClick={onNavigateToDashboard}
-                className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-                title="رفتن به جدول اصلی تخصیص بودجه در تب داشبورد"
-              >
-                <span>جدول داشبورد</span>
-                <ArrowRight className="w-3 h-3" />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Collapsible Live Budget Allocation Quick Adjuster Tray */}
-        {showLiveAdjuster && onPercentageChange && (
-          <div id="charts-view-collapsible-live-budget" className="p-4 rounded-xl bg-slate-50 border border-indigo-200 space-y-3 animate-in fade-in zoom-in-95 duration-200 text-xs">
-            <div id="charts-view-collapsible-live-budget-2" className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200">
-              <div id="charts-view-collapsible-live-budget-3" className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-amber-500" />
-                <span className="font-black text-slate-800">
-                  شبیه‌ساز و کنترل زنده بودجه (Live Budget Slider Dock)
-                </span>
-                <span className="text-[10px] text-slate-500">
-                  با تغییر هر اسلایدر، حباب مربوطه در نمودار زیر بلافاصله به بالا/پایین حرکت کرده و اندازه‌اش تغییر می‌کند.
-                </span>
-              </div>
-              <div id="charts-view-collapsible-live-budget-4" className="flex items-center gap-1.5 flex-wrap">
-                {onAutoRebalance && (
-                  <button
-                    type="button"
-                    onClick={onAutoRebalance}
-                    className="flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded bg-white border border-slate-200 hover:bg-slate-100 text-slate-700"
-                  >
-                    <RefreshCw className="w-3 h-3 text-indigo-600" />
-                    <span>تراز خودکار ۱۰۰٪</span>
-                  </button>
-                )}
-                {onApplySmartRecommendations && (
-                  <button
-                    type="button"
-                    onClick={onApplySmartRecommendations}
-                    className="flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded bg-purple-600 hover:bg-purple-700 text-white shadow-2xs"
-                  >
-                    <Sparkles className="w-3 h-3" />
-                    <span>اعمال هوشمند AI</span>
-                  </button>
-                )}
-                {onResetToDefault && (
-                  <button
-                    type="button"
-                    onClick={onResetToDefault}
-                    className="p-1 rounded bg-white border border-slate-200 text-slate-500 hover:text-slate-800"
-                    title="بازنشانی"
-                  >
-                    <RotateCcw className="w-3 h-3" />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Sliders Grid */}
-            <div id="charts-view-sliders-grid" className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {priorities.map((p) => {
-                const currentVal = currentPercentages[p.id] ?? p.defaultPercentage;
-                const recVal = recommendations.scores[p.id] ?? p.defaultPercentage;
-                const bubbleInfo = bubbleItems.find((b) => b.id === p.id);
-                const isRecentlyChanged = recentChanges[p.id] !== undefined;
-
-                return (
-                  <div
-                    id={`charts-view-sliders-grid-2-${p.id}`}
-                    key={`adjuster-${p.id}`}
-                    className={`p-2.5 rounded-lg border transition-all ${
-                      isRecentlyChanged
-                        ? 'bg-emerald-50/80 border-emerald-300 ring-2 ring-emerald-400/40 shadow-sm'
-                        : selectedBubbleId === p.id
-                        ? 'bg-indigo-50/70 border-indigo-300 shadow-2xs'
-                        : 'bg-white border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
-                    <div id={`charts-view-sliders-grid-3-${p.id}`} className="flex items-center justify-between mb-1.5">
-                      <div id={`charts-view-sliders-grid-4-${p.id}`} className="flex items-center gap-1.5 truncate">
-                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: bubbleInfo?.color || '#6366f1' }} />
-                        <span className="font-bold text-slate-900 truncate" title={p.title}>
-                          کد {toPersianDigits(p.code)} - {p.title}
-                        </span>
-                      </div>
-                      <span className="font-mono font-black text-indigo-700 shrink-0 bg-slate-100 px-1.5 py-0.5 rounded text-[11px]">
-                        {toPersianDigits(currentVal)}٪
-                      </span>
-                    </div>
-
-                    <div id={`charts-view-sliders-grid-5-${p.id}`} className="flex items-center gap-2">
-                      <input
-                        type="range"
-                        min="0"
-                        max="24"
-                        step="0.5"
-                        value={currentVal}
-                        onChange={(e) => onPercentageChange(p.id, parseFloat(e.target.value))}
-                        className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-                      />
-                    </div>
-
-                    <div id={`charts-view-sliders-grid-6-${p.id}`} className="flex items-center justify-between text-[10px] text-slate-400 mt-1 font-mono">
-                      <span>شدت آسیب: {toPersianDigits(bubbleInfo?.deprivationIndex || 0)}٪</span>
-                      <span>پیشنهاد AI: {toPersianDigits(recVal)}٪</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Main Scatter / Bubble Chart Canvas */}
-        <div id="charts-view-main-scatter-bubble-chart-canvas" className="h-[clamp(360px,55vh,540px)] w-full relative">
+        {/* Matrix canvas */}
+        <div
+          id="charts-view-matrix-canvas"
+          className="h-[clamp(360px,52vh,520px)] w-full relative"
+          dir="ltr"
+        >
           <ResponsiveContainer width="100%" height="100%">
-            <ScatterChart margin={{ top: 25, right: 30, bottom: 40, left: 20 }}>
+            <ScatterChart margin={{ top: 25, right: 30, bottom: 40, left: 24 }}>
               <CartesianGrid strokeDasharray="3 3" vertical stroke="#f1f5f9" />
-              
-              {/* X Axis: Deprivation & Harm Index (0 to 80%) */}
-              <XAxis 
-                type="number" 
-                dataKey="deprivationIndex" 
-                name="شاخص محرومیت و آسیب محلی" 
+
+              <XAxis
+                type="number"
+                dataKey="deprivationIndex"
+                name="شاخص محرومیت و آسیب محلی"
                 domain={[10, 80]}
                 unit="٪"
                 tickFormatter={(v) => toPersianDigits(v) + '٪'}
                 tick={{ fontSize: 11, fill: '#64748b' }}
-                label={{ 
-                  value: '← نرخ آسیب و محرومیت در منطقه (شاخص ۱۰۰) →', 
-                  position: 'bottom', 
-                  offset: 20, 
-                  fontSize: 11, 
+                label={{
+                  value: 'شدت آسیب و محرومیت در منطقه (شاخص ۱۰۰)',
+                  position: 'bottom',
+                  offset: 20,
+                  fontSize: 11,
                   fill: '#475569',
-                  fontWeight: 'bold'
+                  fontWeight: 'bold',
                 }}
               />
 
-              {/* Y Axis: Budget Allocation Percentage */}
-              <YAxis 
-                type="number" 
-                dataKey="activePct" 
-                name="درصد تخصیص بودجه" 
+              <YAxis
+                type="number"
+                dataKey="activePct"
+                name="درصد تخصیص بودجه"
                 domain={[0, 24]}
                 unit="٪"
                 tickFormatter={(v) => toPersianDigits(v) + '٪'}
                 tick={{ fontSize: 11, fill: '#64748b' }}
-                label={{ 
-                  value: yAxisMetric === 'CURRENT' ? 'سهم بودجه فعلی (٪)' : 'سهم پیشنهادی AI (٪)', 
-                  angle: -90, 
-                  position: 'insideLeft', 
-                  offset: 0, 
-                  fontSize: 11, 
+                label={{
+                  value: yAxisMetric === 'CURRENT' ? 'سهم بودجه فعلی (٪)' : 'سهم پیشنهادی AI (٪)',
+                  angle: -90,
+                  position: 'insideLeft',
+                  offset: 4,
+                  fontSize: 11,
                   fill: '#475569',
-                  fontWeight: 'bold'
+                  fontWeight: 'bold',
                 }}
               />
 
-              {/* Z Axis: Controls Bubble Diameter proportional to Budget in Billion Toman */}
-              <ZAxis 
-                type="number" 
-                dataKey="bubbleZMetric" 
-                range={[160, 1100]} 
-                name="مبلغ بودجه" 
+              {/* Bubble diameter carries the ريال amount, in همت */}
+              <ZAxis
+                type="number"
+                dataKey="bubbleZMetric"
+                range={[160, 1100]}
+                name="مبلغ بودجه"
                 unit=" همت"
               />
 
-              {/* Quadrant Benchmark Reference Lines */}
-              <ReferenceLine x={45} stroke="#f43f5e" strokeDasharray="4 4" strokeWidth={1.5}>
-                <Label 
-                  value="مرز بحران آسیب محلی (۴۵٪)" 
-                  position="insideTopRight" 
-                  fill="#e11d48" 
-                  fontSize={10} 
+              <ReferenceLine x={SEVERITY_THRESHOLD} stroke="#f43f5e" strokeDasharray="4 4" strokeWidth={1.5}>
+                <Label
+                  value={`مرز بحران آسیب محلی (${toPersianDigits(SEVERITY_THRESHOLD)}٪)`}
+                  position="insideTopRight"
+                  fill="#e11d48"
+                  fontSize={10}
                   fontWeight="bold"
                 />
               </ReferenceLine>
 
-              <ReferenceLine y={8.5} stroke="#6366f1" strokeDasharray="4 4" strokeWidth={1.5}>
-                <Label 
-                  value="میانگین تخصیص متعادل (۸.۵٪)" 
-                  position="insideTopLeft" 
-                  fill="#4f46e5" 
-                  fontSize={10} 
+              <ReferenceLine y={BALANCED_ALLOCATION_PCT} stroke="#6366f1" strokeDasharray="4 4" strokeWidth={1.5}>
+                <Label
+                  value={`مرز تخصیص متعادل (${toPersianDigits(BALANCED_ALLOCATION_PCT)}٪)`}
+                  position="insideTopLeft"
+                  fill="#4f46e5"
+                  fontSize={10}
                   fontWeight="bold"
                 />
               </ReferenceLine>
 
-              <Tooltip content={<CustomBubbleTooltip />} />
+              <Tooltip content={<BubbleTooltip />} />
 
-              {/* Bubbles Scatter with animated SVG custom shape */}
-              <Scatter 
-                name="سرفصل‌های مسئولیت اجتماعی" 
+              <Scatter
+                name="سرفصل‌های مسئولیت اجتماعی"
                 data={filteredBubbles}
                 isAnimationActive={false}
                 shape={(pointProps: any) => {
@@ -756,13 +877,13 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
                   const isPositive = delta !== undefined && delta > 0;
 
                   return (
-                    <g 
+                    <g
                       key={`bubble-node-${payload.id}`}
                       className="cursor-pointer"
                       onClick={() => setSelectedBubbleId(selectedBubbleId === payload.id ? null : payload.id)}
                     >
-                      {/* Animated Ripple / Pulse Halo for recently synchronized items */}
-                      {change && (
+                      {/* Halo marking a recently changed bubble */}
+                      {change ? (
                         <circle
                           cx={cx}
                           cy={cy}
@@ -777,9 +898,8 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
                             transition: 'cx 750ms cubic-bezier(0.34, 1.4, 0.64, 1), cy 750ms cubic-bezier(0.34, 1.4, 0.64, 1)'
                           }}
                         />
-                      )}
+                      ) : null}
 
-                      {/* Core Bubble with fluid CSS transitions on cx, cy, and radius */}
                       <circle
                         cx={cx}
                         cy={cy}
@@ -794,8 +914,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
                         }}
                       />
 
-                      {/* Center Percentage Label inside the bubble */}
-                      {radius >= 13 && (
+                      {radius >= 13 ? (
                         <text
                           x={cx}
                           y={cy + 4}
@@ -811,10 +930,9 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
                         >
                           {toPersianDigits(payload.activePct)}٪
                         </text>
-                      )}
+                      ) : null}
 
-                      {/* Floating Delta Badge showing live change amount from Dashboard */}
-                      {change && delta !== undefined && Math.abs(delta) >= 0.05 && (
+                      {change && delta !== undefined && Math.abs(delta) >= 0.05 ? (
                         <g
                           style={{
                             transform: `translate(${cx}px, ${cy - radius - 12}px)`,
@@ -845,7 +963,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
                             {isPositive ? `+${toPersianDigits(delta)}` : toPersianDigits(delta)}٪
                           </text>
                         </g>
-                      )}
+                      ) : null}
                     </g>
                   );
                 }}
@@ -855,81 +973,101 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
           </ResponsiveContainer>
         </div>
 
-        {/* Visual Map Legend & Notes */}
-        <div id="charts-view-visual-map-legend-notes" className="flex flex-wrap items-center justify-between gap-3 pt-2 text-[11px] text-slate-500 border-t border-slate-100">
-          <div id="charts-view-visual-map-legend-notes-2" className="flex items-center gap-4 flex-wrap">
-            <span className="font-bold text-slate-700">راهنمای بصری حباب‌ها:</span>
-            <div id="charts-view-visual-map-legend-notes-3" className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-full bg-rose-600 inline-block shadow-xs" />
-              <span>کانون بحران محلی پیرامونی</span>
-            </div>
-            <div id="charts-view-visual-map-legend-notes-4" className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-full bg-purple-600 inline-block shadow-xs" />
-              <span>فراگیری بحرانی همه‌جانبه</span>
-            </div>
-            <div id="charts-view-visual-map-legend-notes-5" className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-slate-400 inline-block" />
-              <span className="w-4 h-4 rounded-full bg-slate-400 inline-block" />
-              <span>قطر حباب = حجم ریالی بودجه مصوب</span>
-            </div>
-          </div>
-
-          <span className="text-[10px] text-indigo-600 font-bold">
-            💡 با کلیک روی هر حباب، تحلیل تفصیلی و راهکار رفع انحراف را در کادر زیر مشاهده کنید.
+        {/* Legend */}
+        <div
+          id="charts-view-matrix-legend"
+          className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-3 border-t border-slate-100 text-[11px] font-semibold text-slate-600"
+        >
+          <span className="text-slate-700">راهنمای بصری:</span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-full bg-rose-600" aria-hidden="true" />
+            کانون بحران محلی
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-full bg-purple-600" aria-hidden="true" />
+            فراگیری بحرانی همه‌جانبه
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-slate-400" aria-hidden="true" />
+            <span className="w-4 h-4 rounded-full bg-slate-400" aria-hidden="true" />
+            قطر حباب = حجم اعتبار مصوب (همت)
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-4 border-t-2 border-dashed border-rose-500" aria-hidden="true" />
+            مرز بحران آسیب
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-4 border-t-2 border-dashed border-indigo-500" aria-hidden="true" />
+            مرز تخصیص متعادل
           </span>
         </div>
 
-        {/* Drill-down Detail Inspector Box */}
-        {activeSelectedBubble && (
-          <div id="charts-view-drill-down-detail-inspector-box" className="p-4 rounded-xl bg-gradient-to-r from-slate-50 to-indigo-50/40 border border-indigo-200 text-right text-xs dir-rtl space-y-3 animate-in fade-in duration-200">
-            <div id="charts-view-drill-down-detail-inspector-box-2" className="flex items-center justify-between border-b border-indigo-100 pb-2">
-              <div id="charts-view-drill-down-detail-inspector-box-3" className="flex items-center gap-2">
-                <span className="w-4 h-4 rounded-full shadow-xs" style={{ backgroundColor: activeSelectedBubble.color }} />
-                <span className="font-black text-slate-900 text-sm">
-                  تحلیل تخصصی: کد {toPersianDigits(activeSelectedBubble.code)} - {activeSelectedBubble.title}
+        {/* Drill-down inspector */}
+        {activeSelectedBubble ? (
+          <div
+            id="charts-view-matrix-inspector"
+            className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-3 animate-in fade-in duration-200"
+          >
+            <div
+              id="charts-view-matrix-inspector-header"
+              className="flex items-center justify-between gap-3 border-b border-slate-200 pb-2"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span
+                  className="w-3.5 h-3.5 rounded-full shrink-0"
+                  style={{ backgroundColor: activeSelectedBubble.color }}
+                  aria-hidden="true"
+                />
+                <span className="font-black text-slate-900 text-sm truncate">
+                  کد {toPersianDigits(activeSelectedBubble.code)} — {activeSelectedBubble.title}
                 </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700 shrink-0">
                   {activeSelectedBubble.category}
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedBubbleId(null)}
-                className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-white"
+                aria-label="بستن تحلیل"
+                className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-white shrink-0"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
 
-            <div id="charts-view-drill-down-detail-inspector-box-4" className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <div id="charts-view-drill-down-detail-inspector-box-5" className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
-                <span className="text-[10px] text-slate-500 block">شدت آسیب محلی {context.selectedLocation.city}</span>
-                <span className="text-base font-black text-rose-700 dir-rtl font-mono mt-0.5 block">
-                  {toPersianDigits(activeSelectedBubble.deprivationIndex)}٪
-                </span>
-                <span className="text-[10px] text-slate-400 block mt-0.5">
-                  کشور: {toPersianDigits(activeSelectedBubble.nationalSeverity)}٪ (ضریب LQ: {toPersianDigits(activeSelectedBubble.locationQuotient)})
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div className="bg-white p-3 rounded-lg border border-slate-200">
+                <span className="text-[10px] text-slate-500 block">شدت آسیب محلی {selectedLocation.city}</span>
+                <Num
+                  value={formatPercent(activeSelectedBubble.deprivationIndex)}
+                  className="text-base font-black text-risk-strong mt-0.5 block"
+                />
+                <span className="text-[10px] text-slate-500 block mt-0.5">
+                  میانگین کشور: <Num value={formatPercent(activeSelectedBubble.nationalSeverity)} /> — ضریب LQ:{' '}
+                  <Num value={toPersianDigits(activeSelectedBubble.locationQuotient)} />
                 </span>
               </div>
 
-              <div id="charts-view-drill-down-detail-inspector-box-6" className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
-                <span className="text-[10px] text-slate-500 block">سهم بودجه و مقایسه</span>
-                <div id="charts-view-drill-down-detail-inspector-box-7" className="flex items-baseline gap-2 mt-0.5">
-                  <span className="text-base font-black text-indigo-700 dir-rtl font-mono">
-                    فعلی: {toPersianDigits(activeSelectedBubble.currentPct)}٪
-                  </span>
-                  <span className="text-xs font-bold text-purple-700 dir-rtl font-mono">
-                    AI: {toPersianDigits(activeSelectedBubble.recommendedPct)}٪
-                  </span>
+              <div className="bg-white p-3 rounded-lg border border-slate-200">
+                <span className="text-[10px] text-slate-500 block">سهم بودجه و مقایسه با پیشنهاد هوشمند</span>
+                <div className="flex items-baseline gap-2 mt-0.5">
+                  <Num value={formatPercent(activeSelectedBubble.currentPct)} className="text-base font-black text-indigo-700" />
+                  <Num
+                    value={formatPercent(activeSelectedBubble.recommendedPct)}
+                    className="text-xs font-bold text-purple-700"
+                  />
                 </div>
-                <span className="text-[10px] text-slate-400 block mt-0.5">
-                  مبلغ: {formatCurrency(activeSelectedBubble.activeBudgetToman, 'TOMAN', true)}
+                <span className="text-[10px] text-slate-500 block mt-0.5">
+                  مبلغ:{' '}
+                  <Num {...formatMoneyParts(activeSelectedBubble.activeBudgetToman)} className="font-bold text-slate-700" />
                 </span>
               </div>
 
-              <div id="charts-view-drill-down-detail-inspector-box-8" className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs md:col-span-2">
+              <div className="bg-white p-3 rounded-lg border border-slate-200 md:col-span-2">
                 <span className="text-[10px] text-slate-500 block">موقعیت در ماتریس تصمیم‌گیری و توصیه اصلاحی</span>
-                <span className={`inline-block text-[10px] font-black px-2 py-0.5 rounded-md border mt-1 ${activeSelectedBubble.quadrantBadgeClass}`}>
+                <span
+                  className={`inline-block text-[10px] font-black px-2 py-0.5 rounded-md border mt-1 ${activeSelectedBubble.quadrantBadgeClass}`}
+                >
                   {activeSelectedBubble.quadrantLabel}
                 </span>
                 <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
@@ -938,48 +1076,199 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
               </div>
             </div>
           </div>
+        ) : (
+          <p className="text-[11px] text-slate-500">
+            روی هر حباب بزنید تا تحلیل تفصیلی همان سرفصل — شدت محلی، ضریب LQ، سهم پیشنهادی و توصیه
+            اصلاحی — در همین کادر باز شود.
+          </p>
         )}
+      </ChartCard>
 
+      {/* ======================================================================= */}
+      {/* 2. SIMULATION TOOLS — folded away; they change the allocation           */}
+      {/* ======================================================================= */}
+      <div
+        id="charts-view-simulation-panel"
+        className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden"
+      >
+        <button
+          type="button"
+          id="charts-view-simulation-toggle"
+          onClick={() => setShowSimulation(!showSimulation)}
+          aria-expanded={showSimulation}
+          aria-controls="charts-view-simulation-body"
+          className="w-full flex items-center gap-3 px-5 sm:px-6 py-4 text-start hover:bg-slate-50 transition-colors cursor-pointer"
+        >
+          <span className="p-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 shrink-0">
+            <Zap className="w-4 h-4" aria-hidden="true" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-bold text-sm text-slate-900">ابزار شبیه‌سازی تخصیص</span>
+            <span className="block text-xs text-slate-500 mt-0.5 leading-relaxed">
+              جابه‌جایی زنده سهم‌ها، تراز خودکار، اعمال پیشنهاد هوشمند و بازپخش انیمیشن حباب‌ها
+            </span>
+          </span>
+          {lastSyncLog ? (
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-500 shrink-0">
+              <Play className="w-3 h-3 text-indigo-600" aria-hidden="true" />
+              آخرین تغییر {lastSyncLog.time}
+            </span>
+          ) : null}
+          <ChevronDown
+            className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${showSimulation ? 'rotate-180' : ''}`}
+            aria-hidden="true"
+          />
+        </button>
+
+        {showSimulation ? (
+          <div
+            id="charts-view-simulation-body"
+            className="px-5 sm:px-6 pb-5 border-t border-slate-100 pt-4 space-y-4"
+          >
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <button
+                type="button"
+                onClick={handleReplayAnimation}
+                title="پخش مجدد انیمیشن جابه‌جایی و تغییر اندازه حباب‌ها"
+                className="flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 transition-colors cursor-pointer"
+              >
+                <Play className="w-3 h-3 text-indigo-600 fill-indigo-600" aria-hidden="true" />
+                <span>بازپخش انیمیشن</span>
+              </button>
+
+              {onAutoRebalance ? (
+                <button
+                  type="button"
+                  onClick={onAutoRebalance}
+                  className="flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer"
+                >
+                  <RefreshCw className="w-3 h-3 text-indigo-600" aria-hidden="true" />
+                  <span>تراز خودکار ۱۰۰٪</span>
+                </button>
+              ) : null}
+
+              {onApplySmartRecommendations ? (
+                <button
+                  type="button"
+                  onClick={onApplySmartRecommendations}
+                  className="flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white transition-colors cursor-pointer"
+                >
+                  <Sparkles className="w-3 h-3" aria-hidden="true" />
+                  <span>اعمال پیشنهاد هوشمند AI</span>
+                </button>
+              ) : null}
+
+              {onResetToDefault ? (
+                <button
+                  type="button"
+                  onClick={onResetToDefault}
+                  title="بازنشانی به وزن‌های پیش‌فرض"
+                  className="flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                >
+                  <RotateCcw className="w-3 h-3" aria-hidden="true" />
+                  <span>بازنشانی پیش‌فرض</span>
+                </button>
+              ) : null}
+
+              <span className="flex items-center gap-1.5 text-[11px] text-slate-500 ms-auto">
+                <Sliders className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
+                هر تغییر، حباب متناظر را در ماتریس بالا جابه‌جا می‌کند.
+              </span>
+            </div>
+
+            {onPercentageChange ? (
+              <div id="charts-view-simulation-sliders" className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {priorities.map((p) => {
+                  const currentVal = currentPercentages[p.id] ?? p.defaultPercentage;
+                  const recVal = recommendations.scores[p.id] ?? p.defaultPercentage;
+                  const bubbleInfo = bubbleItems.find((b) => b.id === p.id);
+                  const isRecentlyChanged = recentChanges[p.id] !== undefined;
+
+                  return (
+                    <div
+                      key={`adjuster-${p.id}`}
+                      className={`p-2.5 rounded-lg border transition-all ${
+                        isRecentlyChanged
+                          ? 'bg-emerald-50/80 border-emerald-300 ring-2 ring-emerald-400/40'
+                          : selectedBubbleId === p.id
+                          ? 'bg-indigo-50/70 border-indigo-300'
+                          : 'bg-white border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span
+                            className="w-2.5 h-2.5 rounded-full shrink-0"
+                            style={{ backgroundColor: bubbleInfo?.color || '#6366f1' }}
+                            aria-hidden="true"
+                          />
+                          <span className="text-[11px] font-bold text-slate-900 truncate" title={p.title}>
+                            کد {toPersianDigits(p.code)} — {p.title}
+                          </span>
+                        </div>
+                        <Num
+                          value={formatPercent(currentVal)}
+                          className="text-[11px] font-black text-indigo-700 shrink-0 bg-slate-100 px-1.5 py-0.5 rounded"
+                        />
+                      </div>
+
+                      <input
+                        type="range"
+                        min="0"
+                        max="24"
+                        step="0.5"
+                        value={currentVal}
+                        aria-label={`سهم ${p.title}`}
+                        onChange={(e) => onPercentageChange(p.id, parseFloat(e.target.value))}
+                        className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                      />
+
+                      <div className="flex items-center justify-between text-[10px] text-slate-500 mt-1">
+                        <span className="flex items-center gap-1">
+                          شدت آسیب:
+                          <Num value={formatPercent(bubbleInfo?.deprivationIndex || 0)} className="font-bold" />
+                        </span>
+                        <span className="flex items-center gap-1">
+                          پیشنهاد AI:
+                          <Num value={formatPercent(recVal)} className="font-bold text-purple-700" />
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
-      {/* ========================================================================= */}
-      {/* 2. 4-TIER STATISTICAL PREVALENCE MULTI-BAR CHART                          */}
-      {/* ========================================================================= */}
-      <div id="charts-view-div-14" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs">
-        <div id="charts-view-div-15" className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-2 border-b border-slate-100">
-          <div id="charts-view-div-16">
-            <div id="charts-view-div-17" className="flex items-center gap-2">
-              <Globe2 className="w-5 h-5 text-indigo-600" />
-              <h3 className="font-bold text-slate-900 text-sm">
-                مقایسه تطبیقی فراگیری ۴ سطحی (کشوری vs استانی vs شهرستانی vs کانون محلی)
-              </h3>
-            </div>
-            <p className="text-xs text-slate-500 mt-1">
-              مبنای ریاضی نسبت‌سنجی آماری: کانون‌های بحران محلی که شدت آن در منطقه بالاتر از میانگین کشور است دارای اولویت قطعی هستند.
-            </p>
-          </div>
-        </div>
-
-        <div id="charts-view-div-18" className="h-[clamp(300px,50vh,460px)] w-full">
+      {/* ======================================================================= */}
+      {/* 3. PREVALENCE — the evidence behind the matrix's horizontal axis        */}
+      {/* ======================================================================= */}
+      <ChartCard
+        id="charts-view-prevalence-4tier"
+        icon={Globe2}
+        tone="text-indigo-600"
+        title="فراگیری چهارسطحی: کشوری، استانی، شهرستانی و کانون محلی"
+        subtitle="هر سرفصل در چهار سطح سنجیده شده است؛ جایی که «کانون محلی» از «میانگین کشوری» بالاتر می‌زند، همان‌جا اولویت تخصیص است (واحد: درصد فراگیری)"
+      >
+        <div id="charts-view-prevalence-canvas" className="h-[clamp(300px,50vh,460px)] w-full" dir="ltr">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={prevalenceData} margin={{ top: 10, right: 10, left: 10, bottom: 40 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis 
-                dataKey="name" 
-                tick={{ fontSize: 10, fill: '#64748b' }} 
-                interval={0} 
-                angle={-25} 
-                textAnchor="end" 
+              <XAxis
+                dataKey="name"
+                tick={{ fontSize: 10, fill: '#64748b' }}
+                interval={0}
+                angle={-25}
+                textAnchor="end"
               />
-              <YAxis 
-                tickFormatter={(v) => toPersianDigits(v)} 
-                tick={{ fontSize: 10, fill: '#64748b' }} 
+              <YAxis
+                tickFormatter={(v) => toPersianDigits(v)}
+                tick={{ fontSize: 10, fill: '#64748b' }}
               />
-              <Tooltip 
-                formatter={(val: any) => [`${toPersianDigits(val)}`, '']}
-                contentStyle={{ direction: 'rtl', borderRadius: '12px', fontSize: '12px', textAlign: 'right' }}
-              />
-              <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+              <Tooltip content={<PrevalenceTooltip />} cursor={{ fill: '#f8fafc' }} />
+              <Legend wrapperStyle={{ fontSize: 11, paddingTop: 10 }} />
               <Bar dataKey="میانگین کشوری" fill="#94a3b8" radius={[4, 4, 0, 0]} />
               <Bar dataKey="میانگین استانی" fill="#6366f1" radius={[4, 4, 0, 0]} />
               <Bar dataKey="میانگین شهرستانی" fill="#3b82f6" radius={[4, 4, 0, 0]} />
@@ -987,115 +1276,173 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </div>
+      </ChartCard>
 
-      {/* ========================================================================= */}
-      {/* 3. SECONDARY CHARTS GRID: PIE, BAR & RADAR                                */}
-      {/* ========================================================================= */}
-      <div id="charts-view-div-19" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Pie Chart: Percentage Distribution */}
-        <div id="charts-view-pie-chart-percentage" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs">
-          <div id="charts-view-pie-chart-percentage-2" className="flex items-center justify-between mb-4">
-            <div id="charts-view-pie-chart-percentage-3" className="flex items-center gap-2">
-              <PieIcon className="w-5 h-5 text-blue-600" />
-              <h3 className="font-bold text-slate-800 text-sm">نمودار دایره‌ای توزیع درصدی اولویت‌ها</h3>
-            </div>
-          </div>
-          <div id="charts-view-pie-chart-percentage-4" className="h-[clamp(280px,45vh,400px)] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={95}
-                  paddingAngle={3}
-                  dataKey="value"
-                >
-                  {pieData.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value: any) => [`${toPersianDigits(value)}٪`, 'سهم درصدی']}
-                  labelFormatter={(name) => `اولویت: ${name}`}
-                  contentStyle={{ direction: 'rtl', borderRadius: '12px', fontSize: '12px', textAlign: 'right' }}
-                />
-                <Legend 
-                  layout="horizontal" 
-                  verticalAlign="bottom" 
-                  align="center"
-                  wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+      {/* ======================================================================= */}
+      {/* 4. COMPOSITION — the same allocation as shares, as money and as shape   */}
+      {/* ======================================================================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Shares */}
+        <ChartCard
+          id="charts-view-allocation-shares"
+          icon={PieIcon}
+          tone="text-blue-600"
+          title="ترکیب سرفصل‌ها: سهم درصدی و مبلغ مصوب"
+          subtitle="سهم هر سرفصل از اعتبارات مصوب محدوده فعال، به درصد و به مبلغ"
+        >
+          {allocationRows.length === 0 ? (
+            <p className="text-xs text-slate-500">سرفصل اولویتی برای نمایش ثبت نشده است.</p>
+          ) : (
+            <>
+              <div className="relative h-[clamp(240px,34vh,300px)] w-full" dir="ltr">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={allocationRows}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={58}
+                      outerRadius={94}
+                      paddingAngle={3}
+                      dataKey="value"
+                      nameKey="title"
+                    >
+                      {allocationRows.map((row) => (
+                        <Cell key={`share-cell-${row.id}`} fill={row.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<AllocationShareTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
 
-        {/* Bar Chart: Financial Allocation in Toman */}
-        <div id="charts-view-bar-chart-financial-allocation" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs">
-          <div id="charts-view-bar-chart-financial-allocation-2" className="flex items-center justify-between mb-4">
-            <div id="charts-view-bar-chart-financial-allocation-3" className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-emerald-600" />
-              <h3 className="font-bold text-slate-800 text-sm">نمودار میله‌ای مبلغ تخصیص یافته (تومان)</h3>
-            </div>
-          </div>
-          <div id="charts-view-bar-chart-financial-allocation-4" className="h-[clamp(280px,45vh,400px)] w-full">
+                {/* Donut centre: the budget the shares divide up */}
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <span className="text-[10px] font-bold text-slate-500">کل اعتبارات مصوب</span>
+                  <Num {...formatMoneyParts(totalBudgetToman)} className="text-base font-black text-slate-900" />
+                  <span className="text-[10px] text-slate-500 mt-0.5">
+                    {toPersianDigits(allocationRows.length)} سرفصل فعال
+                  </span>
+                </div>
+              </div>
+
+              <ul id="charts-view-allocation-shares-list" className="space-y-1.5 pt-3 border-t border-slate-100">
+                {allocationRows.map((row) => (
+                  <li key={`share-row-${row.id}`} className="flex items-center justify-between gap-3 text-xs">
+                    <span className="flex items-center gap-2 min-w-0">
+                      <span
+                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                        style={{ backgroundColor: row.color }}
+                        aria-hidden="true"
+                      />
+                      <span className="truncate text-slate-700" title={row.title}>
+                        {row.title}
+                      </span>
+                    </span>
+                    <span className="flex items-center gap-3 shrink-0">
+                      <Num value={formatPercent(row.value)} className="font-black text-slate-800" />
+                      <Num
+                        {...formatMoneyParts(row.amountToman)}
+                        className="font-bold text-slate-500 w-24 text-end"
+                      />
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </ChartCard>
+
+        {/* Money */}
+        <ChartCard
+          id="charts-view-allocation-money"
+          icon={Wallet}
+          tone="text-emerald-600"
+          title="مبلغ تخصیص فعلی در برابر پیشنهاد هوشمند"
+          subtitle="مقایسه ریالی دو سناریوی تخصیص به تفکیک سرفصل — واحد: همت"
+        >
+          <div id="charts-view-allocation-money-canvas" className="h-[clamp(280px,42vh,380px)] w-full" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={pieData} margin={{ top: 10, right: 10, left: 10, bottom: 40 }}>
+              <BarChart data={allocationRows} margin={{ top: 10, right: 12, left: 10, bottom: 40 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis 
-                  dataKey="name" 
-                  tick={{ fontSize: 10, fill: '#64748b' }} 
-                  interval={0} 
-                  angle={-25} 
-                  textAnchor="end" 
+                <XAxis
+                  dataKey="shortTitle"
+                  tick={{ fontSize: 10, fill: '#64748b' }}
+                  interval={0}
+                  angle={-25}
+                  textAnchor="end"
                 />
-                <YAxis 
-                  tickFormatter={(v) => toPersianDigits(Math.round(v / 1_000_000_000))} 
-                  tick={{ fontSize: 10, fill: '#64748b' }} 
+                <YAxis
+                  tickFormatter={(v) => formatHemmat(Number(v), 0)}
+                  tick={{ fontSize: 10, fill: '#64748b' }}
                 />
-                <Tooltip 
-                  formatter={(val: any) => [formatCurrency(Number(val), 'TOMAN', true), 'مبلغ تخصیص یافته']}
-                  contentStyle={{ direction: 'rtl', borderRadius: '12px', fontSize: '12px' }}
+                <Tooltip content={<AllocationMoneyTooltip />} cursor={{ fill: '#f8fafc' }} />
+                <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
+                <Bar
+                  dataKey="amountToman"
+                  name="تخصیص فعلی (همت)"
+                  fill="#2563eb"
+                  radius={[5, 5, 0, 0]}
                 />
-                <Bar dataKey="amountToman" fill="#059669" radius={[6, 6, 0, 0]} />
+                <Bar
+                  dataKey="recommendedAmountToman"
+                  name="پیشنهاد هوشمند (همت)"
+                  fill="#9333ea"
+                  radius={[5, 5, 0, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </ChartCard>
 
-        {/* Radar Chart: Manual vs Smart AI Comparison */}
-        <div id="charts-view-radar-chart-manual-vs-smart-ai" className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs lg:col-span-2">
-          <div id="charts-view-radar-chart-manual-vs-smart-ai-2" className="flex items-center justify-between mb-2">
-            <div id="charts-view-radar-chart-manual-vs-smart-ai-3" className="flex items-center gap-2">
-              <RadarIcon className="w-5 h-5 text-purple-600" />
-              <h3 className="font-bold text-slate-800 text-sm">تطبیق راداری: تخصیص دستی در برابر پیشنهاد هوشمند AI</h3>
-            </div>
-          </div>
-          <p className="text-xs text-slate-500 mb-4">
-            مقایسه وزن‌های دستی کاربر با پیشنهاد الگوریتمی هوشمند بر اساس نیازسنجی محلی و نسبت‌سنجی آماری
-          </p>
-          <div id="charts-view-radar-chart-manual-vs-smart-ai-4" className="h-[clamp(300px,50vh,460px)] w-full">
+        {/* Profile */}
+        <ChartCard
+          id="charts-view-alignment-radar"
+          icon={RadarIcon}
+          tone="text-purple-600"
+          title="تطبیق راداری: تخصیص دستی، پیشنهاد هوشمند و وزن پیش‌فرض"
+          subtitle="پروفایل هر سرفصل در سه سناریو؛ هر چه دو چندضلعی «دستی» و «پیشنهاد هوشمند» به هم نزدیک‌تر باشند، تخصیص متعادل‌تر است"
+          className="lg:col-span-2"
+        >
+          <div id="charts-view-alignment-radar-canvas" className="h-[clamp(300px,50vh,460px)] w-full" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarData}>
                 <PolarGrid stroke="#e2e8f0" />
                 <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11, fill: '#334155' }} />
                 <PolarRadiusAxis angle={30} domain={[0, 30]} tick={{ fontSize: 10 }} />
                 <Radar name="تخصیص دستی" dataKey="دستی" stroke="#2563eb" fill="#2563eb" fillOpacity={0.3} />
-                <Radar name="پیشنهاد هوشمند AI" dataKey="پیشنهاد_هوشمند" stroke="#9333ea" fill="#9333ea" fillOpacity={0.25} />
+                <Radar
+                  name="پیشنهاد هوشمند AI"
+                  dataKey="پیشنهاد_هوشمند"
+                  stroke="#9333ea"
+                  fill="#9333ea"
+                  fillOpacity={0.25}
+                />
                 <Radar name="وزن پیش‌فرض" dataKey="پیش_فرض" stroke="#94a3b8" fill="#94a3b8" fillOpacity={0.1} />
-                <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '15px' }} />
-                <Tooltip contentStyle={{ direction: 'rtl', borderRadius: '12px', fontSize: '12px' }} />
+                <Legend wrapperStyle={{ fontSize: 12, paddingTop: 15 }} />
+                <Tooltip
+                  content={({ active, payload, label }: any) => {
+                    if (!active || !payload?.length) return null;
+                    return (
+                      <TooltipShell>
+                        <TooltipHeading title={String(label ?? '')} meta="درصد سهم از اعتبارات" />
+                        {payload.map((entry: any) => (
+                          <TooltipRow
+                            key={entry.dataKey}
+                            label={entry.name}
+                            color={entry.color ?? entry.stroke}
+                          >
+                            <Num value={formatPercent(Number(entry.value) || 0)} />
+                          </TooltipRow>
+                        ))}
+                      </TooltipShell>
+                    );
+                  }}
+                />
               </RadarChart>
             </ResponsiveContainer>
           </div>
-        </div>
-
+        </ChartCard>
       </div>
-
     </div>
   );
 };

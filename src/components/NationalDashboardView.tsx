@@ -3,6 +3,7 @@ import { useAppContext } from '../context/AppContext';
 import { formatMoney, formatMoneyParts, formatNumber, formatPercent } from '../utils/numberUtils';
 import { Num } from './Num';
 import { DashboardPredictiveEngine } from './DashboardPredictiveEngine';
+import { DashboardChartsPanel } from './DashboardChartsPanel';
 import { PageHeader } from './PageHeader';
 import {
   ShieldAlert,
@@ -262,6 +263,11 @@ export const NationalDashboardView: React.FC = () => {
 
       {/* Predictive Analysis Engine Module */}
       <DashboardPredictiveEngine />
+
+      {/* Dashboard analytics panel — the dashboard's own charts: deprivation
+          profile, funding mix and drawdown, project portfolio, crisis map,
+          department delivery and anti-duplication alerts. */}
+      <DashboardChartsPanel />
 
       {isBudgetSourcesModalOpen && (
         <div

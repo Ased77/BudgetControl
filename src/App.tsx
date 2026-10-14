@@ -182,6 +182,7 @@ function AppContent() {
 
   const exportDropdownRef = useRef<HTMLDivElement>(null);
   const mainWorkspaceRef = useRef<HTMLDivElement>(null);
+  const identityBarRef = useRef<HTMLDivElement>(null);
 
   // Close export dropdown on outside click
   useEffect(() => {
@@ -192,6 +193,23 @@ function AppContent() {
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Publish the identity bar's height so the sidebar can clear it — plus the
+  // gap the workspace leaves below it — before the title block, letting the
+  // panel's top land on the page's banner. Measured rather than guessed: the
+  // bar reflows (name/role hide, controls wrap) as the viewport narrows.
+  useEffect(() => {
+    const el = identityBarRef.current;
+    if (!el) return;
+    const publish = () => {
+      const { height } = el.getBoundingClientRect();
+      document.documentElement.style.setProperty('--app-identity-bar-space', `${height}px`);
+    };
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(el);
+    return () => observer.disconnect();
   }, []);
 
   // Synchronize Recharts dimensions seamlessly when switching to CHARTS tab
@@ -282,10 +300,11 @@ function AppContent() {
       {/* Navigation Sidebar — floating white panel that hugs its own height
           (capped at the viewport) instead of stretching to the bottom; the
           active row is an outlined pill with a start-edge accent (no fill).
-          From `lg` up its top clears the page's own title block and that block's
-          margin (the workspace's `md:p-6` plus the space `PageHeader` publishes),
-          so the panel begins on the line where the page's content begins rather
-          than above the page title. */}
+          From `lg` up its top lines up with the page's banner: it reserves the
+          workspace's own top padding, the identity bar above the page, the gap
+          below that bar, and the title block (plus the margin `PageHeader`
+          publishes), so the panel starts level with the banner rather than
+          floating above the title. */}
       {/* Mobile drawer scrim — tapping outside the panel closes it, and the
           scrim is itself a keyboard-reachable close control. Hidden from `lg`
           up, where the sidebar is a static column. */}
@@ -300,7 +319,7 @@ function AppContent() {
 
       <aside
         aria-label="ناوبری اصلی سامانه"
-        className={`fixed inset-y-0 right-0 z-40 w-72 p-3 flex flex-col transition-transform duration-300 lg:static lg:translate-x-0 lg:pt-[calc(1.5rem+var(--app-page-header-space))] ${
+        className={`fixed inset-y-0 right-0 z-40 w-72 p-3 flex flex-col transition-transform duration-300 lg:static lg:translate-x-0 lg:pt-[calc(3rem+var(--app-identity-bar-space)+var(--app-page-header-space))] ${
           sidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
         }`}
       >
@@ -430,7 +449,7 @@ function AppContent() {
               workspace reserves room for it and nothing sits over the workspace.
               Only identity moved out of the sidebar; sign-out stayed behind in the
               sidebar footer. */}
-          <div id="app-workspace-identity-bar" className="flex items-center gap-2 sm:gap-3">
+          <div id="app-workspace-identity-bar" ref={identityBarRef} className="flex items-center gap-2 sm:gap-3">
             {/* Mobile nav toggle — the bordered square the page titles used to
                 carry. Hidden from `lg` up, where the sidebar is a static column. */}
             <button

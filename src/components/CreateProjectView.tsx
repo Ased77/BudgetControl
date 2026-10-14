@@ -46,11 +46,9 @@ import {
   GraduationCap,
   Home,
   CheckCheck,
-  ChevronDown,
-  ChevronUp,
   Info,
   Pencil,
-  Save,
+  X,
 } from 'lucide-react';
 
 export type ProjectCategoryKey =
@@ -170,118 +168,12 @@ const PUBLISH_MODULES: { label: string; icon: React.ComponentType<{ className?: 
 
 const ADMIN_LEVELS: AdministrativeLevel[] = ['NATIONAL', 'PROVINCIAL', 'COUNTY', 'RURAL_DISTRICT'];
 
-/** True when `value` is one of `list` — used to reject stale draft values. */
-const isOneOf = <T extends string>(value: unknown, list: readonly T[]): value is T =>
-  typeof value === 'string' && (list as readonly string[]).includes(value);
-
 /**
- * The autosaved draft of the project form.
- *
- * The wizard is long enough that losing it to a refresh or a stray tab switch
- * hurts, so every answer it must be able to restore is mirrored into
- * localStorage — along with the step the user had reached. Nothing derived is
- * stored, and every value is re-checked on the way back in (see the restore
- * effect), because a draft written before a data refresh can name a department
- * or crisis that no longer exists, and a dead id would leave a select looking
- * empty while still travelling in the payload.
+ * The form used to autosave answers under this key and restore them on mount.
+ * It now always starts blank, so any leftover value is dropped once on mount
+ * rather than left to linger for a returning user.
  */
-type ProjectDraft = {
-  v: 1;
-  savedAt: number;
-  title?: string;
-  code?: string;
-  description?: string;
-  status?: ProjectStatus;
-  startYear?: number;
-  endYear?: number;
-  durationMonths?: number;
-  requestingDeptId?: string;
-  primaryDeptId?: string;
-  isMultiDept?: boolean;
-  contributingDepts?: ContributingDepartment[];
-  selectedCrisisId?: string;
-  urgency?: UrgencyLevel;
-  selectedPriorityId?: string;
-  adminLevel?: AdministrativeLevel;
-  province?: string;
-  county?: string;
-  district?: string;
-  targetArea?: string;
-  beneficiariesCount?: number;
-  selectedBeneficiaryGroups?: string[];
-  primaryBudgetSourceId?: string;
-  estimatedCostToman?: number;
-  currentYearAllocatedToman?: number;
-  futureYearsAllocatedToman?: number;
-  csrSharePct?: number;
-  govSharePct?: number;
-  dehyariSharePct?: number;
-  bankSharePct?: number;
-  charitySharePct?: number;
-  executorId?: string;
-  contractorId?: string;
-  selectedCategory?: ProjectCategoryKey;
-  activeStep?: number;
-  maxReachedStep?: number;
-};
-
-/** Same `csr.<area>.<field>` shape the rest of the app persists under. */
-const DRAFT_STORAGE_KEY = 'csr.createProject.draft';
-/** Writes are debounced: a burst of typing is one write, not twenty. */
-const DRAFT_SAVE_DELAY_MS = 600;
-
-/** Storage may be unavailable (private mode, quota) — the form still works. */
-function readProjectDraft(): ProjectDraft | null {
-  try {
-    const raw = window.localStorage.getItem(DRAFT_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed: unknown = JSON.parse(raw);
-    if (!parsed || typeof parsed !== 'object') return null;
-    const draft = parsed as ProjectDraft;
-    return draft.v === 1 ? draft : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeProjectDraft(draft: ProjectDraft) {
-  try {
-    window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
-  } catch {
-    // Quota or privacy mode: this session simply goes on unsaved.
-  }
-}
-
-function clearProjectDraft() {
-  try {
-    window.localStorage.removeItem(DRAFT_STORAGE_KEY);
-  } catch {
-    // Nothing to do — there was no stored draft to remove.
-  }
-}
-
-/** Whether a draft is worth keeping. Every wizard field starts with a sensible
- *  default, so the only proof that a person filled the form is one of the three
- *  that start empty — otherwise merely opening the page would store a "draft". */
-function draftHasContent(draft: {
-  title?: string;
-  description?: string;
-  contributingDepts?: unknown[];
-}): boolean {
-  return (
-    (draft.title ?? '').trim().length > 0 ||
-    (draft.description ?? '').trim().length > 0 ||
-    (draft.contributingDepts?.length ?? 0) > 0
-  );
-}
-
-/** HH:MM in Persian digits, e.g. «۱۴:۰۵», for the autosave indicator. */
-function formatDraftTime(timestamp: number): string {
-  const date = new Date(timestamp);
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  return toPersianDigits(`${hours}:${minutes}`);
-}
+const LEGACY_DRAFT_STORAGE_KEY = 'csr.createProject.draft';
 
 export const CreateProjectView: React.FC = () => {
   const {
@@ -304,81 +196,82 @@ export const CreateProjectView: React.FC = () => {
   const [code, setCode] = useState(`PRJ-${new Date().getFullYear().toString().slice(-2)}-${Math.floor(100 + Math.random() * 900)}`);
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<ProjectStatus>('PROPOSED');
-  const [startYear, setStartYear] = useState<number>(1403);
-  const [endYear, setEndYear] = useState<number>(1404);
-  const [durationMonths, setDurationMonths] = useState<number>(12);
+  // The form intentionally starts blank — every answer below defaults to its
+  // empty state ('' or 0) so a new project is described by the user, never
+  // pre-filled by the app.
+  const [startYear, setStartYear] = useState<number>(0);
+  const [endYear, setEndYear] = useState<number>(0);
+  const [durationMonths, setDurationMonths] = useState<number>(0);
 
   // --- Step 2: Department Governance & Multi-Department ---
-  const [requestingDeptId, setRequestingDeptId] = useState<string>(departments[0]?.id || '');
-  const [primaryDeptId, setPrimaryDeptId] = useState<string>(departments[0]?.id || '');
+  const [requestingDeptId, setRequestingDeptId] = useState<string>('');
+  const [primaryDeptId, setPrimaryDeptId] = useState<string>('');
   const [isMultiDept, setIsMultiDept] = useState<boolean>(false);
   const [contributingDepts, setContributingDepts] = useState<ContributingDepartment[]>([]);
 
   // Temp fields for adding a contributing department
-  const [newContribDeptId, setNewContribDeptId] = useState<string>(departments[1]?.id || departments[0]?.id || '');
-  const [newContribPct, setNewContribPct] = useState<number>(20);
-  const [newContribRole, setNewContribRole] = useState<string>('تأمین زیرساخت فنی و نظارت میدانی');
+  const [newContribDeptId, setNewContribDeptId] = useState<string>('');
+  const [newContribPct, setNewContribPct] = useState<number>(0);
+  const [newContribRole, setNewContribRole] = useState<string>('');
 
   // --- Step 3: Crisis & Harm Alignment ---
-  const [selectedCrisisId, setSelectedCrisisId] = useState<string>(crisesHarms[0]?.id || '');
-  const [urgency, setUrgency] = useState<UrgencyLevel>('HIGH');
+  const [selectedCrisisId, setSelectedCrisisId] = useState<string>('');
+  const [urgency, setUrgency] = useState<UrgencyLevel | ''>('');
 
   // --- Step 4: Strategic Priority Alignment ---
-  const [selectedPriorityId, setSelectedPriorityId] = useState<string>(priorities[0]?.id || '');
+  const [selectedPriorityId, setSelectedPriorityId] = useState<string>('');
 
   // --- Step 5: Location & Target Beneficiaries ---
+  // Province/county stay tied to the app's global location picker (they scope the
+  // بخش dropdown below); the actual answers — the area and target point — start
+  // empty so the user chooses them.
   const [adminLevel, setAdminLevel] = useState<AdministrativeLevel>('COUNTY');
   const [province, setProvince] = useState<string>(selectedLocation.province);
   const [county, setCounty] = useState<string>(selectedLocation.county);
-  const [district, setDistrict] = useState<string>(selectedLocation.city);
-  const [targetArea, setTargetArea] = useState<string>(selectedLocation.district);
-  const [beneficiariesCount, setBeneficiariesCount] = useState<number>(5000);
-  const [selectedBeneficiaryGroups, setSelectedBeneficiaryGroups] = useState<string[]>([
-    'روستاییان مناطق محروم و دارای تنش آبی',
-  ]);
+  const [district, setDistrict] = useState<string>('');
+  const [targetArea, setTargetArea] = useState<string>('');
+  const [beneficiariesCount, setBeneficiariesCount] = useState<number>(0);
+  const [selectedBeneficiaryGroups, setSelectedBeneficiaryGroups] = useState<string[]>([]);
 
   // --- Step 6: Multi-Source Budgeting ---
-  const [primaryBudgetSourceId, setPrimaryBudgetSourceId] = useState<string>(budgetSources[0]?.id || '');
-  const [estimatedCostToman, setEstimatedCostToman] = useState<number>(500_000_000_000); // 500 Billion Tomans
-  const [currentYearAllocatedToman, setCurrentYearAllocatedToman] = useState<number>(300_000_000_000);
-  const [futureYearsAllocatedToman, setFutureYearsAllocatedToman] = useState<number>(200_000_000_000);
+  const [primaryBudgetSourceId, setPrimaryBudgetSourceId] = useState<string>('');
+  const [estimatedCostToman, setEstimatedCostToman] = useState<number>(0);
+  const [currentYearAllocatedToman, setCurrentYearAllocatedToman] = useState<number>(0);
+  const [futureYearsAllocatedToman, setFutureYearsAllocatedToman] = useState<number>(0);
 
   // Shares (in percentage, must sum up to 100%)
-  const [csrSharePct, setCsrSharePct] = useState<number>(70);
-  const [govSharePct, setGovSharePct] = useState<number>(20);
-  const [dehyariSharePct, setDehyariSharePct] = useState<number>(10);
+  const [csrSharePct, setCsrSharePct] = useState<number>(0);
+  const [govSharePct, setGovSharePct] = useState<number>(0);
+  const [dehyariSharePct, setDehyariSharePct] = useState<number>(0);
   const [bankSharePct, setBankSharePct] = useState<number>(0);
   const [charitySharePct, setCharitySharePct] = useState<number>(0);
 
   // --- Step 7: Implementation (Executor & Contractor) ---
-  const [executorId, setExecutorId] = useState<string>(executors[0]?.id || '');
-  const [contractorId, setContractorId] = useState<string>(contractors[0]?.id || '');
+  const [executorId, setExecutorId] = useState<string>('');
+  const [contractorId, setContractorId] = useState<string>('');
 
   // Demographic-Driven Priority Planning States
-  const [selectedCategory, setSelectedCategory] = useState<ProjectCategoryKey>('WATER');
+  const [selectedCategory, setSelectedCategory] = useState<ProjectCategoryKey | ''>('');
   const [appliedPriorityNotice, setAppliedPriorityNotice] = useState<string | null>(null);
-  const [plannerExpanded, setPlannerExpanded] = useState<boolean>(true);
+  // The demographic planning assistant now lives in a modal opened from the page
+  // header, so the form column stays focused on the form itself.
+  const [plannerOpen, setPlannerOpen] = useState<boolean>(false);
 
   // Feedback states
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
 
   // --- Wizard navigation ---
-  // `maxReachedStep` gates the stepper: a step already reached can be reopened,
-  // so the user can move back and forth without losing work, but no step can be
-  // skipped past validation. `showStepErrors` keeps the issue list quiet until an
-  // advance is actually attempted, so a fresh form is never covered in warnings.
+  // `maxReachedStep` tracks the furthest step visited: reached steps are marked
+  // done and their warnings surfaced, while every tile stays clickable so the
+  // user can move freely between sections. `showStepErrors` keeps the issue list
+  // quiet until an advance is actually attempted, so a fresh form is never
+  // covered in warnings; an incomplete step is still caught on submit.
   const [activeStep, setActiveStep] = useState<number>(1);
   const [maxReachedStep, setMaxReachedStep] = useState<number>(1);
   const [showStepErrors, setShowStepErrors] = useState<boolean>(false);
+  // The header's issue pill opens a popup listing every step that needs fixing.
+  const [validationWarningsOpen, setValidationWarningsOpen] = useState<boolean>(false);
 
-  // --- Draft autosave ---
-  // `initialDraft` is read exactly once, on first render, and `draftReady` gates
-  // autosaving until the restore pass below has committed — without that gate the
-  // empty first render would overwrite a stored draft with the form's defaults.
-  const [initialDraft] = useState(() => readProjectDraft());
-  const [draftReady, setDraftReady] = useState(false);
-  const [draftRestored, setDraftRestored] = useState(false);
-  const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
   const formTopRef = useRef<HTMLElement | null>(null);
   // Tracks the step the scroll effect last acted on. Comparing against it (rather
   // than a "first run" flag) keeps the effect from firing on mount — React's
@@ -416,6 +309,55 @@ export const CreateProjectView: React.FC = () => {
     });
   }, [selectedCrisisId, district, title, targetArea, projects]);
 
+  // --- Smart parallel-work (“موازی‌کاری”) warning popup ---
+  // The tracker is AI-computed from the step-۱ inputs (title/location) plus the
+  // chosen crisis. When it finds a collision it raises a dismissible popup in
+  // place of the permanent card that used to sit in the side column. It only
+  // fires once the user has actually entered a step-۱ title, so the default
+  // crisis/location selection cannot ambush a blank form with a modal. A
+  // dismissal is remembered per set of matches — so it does not re-open on every
+  // keystroke — and is forgotten once the conflict clears.
+  const [dismissedOverlapSignature, setDismissedOverlapSignature] = useState<string | null>(null);
+  const overlapSignature = potentialDuplicates.map((p) => p.id).sort().join('|');
+  const overlapWarningOpen =
+    title.trim().length > 0 &&
+    potentialDuplicates.length > 0 &&
+    overlapSignature !== dismissedOverlapSignature;
+
+  useEffect(() => {
+    if (potentialDuplicates.length === 0) setDismissedOverlapSignature(null);
+  }, [potentialDuplicates.length]);
+
+  // Escape dismisses the popup, matching the app's other modal dialogs.
+  useEffect(() => {
+    if (!overlapWarningOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setDismissedOverlapSignature(overlapSignature);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [overlapWarningOpen, overlapSignature]);
+
+  // Escape dismisses the step-validation popup, matching the other modals.
+  useEffect(() => {
+    if (!validationWarningsOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setValidationWarningsOpen(false);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [validationWarningsOpen]);
+
+  // Escape dismisses the demographic planner modal too.
+  useEffect(() => {
+    if (!plannerOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPlannerOpen(false);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [plannerOpen]);
+
   /**
    * Per-step validation. Every rule reads state the form already owns — nothing
    * is inferred — so a step either genuinely can be left behind or it reports
@@ -425,7 +367,11 @@ export const CreateProjectView: React.FC = () => {
     const issues: Record<number, string[]> = { 1: [], 2: [], 3: [], 4: [], 5: [] };
 
     if (title.trim().length < 8) issues[1].push('عنوان پروژه را کامل وارد کنید (حداقل ۸ نویسه).');
-    if (endYear < startYear) issues[1].push('سال پایان نمی‌تواند پیش از سال شروع باشد.');
+    if (startYear <= 0) issues[1].push('سال آغاز عملیات را وارد کنید.');
+    if (endYear <= 0) issues[1].push('سال پیش‌بینی پایان را وارد کنید.');
+    if (startYear > 0 && endYear > 0 && endYear < startYear) {
+      issues[1].push('سال پایان نمی‌تواند پیش از سال شروع باشد.');
+    }
     if (durationMonths <= 0) issues[1].push('مدت اجرای طرح باید بیش از صفر ماه باشد.');
 
     if (!district.trim()) issues[2].push('محدوده اجرای طرح را انتخاب کنید.');
@@ -442,6 +388,7 @@ export const CreateProjectView: React.FC = () => {
 
     if (!selectedPriorityId) issues[4].push('اولویت راهبردی مرتبط را انتخاب کنید.');
     if (!selectedCrisisId) issues[4].push('کانون بحران مرتبط با پروژه را انتخاب کنید.');
+    if (!urgency) issues[4].push('درجه فوریت مداخله را انتخاب کنید.');
 
     if (!requestingDeptId) issues[5].push('اداره متقاضی را انتخاب کنید.');
     if (!primaryDeptId) issues[5].push('دستگاه اجرایی اصلی را انتخاب کنید.');
@@ -458,7 +405,7 @@ export const CreateProjectView: React.FC = () => {
     title, endYear, startYear, durationMonths, district, beneficiariesCount,
     selectedBeneficiaryGroups, estimatedCostToman, primaryBudgetSourceId,
     isBudgetShareValid, totalBudgetShares, selectedPriorityId, selectedCrisisId,
-    requestingDeptId, primaryDeptId, isMultiDept, contributingDepts, executorId,
+    urgency, requestingDeptId, primaryDeptId, isMultiDept, contributingDepts, executorId,
   ]);
 
   const hasStepIssues = (step: number) => (stepIssues[step]?.length ?? 0) > 0;
@@ -467,8 +414,12 @@ export const CreateProjectView: React.FC = () => {
 
   const goToStep = (step: number) => {
     if (step < 1 || step > FORM_STEPS.length) return;
-    if (step > maxReachedStep) return; // forward movement is gated by validation
+    // The stepper is a navigation aid, not a gate: every tile is clickable so the
+    // user can jump ahead to a later section or back to an earlier one. Skipping
+    // an incomplete step is still caught on submit, which parks the wizard on the
+    // first step that needs attention.
     setActiveStep(step);
+    setMaxReachedStep((prev) => Math.max(prev, step));
     setShowStepErrors(false);
   };
 
@@ -830,220 +781,26 @@ export const CreateProjectView: React.FC = () => {
     }
   }, [title, targetArea]);
 
-  // Switch the form's geography whenever the global location picker changes so
-  // a new project is always attributed to the county the user is working in.
+  // Keep the form's province/county in step with the global location picker (they
+  // scope the بخش dropdown), but leave the area and target point to the user — a
+  // picker change clears them rather than carrying a stale choice across.
   useEffect(() => {
     setProvince(selectedLocation.province);
     setCounty(selectedLocation.county);
-    setDistrict(selectedLocation.city);
-    setTargetArea(selectedLocation.district);
+    setDistrict('');
+    setTargetArea('');
   }, [selectedLocation.id]);
 
-  // Restore an autosaved draft, deliberately AFTER the location effect above:
-  // that one seeds the geography from the global selector on mount and would
-  // otherwise overwrite the draft's own geography. The body runs once — the
-  // collections in its dependencies can change identity after an API refresh,
-  // and re-applying the draft then would clobber whatever the user had typed.
+  // One-off cleanup: earlier versions autosaved answers under this key and
+  // restored them on mount. The form starts blank now, so the stale value is
+  // dropped instead of being left behind in storage.
   useEffect(() => {
-    if (draftReady) return;
-    const draft = initialDraft;
-    // An untouched form has nothing to restore; drop such a draft instead of
-    // announcing it, so the notice only ever describes real answers.
-    if (!draft || !draftHasContent(draft)) {
-      clearProjectDraft();
-      setDraftReady(true);
-      return;
+    try {
+      window.localStorage.removeItem(LEGACY_DRAFT_STORAGE_KEY);
+    } catch {
+      // Storage unavailable (private mode, quota) — nothing to clean up.
     }
-
-    const numberOrNull = (value: unknown): number | null =>
-      typeof value === 'number' && Number.isFinite(value) ? value : null;
-    // An empty collection means the data has not arrived yet, not that the id is
-    // unknown — validating against it would drop perfectly good answers.
-    const knownId = (value: unknown, ids: string[]): value is string =>
-      typeof value === 'string' && (ids.length === 0 || ids.includes(value));
-
-    if (typeof draft.title === 'string') setTitle(draft.title);
-    if (typeof draft.code === 'string') setCode(draft.code);
-    if (typeof draft.description === 'string') setDescription(draft.description);
-    if (isOneOf(draft.status, Object.keys(STATUS_LABELS) as ProjectStatus[])) setStatus(draft.status);
-    const restoredStartYear = numberOrNull(draft.startYear);
-    if (restoredStartYear !== null) setStartYear(restoredStartYear);
-    const restoredEndYear = numberOrNull(draft.endYear);
-    if (restoredEndYear !== null) setEndYear(restoredEndYear);
-    const restoredDuration = numberOrNull(draft.durationMonths);
-    if (restoredDuration !== null) setDurationMonths(restoredDuration);
-
-    if (knownId(draft.requestingDeptId, departments.map((d) => d.id))) setRequestingDeptId(draft.requestingDeptId);
-    if (knownId(draft.primaryDeptId, departments.map((d) => d.id))) setPrimaryDeptId(draft.primaryDeptId);
-    if (typeof draft.isMultiDept === 'boolean') setIsMultiDept(draft.isMultiDept);
-    if (Array.isArray(draft.contributingDepts)) {
-      setContributingDepts(draft.contributingDepts.filter((c) => Boolean(c) && typeof c.departmentId === 'string'));
-    }
-
-    if (knownId(draft.selectedCrisisId, crisesHarms.map((c) => c.id))) setSelectedCrisisId(draft.selectedCrisisId);
-    if (isOneOf(draft.urgency, Object.keys(URGENCY_LABELS) as UrgencyLevel[])) setUrgency(draft.urgency);
-    if (knownId(draft.selectedPriorityId, priorities.map((p) => p.id))) setSelectedPriorityId(draft.selectedPriorityId);
-
-    if (isOneOf(draft.adminLevel, ADMIN_LEVELS)) setAdminLevel(draft.adminLevel);
-    if (typeof draft.province === 'string') setProvince(draft.province);
-    if (typeof draft.county === 'string') setCounty(draft.county);
-    if (typeof draft.district === 'string') setDistrict(draft.district);
-    if (typeof draft.targetArea === 'string') setTargetArea(draft.targetArea);
-    const restoredBeneficiaries = numberOrNull(draft.beneficiariesCount);
-    if (restoredBeneficiaries !== null) setBeneficiariesCount(restoredBeneficiaries);
-    if (Array.isArray(draft.selectedBeneficiaryGroups)) {
-      setSelectedBeneficiaryGroups(
-        draft.selectedBeneficiaryGroups.filter((group): group is string => typeof group === 'string')
-      );
-    }
-
-    if (knownId(draft.primaryBudgetSourceId, budgetSources.map((b) => b.id))) {
-      setPrimaryBudgetSourceId(draft.primaryBudgetSourceId);
-    }
-    const restoredCost = numberOrNull(draft.estimatedCostToman);
-    if (restoredCost !== null) setEstimatedCostToman(restoredCost);
-    const restoredCurrentYear = numberOrNull(draft.currentYearAllocatedToman);
-    if (restoredCurrentYear !== null) setCurrentYearAllocatedToman(restoredCurrentYear);
-    const restoredFutureYears = numberOrNull(draft.futureYearsAllocatedToman);
-    if (restoredFutureYears !== null) setFutureYearsAllocatedToman(restoredFutureYears);
-    const restoredCsr = numberOrNull(draft.csrSharePct);
-    if (restoredCsr !== null) setCsrSharePct(restoredCsr);
-    const restoredGov = numberOrNull(draft.govSharePct);
-    if (restoredGov !== null) setGovSharePct(restoredGov);
-    const restoredDehyari = numberOrNull(draft.dehyariSharePct);
-    if (restoredDehyari !== null) setDehyariSharePct(restoredDehyari);
-    const restoredBank = numberOrNull(draft.bankSharePct);
-    if (restoredBank !== null) setBankSharePct(restoredBank);
-    const restoredCharity = numberOrNull(draft.charitySharePct);
-    if (restoredCharity !== null) setCharitySharePct(restoredCharity);
-
-    if (knownId(draft.executorId, executors.map((e) => e.id))) setExecutorId(draft.executorId);
-    if (knownId(draft.contractorId, contractors.map((c) => c.id))) setContractorId(draft.contractorId);
-    if (isOneOf(draft.selectedCategory, PROJECT_CATEGORIES.map((c) => c.key))) {
-      setSelectedCategory(draft.selectedCategory);
-    }
-
-    // Resume on the step the draft was saved from — and tell the scroll effect
-    // that this step is already where it should be, so restoring does not scroll.
-    const restoredStep = Math.min(
-      Math.max(1, Math.floor(numberOrNull(draft.activeStep) ?? 1)),
-      FORM_STEPS.length
-    );
-    const restoredReached = Math.min(
-      Math.max(restoredStep, Math.floor(numberOrNull(draft.maxReachedStep) ?? restoredStep)),
-      FORM_STEPS.length
-    );
-    setActiveStep(restoredStep);
-    setMaxReachedStep(restoredReached);
-    lastScrolledStep.current = restoredStep;
-    setDraftRestored(true);
-    setDraftSavedAt(numberOrNull(draft.savedAt) ?? Date.now());
-    setDraftReady(true);
-  }, [
-    draftReady,
-    initialDraft,
-    departments,
-    crisesHarms,
-    priorities,
-    budgetSources,
-    executors,
-    contractors,
-  ]);
-
-  // Autosave the answers, debounced so a burst of typing is a single write. This
-  // stays silent until `draftReady`, which the restore pass raises once it has
-  // committed the saved values into state.
-  useEffect(() => {
-    if (!draftReady) return;
-    const timer = window.setTimeout(() => {
-      // Nothing worth restoring yet (a fresh or just-reset form): drop any stored
-      // draft rather than persisting an empty one, and hide the saved indicator.
-      if (!draftHasContent({ title, description, contributingDepts })) {
-        clearProjectDraft();
-        setDraftSavedAt(null);
-        return;
-      }
-      const savedAt = Date.now();
-      writeProjectDraft({
-        v: 1,
-        savedAt,
-        title,
-        code,
-        description,
-        status,
-        startYear,
-        endYear,
-        durationMonths,
-        requestingDeptId,
-        primaryDeptId,
-        isMultiDept,
-        contributingDepts,
-        selectedCrisisId,
-        urgency,
-        selectedPriorityId,
-        adminLevel,
-        province,
-        county,
-        district,
-        targetArea,
-        beneficiariesCount,
-        selectedBeneficiaryGroups,
-        primaryBudgetSourceId,
-        estimatedCostToman,
-        currentYearAllocatedToman,
-        futureYearsAllocatedToman,
-        csrSharePct,
-        govSharePct,
-        dehyariSharePct,
-        bankSharePct,
-        charitySharePct,
-        executorId,
-        contractorId,
-        selectedCategory,
-        activeStep,
-        maxReachedStep,
-      });
-      setDraftSavedAt(savedAt);
-    }, DRAFT_SAVE_DELAY_MS);
-    return () => window.clearTimeout(timer);
-  }, [
-    draftReady,
-    title,
-    code,
-    description,
-    status,
-    startYear,
-    endYear,
-    durationMonths,
-    requestingDeptId,
-    primaryDeptId,
-    isMultiDept,
-    contributingDepts,
-    selectedCrisisId,
-    urgency,
-    selectedPriorityId,
-    adminLevel,
-    province,
-    county,
-    district,
-    targetArea,
-    beneficiariesCount,
-    selectedBeneficiaryGroups,
-    primaryBudgetSourceId,
-    estimatedCostToman,
-    currentYearAllocatedToman,
-    futureYearsAllocatedToman,
-    csrSharePct,
-    govSharePct,
-    dehyariSharePct,
-    bankSharePct,
-    charitySharePct,
-    executorId,
-    contractorId,
-    selectedCategory,
-    activeStep,
-    maxReachedStep,
-  ]);
+  }, []);
 
   // محدوده‌های قابل انتخاب همان شهرستان برای دراپ‌داون مکان اجرا.
   const selectableAreas = useMemo(
@@ -1756,7 +1513,7 @@ export const CreateProjectView: React.FC = () => {
       {
         id: 'gen-1',
         title: `توسعه زیرساخت‌ها و خدمات اولویت‌دار ${locName}`,
-        category: selectedCategory,
+        category: selectedCategory || 'RURAL_HOUSING',
         categoryFa: PROJECT_CATEGORIES.find((c) => c.key === selectedCategory)?.labelFa || 'عمومی',
         demographicRationale: `بر اساس شاخص‌های آمایش سرزمینی و توزیع جمعیتی در ${locName}`,
         keyIndicatorBadge: `پوشش جمعیتی منطقه: ${formatNumber(activeLocationData?.totalPopulation || 50000)} نفر`,
@@ -1867,7 +1624,7 @@ export const CreateProjectView: React.FC = () => {
       contractorName: selectedContractor ? selectedContractor.companyName : undefined,
       crisisHarmId: selectedCrisisId,
       crisisHarmTitle: selectedCrisis?.title,
-      urgencyLevel: urgency,
+      urgencyLevel: urgency || undefined,
       administrativeLevel: adminLevel,
       province,
       county,
@@ -1894,35 +1651,25 @@ export const CreateProjectView: React.FC = () => {
 
     handleAddProject(newProjectData);
     setSubmittedSuccess(true);
-    // The answers now live in the database — drop the local draft so the next
-    // visit starts from a clean form instead of resurrecting this submission.
-    clearProjectDraft();
-    setDraftRestored(false);
-    setDraftSavedAt(null);
   };
 
   const handleResetForm = () => {
     setTitle('');
     setCode(`PRJ-${new Date().getFullYear().toString().slice(-2)}-${Math.floor(100 + Math.random() * 900)}`);
     setDescription('');
-    setBeneficiariesCount(5000);
+    setBeneficiariesCount(0);
     setContributingDepts([]);
     setIsMultiDept(false);
     setSubmittedSuccess(false);
     setActiveStep(1);
     setMaxReachedStep(1);
     setShowStepErrors(false);
-    clearProjectDraft();
-    setDraftRestored(false);
-    setDraftSavedAt(null);
   };
 
-  /** Drop the stored draft but keep what is on screen; the next edit re-saves. */
-  const handleDiscardDraft = () => {
-    clearProjectDraft();
-    setDraftRestored(false);
-    setDraftSavedAt(null);
-  };
+  // Wizard stepper derived values — the active step's icon for the header, and
+  // how far the rail should fill between the first and last node centres.
+  const ActiveStepIcon = FORM_STEPS[activeStep - 1].icon;
+  const stepRailProgress = FORM_STEPS.length > 1 ? (activeStep - 1) / (FORM_STEPS.length - 1) : 0;
 
   return (
     <div id="create-project-view-root" className="space-y-6 pb-16">
@@ -1935,6 +1682,13 @@ export const CreateProjectView: React.FC = () => {
         subtitle="ثبت یکپارچه پرونده پروژه با پیوند منابع، ادارات، مجریان و جامعه هدف"
         tone="text-indigo-600"
       >
+        <button
+          onClick={() => setPlannerOpen(true)}
+          className="px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-sm font-bold rounded-xl shadow-md shadow-cyan-500/20 transition-all flex items-center gap-2 cursor-pointer"
+        >
+          <Sparkles className="w-4 h-4" />
+          دستیار هوشمند آمایشی
+        </button>
         <button
           onClick={() => setActiveTab('PROJECTS')}
           className="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-xl border border-slate-300 shadow-2xs transition-colors flex items-center gap-2"
@@ -1976,137 +1730,294 @@ export const CreateProjectView: React.FC = () => {
         </div>
       )}
 
-      {/* Main Grid: Form + Live Project Passport Card */}
-      <div id="create-project-view-main-grid-form-live-project" className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Main Form (8 Columns) */}
-        <div id="create-project-view-main-form-8-columns" className="lg:col-span-8 space-y-6">
-          {/* Wizard stepper — the form's six sections become five reviewable steps.
-              Only the active step is mounted, and forward movement is gated by that
-              step's own validation. */}
-          <nav
-            id="create-project-view-wizard-stepper"
-            ref={formTopRef}
-            aria-label="گام‌های ثبت پروژه"
-            className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5 space-y-3 scroll-mt-6"
+      {/* Smart parallel-work warning popup — raised only when the detector finds a
+          conflicting project, instead of the old always-visible side card. */}
+      {overlapWarningOpen && (
+        <div
+          id="create-project-view-overlap-alert"
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-project-view-overlap-alert-title"
+            className="w-full max-w-lg rounded-2xl border border-amber-200 bg-white shadow-2xl p-6"
           >
-            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-              <span className="text-xs font-bold text-slate-500">
-                گام {toPersianDigits(activeStep)} از {toPersianDigits(FORM_STEPS.length)}
-              </span>
-              <span className="text-sm font-black text-slate-900">{FORM_STEPS[activeStep - 1].label}</span>
-              <span className={`text-xs font-bold ${allStepsValid ? 'text-emerald-700' : 'text-warning-strong'}`}>
-                {allStepsValid ? 'همه گام‌ها معتبر است' : `${toPersianDigits(invalidStepCount)} گام نیازمند اصلاح`}
-              </span>
+            <div className="flex items-start gap-3">
+              <div className="w-11 h-11 rounded-xl bg-amber-100 border border-amber-200 text-amber-600 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5" aria-hidden="true" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 id="create-project-view-overlap-alert-title" className="text-sm font-black text-slate-900">
+                    هشدار هوشمند ردیاب موازی‌کاری
+                  </h3>
+                  <span className="inline-flex items-center gap-1 text-[0.65rem] font-bold bg-amber-100 text-amber-800 border border-amber-200 rounded-full px-2 py-0.5">
+                    <Sparkles className="w-3 h-3" aria-hidden="true" />
+                    تحلیل هوشمند گام ۱
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed mt-1">
+                  سیستم متوجه شد طرح دیگری با بحران یا موقعیت مکانی مشابه در حال پیگیری است.
+                </p>
+              </div>
             </div>
 
-            <div
-              className="h-1.5 bg-slate-100 rounded-full overflow-hidden"
-              role="progressbar"
-              aria-label="پیشرفت ثبت پروژه"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={Math.round((activeStep / FORM_STEPS.length) * 100)}
-              aria-valuetext={`گام ${toPersianDigits(activeStep)} از ${toPersianDigits(FORM_STEPS.length)}`}
-            >
-              <div
-                className="h-full bg-blue-600 rounded-full transition-all duration-300"
-                style={{ width: `${(activeStep / FORM_STEPS.length) * 100}%` }}
-              />
+            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50/70 p-3">
+              <div className="font-bold text-xs text-slate-900">{potentialDuplicates[0].title}</div>
+              <div className="text-xs text-slate-500 mt-1">
+                متولی: {potentialDuplicates[0].departmentName} | کد: {potentialDuplicates[0].code}
+              </div>
+              {potentialDuplicates.length > 1 && (
+                <div className="text-xs font-semibold text-amber-700 mt-1.5">
+                  و {toPersianDigits(potentialDuplicates.length - 1)} مورد مشابه دیگر.
+                </div>
+              )}
             </div>
 
-            <ol className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-              {FORM_STEPS.map((step) => {
-                const isCurrent = step.id === activeStep;
-                const isDone = step.id < activeStep;
-                const isLocked = step.id > maxReachedStep;
-                const needsFix = !isLocked && hasStepIssues(step.id);
+            <p className="text-xs text-amber-700 font-semibold leading-relaxed mt-3">
+              توصیه هوشمند: پیشنهاد می‌شود سهم‌های هر دو دستگاه را در قالب این پروژه مشترک ادغام نمایید تا از هدررفت بودجه جلوگیری شود.
+            </p>
+
+            <div className="flex items-center justify-end gap-2.5 pt-4 mt-4 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('PROJECTS');
+                  setDismissedOverlapSignature(overlapSignature);
+                }}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <Eye className="w-3.5 h-3.5" aria-hidden="true" />
+                مشاهده پروژه‌ها
+              </button>
+              <button
+                type="button"
+                onClick={() => setDismissedOverlapSignature(overlapSignature)}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-md shadow-amber-500/25 transition-colors cursor-pointer"
+              >
+                متوجه شدم
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Step-validation popup — opened from the header's issue pill. Each row is
+          a step that still needs attention and jumps straight to it. */}
+      {validationWarningsOpen && invalidStepCount > 0 && (
+        <div
+          id="create-project-view-validation-alert"
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={() => setValidationWarningsOpen(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-project-view-validation-alert-title"
+            onClick={(event) => event.stopPropagation()}
+            className="w-full max-w-lg rounded-2xl border border-amber-200 bg-white shadow-2xl p-6"
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-11 h-11 rounded-xl bg-amber-100 border border-amber-200 text-amber-600 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5" aria-hidden="true" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 id="create-project-view-validation-alert-title" className="text-sm font-black text-slate-900">
+                  {toPersianDigits(invalidStepCount)} گام نیازمند اصلاح
+                </h3>
+                <p className="text-xs text-slate-600 leading-relaxed mt-1">
+                  برای ثبت نهایی طرح، موارد زیر را در گام‌های مربوطه کامل کنید.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setValidationWarningsOpen(false)}
+                aria-label="بستن"
+                className="shrink-0 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" aria-hidden="true" />
+              </button>
+            </div>
+
+            <ul className="mt-4 space-y-2 max-h-[55vh] overflow-y-auto">
+              {FORM_STEPS.filter((step) => hasStepIssues(step.id)).map((step) => {
                 const StepIcon = step.icon;
                 return (
                   <li key={step.id}>
                     <button
                       type="button"
-                      onClick={() => goToStep(step.id)}
-                      disabled={isLocked}
-                      aria-current={isCurrent ? 'step' : undefined}
-                      aria-label={`گام ${toPersianDigits(step.id)}: ${step.label}${needsFix ? ' — نیازمند اصلاح' : ''}`}
-                      className={`w-full h-full flex items-start gap-2 rounded-xl border p-2.5 text-start transition-colors ${
-                        isCurrent
-                          ? 'border-blue-500 bg-blue-50 text-blue-900 ring-1 ring-blue-500/30'
-                          : isDone
-                          ? 'border-emerald-200 bg-emerald-50/60 text-emerald-900 hover:border-emerald-300 cursor-pointer'
-                          : isLocked
-                          ? 'border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed'
-                          : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 cursor-pointer'
-                      }`}
+                      onClick={() => {
+                        goToStep(step.id);
+                        setValidationWarningsOpen(false);
+                      }}
+                      className="w-full text-start rounded-xl border border-slate-200 bg-slate-50/60 p-3 hover:border-amber-300 hover:bg-amber-50/60 transition-colors cursor-pointer"
                     >
-                      <span
-                        className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 text-xs font-black ${
-                          isCurrent ? 'bg-blue-600 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-500'
-                        }`}
-                      >
-                        {isDone ? <Check className="w-3.5 h-3.5" aria-hidden="true" /> : toPersianDigits(step.id)}
+                      <span className="flex items-center gap-2">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-amber-100 text-amber-700 shrink-0">
+                          <StepIcon className="w-3.5 h-3.5" aria-hidden="true" />
+                        </span>
+                        <span className="text-xs font-black text-slate-900">
+                          گام {toPersianDigits(step.id)} — {step.label}
+                        </span>
+                        <span className="ms-auto text-xs font-bold text-amber-700">اصلاح</span>
                       </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-xs font-bold leading-snug">{step.label}</span>
-                        <span className="hidden sm:block text-xs text-slate-500 mt-0.5 leading-snug">{step.hint}</span>
+                      <span className="mt-2 block space-y-1 ps-8">
+                        {stepIssues[step.id].map((issue) => (
+                          <span key={issue} className="flex items-start gap-1.5 text-xs text-slate-600 leading-relaxed">
+                            <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" aria-hidden="true" />
+                            {issue}
+                          </span>
+                        ))}
                       </span>
-                      {needsFix ? (
-                        <AlertTriangle className="w-3.5 h-3.5 text-risk shrink-0" aria-hidden="true" />
-                      ) : (
-                        <StepIcon className="w-3.5 h-3.5 text-slate-500 shrink-0 hidden sm:block" aria-hidden="true" />
-                      )}
                     </button>
                   </li>
                 );
               })}
-            </ol>
+            </ul>
 
-            {/* Draft autosave status — proves the answers survive a reload, and
-                gives the user a way out of a draft they no longer want. */}
-            {(draftRestored || draftSavedAt !== null) && (
-              <div
-                id="create-project-view-draft-status"
-                className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"
+            <div className="flex items-center justify-end gap-2.5 pt-4 mt-4 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setValidationWarningsOpen(false)}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-md shadow-amber-500/25 transition-colors cursor-pointer"
               >
-                <div className="flex items-start gap-2 text-xs font-semibold text-slate-600">
-                  {draftRestored ? (
-                    <>
-                      <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-emerald-600" aria-hidden="true" />
-                      <span className="leading-relaxed">
-                        پیش‌نویس ذخیره‌شده بازیابی شد؛ می‌توانید از همین گام ادامه دهید.
-                        {draftSavedAt !== null && (
-                          <>
-                            {' '}
-                            (آخرین ذخیره:{' '}
-                            <bdi className="tabular-nums">{formatDraftTime(draftSavedAt)}</bdi>)
-                          </>
-                        )}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4 mt-0.5 shrink-0 text-slate-500" aria-hidden="true" />
-                      <span className="leading-relaxed">
-                        پیش‌نویس خودکار ذخیره شد
-                        {draftSavedAt !== null && (
-                          <>
-                            {' '}
-                            — ساعت <bdi className="tabular-nums">{formatDraftTime(draftSavedAt)}</bdi>
-                          </>
-                        )}
-                      </span>
-                    </>
-                  )}
+                متوجه شدم
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Grid: Project Form */}
+      <div id="create-project-view-main-grid-form-live-project" className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Main Form — full width now that the side card is gone */}
+        <div id="create-project-view-main-form-8-columns" className="lg:col-span-12 space-y-6">
+          {/* Wizard stepper — the form's six sections become five reviewable steps.
+              Only the active step is mounted; every tile is clickable so the user
+              can jump between sections, with validation enforced on submit. */}
+          <nav
+            id="create-project-view-wizard-stepper"
+            ref={formTopRef}
+            aria-label="گام‌های ثبت پروژه"
+            className="relative overflow-hidden bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5 space-y-4 scroll-mt-6"
+          >
+            {/* Soft accent wash so the rail reads as the page's spine. */}
+            <div
+              className="pointer-events-none absolute -top-16 -left-10 h-56 w-56 rounded-full bg-blue-500/5 blur-3xl"
+              aria-hidden="true"
+            />
+
+            {/* Header — the active step sits on the start edge, overall validity
+                on the end edge (wrapping below on narrow screens). */}
+            <div className="relative flex flex-wrap items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 text-white shadow-sm shadow-blue-600/25">
+                  <ActiveStepIcon className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-slate-500">
+                    گام {toPersianDigits(activeStep)} از {toPersianDigits(FORM_STEPS.length)}
+                  </div>
+                  <div className="truncate text-sm font-black text-slate-900">
+                    {FORM_STEPS[activeStep - 1].label}
+                  </div>
                 </div>
+              </div>
+
+              {allStepsValid ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+                  <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                  همه گام‌ها معتبر است
+                </span>
+              ) : (
                 <button
                   type="button"
-                  onClick={draftRestored ? handleResetForm : handleDiscardDraft}
-                  className="shrink-0 text-xs font-bold text-slate-500 hover:text-risk-strong underline underline-offset-2 cursor-pointer"
+                  onClick={() => setValidationWarningsOpen(true)}
+                  aria-haspopup="dialog"
+                  title="مشاهده جزئیات گام‌های نیازمند اصلاح"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-warning-strong hover:bg-amber-100 hover:border-amber-300 transition-colors cursor-pointer"
                 >
-                  {draftRestored ? 'حذف پیش‌نویس و شروع دوباره' : 'حذف پیش‌نویس'}
+                  <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+                  {toPersianDigits(invalidStepCount)} گام نیازمند اصلاح
                 </button>
-              </div>
-            )}
+              )}
+            </div>
+
+            {/* Rail — five numbered nodes on a track that fills toward the active
+                step. The base and the fill both span the first and last node
+                centres (10%→90% of the width), so they sit under the circles. */}
+            <div className="relative">
+              {/* Progress is exposed as a leaf node — the interactive step buttons
+                  below must not live inside a role="progressbar". */}
+              <div
+                role="progressbar"
+                aria-label="پیشرفت ثبت پروژه"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round((activeStep / FORM_STEPS.length) * 100)}
+                aria-valuetext={`گام ${toPersianDigits(activeStep)} از ${toPersianDigits(FORM_STEPS.length)}`}
+                className="sr-only"
+              />
+              <div className="absolute right-[10%] left-[10%] top-[14px] h-1 rounded-full bg-slate-200" aria-hidden="true" />
+              <div
+                className="absolute right-[10%] top-[14px] h-1 rounded-full bg-gradient-to-l from-blue-600 to-emerald-500 transition-all duration-500"
+                style={{ width: `calc(${stepRailProgress} * 80%)` }}
+                aria-hidden="true"
+              />
+
+              <ol className="relative grid grid-cols-5 gap-1">
+                {FORM_STEPS.map((step) => {
+                  const isCurrent = step.id === activeStep;
+                  const isDone = step.id < activeStep;
+                  const isReached = step.id <= maxReachedStep;
+                  const needsFix = isReached && hasStepIssues(step.id);
+                  return (
+                    <li key={step.id} className="flex justify-center">
+                      <button
+                        type="button"
+                        onClick={() => goToStep(step.id)}
+                        aria-current={isCurrent ? 'step' : undefined}
+                        aria-label={`گام ${toPersianDigits(step.id)}: ${step.label}${needsFix ? ' — نیازمند اصلاح' : ''}`}
+                        className="group flex w-full flex-col items-center gap-2 rounded-xl px-1 pb-1 text-center transition-colors cursor-pointer"
+                      >
+                        <span className="relative flex h-8 w-8 items-center justify-center">
+                          <span
+                            className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-black transition-all ${
+                              isCurrent
+                                ? 'bg-blue-600 text-white ring-4 ring-blue-600/15 shadow-md shadow-blue-600/25'
+                                : isDone
+                                ? 'bg-emerald-500 text-white'
+                                : 'border-2 border-slate-200 bg-white text-slate-500 group-hover:border-slate-300 group-hover:text-slate-700'
+                            }`}
+                          >
+                            {isDone ? <Check className="h-4 w-4" aria-hidden="true" /> : toPersianDigits(step.id)}
+                          </span>
+                          {needsFix && (
+                            <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-500 text-white ring-2 ring-white">
+                              <AlertTriangle className="h-2.5 w-2.5" aria-hidden="true" />
+                            </span>
+                          )}
+                        </span>
+
+                        <span className="hidden min-w-0 sm:block">
+                          <span
+                            className={`block text-xs font-bold leading-snug ${
+                              isCurrent ? 'text-blue-900' : isDone ? 'text-emerald-800' : 'text-slate-500 group-hover:text-slate-700'
+                            }`}
+                          >
+                            {step.label}
+                          </span>
+                          <span className="mt-0.5 hidden text-xs leading-snug text-slate-400 lg:block">
+                            {step.hint}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
 
             {showStepErrors && hasStepIssues(activeStep) && (
               <ul role="alert" className="rounded-xl border border-red-200 bg-risk-soft p-3 space-y-1">
@@ -2236,7 +2147,7 @@ export const CreateProjectView: React.FC = () => {
                   <label className="block text-xs font-bold text-slate-700 mb-1">سال آغاز عملیات</label>
                   <input
                     type="number"
-                    value={startYear}
+                    value={startYear || ''}
                     onChange={(e) => setStartYear(Number(e.target.value))}
                     className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2"
                   />
@@ -2245,7 +2156,7 @@ export const CreateProjectView: React.FC = () => {
                   <label className="block text-xs font-bold text-slate-700 mb-1">سال پیش‌بینی پایان</label>
                   <input
                     type="number"
-                    value={endYear}
+                    value={endYear || ''}
                     onChange={(e) => setEndYear(Number(e.target.value))}
                     className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2"
                   />
@@ -2254,7 +2165,7 @@ export const CreateProjectView: React.FC = () => {
                   <label className="block text-xs font-bold text-slate-700 mb-1">مدت زمان اجرا (ماه)</label>
                   <input
                     type="number"
-                    value={durationMonths}
+                    value={durationMonths || ''}
                     onChange={(e) => setDurationMonths(Number(e.target.value))}
                     className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2"
                   />
@@ -2314,6 +2225,7 @@ export const CreateProjectView: React.FC = () => {
                     onChange={(e) => setRequestingDeptId(e.target.value)}
                     className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
+                    <option value="">— انتخاب دستگاه متقاضی —</option>
                     {departments.map((d) => (
                       <option key={d.id} value={d.id}>
                         {d.name} ({d.categoryFa})
@@ -2343,6 +2255,7 @@ export const CreateProjectView: React.FC = () => {
                     onChange={(e) => setPrimaryDeptId(e.target.value)}
                     className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold"
                   >
+                    <option value="">— انتخاب دستگاه اجرایی —</option>
                     {departments.map((d) => (
                       <option key={d.id} value={d.id}>
                         {d.name} ({d.contactPerson})
@@ -2389,6 +2302,7 @@ export const CreateProjectView: React.FC = () => {
                           onChange={(e) => setNewContribDeptId(e.target.value)}
                           className="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-1.5"
                         >
+                          <option value="">— انتخاب اداره —</option>
                           {departments
                             .filter((d) => d.id !== primaryDeptId)
                             .map((d) => (
@@ -2405,7 +2319,7 @@ export const CreateProjectView: React.FC = () => {
                           type="number"
                           min="1"
                           max="90"
-                          value={newContribPct}
+                          value={newContribPct || ''}
                           onChange={(e) => setNewContribPct(Number(e.target.value))}
                           className="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-1.5"
                         />
@@ -2520,6 +2434,7 @@ export const CreateProjectView: React.FC = () => {
                     onChange={(e) => setSelectedCrisisId(e.target.value)}
                     className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500 font-medium"
                   >
+                    <option value="">— انتخاب کانون بحران —</option>
                     {crisesHarms.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.title} (شدت: {toPersianDigits(c.severityScore)}٪ | جمعیت درگیر: {formatNumber(c.affectedPopulation)})
@@ -2554,6 +2469,7 @@ export const CreateProjectView: React.FC = () => {
                     onChange={(e) => setSelectedPriorityId(e.target.value)}
                     className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 font-medium"
                   >
+                    <option value="">— انتخاب اولویت راهبردی —</option>
                     {priorities.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.title} (سهم مصوب: {toPersianDigits(p.currentPercentage)}٪)
@@ -2672,7 +2588,7 @@ export const CreateProjectView: React.FC = () => {
                   <input
                     type="number"
                     step={10_000_000_000}
-                    value={estimatedCostToman}
+                    value={estimatedCostToman || ''}
                     onChange={(e) => setEstimatedCostToman(Number(e.target.value))}
                     className="w-full text-xs font-bold text-slate-900 bg-white border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-emerald-500"
                   />
@@ -2686,7 +2602,7 @@ export const CreateProjectView: React.FC = () => {
                   <input
                     type="number"
                     step={10_000_000_000}
-                    value={currentYearAllocatedToman}
+                    value={currentYearAllocatedToman || ''}
                     onChange={(e) => setCurrentYearAllocatedToman(Number(e.target.value))}
                     className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3 py-2"
                   />
@@ -2702,6 +2618,7 @@ export const CreateProjectView: React.FC = () => {
                     onChange={(e) => setPrimaryBudgetSourceId(e.target.value)}
                     className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3 py-2"
                   >
+                    <option value="">— انتخاب منبع مالی —</option>
                     {budgetSources.map((b) => (
                       <option key={b.id} value={b.id}>
                         {b.title} ({b.sourceTypeFa})
@@ -2891,6 +2808,7 @@ export const CreateProjectView: React.FC = () => {
                     onChange={(e) => setDistrict(e.target.value)}
                     className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2"
                   >
+                    <option value="">— انتخاب بخش —</option>
                     {selectableAreas.map((area) => (
                       <option key={area.id} value={area.city}>
                         {area.city} ({formatNumber(area.population)} نفر)
@@ -2930,7 +2848,7 @@ export const CreateProjectView: React.FC = () => {
                   <input
                     type="number"
                     min="1"
-                    value={beneficiariesCount}
+                    value={beneficiariesCount || ''}
                     onChange={(e) => setBeneficiariesCount(Number(e.target.value))}
                     className="w-full text-xs font-bold bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
                   />
@@ -3073,6 +2991,7 @@ export const CreateProjectView: React.FC = () => {
                     onChange={(e) => setExecutorId(e.target.value)}
                     className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                   >
+                    <option value="">— انتخاب مجری —</option>
                     {executors.map((ex) => (
                       <option key={ex.id} value={ex.id}>
                         {ex.name} ({ex.typeFa} | نرخ موفقیت: {toPersianDigits(ex.successRate)}٪)
@@ -3178,7 +3097,7 @@ export const CreateProjectView: React.FC = () => {
                   )}
                   {reviewRow('اولویت راهبردی', selectedPriority?.title ?? '—', 4)}
                   {reviewRow('کانون بحران', selectedCrisis?.title ?? '—', 4)}
-                  {reviewRow('درجه فوریت', URGENCY_LABELS[urgency], 4)}
+                  {reviewRow('درجه فوریت', urgency ? URGENCY_LABELS[urgency] : '—', 4)}
                   {reviewRow('اداره متقاضی', requestingDept?.name ?? '—', 5)}
                   {reviewRow('دستگاه اجرایی اصلی', primaryDept?.name ?? '—', 5)}
                   {reviewRow(
@@ -3449,11 +3368,24 @@ export const CreateProjectView: React.FC = () => {
             </div>
           </form>
 
-          {/* Smart Demographic Priority Recommendations Panel */}
-          <div id="create-project-view-smart-demographic-priority" className="bg-gradient-to-br from-cyan-50/80 via-blue-50/60 to-slate-50 text-slate-900 rounded-2xl p-5 shadow-sm border border-cyan-200/70 relative overflow-hidden">
+          {/* Demographic planning assistant — no longer an inline panel; it opens
+              as a modal from the page header so the form column holds only the
+              form. */}
+          {plannerOpen && (
+          <div
+            id="create-project-view-demographic-planner-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-project-view-demographic-planner-modal-title"
+            className="fixed inset-0 z-[60] overflow-y-auto bg-black/60 p-4 backdrop-blur-sm"
+            onClick={(event) => {
+              if (event.target === event.currentTarget) setPlannerOpen(false);
+            }}
+          >
+          <div className="relative mx-auto my-6 w-full max-w-4xl overflow-hidden rounded-2xl border border-cyan-200/70 bg-gradient-to-br from-cyan-50/80 via-blue-50/60 to-slate-50 p-5 text-slate-900 shadow-2xl">
             {/* Subtle decorative background glow */}
-            <div id="create-project-view-subtle-decorative-background" className="absolute -left-12 -top-12 w-48 h-48 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
-            <div id="create-project-view-subtle-decorative-background-2" className="absolute -right-12 -bottom-12 w-48 h-48 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
+            <div id="create-project-view-subtle-decorative-background" className="absolute -left-12 -top-12 h-48 w-48 rounded-full bg-cyan-500/10 blur-2xl pointer-events-none" aria-hidden="true" />
+            <div id="create-project-view-subtle-decorative-background-2" className="absolute -right-12 -bottom-12 h-48 w-48 rounded-full bg-blue-500/10 blur-2xl pointer-events-none" aria-hidden="true" />
 
             {/* Header Row */}
             <div id="create-project-view-header-row" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-cyan-200/60 pb-4 relative z-10">
@@ -3463,7 +3395,7 @@ export const CreateProjectView: React.FC = () => {
                 </div>
                 <div id="create-project-view-header-row-4">
                   <div id="create-project-view-header-row-5" className="flex items-center gap-2">
-                    <h2 className="text-sm font-bold text-slate-900 tracking-tight">
+                    <h2 id="create-project-view-demographic-planner-modal-title" className="text-sm font-bold text-slate-900 tracking-tight">
                       دستیار برنامه‌ریزی دموگرافیک و اولویت‌های پیشنهادی منطقه
                     </h2>
                     <span className="text-xs bg-cyan-100 text-cyan-800 px-2 py-0.5 rounded-full border border-cyan-200 font-semibold">
@@ -3478,20 +3410,12 @@ export const CreateProjectView: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => setPlannerExpanded(!plannerExpanded)}
-                className="inline-flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer self-start sm:self-auto"
+                onClick={() => setPlannerOpen(false)}
+                aria-label="بستن دستیار"
+                className="inline-flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer self-start sm:self-auto"
               >
-                {plannerExpanded ? (
-                  <>
-                    <span>جمع‌کردن پنل</span>
-                    <ChevronUp className="w-3.5 h-3.5" />
-                  </>
-                ) : (
-                  <>
-                    <span>نمایش اولویت‌های پیشنهادی</span>
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  </>
-                )}
+                <X className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>بستن</span>
               </button>
             </div>
 
@@ -3514,8 +3438,7 @@ export const CreateProjectView: React.FC = () => {
               </div>
             )}
 
-            {/* Expanded Content */}
-            {plannerExpanded && (
+            {/* Planner content */}
               <div id="create-project-view-expanded-content" className="mt-4 space-y-4 relative z-10">
                 {/* Filter Controls: Location Selector + Category Selector */}
                 <div id="create-project-view-filter-controls-location" className="grid grid-cols-1 md:grid-cols-12 gap-3">
@@ -3530,6 +3453,7 @@ export const CreateProjectView: React.FC = () => {
                       onChange={(e) => setDistrict(e.target.value)}
                       className="w-full text-xs font-bold bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-cyan-500 cursor-pointer"
                     >
+                      <option value="">— انتخاب بخش —</option>
                       {selectableAreas.map((area) => (
                         <option key={area.id} value={area.city}>
                           {area.city} (جمعیت: {formatNumber(area.population)})
@@ -3703,57 +3627,11 @@ export const CreateProjectView: React.FC = () => {
                   </div>
                 </div>
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Live Project Passport Column (4 Columns) */}
-        <div id="create-project-view-live-project-passport-column-4" className="lg:col-span-4 space-y-6">
-          {/* Anti-Overlap Intelligence Card */}
-          <div
-            id="create-project-view-anti-overlap-intelligence-card"
-            className={`rounded-2xl p-5 border shadow-sm transition-all ${
-              potentialDuplicates.length > 0
-                ? 'bg-amber-50 border-amber-300 text-amber-950'
-                : 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
-            }`}
-          >
-            <div id="create-project-view-anti-overlap-intelligence-card-2" className="flex items-center gap-2 mb-2">
-              {potentialDuplicates.length > 0 ? (
-                <>
-                  <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
-                  <h3 className="text-xs font-black text-amber-900">هشدار هوشمند ردیاب موازی‌کاری</h3>
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                  <h3 className="text-xs font-black text-emerald-900">سنجش موازی‌کاری: وضعیت بدون تداخل</h3>
-                </>
-              )}
             </div>
-
-            {potentialDuplicates.length > 0 ? (
-              <div id="create-project-view-anti-overlap-intelligence-card-3" className="text-xs space-y-2">
-                <p className="text-amber-800 leading-relaxed">
-                  سیستم متوجه شد طرح دیگری با بحران یا موقعیت مکانی مشابه در حال پیگیری است:
-                </p>
-                <div id="create-project-view-anti-overlap-intelligence-card-4" className="bg-white/80 p-2.5 rounded-xl border border-amber-200 text-slate-800">
-                  <div id="create-project-view-anti-overlap-intelligence-card-5" className="font-bold text-xs text-slate-900">{potentialDuplicates[0].title}</div>
-                  <div id="create-project-view-anti-overlap-intelligence-card-6" className="text-xs text-slate-500 mt-1">
-                    متولی: {potentialDuplicates[0].departmentName} | کد: {potentialDuplicates[0].code}
-                  </div>
-                </div>
-                <p className="text-xs text-amber-700 font-semibold">
-                  توصیه هوشمند: پیشنهاد می‌شود سهم‌های هر دو دستگاه را در قالب این پروژه مشترک ادغام نمایید تا از هدررفت بودجه جلوگیری شود.
-                </p>
-              </div>
-            ) : (
-              <p className="text-xs text-emerald-700 leading-relaxed">
-                هیچ همپوشانی مخربی برای این محدوده و این سرفصل بحران با پروژه‌های دستگاه‌های دیگر ثبت نشده است. پروژه از حیث بهره‌وری قابل تایید است.
-              </p>
-            )}
           </div>
+          )}
         </div>
+
       </div>
 
     </div>

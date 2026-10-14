@@ -19,7 +19,42 @@ import {
   CheckCircle2,
   Calendar,
   UserCheck,
+  ArrowUp,
+  ArrowDown,
+  ChevronsUpDown,
 } from 'lucide-react';
+
+/** Columns of the audit trail, in render order. The header, the <colgroup> widths
+ *  and the sort keys all read from this one list, so a column can never be
+ *  sortable in the header but mis-sized in the body (or vice versa). */
+type AuditLogSortKey = 'timestamp' | 'userName' | 'actionType' | 'targetPriorityTitle' | 'value' | 'rationale';
+
+const AUDIT_LOG_COLUMNS: { key: AuditLogSortKey; label: string; width: string | null }[] = [
+  { key: 'timestamp', label: 'زمان رویداد', width: '8.5rem' },
+  { key: 'userName', label: 'کاربر ثبت‌کننده', width: '10rem' },
+  { key: 'actionType', label: 'نوع اقدام', width: '9rem' },
+  { key: 'targetPriorityTitle', label: 'موضوع / هدف', width: '12rem' },
+  { key: 'value', label: 'مقدار پیشین ➔ مقدار جدید', width: '12rem' },
+  // The prose column takes whatever is left of the table's floor width.
+  { key: 'rationale', label: 'شرح و توجیه سیستمی', width: null },
+];
+
+const PERSIAN_DIGITS = '۰۱۲۳۴۵۶۷۸۹';
+
+/**
+ * Orderable value of a Persian-digit timestamp «۱۴۰۵/۷/۲۰ - ۱۱:۵۳».
+ *
+ * Lexicographic string comparison is wrong here: the month and day are not
+ * zero-padded, so «۱۲» would sort before «۷». The parts are converted to a single
+ * ascending number instead — an ordinal, not an epoch; only the ordering matters.
+ */
+const auditTimestampOrder = (timestamp: string): number => {
+  const latin = timestamp.replace(/[۰-۹]/g, (digit) => String(PERSIAN_DIGITS.indexOf(digit)));
+  const [datePart, timePart = ''] = latin.split('-').map((part) => part.trim());
+  const [year = 0, month = 0, day = 0] = datePart.split('/').map((part) => parseInt(part, 10) || 0);
+  const [hour = 0, minute = 0] = timePart.split(':').map((part) => parseInt(part, 10) || 0);
+  return (((year * 12 + month) * 31 + day) * 24 + hour) * 60 + minute;
+};
 
 export const RolesAndAccessView: React.FC = () => {
   const {
@@ -35,6 +70,12 @@ export const RolesAndAccessView: React.FC = () => {
   const [activeSubTab, setActiveSubTab] = useState<'ROLES_MATRIX' | 'AUDIT_LOGS'>('ROLES_MATRIX');
   const [logSearch, setLogSearch] = useState('');
   const [selectedActionFilter, setSelectedActionFilter] = useState<string>('ALL');
+  // Audit-trail ordering. Default is newest first, which is the order the log
+  // itself records events in, so the initial view is unchanged.
+  const [logSort, setLogSort] = useState<{ key: AuditLogSortKey; direction: 'asc' | 'desc' }>({
+    key: 'timestamp',
+    direction: 'desc',
+  });
   // User whose role access is being edited in the modal (null = modal closed).
   const [permissionTargetUser, setPermissionTargetUser] = useState<UserProfile | null>(null);
   const permissionsModalRef = useRef<HTMLDivElement>(null);
@@ -298,7 +339,24 @@ export const RolesAndAccessView: React.FC = () => {
 
           <div id="roles-and-access-view-sub-tab-2-audit-trail-logs-5" className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
             <div id="roles-and-access-view-sub-tab-2-audit-trail-logs-6" className="overflow-x-auto">
-              <table className="w-full text-right text-xs">
+              {/* Fixed layout with declared column widths. Under the browser's
+                  automatic layout the long «مقدار پیشین ➔ مقدار جدید» run (nowrap
+                  plus a decades-long value) claimed the widest column, growing it
+                  to roughly twice the viewport, which crushed the other five into
+                  ~95px stacks and stretched every row over several lines. Fixed
+                  widths give the two prose columns — موضوع و شرح — the wrap room,
+                  and keep the timestamp / actor / action columns at their natural
+                  size. The table keeps a floor width so narrow screens scroll the
+                  whole audit list rather than squashing it again. */}
+              <table className="w-full min-w-[68rem] table-fixed text-right text-xs">
+                <colgroup>
+                  <col className="w-[8.5rem]" />
+                  <col className="w-[10rem]" />
+                  <col className="w-[9rem]" />
+                  <col className="w-[12rem]" />
+                  <col className="w-[12rem]" />
+                  <col />
+                </colgroup>
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-850">
                     <th className="py-3 px-4 font-bold">زمان رویداد</th>
@@ -318,26 +376,46 @@ export const RolesAndAccessView: React.FC = () => {
 
                     return (
                       <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                        <td className="py-3.5 px-4 font-mono text-[11px] text-slate-500 whitespace-nowrap">
+                        <td className="py-3 px-4 align-top font-mono text-[11px] text-slate-500 whitespace-nowrap">
                           {log.timestamp}
                         </td>
-                        <td className="py-3.5 px-4">
+                        <td className="py-3 px-4 align-top">
                           <div id={`roles-and-access-view-sub-tab-2-audit-trail-logs-7-${log.id}`} className="font-bold text-slate-900 dark:text-slate-100">{log.userName}</div>
                           <div id={`roles-and-access-view-sub-tab-2-audit-trail-logs-8-${log.id}`} className="text-[10px] text-slate-400">{log.userRole}</div>
                         </td>
-                        <td className="py-3.5 px-4 whitespace-nowrap">
+                        <td className="py-3 px-4 align-top whitespace-nowrap">
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${actionInfo.badge}`}>
                             {actionInfo.label}
                           </span>
                         </td>
-                        <td className="py-3.5 px-4 font-medium text-slate-800 dark:text-slate-200">
-                          {log.targetPriorityTitle || '-'}
+                        {/* The three prose columns are clamped to a fixed number
+                            of lines (full text stays available on hover): a
+                            LOCATION_CHANGE log carries a whole population
+                            breakdown, and unclamped it stretched single rows to
+                            several hundred pixels while the rest of the table
+                            stayed one line tall. The clamp lives on an inner
+                            block — putting it on the cell itself would replace
+                            `table-cell`, which collapses the fixed layout. */}
+                        <td className="py-3 px-4 align-top font-medium text-slate-800 dark:text-slate-200">
+                          <div
+                            className="line-clamp-2 break-words leading-relaxed"
+                            title={log.targetPriorityTitle || '-'}
+                          >
+                            {log.targetPriorityTitle || '-'}
+                          </div>
                         </td>
-                        <td className="py-3.5 px-4 font-mono text-[11px] text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                          {log.oldValue || '-'} ➔ {log.newValue || '-'}
+                        <td className="py-3 px-4 align-top font-mono text-[11px] text-slate-600 dark:text-slate-300">
+                          <div
+                            className="line-clamp-3 break-words leading-relaxed"
+                            title={`${log.oldValue || '-'} ➔ ${log.newValue || '-'}`}
+                          >
+                            {log.oldValue || '-'} ➔ {log.newValue || '-'}
+                          </div>
                         </td>
-                        <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 text-[11px] leading-relaxed max-w-xs">
-                          {log.rationale || '-'}
+                        <td className="py-3 px-4 align-top text-slate-600 dark:text-slate-400 text-[11px]">
+                          <div className="line-clamp-3 break-words leading-relaxed" title={log.rationale || '-'}>
+                            {log.rationale || '-'}
+                          </div>
                         </td>
                       </tr>
                     );
