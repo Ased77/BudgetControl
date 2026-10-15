@@ -294,34 +294,29 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
                       >
                         استان {loc.province}
                       </span>
-                      {isSelected ? (
+                      {isSelected && (
                         <span className="flex items-center gap-1 text-[11px] font-extrabold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-md">
                           <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
                           لوکیشن فعال
                         </span>
-                      ) : (
-                        <span className="flex items-center gap-1 text-[11px] font-bold text-slate-400">
-                          <Pencil className="w-3.5 h-3.5" />
-                          ویرایش
-                        </span>
                       )}
                     </div>
 
-                    <div id={`location-module-location-cards-grid-6-${loc.id}`} className="flex items-center gap-2.5 mt-1">
+                    <div id={`location-module-location-cards-grid-6-${loc.id}`} className="flex justify-center mt-1">
                       <div
                         id={`location-module-location-cards-grid-7-${loc.id}`}
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                        className={`w-20 h-20 rounded-2xl flex items-center justify-center shrink-0 ${
                           isSelected
                             ? 'bg-blue-600 text-white shadow-xs'
                             : 'bg-blue-50 text-blue-600'
                         }`}
                       >
-                        <MapPin className="w-6 h-6" />
+                        <MapPin className="w-12 h-12" />
                       </div>
-                      <h3 className="font-extrabold text-slate-900 text-sm">
-                        شهرستان {loc.county}
-                      </h3>
                     </div>
+                    <h3 className="font-extrabold text-slate-900 text-sm text-center mt-1.5">
+                      شهرستان {loc.county}
+                    </h3>
                   </div>
 
                   <div id={`location-module-location-cards-grid-8-${loc.id}`} className="mt-3 pt-2 border-t border-slate-100 space-y-1.5">
