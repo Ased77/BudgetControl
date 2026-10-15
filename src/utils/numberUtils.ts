@@ -105,6 +105,24 @@ export function formatMoneyParts(
   return { value: formatFaNumber(Math.round(a), 0), unit: 'تومان' };
 }
 
+export type MoneyDisplayTier = { divisor: number; fractionDigits: number; unit: string };
+
+/**
+ * The tier a Toman amount settles in — the same tiers and per-tier digit
+ * counts as `formatMoneyParts` (defaults), exposed so a count-up animation can
+ * pin the unit label: a figure that settles at «۱۴٫۶ همت» counts up as «همت»
+ * from the first frame instead of flipping through میلیون/میلیارد on the way.
+ */
+export function moneyDisplayTier(amountToman: number): MoneyDisplayTier {
+  const a = Number(amountToman);
+  if (!Number.isFinite(a)) return { divisor: 1, fractionDigits: 0, unit: 'تومان' };
+  const abs = Math.abs(a);
+  if (abs >= ONE_HEMMAT_TOMAN) return { divisor: ONE_HEMMAT_TOMAN, fractionDigits: 2, unit: 'همت' };
+  if (abs >= TOMAN_BILLION) return { divisor: TOMAN_BILLION, fractionDigits: 2, unit: 'میلیارد تومان' };
+  if (abs >= 1_000_000) return { divisor: 1_000_000, fractionDigits: 1, unit: 'میلیون تومان' };
+  return { divisor: 1, fractionDigits: 0, unit: 'تومان' };
+}
+
 /** One-line monetary string: formatMoney(14_600_000_000_000) → «۱۴٫۶ همت». */
 export function formatMoney(
   amountToman: number,
