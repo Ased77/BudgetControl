@@ -303,12 +303,29 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
                     </div>
 
                     <div id={`location-module-location-cards-grid-6-${loc.id}`} className="flex justify-center mt-1">
+                      {/* The only control that re-scopes the whole system to this
+                          location. Clicking the card body opens the edit dialog,
+                          so the selection click must not bubble up to it. */}
                       <div
                         id={`location-module-location-cards-grid-7-${loc.id}`}
-                        className={`w-20 h-20 rounded-2xl flex items-center justify-center shrink-0 ${
+                        role="button"
+                        tabIndex={0}
+                        title="انتخاب این لوکیشن برای کل سامانه"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onSelectLocation(loc);
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            onSelectLocation(loc);
+                          }
+                        }}
+                        className={`w-20 h-20 rounded-2xl flex items-center justify-center shrink-0 cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
                           isSelected
                             ? 'bg-blue-600 text-white shadow-xs'
-                            : 'bg-blue-50 text-blue-600'
+                            : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
                         }`}
                       >
                         <MapPin className="w-12 h-12" />
@@ -332,26 +349,6 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
                         {toPersianDigits(loc.indicators.povertyRate)}٪
                       </strong>
                     </div>
-
-                    {/* The only control that re-scopes the whole system to this
-                        location. Clicking the card body opens the edit dialog,
-                        so the selection click must not bubble up to it. */}
-                    {isSelected ? (
-                      <span className="block w-full mt-2 py-1.5 rounded-xl text-xs font-bold text-center bg-blue-600 text-white shadow-xs">
-                        لوکیشن فعال سیستم
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          onSelectLocation(loc);
-                        }}
-                        className="w-full mt-2 py-1.5 rounded-xl text-xs font-bold transition-all text-center bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200"
-                      >
-                        انتخاب برای کل سامانه
-                      </button>
-                    )}
                   </div>
                 </div>
               );

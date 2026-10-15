@@ -283,6 +283,61 @@ const CATEGORY_OPTIONS: { id: string; label: string }[] = [
   { id: 'ENVIRONMENT_RISK', label: '🌳 محیط‌زیست و بحران' },
 ];
 
+/**
+ * Circular progress ring for the 0-100 indicator values shown in the main
+ * comparison table columns. Mirrors the gauge used by CrisesHarmsView: a fixed
+ * track circle plus a value arc whose dash offset encodes the percentage.
+ */
+const GAUGE_RADIUS = 22;
+
+interface IndicatorGaugeProps {
+  id: string;
+  value: number;
+  /** Static Tailwind stroke-* class so the arc tone survives class purging. */
+  toneClass: string;
+  footer?: React.ReactNode;
+}
+
+const IndicatorGauge: React.FC<IndicatorGaugeProps> = ({
+  id,
+  value,
+  toneClass,
+  footer,
+}) => {
+  const pct = Math.min(100, Math.max(0, value));
+  return (
+    <div id={id} className="flex flex-col items-center">
+      <div className="relative w-12 h-12">
+        <svg viewBox="0 0 56 56" className="w-12 h-12 -rotate-90">
+          <circle
+            cx="28"
+            cy="28"
+            r={GAUGE_RADIUS}
+            fill="none"
+            strokeWidth="6"
+            className="stroke-slate-200"
+          />
+          <circle
+            cx="28"
+            cy="28"
+            r={GAUGE_RADIUS}
+            fill="none"
+            strokeWidth="6"
+            strokeLinecap="round"
+            className={`transition-all duration-500 ${toneClass}`}
+            strokeDasharray={2 * Math.PI * GAUGE_RADIUS}
+            strokeDashoffset={2 * Math.PI * GAUGE_RADIUS * (1 - pct / 100)}
+          />
+        </svg>
+        <span className="absolute inset-0 flex items-center justify-center text-[11px] font-black text-slate-800">
+          {toPersianDigits(value)}٪
+        </span>
+      </div>
+      {footer}
+    </div>
+  );
+};
+
 interface ComparativeHarmsTableProps {
   currentLocation: LocationData;
   allLocations?: LocationData[];
@@ -806,41 +861,42 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                     </td>
 
                     {/* Local Value */}
-                    <td className="py-3 px-3 text-center bg-blue-50/40 font-black text-sm text-blue-900 border-x border-blue-200">
-                      <div id={`comparative-harms-table-local-value-${item.key}`} className="flex flex-col items-center">
-                        <span className="text-base font-black">
-                          {toPersianDigits(localVal)}
-                        </span>
-                        <span className="text-[10px] text-blue-700 font-medium">
-                          {item.unit}
-                        </span>
-                      </div>
+                    <td className="py-3 px-3 text-center bg-blue-50/40 border-x border-blue-200">
+                      <IndicatorGauge
+                        id={`comparative-harms-table-local-value-${item.key}`}
+                        value={localVal}
+                        toneClass={isHotspot ? 'stroke-rose-500' : isWorseThanNat ? 'stroke-amber-500' : 'stroke-emerald-500'}
+                      />
                     </td>
 
                     {/* Province Average */}
                     {(comparisonTarget === 'BOTH' || comparisonTarget === 'PROVINCE') && (
-                      <td className="py-3 px-3 text-center bg-indigo-50/30 font-bold text-xs text-indigo-950 border-l border-indigo-100">
-                        <div id={`comparative-harms-table-province-average-${item.key}`} className="flex flex-col items-center">
-                          <span>{toPersianDigits(provVal)}</span>
-                          <span className="text-[10px] text-slate-400">{item.unit}</span>
-                          {localVal !== provVal && (
-                            <span className={`text-[10px] font-bold ${
-                              isWorseThanProv ? 'text-rose-600' : 'text-emerald-600'
-                            }`}>
-                              {isWorseThanProv ? '▲ بالاتر از استان' : '▼ پایین‌تر از استان'}
-                            </span>
-                          )}
-                        </div>
+                      <td className="py-3 px-3 text-center bg-indigo-50/30 border-l border-indigo-100">
+                        <IndicatorGauge
+                          id={`comparative-harms-table-province-average-${item.key}`}
+                          value={provVal}
+                          toneClass="stroke-indigo-400"
+                          footer={
+                            localVal !== provVal ? (
+                              <span className={`text-[10px] font-bold ${
+                                isWorseThanProv ? 'text-rose-600' : 'text-emerald-600'
+                              }`}>
+                                {isWorseThanProv ? '▲ بالاتر از استان' : '▼ پایین‌تر از استان'}
+                              </span>
+                            ) : undefined
+                          }
+                        />
                       </td>
                     )}
 
                     {/* National Average */}
                     {(comparisonTarget === 'BOTH' || comparisonTarget === 'NATIONAL') && (
-                      <td className="py-3 px-3 text-center bg-slate-50/50 font-bold text-xs text-slate-700 border-l border-slate-200">
-                        <div id={`comparative-harms-table-national-average-${item.key}`} className="flex flex-col items-center">
-                          <span>{toPersianDigits(natVal)}</span>
-                          <span className="text-[10px] text-slate-400">{item.unit}</span>
-                        </div>
+                      <td className="py-3 px-3 text-center bg-slate-50/50 border-l border-slate-200">
+                        <IndicatorGauge
+                          id={`comparative-harms-table-national-average-${item.key}`}
+                          value={natVal}
+                          toneClass="stroke-slate-400"
+                        />
                       </td>
                     )}
 
