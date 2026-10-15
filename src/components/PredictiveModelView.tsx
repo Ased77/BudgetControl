@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { CsrPriority, LocalIndicators, LocationData, OrganizationConfig } from '../types';
 import { calculatePredictiveForecast } from '../utils/predictiveEngine';
-import { toPersianDigits, formatCurrency, formatLargeBudgetPersian } from '../utils/numberUtils';
+import { toPersianDigits, formatCurrency, formatMoneyParts } from '../utils/numberUtils';
+import { Num } from './Num';
 import {
   TrendingUp,
   Sparkles,
@@ -142,7 +143,7 @@ export const PredictiveModelView: React.FC<PredictiveModelViewProps> = ({
             <div id="predictive-model-view-budget-multiplier-interactive-3">
               <span className="text-xs font-bold text-slate-800">شبیه‌ساز ضریب بودجه (تست چه-می‌شود اگر؟):</span>
               <div id="predictive-model-view-budget-multiplier-interactive-4" className="text-[11px] text-slate-500">
-                بودجه کل شبیه‌سازی‌شده: <strong className="text-indigo-700 font-bold">{formatLargeBudgetPersian(simulatedTotalBudgetToman)}</strong>
+                بودجه کل شبیه‌سازی‌شده: <strong className="text-indigo-700 font-bold"><Num {...formatMoneyParts(simulatedTotalBudgetToman)} /></strong>
               </div>
             </div>
           </div>
@@ -158,7 +159,7 @@ export const PredictiveModelView: React.FC<PredictiveModelViewProps> = ({
               className="w-full accent-indigo-600 h-2 bg-slate-200 rounded-lg cursor-pointer"
             />
             <span className="bg-indigo-100 text-indigo-800 border border-indigo-200 text-xs font-extrabold px-3 py-1.5 rounded-lg shrink-0 font-mono">
-              {toPersianDigits(Math.round(budgetMultiplier * 100))}٪ (ضریب {toPersianDigits(budgetMultiplier)}x)
+              <Num value={toPersianDigits(Math.round(budgetMultiplier * 100))} />٪ (ضریب <Num value={toPersianDigits(budgetMultiplier)} />x)
             </span>
           </div>
         </div>
@@ -175,7 +176,7 @@ export const PredictiveModelView: React.FC<PredictiveModelViewProps> = ({
           </div>
           <div id="predictive-model-view-kpi-prediction-summary-cards-5" className="flex items-baseline gap-2">
             <span className="text-2xl font-black text-slate-900">
-              +{toPersianDigits(predictionResult.overallRegionalImprovementPct)}٪
+              +<Num value={toPersianDigits(predictionResult.overallRegionalImprovementPct)} />٪
             </span>
             <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
               ارتقای شاخص‌ها
@@ -194,14 +195,14 @@ export const PredictiveModelView: React.FC<PredictiveModelViewProps> = ({
           </div>
           <div id="predictive-model-view-kpi-prediction-summary-cards-9" className="flex items-baseline gap-2">
             <span className="text-2xl font-black text-slate-900">
-              {toPersianDigits(predictionResult.roiSocialRatio)}x
+              <Num value={toPersianDigits(predictionResult.roiSocialRatio)} />x
             </span>
             <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
               خلق ارزش اجتماعی
             </span>
           </div>
           <p className="text-[11px] text-slate-500">
-            {toPersianDigits(predictionResult.roiSocialRatio)} برابر هزینه اولیه ارزش‌افزوده رفاهی
+            <Num value={toPersianDigits(predictionResult.roiSocialRatio)} unit="برابر" /> هزینه اولیه ارزش‌افزوده رفاهی
           </p>
         </div>
 
@@ -213,14 +214,14 @@ export const PredictiveModelView: React.FC<PredictiveModelViewProps> = ({
           </div>
           <div id="predictive-model-view-kpi-prediction-summary-cards-13" className="flex items-baseline gap-2">
             <span className="text-2xl font-black text-slate-900">
-              {toPersianDigits(predictionResult.totalBeneficiariesProjected.toLocaleString('fa-IR'))}
+              <Num value={toPersianDigits(predictionResult.totalBeneficiariesProjected.toLocaleString('fa-IR'))} />
             </span>
             <span className="text-[11px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-md">
               نفر
             </span>
           </div>
           <p className="text-[11px] text-slate-500">
-            حدود {toPersianDigits(Math.round((predictionResult.totalBeneficiariesProjected / (selectedLocation.population || 320000)) * 100))}٪ کل جمعیت شهرستان
+            حدود <Num value={toPersianDigits(Math.round((predictionResult.totalBeneficiariesProjected / (selectedLocation.population || 320000)) * 100))} />٪ کل جمعیت شهرستان
           </p>
         </div>
 
@@ -232,7 +233,7 @@ export const PredictiveModelView: React.FC<PredictiveModelViewProps> = ({
           </div>
           <div id="predictive-model-view-kpi-prediction-summary-cards-17" className="flex items-baseline gap-2">
             <span className="text-2xl font-black text-slate-900">
-              {toPersianDigits(predictionResult.jobsCreatedProjected.toLocaleString('fa-IR'))}
+              <Num value={toPersianDigits(predictionResult.jobsCreatedProjected.toLocaleString('fa-IR'))} />
             </span>
             <span className="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">
               شغل پایدار
@@ -298,7 +299,7 @@ export const PredictiveModelView: React.FC<PredictiveModelViewProps> = ({
                       {item.titleFa}
                     </h4>
                     <span className="text-[10px] text-slate-500 font-medium">
-                      بودجه مرتبط: {formatLargeBudgetPersian(item.impactBudgetToman)}
+                      بودجه مرتبط: <Num {...formatMoneyParts(item.impactBudgetToman)} />
                     </span>
                   </div>
 
@@ -313,7 +314,7 @@ export const PredictiveModelView: React.FC<PredictiveModelViewProps> = ({
                         : 'bg-slate-600 text-white'
                     }`}
                   >
-                    بهبود +{toPersianDigits(item.improvementPercentage)}٪
+                    بهبود +<Num value={toPersianDigits(item.improvementPercentage)} />٪
                   </span>
                 </div>
 

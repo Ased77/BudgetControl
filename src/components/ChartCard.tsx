@@ -1,5 +1,6 @@
 import React from 'react';
 import { Layers } from 'lucide-react';
+import { NumCountUpContext } from './Num';
 
 /**
  * The app's chart shell — one card, one tooltip and one axis-tick convention,
@@ -81,17 +82,24 @@ export const ChartEmptyState: React.FC<{
   </div>
 );
 
-/** Tooltip shell — one RTL card so every chart's tooltip reads identically. */
+/**
+ * Tooltip shell — one RTL card so every chart's tooltip reads identically.
+ * Tooltips are hover surfaces, not page content: the count-up entrance is
+ * disabled for the whole subtree so a hovered figure appears at full value
+ * instead of animating while the pointer is already on it.
+ */
 export const TooltipShell: React.FC<{ children: React.ReactNode; className?: string }> = ({
   children,
   className = '',
 }) => (
-  <div
-    className={`bg-white/95 backdrop-blur-md p-3 rounded-xl border border-slate-200 shadow-xl text-xs space-y-1.5 z-50 max-w-xs ${className}`}
-    dir="rtl"
-  >
-    {children}
-  </div>
+  <NumCountUpContext.Provider value={false}>
+    <div
+      className={`bg-white/95 backdrop-blur-md p-3 rounded-xl border border-slate-200 shadow-xl text-xs space-y-1.5 z-50 max-w-xs ${className}`}
+      dir="rtl"
+    >
+      {children}
+    </div>
+  </NumCountUpContext.Provider>
 );
 
 /** A labelled figure row inside a tooltip. */

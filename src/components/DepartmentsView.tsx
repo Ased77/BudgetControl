@@ -33,7 +33,8 @@ import {
   Leaf,
   Landmark,
 } from 'lucide-react';
-import { compactToman, formatToman, toPersianDigits } from '../utils/numberUtils';
+import { compactToman, formatMoneyParts, formatPercent, formatToman, formatNumber, toPersianDigits } from '../utils/numberUtils';
+import { Num } from './Num';
 import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
 import { useConfirmDelete } from './ConfirmDeleteModal';
 
@@ -443,7 +444,7 @@ export const DepartmentsView: React.FC = () => {
     {
       id: 'absorption',
       label: 'میانگین جذب بودجه',
-      value: `${toPersianDigits(avgAbsorption)}٪`,
+      figure: { value: formatPercent(avgAbsorption), unit: undefined as string | undefined },
       icon: Gauge,
       card: 'border-cyan-200 dark:border-cyan-900/70 bg-cyan-50/40 dark:bg-cyan-950/20',
       tile: 'bg-cyan-100 dark:bg-cyan-950/60 border-cyan-200 dark:border-cyan-800 text-cyan-700 dark:text-cyan-300',
@@ -452,7 +453,7 @@ export const DepartmentsView: React.FC = () => {
     {
       id: 'absorbed',
       label: 'بودجه جذب‌شده کل',
-      value: formatToman(totalAbsorbed),
+      figure: formatMoneyParts(totalAbsorbed),
       icon: Wallet,
       card: 'border-violet-200 dark:border-violet-900/70 bg-violet-50/40 dark:bg-violet-950/20',
       tile: 'bg-violet-100 dark:bg-violet-950/60 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300',
@@ -461,7 +462,7 @@ export const DepartmentsView: React.FC = () => {
     {
       id: 'allocated',
       label: 'بودجه مصوب کل',
-      value: formatToman(totalAllocated),
+      figure: formatMoneyParts(totalAllocated),
       icon: Banknote,
       card: 'border-blue-200 dark:border-blue-900/70 bg-blue-50/40 dark:bg-blue-950/20',
       tile: 'bg-blue-100 dark:bg-blue-950/60 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300',
@@ -470,7 +471,7 @@ export const DepartmentsView: React.FC = () => {
     {
       id: 'performance',
       label: 'میانگین امتیاز عملکرد',
-      value: `${toPersianDigits(avgPerformance)} از ۱۰۰`,
+      figure: { value: formatNumber(avgPerformance), unit: 'از ۱۰۰' },
       icon: Award,
       card: 'border-amber-200 dark:border-amber-900/70 bg-amber-50/40 dark:bg-amber-950/20',
       tile: 'bg-amber-100 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300',
@@ -505,7 +506,11 @@ export const DepartmentsView: React.FC = () => {
                 <KpiIcon className="w-5 h-5" />
               </div>
               <div id={`departments-view-kpi-card-body-${kpi.id}`} className="min-w-0">
-                <span className={`block text-base font-black leading-tight truncate ${kpi.valueClass}`}>{kpi.value}</span>
+                <Num
+                  value={kpi.figure.value}
+                  unit={kpi.figure.unit}
+                  className={`block text-base font-black leading-tight truncate ${kpi.valueClass}`}
+                />
                 <span className="block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{kpi.label}</span>
               </div>
             </div>
@@ -539,7 +544,7 @@ export const DepartmentsView: React.FC = () => {
               className="text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 whitespace-nowrap"
             >
               <ListChecks className="w-3.5 h-3.5 text-blue-500" />
-              {toPersianDigits(filteredDepartments.length)} اداره یافت شد
+              <Num value={formatNumber(filteredDepartments.length)} unit="اداره" unitClassName="text-[0.85em] font-bold text-slate-600 dark:text-slate-300 ms-1" /> یافت شد
             </span>
           </div>
 
@@ -595,7 +600,7 @@ export const DepartmentsView: React.FC = () => {
                 : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
             }`}
           >
-            همه ({toPersianDigits(departments.length)})
+            همه (<Num value={toPersianDigits(departments.length)} />)
           </button>
 
           {CATEGORY_ORDER.filter((cat) => (categoryCounts[cat] || 0) > 0).map((cat) => {
@@ -620,7 +625,7 @@ export const DepartmentsView: React.FC = () => {
                 <ChipIcon className="w-3.5 h-3.5 shrink-0" />
                 <span>{categoryLabels[cat]}</span>
                 <span className={`text-[10px] ${isSelected ? 'opacity-80' : 'text-slate-400'}`}>
-                  ({toPersianDigits(categoryCounts[cat] || 0)})
+                  (<Num value={toPersianDigits(categoryCounts[cat] || 0)} />)
                 </span>
               </button>
             );
@@ -746,9 +751,7 @@ export const DepartmentsView: React.FC = () => {
                           strokeDashoffset={2 * Math.PI * GAUGE_RADIUS * (1 - absorptionRate / 100)}
                         />
                       </svg>
-                      <span className="absolute inset-0 flex items-center justify-center text-xs font-black text-slate-800 dark:text-slate-100">
-                        {toPersianDigits(absorptionRate)}٪
-                      </span>
+                      <Num value={formatPercent(absorptionRate)} className="absolute inset-0 flex items-center justify-center text-xs font-black text-slate-800 dark:text-slate-100" />
                     </div>
                   </div>
 
@@ -756,9 +759,7 @@ export const DepartmentsView: React.FC = () => {
                     id={`departments-view-card-projects-metric-${dept.id}`}
                     className="flex flex-col items-center justify-center gap-0.5 px-1 py-3 border-x border-slate-100 dark:border-slate-800 text-center"
                   >
-                    <span className="text-base font-black text-slate-900 dark:text-slate-100 leading-none">
-                      {toPersianDigits(deptProjects.length)}
-                    </span>
+                    <Num value={formatNumber(deptProjects.length)} className="text-base font-black text-slate-900 dark:text-slate-100 leading-none" />
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
                       <FolderGit2 className="w-3 h-3 text-slate-400" />
                       پروژه جاری
@@ -769,9 +770,7 @@ export const DepartmentsView: React.FC = () => {
                     id={`departments-view-card-budget-metric-${dept.id}`}
                     className="flex flex-col items-center justify-center gap-0.5 px-1 py-3 text-center"
                   >
-                    <span className="text-base font-black text-slate-900 dark:text-slate-100 leading-none">
-                      {budget.value}
-                    </span>
+                    <Num value={budget.value} className="text-base font-black text-slate-900 dark:text-slate-100 leading-none" />
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
                       <Banknote className="w-3 h-3 text-slate-400" />
                       {budget.unit}
@@ -831,7 +830,7 @@ export const DepartmentsView: React.FC = () => {
           className="flex items-center justify-center gap-2 py-5 text-[11px] font-bold text-slate-400 dark:text-slate-500"
         >
           <Check className="w-4 h-4" />
-          <span>تمام {toPersianDigits(filteredDepartments.length)} اداره نمایش داده شد</span>
+          <span>تمام <Num value={toPersianDigits(filteredDepartments.length)} unit="اداره" /> نمایش داده شد</span>
         </div>
       )}
 
@@ -955,9 +954,7 @@ export const DepartmentsView: React.FC = () => {
                         <FolderGit2 className="w-3.5 h-3.5" />
                         پروژه‌های متولی
                       </span>
-                      <span className="font-bold text-slate-800 dark:text-slate-200">
-                        {toPersianDigits(deptProjects.length)} پروژه
-                      </span>
+                      <Num value={formatNumber(deptProjects.length)} unit="پروژه" className="font-bold text-slate-800 dark:text-slate-200" />
                     </div>
                   </div>
 
@@ -998,9 +995,7 @@ export const DepartmentsView: React.FC = () => {
                           />
                         </svg>
                         <span className="absolute inset-0 flex flex-col items-center justify-center">
-                          <span className="text-sm font-black text-slate-800 dark:text-slate-100">
-                            {toPersianDigits(absorptionRate)}٪
-                          </span>
+                          <Num value={formatPercent(absorptionRate)} className="text-sm font-black text-slate-800 dark:text-slate-100" />
                           <span className="text-[9px] text-slate-400">جذب بودجه</span>
                         </span>
                       </div>
@@ -1008,19 +1003,15 @@ export const DepartmentsView: React.FC = () => {
                       <div className="flex-1 space-y-2 min-w-0">
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-slate-500 dark:text-slate-400 text-[11px]">بودجه مصوب</span>
-                          <span className="font-black text-slate-900 dark:text-slate-100">
-                            {formatToman(detailDept.allocatedBudgetToman)}
-                          </span>
+                          <Num {...formatMoneyParts(detailDept.allocatedBudgetToman)} className="font-black text-slate-900 dark:text-slate-100" />
                         </div>
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-slate-500 dark:text-slate-400 text-[11px]">جذب‌شده</span>
-                          <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                            {formatToman(detailDept.absorbedBudgetToman)}
-                          </span>
+                          <Num {...formatMoneyParts(detailDept.absorbedBudgetToman)} className="font-bold text-emerald-600 dark:text-emerald-400" />
                         </div>
                         <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
                           <span className="text-slate-500 dark:text-slate-400 text-[11px]">مانده قابل جذب</span>
-                          <span className="font-bold text-amber-600 dark:text-amber-400">{formatToman(remainingToman)}</span>
+                          <Num {...formatMoneyParts(remainingToman)} className="font-bold text-amber-600 dark:text-amber-400" />
                         </div>
                       </div>
                     </div>
@@ -1044,7 +1035,7 @@ export const DepartmentsView: React.FC = () => {
                         پروژه‌های تحت تولیت این نهاد
                       </span>
                       <span className="text-[10px] text-slate-400">
-                        {toPersianDigits(deptProjects.length)} پروژه ثبت‌شده
+                        <Num value={formatNumber(deptProjects.length)} unit="پروژه" unitClassName="text-[0.9em] font-bold text-slate-400 ms-0.5" /> ثبت‌شده
                       </span>
                     </div>
 
@@ -1088,12 +1079,8 @@ export const DepartmentsView: React.FC = () => {
                                   style={{ width: `${Math.min(100, proj.progressPercentage)}%` }}
                                 />
                               </div>
-                              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 w-9 text-left shrink-0">
-                                {toPersianDigits(proj.progressPercentage)}٪
-                              </span>
-                              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono shrink-0">
-                                {formatToman(proj.estimatedCostToman)}
-                              </span>
+                              <Num value={formatPercent(proj.progressPercentage)} className="text-[10px] font-bold text-slate-500 dark:text-slate-400 w-9 text-left shrink-0" />
+                              <Num {...formatMoneyParts(proj.estimatedCostToman)} className="text-[10px] text-slate-500 dark:text-slate-400 font-mono shrink-0" />
                             </div>
                           </div>
                         ))}

@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { LocationData } from '../types';
 import { toPersianDigits } from '../utils/numberUtils';
 import { AlertTriangle, MapPin } from 'lucide-react';
+import { Num } from './Num';
 
 interface LocationCascadeProps {
   locations: LocationData[];
@@ -123,7 +124,7 @@ export const LocationCascade: React.FC<LocationCascadeProps> = ({
           <div className="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-right">
             <div className="text-[10px] text-slate-500">جمعیت تحت پوشش</div>
             <div className="text-xs font-bold text-slate-800">
-              {toPersianDigits(selectedLocation.population.toLocaleString('fa-IR'))} نفر
+              <Num value={toPersianDigits(selectedLocation.population.toLocaleString('fa-IR'))} unit="نفر" />
             </div>
           </div>
 
@@ -132,7 +133,7 @@ export const LocationCascade: React.FC<LocationCascadeProps> = ({
             <div className="text-xs font-extrabold text-amber-600 flex items-center gap-1">
               <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
               <span>
-                {toPersianDigits(selectedLocation.indicators.overallVulnerabilityScore || 45)} از ۱۰۰
+                <Num value={toPersianDigits(selectedLocation.indicators.overallVulnerabilityScore || 45)} unit="از ۱۰۰" />
               </span>
             </div>
           </div>

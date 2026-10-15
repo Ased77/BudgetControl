@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { OrganizationConfig, OrgType, BudgetPeriod, LocationData } from '../types';
-import { formatLargeBudgetPersian, formatCurrency, toPersianDigits } from '../utils/numberUtils';
+import { formatMoneyParts, formatCurrency, toPersianDigits } from '../utils/numberUtils';
+import { Num } from './Num';
 import { Building2, Save, MapPin, DollarSign, Calendar, Layers, CheckCircle2 } from 'lucide-react';
 
 interface CompanySetupViewProps {
@@ -173,7 +174,7 @@ export const CompanySetupView: React.FC<CompanySetupViewProps> = ({
 
           <div id="company-setup-view-budget-definition-2" className="p-3 bg-blue-100/60 rounded-xl text-blue-900 border border-blue-200 flex items-center justify-between">
             <span className="font-semibold">معادل حروفی مالی:</span>
-            <strong className="text-sm dir-rtl">{formatLargeBudgetPersian(totalBudget)}</strong>
+            <strong className="text-sm dir-rtl"><Num {...formatMoneyParts(totalBudget)} /></strong>
           </div>
         </div>
 

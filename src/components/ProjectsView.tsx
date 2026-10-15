@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { ExecutiveProject, ProjectStatus } from '../types';
-import { formatToman, formatNumber, toPersianDigits } from '../utils/numberUtils';
+import { formatMoneyParts, formatPercent, formatToman, formatNumber, toPersianDigits } from '../utils/numberUtils';
+import { Num } from './Num';
 import { useConfirmDelete } from './ConfirmDeleteModal';
 import { useOutsideClick } from '../hooks/useOutsideClick';
 import { PageHeader } from './PageHeader';
@@ -288,21 +289,21 @@ export const ProjectsView: React.FC = () => {
         <div id="projects-view-micro-kpi-strip" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-blue-200/60">
           <div id="projects-view-micro-kpi-strip-2" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">کل پروژه‌های ثبت‌شده</span>
-            <span className="text-xl font-black text-slate-900 mt-0.5 block font-mono">{toPersianDigits(projects.length)} پروژه</span>
+            <Num value={formatNumber(projects.length)} unit="پروژه" className="text-xl font-black text-slate-900 mt-0.5 block font-mono" />
           </div>
           <div id="projects-view-micro-kpi-strip-3" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">ارزش کل اعتبارات پروژه‌ها</span>
-            <span className="text-xl font-black text-emerald-700 mt-0.5 block font-mono">{formatToman(totalBudget)}</span>
+            <Num {...formatMoneyParts(totalBudget)} className="text-xl font-black text-emerald-700 mt-0.5 block font-mono" />
           </div>
           <div id="projects-view-micro-kpi-strip-4" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">جمعیت بهره‌بردار مستقیم</span>
-            <span className="text-xl font-black text-blue-700 mt-0.5 block font-mono">{formatNumber(totalBeneficiaries)} نفر</span>
+            <Num value={formatNumber(totalBeneficiaries)} unit="نفر" className="text-xl font-black text-blue-700 mt-0.5 block font-mono" />
           </div>
           <div id="projects-view-micro-kpi-strip-5" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">پروژه‌های نیازمند بازنگری موازی‌کاری</span>
             <span className="text-xl font-black text-rose-700 mt-0.5 block flex items-center gap-1 font-mono">
               <ShieldAlert className="w-4 h-4 text-rose-600" />
-              {toPersianDigits(flaggedCount)} مورد هشدار
+              <Num value={formatNumber(flaggedCount)} unit="مورد هشدار" unitClassName="text-[0.6em] font-bold text-rose-700 ms-1" />
             </span>
           </div>
         </div>
@@ -439,7 +440,7 @@ export const ProjectsView: React.FC = () => {
               <div id={`projects-view-progress-bar-${proj.id}`} className="pt-3 mt-3 border-t border-slate-100 dark:border-slate-800 space-y-1">
                 <div id={`projects-view-progress-bar-2-${proj.id}`} className="flex justify-between items-center text-[11px]">
                   <span className="text-slate-500 dark:text-slate-400">پیشرفت فیزیکی</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">{toPersianDigits(proj.progressPercentage)}٪</span>
+                  <Num value={formatPercent(proj.progressPercentage)} className="font-bold text-slate-800 dark:text-slate-200" />
                 </div>
                 <div id={`projects-view-progress-bar-3-${proj.id}`} className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                   <div
@@ -563,15 +564,15 @@ export const ProjectsView: React.FC = () => {
               <div id="projects-view-detail-modal-financial" className="grid grid-cols-3 gap-3">
                 <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800 text-center">
                   <span className="text-slate-400 block text-[10px] mb-1">کل اعتبار مصوب</span>
-                  <span className="font-black text-slate-900 dark:text-slate-100">{formatToman(detailProject.estimatedCostToman)}</span>
+                  <Num {...formatMoneyParts(detailProject.estimatedCostToman)} className="font-black text-slate-900 dark:text-slate-100" />
                 </div>
                 <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800 text-center">
                   <span className="text-slate-400 block text-[10px] mb-1">جمعیت بهره‌بردار</span>
-                  <span className="font-bold text-blue-600 dark:text-blue-400">{formatNumber(detailProject.beneficiariesCount)} نفر</span>
+                  <Num value={formatNumber(detailProject.beneficiariesCount)} unit="نفر" className="font-bold text-blue-600 dark:text-blue-400" />
                 </div>
                 <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-800 text-center">
                   <span className="text-slate-400 block text-[10px] mb-1">سرانه هر نفر</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatToman(detailProject.costPerBeneficiaryToman)}</span>
+                  <Num {...formatMoneyParts(detailProject.costPerBeneficiaryToman)} className="font-bold text-emerald-600 dark:text-emerald-400" />
                 </div>
               </div>
 
@@ -579,7 +580,7 @@ export const ProjectsView: React.FC = () => {
               <div id="projects-view-detail-modal-progress" className="space-y-1">
                 <div className="flex justify-between items-center text-[11px]">
                   <span className="text-slate-500 dark:text-slate-400">پیشرفت فیزیکی پروژه</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">{toPersianDigits(detailProject.progressPercentage)}٪</span>
+                  <Num value={formatPercent(detailProject.progressPercentage)} className="font-bold text-slate-800 dark:text-slate-200" />
                 </div>
                 <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                   <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${detailProject.progressPercentage}%` }} />
@@ -600,7 +601,7 @@ export const ProjectsView: React.FC = () => {
                   <span className="font-bold text-slate-800 dark:text-slate-200 font-mono">
                     {toPersianDigits(detailProject.startYear)} - {toPersianDigits(detailProject.endYear)}
                     {detailProject.durationMonths > 0 && (
-                      <span className="font-sans text-slate-400 font-normal"> ({toPersianDigits(detailProject.durationMonths)} ماه)</span>
+                      <span className="font-sans text-slate-400 font-normal"> (<Num value={formatNumber(detailProject.durationMonths)} unit="ماه" unitClassName="text-[0.8em] font-normal text-slate-400 ms-0.5" />)</span>
                     )}
                   </span>
                 </div>
@@ -843,7 +844,7 @@ export const ProjectsView: React.FC = () => {
               <div id="projects-view-online-per-capita-indicator" className="bg-slate-100 dark:bg-slate-800/80 rounded-xl p-3 flex items-center justify-between">
                 <div id="projects-view-online-per-capita-indicator-2">
                   <span className="text-slate-500 dark:text-slate-400 block text-[11px]">محاسبه خودکار سرانه هر بهره‌بردار:</span>
-                  <span className="font-black text-sm text-slate-900 dark:text-slate-100">{formatToman(computedPerCapita)}</span>
+                  <Num {...formatMoneyParts(computedPerCapita)} className="font-black text-sm text-slate-900 dark:text-slate-100" />
                 </div>
                 {computedPerCapita > 300_000_000 ? (
                   <span className="text-[10px] text-rose-600 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-950/60 px-2 py-1 rounded border border-rose-200">

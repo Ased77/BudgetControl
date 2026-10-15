@@ -7,7 +7,7 @@ import {
   formatNumber,
   formatPercent,
 } from '../utils/numberUtils';
-import { Num } from './Num';
+import { Num, NumCountUpContext } from './Num';
 import {
   runDashboardPredictiveAnalysis,
   ForecastScenario,
@@ -284,6 +284,7 @@ export const DashboardPredictiveEngine: React.FC = () => {
       scenario !== 'BASE' && baseNeed !== undefined ? point.projectedNeedToman - baseNeed : null;
 
     return (
+      <NumCountUpContext.Provider value={false}>
       <div
         id="dashboard-predictive-engine-root"
         className="bg-white/95 backdrop-blur-md p-3 rounded-xl border border-slate-200 shadow-xl text-xs space-y-1.5 z-50"
@@ -324,6 +325,7 @@ export const DashboardPredictiveEngine: React.FC = () => {
           </div>
         )}
       </div>
+      </NumCountUpContext.Provider>
     );
   };
 
@@ -339,7 +341,7 @@ export const DashboardPredictiveEngine: React.FC = () => {
               موتور تحلیل پیش‌بین تقاضای توسعه‌ای
             </span>
             <span className="text-xs text-slate-500 font-medium">
-              بر پایه تحلیل {formatNumber(summaryMetrics.totalLogInterventionsAnalyzed)} لاگ ممیزی و بودجه‌های تخصیص‌یافته
+              بر پایه تحلیل <Num value={formatNumber(summaryMetrics.totalLogInterventionsAnalyzed)} unit="لاگ ممیزی" /> و بودجه‌های تخصیص‌یافته
             </span>
           </div>
 

@@ -2,7 +2,8 @@ import React, { useState, useMemo, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Contractor, ContractorGrade } from '../types';
 import { useOutsideClick } from '../hooks/useOutsideClick';
-import { compactToman, formatToman, toPersianDigits } from '../utils/numberUtils';
+import { compactToman, formatMoneyParts, formatPercent, formatToman, formatNumber, toPersianDigits } from '../utils/numberUtils';
+import { Num } from './Num';
 import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
 import { PageHeader } from './PageHeader';
 import {
@@ -240,22 +241,22 @@ export const ContractorsView: React.FC = () => {
         <div id="contractors-view-micro-kpi-strip" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-amber-200/60">
           <div id="contractors-view-micro-kpi-strip-2" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">پیمانکاران احراز صلاحیت شده</span>
-            <span className="text-xl font-black text-slate-900 mt-0.5 block font-mono">{toPersianDigits(contractors.length)} شرکت</span>
+            <Num value={formatNumber(contractors.length)} unit="شرکت" className="text-xl font-black text-slate-900 mt-0.5 block font-mono" />
           </div>
           <div id="contractors-view-micro-kpi-strip-3" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">ارزش کل پیمان‌های فعال</span>
-            <span className="text-xl font-black text-amber-700 mt-0.5 block font-mono">{formatToman(totalContractsValue)}</span>
+            <Num {...formatMoneyParts(totalContractsValue)} className="text-xl font-black text-amber-700 mt-0.5 block font-mono" />
           </div>
           <div id="contractors-view-micro-kpi-strip-4" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">میانگین نمره ارزیابی کیفی</span>
             <span className="text-xl font-black text-emerald-700 mt-0.5 block flex items-center gap-1 font-mono">
               <Star className="w-4 h-4 fill-emerald-600 text-emerald-600" />
-              {toPersianDigits(avgScore)} از ۱۰۰
+              <Num value={formatNumber(avgScore)} unit="از ۱۰۰" unitClassName="text-[0.6em] font-bold text-emerald-700 ms-1" />
             </span>
           </div>
           <div id="contractors-view-micro-kpi-strip-5" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">پیمانکاران بومی معتمد</span>
-            <span className="text-xl font-black text-blue-700 mt-0.5 block font-mono">{toPersianDigits(localVerifiedCount)} شرکت بومی</span>
+            <Num value={formatNumber(localVerifiedCount)} unit="شرکت بومی" className="text-xl font-black text-blue-700 mt-0.5 block font-mono" />
           </div>
         </div>
       </div>
@@ -400,9 +401,7 @@ export const ContractorsView: React.FC = () => {
                           strokeDashoffset={2 * Math.PI * GAUGE_RADIUS * (1 - cnt.performanceScore / 100)}
                         />
                       </svg>
-                      <span className="absolute inset-0 flex items-center justify-center text-xs font-black text-slate-800 dark:text-slate-100">
-                        {toPersianDigits(cnt.performanceScore)}
-                      </span>
+                      <Num value={formatNumber(cnt.performanceScore)} className="absolute inset-0 flex items-center justify-center text-xs font-black text-slate-800 dark:text-slate-100" />
                     </div>
                   </div>
 
@@ -410,9 +409,7 @@ export const ContractorsView: React.FC = () => {
                     id={`contractors-view-card-capacity-metric-${cnt.id}`}
                     className="flex flex-col items-center justify-center gap-0.5 px-1 py-3 border-x border-slate-100 dark:border-slate-800 text-center"
                   >
-                    <span className="text-base font-black text-slate-900 dark:text-slate-100 leading-none">
-                      {toPersianDigits(cnt.freeCapacitySlots)}
-                    </span>
+                    <Num value={formatNumber(cnt.freeCapacitySlots)} className="text-base font-black text-slate-900 dark:text-slate-100 leading-none" />
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
                       <Briefcase className="w-3 h-3 text-slate-400" />
                       ظرفیت آزاد
@@ -423,7 +420,7 @@ export const ContractorsView: React.FC = () => {
                     id={`contractors-view-card-value-metric-${cnt.id}`}
                     className="flex flex-col items-center justify-center gap-0.5 px-1 py-3 text-center"
                   >
-                    <span className="text-base font-black text-slate-900 dark:text-slate-100 leading-none">{contractValue.value}</span>
+                    <Num value={contractValue.value} className="text-base font-black text-slate-900 dark:text-slate-100 leading-none" />
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
                       <Banknote className="w-3 h-3 text-slate-400" />
                       {contractValue.unit}
@@ -544,9 +541,7 @@ export const ContractorsView: React.FC = () => {
                         <FileCheck2 className="w-3.5 h-3.5" />
                         قراردادهای فعال
                       </span>
-                      <span className="font-bold text-slate-800 dark:text-slate-200">
-                        {toPersianDigits(cntProjects.length)} مورد
-                      </span>
+                      <Num value={formatNumber(cntProjects.length)} unit="مورد" className="font-bold text-slate-800 dark:text-slate-200" />
                     </div>
                   </div>
 
@@ -562,7 +557,7 @@ export const ContractorsView: React.FC = () => {
                       </span>
                       <span className="text-[10px] text-slate-400 flex items-center gap-1">
                         <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                        رضایت کارفرما {toPersianDigits(detailCnt.satisfactionRating)} از ۵
+                        رضایت کارفرما <Num value={formatNumber(detailCnt.satisfactionRating)} unit="از ۵" unitClassName="text-[0.85em] font-bold text-slate-400 ms-0.5" />
                       </span>
                     </div>
 
@@ -590,9 +585,7 @@ export const ContractorsView: React.FC = () => {
                           />
                         </svg>
                         <span className="absolute inset-0 flex flex-col items-center justify-center">
-                          <span className="text-sm font-black text-slate-800 dark:text-slate-100">
-                            {toPersianDigits(detailCnt.performanceScore)}
-                          </span>
+                          <Num value={formatNumber(detailCnt.performanceScore)} className="text-sm font-black text-slate-800 dark:text-slate-100" />
                           <span className="text-[9px] text-slate-400">از ۱۰۰</span>
                         </span>
                       </div>
@@ -600,15 +593,11 @@ export const ContractorsView: React.FC = () => {
                       <div className="flex-1 space-y-2 min-w-0">
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-slate-500 dark:text-slate-400 text-[11px]">ظرفیت آزاد پیمان</span>
-                          <span className="font-bold text-slate-900 dark:text-slate-100">
-                            {toPersianDigits(detailCnt.freeCapacitySlots)} پروژه
-                          </span>
+                          <Num value={formatNumber(detailCnt.freeCapacitySlots)} unit="پروژه" className="font-bold text-slate-900 dark:text-slate-100" />
                         </div>
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-slate-500 dark:text-slate-400 text-[11px]">ارزش قراردادهای فعال</span>
-                          <span className="font-bold text-amber-600 dark:text-amber-400">
-                            {formatToman(detailCnt.totalContractValueToman)}
-                          </span>
+                          <Num {...formatMoneyParts(detailCnt.totalContractValueToman)} className="font-bold text-amber-600 dark:text-amber-400" />
                         </div>
                         <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
                           <span className="text-slate-500 dark:text-slate-400 text-[11px]">وضعیت احراز صلاحیت</span>
@@ -625,7 +614,7 @@ export const ContractorsView: React.FC = () => {
                         <FileCheck2 className="w-3.5 h-3.5 text-amber-500" />
                         پروژه‌های سپرده‌شده به این پیمانکار
                       </span>
-                      <span className="text-[10px] text-slate-400">{toPersianDigits(cntProjects.length)} پروژه ثبت‌شده</span>
+                      <span className="text-[10px] text-slate-400"><Num value={formatNumber(cntProjects.length)} unit="پروژه" unitClassName="text-[0.9em] font-bold text-slate-400 ms-0.5" /> ثبت‌شده</span>
                     </div>
 
                     {cntProjects.length === 0 ? (
@@ -662,12 +651,8 @@ export const ContractorsView: React.FC = () => {
                                   style={{ width: `${Math.min(100, proj.progressPercentage)}%` }}
                                 />
                               </div>
-                              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 w-9 text-left shrink-0">
-                                {toPersianDigits(proj.progressPercentage)}٪
-                              </span>
-                              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono shrink-0">
-                                {formatToman(proj.estimatedCostToman)}
-                              </span>
+                              <Num value={formatPercent(proj.progressPercentage)} className="text-[10px] font-bold text-slate-500 dark:text-slate-400 w-9 text-left shrink-0" />
+                              <Num {...formatMoneyParts(proj.estimatedCostToman)} className="text-[10px] text-slate-500 dark:text-slate-400 font-mono shrink-0" />
                             </div>
                           </div>
                         ))}

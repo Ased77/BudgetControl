@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { formatMoney, formatMoneyParts, formatNumber, formatPercent, moneyDisplayTier } from '../utils/numberUtils';
-import { useCountUp } from '../hooks/useCountUp';
+import { formatMoney, formatMoneyParts, formatNumber, formatPercent } from '../utils/numberUtils';
 import { Num } from './Num';
 import { DashboardPredictiveEngine } from './DashboardPredictiveEngine';
 import { DashboardChartsPanel } from './DashboardChartsPanel';
@@ -28,49 +27,6 @@ const KPI_CARD_TONES: Record<'neutral' | 'warning' | 'success', { icon: string; 
   neutral: { icon: 'text-slate-500', value: 'text-slate-900' },
   warning: { icon: 'text-amber-600', value: 'text-amber-700' },
   success: { icon: 'text-emerald-600', value: 'text-emerald-700' },
-};
-
-/**
- * Count-up hero figures for the macro KPI strip.
- * Each is a leaf component so `useCountUp`'s per-frame state re-renders only
- * the digits — the charts and panels below the strip stay put during the
- * ~0.8s entrance. The money variant pins its final tier's unit from the first
- * frame (`moneyDisplayTier`) and the last frame formats identically to
- * `formatMoneyParts`, so the resting figure is bit-identical to a static
- * render.
- */
-const CountUpMoney: React.FC<{ amountToman: number; className?: string; unitClassName?: string }> = ({
-  amountToman,
-  className = '',
-  unitClassName,
-}) => {
-  const tier = moneyDisplayTier(amountToman);
-  const animated = useCountUp(amountToman);
-  return (
-    <Num
-      value={formatNumber(animated / tier.divisor, true, tier.fractionDigits)}
-      unit={tier.unit}
-      className={className}
-      unitClassName={unitClassName}
-    />
-  );
-};
-
-const CountUpNumber: React.FC<{
-  count: number;
-  unit: string;
-  className?: string;
-  unitClassName?: string;
-}> = ({ count, unit, className = '', unitClassName }) => {
-  const animated = useCountUp(count);
-  return (
-    <Num
-      value={formatNumber(Math.round(animated))}
-      unit={unit}
-      className={className}
-      unitClassName={unitClassName}
-    />
-  );
 };
 
 export const NationalDashboardView: React.FC = () => {
@@ -151,8 +107,8 @@ export const NationalDashboardView: React.FC = () => {
             <span>کل منابع مالی مصوب</span>
             <Wallet className={`w-4 h-4 ${KPI_CARD_TONES.neutral.icon}`} aria-hidden="true" />
           </div>
-          <CountUpMoney
-            amountToman={totalBudgetSources}
+          <Num
+            {...formatMoneyParts(totalBudgetSources)}
             className={`text-xl md:text-2xl font-black leading-none ${KPI_CARD_TONES.neutral.value}`}
           />
           <span className="text-xs text-slate-500">
@@ -176,8 +132,8 @@ export const NationalDashboardView: React.FC = () => {
             <span>پروژه‌های اجرایی فعال</span>
             <FolderKanban className={`w-4 h-4 ${KPI_CARD_TONES.neutral.icon}`} aria-hidden="true" />
           </div>
-          <CountUpNumber
-            count={projects.length}
+          <Num
+            value={formatNumber(projects.length)}
             unit="پروژه"
             className={`text-xl md:text-2xl font-black leading-none ${KPI_CARD_TONES.neutral.value}`}
             unitClassName="text-xs font-bold text-slate-500 ms-1.5"
@@ -202,8 +158,8 @@ export const NationalDashboardView: React.FC = () => {
             <span className="group-hover:text-amber-800 transition-colors">جمعیت محروم شناسایی‌شده</span>
             <Users2 className={`w-4 h-4 ${KPI_CARD_TONES.warning.icon}`} aria-hidden="true" />
           </div>
-          <CountUpNumber
-            count={vulnerablePopulation}
+          <Num
+            value={formatNumber(vulnerablePopulation)}
             unit="نفر"
             className={`text-xl md:text-2xl font-black leading-none ${KPI_CARD_TONES.warning.value}`}
             unitClassName="text-xs font-bold text-slate-500 ms-1.5"
@@ -226,8 +182,8 @@ export const NationalDashboardView: React.FC = () => {
           </div>
           {savingsCalculated ? (
             <>
-              <CountUpMoney
-                amountToman={antiDuplicationSavingsToman}
+              <Num
+                {...formatMoneyParts(antiDuplicationSavingsToman)}
                 className={`text-xl md:text-2xl font-black leading-none ${KPI_CARD_TONES.success.value}`}
               />
               <span className="text-xs text-emerald-700 font-medium flex items-center gap-1">

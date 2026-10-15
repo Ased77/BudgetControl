@@ -6,7 +6,8 @@ import {
   AnalysisSourceOrigin,
   AnalysisSourceStatus,
 } from '../types';
-import { toPersianDigits } from '../utils/numberUtils';
+import { formatNumber, formatPercent, toPersianDigits } from '../utils/numberUtils';
+import { Num } from './Num';
 import { useConfirmDelete } from './ConfirmDeleteModal';
 import { useOutsideClick } from '../hooks/useOutsideClick';
 import { PageHeader } from './PageHeader';
@@ -264,21 +265,21 @@ export const AnalysisSourcesView: React.FC = () => {
         <div id="analysis-sources-view-micro-kpi-strip" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-violet-200/60">
           <div id="analysis-sources-view-micro-kpi-strip-1" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">کل منابع ثبت‌شده</span>
-            <span className="text-xl font-black text-slate-900 mt-0.5 block font-mono">{toPersianDigits(stats.total)} منبع</span>
+            <Num value={formatNumber(stats.total)} unit="منبع" className="text-xl font-black text-slate-900 mt-0.5 block font-mono" />
           </div>
           <div id="analysis-sources-view-micro-kpi-strip-2" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">منابع تأییدشده</span>
-            <span className="text-xl font-black text-emerald-700 mt-0.5 block font-mono">{toPersianDigits(stats.approved)} منبع</span>
+            <Num value={formatNumber(stats.approved)} unit="منبع" className="text-xl font-black text-emerald-700 mt-0.5 block font-mono" />
           </div>
           <div id="analysis-sources-view-micro-kpi-strip-3" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">در انتظار بازبینی</span>
-            <span className="text-xl font-black text-amber-700 mt-0.5 block font-mono">{toPersianDigits(stats.pending)} منبع</span>
+            <Num value={formatNumber(stats.pending)} unit="منبع" className="text-xl font-black text-amber-700 mt-0.5 block font-mono" />
           </div>
           <div id="analysis-sources-view-micro-kpi-strip-4" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">تولید هوش مصنوعی</span>
             <span className="text-xl font-black text-violet-700 mt-0.5 block flex items-center gap-1 font-mono">
               <Bot className="w-4 h-4 text-violet-600" />
-              {toPersianDigits(stats.ai)} منبع
+              <Num value={formatNumber(stats.ai)} unit="منبع" unitClassName="text-[0.6em] font-bold text-violet-700 ms-1" />
             </span>
           </div>
         </div>
@@ -395,7 +396,7 @@ export const AnalysisSourcesView: React.FC = () => {
                       <Gauge className="w-3.5 h-3.5 text-violet-500" />
                       اعتبار منبع
                     </span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200">{toPersianDigits(source.reliabilityScore)}٪</span>
+                    <Num value={formatPercent(source.reliabilityScore)} className="font-bold text-slate-800 dark:text-slate-200" />
                   </div>
                   <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                     <div
@@ -505,7 +506,7 @@ export const AnalysisSourcesView: React.FC = () => {
                     <Gauge className="w-3.5 h-3.5 text-violet-500" />
                     امتیاز اعتبار و اتکاپذیری منبع
                   </span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">{toPersianDigits(detailSource.reliabilityScore)} از ۱۰۰</span>
+                  <Num value={formatNumber(detailSource.reliabilityScore)} unit="از ۱۰۰" className="font-bold text-slate-800 dark:text-slate-200" />
                 </div>
                 <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                   <div className={`h-full rounded-full ${reliabilityTone(detailSource.reliabilityScore)}`} style={{ width: `${detailSource.reliabilityScore}%` }} />
@@ -769,7 +770,7 @@ export const AnalysisSourcesView: React.FC = () => {
                     onChange={(e) => setFormReliability(Number(e.target.value))}
                     className="w-full mt-2 accent-violet-600"
                   />
-                  <span className="text-[11px] text-slate-500 font-bold">{toPersianDigits(formReliability)} از ۱۰۰</span>
+                  <span className="text-[11px] text-slate-500 font-bold"><Num value={formatNumber(formReliability)} unit="از ۱۰۰" unitClassName="text-[0.85em] font-bold text-slate-500 ms-0.5" /></span>
                 </div>
               </div>
 

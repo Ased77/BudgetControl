@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { toPersianDigits } from '../utils/numberUtils';
+import { Num } from './Num';
 import { Filter, X, ChevronDown, ChevronUp, Sparkles, Check, Search, Layers } from 'lucide-react';
 import { HelpTooltip } from './HelpTooltip';
 
@@ -210,13 +211,13 @@ export const TableTopicFilters: React.FC<TableTopicFiltersProps> = ({
                   <span>{activeTopic.emoji}</span>
                   <span>{activeTopic.label}</span>
                   <span className="text-[10px] text-indigo-300 font-mono">
-                    ({toPersianDigits(activeCount)} سرفصل تطبیقی)
+                    (<Num value={toPersianDigits(activeCount)} unit="سرفصل تطبیقی" />)
                   </span>
                 </div>
               ) : (
                 <span className="text-emerald-400 font-bold text-[11px] flex items-center gap-1">
                   <Check className="w-3.5 h-3.5" />
-                  همه موارد فعال هستند ({toPersianDigits(activeCount)} سرفصل)
+                  همه موارد فعال هستند (<Num value={toPersianDigits(activeCount)} unit="سرفصل" />)
                 </span>
               )}
             </div>
@@ -284,7 +285,7 @@ export const TableTopicFilters: React.FC<TableTopicFiltersProps> = ({
                 انتخاب سرفصل آسیب برای فیلتر جدول:
               </span>
               <span className="text-[10px] text-slate-400">
-                ({toPersianDigits(filteredTopics.length)} موضوع)
+                (<Num value={toPersianDigits(filteredTopics.length)} unit="موضوع" />)
               </span>
             </div>
 

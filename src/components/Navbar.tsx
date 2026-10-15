@@ -1,6 +1,7 @@
 import React from 'react';
 import { OrganizationConfig, UserProfile, UserRole } from '../types';
-import { formatLargeBudgetPersian, toPersianDigits } from '../utils/numberUtils';
+import { formatMoneyParts, toPersianDigits } from '../utils/numberUtils';
+import { Num } from './Num';
 import { Building2, MapPin, ShieldCheck, Download, FileSpreadsheet, FileText, UserCheck, Sparkles, ChevronDown } from 'lucide-react';
 
 interface NavbarProps {
@@ -51,7 +52,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   {orgConfig.province} • {orgConfig.county} ({orgConfig.district})
                 </span>
                 <span className="text-slate-600">•</span>
-                <span>دوره {toPersianDigits(orgConfig.fiscalYear)}</span>
+                <span>دوره <Num value={toPersianDigits(orgConfig.fiscalYear)} /></span>
               </div>
             </div>
           </div>
@@ -61,7 +62,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div id="navbar-budget-quick-info-badge-2" className="text-right">
               <div id="navbar-budget-quick-info-badge-3" className="text-[11px] text-slate-400">بودجه کل مسئولیت اجتماعی</div>
               <div id="navbar-budget-quick-info-badge-4" className="text-sm font-extrabold text-emerald-400 dir-rtl">
-                {formatLargeBudgetPersian(orgConfig.totalBudget)}
+                <Num {...formatMoneyParts(orgConfig.totalBudget)} />
               </div>
             </div>
             <button

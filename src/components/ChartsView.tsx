@@ -704,7 +704,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
                     : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                 }`}
               >
-                همه ({toPersianDigits(priorities.length)})
+                همه (<Num value={toPersianDigits(priorities.length)} />)
               </button>
 
               <button
@@ -719,7 +719,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
                 }`}
               >
                 <Flame className="w-3 h-3" aria-hidden="true" />
-                <span>کانون‌های بحران ({toPersianDigits(bubbleItems.filter((b) => b.deprivationIndex >= SEVERITY_THRESHOLD).length)})</span>
+                <span>کانون‌های بحران (<Num value={toPersianDigits(bubbleItems.filter((b) => b.deprivationIndex >= SEVERITY_THRESHOLD).length)} />)</span>
               </button>
 
               <button
@@ -734,7 +734,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
                 }`}
               >
                 <AlertTriangle className="w-3 h-3" aria-hidden="true" />
-                <span>کسری بودجه ({toPersianDigits(quadrantStats.deficit)})</span>
+                <span>کسری بودجه (<Num value={toPersianDigits(quadrantStats.deficit)} />)</span>
               </button>
             </div>
           </div>
@@ -779,7 +779,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
             <Num value={toPersianDigits(quadrantStats.stable)} className="bg-white px-1.5 rounded border border-slate-200" />
           </span>
           <span className="text-slate-400">
-            نمایش {toPersianDigits(filteredBubbles.length)} از {toPersianDigits(bubbleItems.length)} سرفصل
+            نمایش <Num value={toPersianDigits(filteredBubbles.length)} /> از <Num value={toPersianDigits(bubbleItems.length)} unit="سرفصل" />
           </span>
         </div>
 
@@ -1320,7 +1320,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
                   <span className="text-[10px] font-bold text-slate-500">کل اعتبارات مصوب</span>
                   <Num {...formatMoneyParts(totalBudgetToman)} className="text-base font-black text-slate-900" />
                   <span className="text-[10px] text-slate-500 mt-0.5">
-                    {toPersianDigits(allocationRows.length)} سرفصل فعال
+                    <Num value={toPersianDigits(allocationRows.length)} unit="سرفصل" /> فعال
                   </span>
                 </div>
               </div>

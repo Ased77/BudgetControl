@@ -462,7 +462,7 @@ export const CreateProjectView: React.FC = () => {
         className="text-xs font-bold text-blue-700 hover:underline flex items-center gap-1 cursor-pointer"
       >
         <Pencil className="w-3 h-3" aria-hidden="true" />
-        ویرایش در گام {toPersianDigits(step)}
+        ویرایش در گام <Num value={toPersianDigits(step)} />
       </button>
     </div>
   );
@@ -1770,7 +1770,7 @@ export const CreateProjectView: React.FC = () => {
               </div>
               {potentialDuplicates.length > 1 && (
                 <div className="text-xs font-semibold text-amber-700 mt-1.5">
-                  و {toPersianDigits(potentialDuplicates.length - 1)} مورد مشابه دیگر.
+                  و <Num value={toPersianDigits(potentialDuplicates.length - 1)} unit="مورد" /> مشابه دیگر.
                 </div>
               )}
             </div>
@@ -1824,7 +1824,7 @@ export const CreateProjectView: React.FC = () => {
               </div>
               <div className="min-w-0 flex-1">
                 <h3 id="create-project-view-validation-alert-title" className="text-sm font-black text-slate-900">
-                  {toPersianDigits(invalidStepCount)} گام نیازمند اصلاح
+                  <Num value={toPersianDigits(invalidStepCount)} unit="گام" /> نیازمند اصلاح
                 </h3>
                 <p className="text-xs text-slate-600 leading-relaxed mt-1">
                   برای ثبت نهایی طرح، موارد زیر را در گام‌های مربوطه کامل کنید.
@@ -1858,7 +1858,7 @@ export const CreateProjectView: React.FC = () => {
                           <StepIcon className="w-3.5 h-3.5" aria-hidden="true" />
                         </span>
                         <span className="text-xs font-black text-slate-900">
-                          گام {toPersianDigits(step.id)} — {step.label}
+                          گام <Num value={toPersianDigits(step.id)} /> — {step.label}
                         </span>
                         <span className="ms-auto text-xs font-bold text-amber-700">اصلاح</span>
                       </span>
@@ -1917,7 +1917,7 @@ export const CreateProjectView: React.FC = () => {
                 </span>
                 <div className="min-w-0">
                   <div className="text-xs font-bold text-slate-500">
-                    گام {toPersianDigits(activeStep)} از {toPersianDigits(FORM_STEPS.length)}
+                    گام <Num value={toPersianDigits(activeStep)} /> از <Num value={toPersianDigits(FORM_STEPS.length)} />
                   </div>
                   <div className="truncate text-sm font-black text-slate-900">
                     {FORM_STEPS[activeStep - 1].label}
@@ -1939,7 +1939,7 @@ export const CreateProjectView: React.FC = () => {
                   className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-warning-strong hover:bg-amber-100 hover:border-amber-300 transition-colors cursor-pointer"
                 >
                   <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
-                  {toPersianDigits(invalidStepCount)} گام نیازمند اصلاح
+                  <Num value={toPersianDigits(invalidStepCount)} unit="گام" /> نیازمند اصلاح
                 </button>
               )}
             </div>
@@ -1991,7 +1991,7 @@ export const CreateProjectView: React.FC = () => {
                                 : 'border-2 border-slate-200 bg-white text-slate-500 group-hover:border-slate-300 group-hover:text-slate-700'
                             }`}
                           >
-                            {isDone ? <Check className="h-4 w-4" aria-hidden="true" /> : toPersianDigits(step.id)}
+                            {isDone ? <Check className="h-4 w-4" aria-hidden="true" /> : <Num value={toPersianDigits(step.id)} />}
                           </span>
                           {needsFix && (
                             <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-500 text-white ring-2 ring-white">
@@ -2100,7 +2100,7 @@ export const CreateProjectView: React.FC = () => {
                         </span>
                       </div>
                       <div id="create-project-view-smart-assistance-recommendation-6" className="text-xs text-slate-600 mt-0.5">
-                        پیشنهاد جمعیت بهره‌بردار: <strong className="text-indigo-700">{formatNumber(smartInference.suggestedBeneficiaries)} نفر</strong> ({smartInference.suggestedBeneficiariesReason})
+                        پیشنهاد جمعیت بهره‌بردار: <strong className="text-indigo-700"><Num value={formatNumber(smartInference.suggestedBeneficiaries)} unit="نفر" /></strong> ({smartInference.suggestedBeneficiariesReason})
                       </div>
                     </div>
                   </div>
@@ -2282,7 +2282,7 @@ export const CreateProjectView: React.FC = () => {
                   </div>
                   {isMultiDept && (
                     <span className="text-xs font-bold text-indigo-700 bg-indigo-100 px-2.5 py-0.5 rounded-full">
-                      {toPersianDigits(contributingDepts.length)} اداره همکار اضافه شده
+                      <Num value={toPersianDigits(contributingDepts.length)} unit="اداره" /> همکار اضافه شده
                     </span>
                   )}
                 </div>
@@ -2370,7 +2370,7 @@ export const CreateProjectView: React.FC = () => {
 
                               <div id={`create-project-view-contributing-departments-list-5-${c.departmentId}`} className="flex items-center gap-4">
                                 <div id={`create-project-view-contributing-departments-list-6-${c.departmentId}`} className="text-left">
-                                  <span className="font-bold text-indigo-700">{toPersianDigits(c.sharePercentage)}٪</span>
+                                  <span className="font-bold text-indigo-700"><Num value={toPersianDigits(c.sharePercentage)} />٪</span>
                                   <span className="text-xs text-slate-500 mr-2">
                                     (<Num {...formatMoneyParts(deptShareToman)} />)
                                   </span>
@@ -2661,7 +2661,7 @@ export const CreateProjectView: React.FC = () => {
                         : 'bg-rose-100 text-rose-800 border-rose-300 animate-pulse'
                     }`}
                   >
-                    مجموع سهم‌ها: {toPersianDigits(totalBudgetShares)}٪ {isBudgetShareValid ? '✓ (متوازن)' : '✗ (نیاز به اصلاح)'}
+                    مجموع سهم‌ها: <Num value={toPersianDigits(totalBudgetShares)} />٪ {isBudgetShareValid ? '✓ (متوازن)' : '✗ (نیاز به اصلاح)'}
                   </div>
                 </div>
 
@@ -2679,7 +2679,7 @@ export const CreateProjectView: React.FC = () => {
                   <div id="create-project-view-shares-inputs-grid-2" className="bg-emerald-50/70 border border-emerald-200 p-2.5 rounded-xl">
                     <div id="create-project-view-shares-inputs-grid-3" className="flex items-center justify-between text-xs font-bold text-emerald-900 mb-1">
                       <span>سهم CSR مس</span>
-                      <span>{toPersianDigits(csrSharePct)}٪</span>
+                      <span><Num value={toPersianDigits(csrSharePct)} />٪</span>
                     </div>
                     <input
                       type="range"
@@ -2697,7 +2697,7 @@ export const CreateProjectView: React.FC = () => {
                   <div id="create-project-view-shares-inputs-grid-5" className="bg-blue-50/70 border border-blue-200 p-2.5 rounded-xl">
                     <div id="create-project-view-shares-inputs-grid-6" className="flex items-center justify-between text-xs font-bold text-blue-900 mb-1">
                       <span>سهم دولت</span>
-                      <span>{toPersianDigits(govSharePct)}٪</span>
+                      <span><Num value={toPersianDigits(govSharePct)} />٪</span>
                     </div>
                     <input
                       type="range"
@@ -2715,7 +2715,7 @@ export const CreateProjectView: React.FC = () => {
                   <div id="create-project-view-shares-inputs-grid-8" className="bg-amber-50/70 border border-amber-200 p-2.5 rounded-xl">
                     <div id="create-project-view-shares-inputs-grid-9" className="flex items-center justify-between text-xs font-bold text-amber-900 mb-1">
                       <span>دهیاری / عوارض</span>
-                      <span>{toPersianDigits(dehyariSharePct)}٪</span>
+                      <span><Num value={toPersianDigits(dehyariSharePct)} />٪</span>
                     </div>
                     <input
                       type="range"
@@ -2733,7 +2733,7 @@ export const CreateProjectView: React.FC = () => {
                   <div id="create-project-view-shares-inputs-grid-11" className="bg-purple-50/70 border border-purple-200 p-2.5 rounded-xl">
                     <div id="create-project-view-shares-inputs-grid-12" className="flex items-center justify-between text-xs font-bold text-purple-900 mb-1">
                       <span>وام / تبصره ۲</span>
-                      <span>{toPersianDigits(bankSharePct)}٪</span>
+                      <span><Num value={toPersianDigits(bankSharePct)} />٪</span>
                     </div>
                     <input
                       type="range"
@@ -2751,7 +2751,7 @@ export const CreateProjectView: React.FC = () => {
                   <div id="create-project-view-shares-inputs-grid-14" className="bg-rose-50/70 border border-rose-200 p-2.5 rounded-xl">
                     <div id="create-project-view-shares-inputs-grid-15" className="flex items-center justify-between text-xs font-bold text-rose-900 mb-1">
                       <span>خیرین / مردمی</span>
-                      <span>{toPersianDigits(charitySharePct)}٪</span>
+                      <span><Num value={toPersianDigits(charitySharePct)} />٪</span>
                     </div>
                     <input
                       type="range"
@@ -2841,7 +2841,7 @@ export const CreateProjectView: React.FC = () => {
                         title="اعمال برآورد هوشمند جمعیت ذینفع این منطقه"
                       >
                         <Sparkles className="w-2.5 h-2.5 text-cyan-600" />
-                        <span>پیشنهاد هوشمند: {formatNumber(smartInference.suggestedBeneficiaries)}</span>
+                        <span>پیشنهاد هوشمند: <Num value={formatNumber(smartInference.suggestedBeneficiaries)} /></span>
                       </button>
                     )}
                   </div>
@@ -2873,7 +2873,7 @@ export const CreateProjectView: React.FC = () => {
                       className="text-xs px-1.5 py-0.5 rounded bg-cyan-50 hover:bg-cyan-100 text-cyan-800 font-bold border border-cyan-200 transition-colors cursor-pointer"
                       title="جمعیت هدف محاسبه‌شده بر اساس نوع و مکان طرح"
                     >
-                      پیشنهاد طرح ({formatNumber(smartInference.suggestedBeneficiaries)})
+                      پیشنهاد طرح (<Num value={formatNumber(smartInference.suggestedBeneficiaries)} />)
                     </button>
                     <button
                       type="button"
@@ -2881,7 +2881,7 @@ export const CreateProjectView: React.FC = () => {
                       className="text-xs px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors cursor-pointer"
                       title={`کل جمعیت ثبت‌شده این محدوده در ${selectedLocation.city}`}
                     >
-                      کل بخش ({formatNumber(smartInference.districtTotalPop)})
+                      کل بخش (<Num value={formatNumber(smartInference.districtTotalPop)} />)
                     </button>
                     {smartInference.districtVulnerablePop > 0 && (
                       <button
@@ -2890,7 +2890,7 @@ export const CreateProjectView: React.FC = () => {
                         className="text-xs px-1.5 py-0.5 rounded bg-amber-50 hover:bg-amber-100 text-amber-800 font-medium border border-amber-200 transition-colors cursor-pointer"
                         title="جمعیت اقشار آسیب‌پذیر و مددجویان این بخش"
                       >
-                        آسیب‌پذیر ({formatNumber(smartInference.districtVulnerablePop)})
+                        آسیب‌پذیر (<Num value={formatNumber(smartInference.districtVulnerablePop)} />)
                       </button>
                     )}
                   </div>
@@ -3035,7 +3035,7 @@ export const CreateProjectView: React.FC = () => {
                   </select>
                   {selectedContractor && (
                     <div id="create-project-view-section-6-execution-contracting-12" className="mt-1 text-xs text-slate-500">
-                      مدیرعامل: {selectedContractor.ceoName} | امتیاز عملکرد: {toPersianDigits(selectedContractor.performanceScore)} از ۱۰۰
+                      مدیرعامل: {selectedContractor.ceoName} | امتیاز عملکرد: <Num value={toPersianDigits(selectedContractor.performanceScore)} unit="از ۱۰۰" />
                     </div>
                   )}
                 </div>
@@ -3057,7 +3057,7 @@ export const CreateProjectView: React.FC = () => {
                     <h2 className="text-sm font-bold text-slate-900">بازبینی نهایی و تأیید اطلاعات</h2>
                   </div>
                   <span className={`text-xs font-bold ${allStepsValid ? 'text-emerald-700' : 'text-warning-strong'}`}>
-                    {allStepsValid ? 'همه گام‌ها معتبر است' : `${toPersianDigits(invalidStepCount)} گام نیازمند اصلاح`}
+                    {allStepsValid ? 'همه گام‌ها معتبر است' : (<><Num value={toPersianDigits(invalidStepCount)} unit="گام" /> نیازمند اصلاح</>)}
                   </span>
                 </div>
 
@@ -3142,7 +3142,7 @@ export const CreateProjectView: React.FC = () => {
                       }`}
                     >
                       {potentialDuplicates.length > 0
-                        ? `${toPersianDigits(potentialDuplicates.length)} پروژه با محدوده یا بحران مشابه`
+                        ? (<><Num value={toPersianDigits(potentialDuplicates.length)} unit="پروژه" /> با محدوده یا بحران مشابه</>)
                         : 'بدون همپوشانی با پروژه‌های موجود'}
                     </span>
                   </div>
@@ -3198,7 +3198,7 @@ export const CreateProjectView: React.FC = () => {
                       <div id="create-project-view-core-attributes-4" className="flex items-center justify-between">
                         <span className="text-slate-500">مشارکت بین‌دستگاهی:</span>
                         <span className="font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
-                          {toPersianDigits(contributingDepts.length)} اداره همکار
+                          <Num value={toPersianDigits(contributingDepts.length)} unit="اداره" /> همکار
                         </span>
                       </div>
                     )}
@@ -3225,26 +3225,26 @@ export const CreateProjectView: React.FC = () => {
                     <div id="create-project-view-budget-composition-breakdown-3" className="space-y-1 text-xs pt-1">
                       <div id="create-project-view-budget-composition-breakdown-4" className="flex items-center justify-between text-emerald-800">
                         <span>سهم مسئولیت اجتماعی (CSR مس):</span>
-                        <span className="font-bold">{toPersianDigits(csrSharePct)}٪</span>
+                        <span className="font-bold"><Num value={toPersianDigits(csrSharePct)} />٪</span>
                       </div>
                       <div id="create-project-view-budget-composition-breakdown-5" className="flex items-center justify-between text-blue-800">
                         <span>سهم بودجه دولتی:</span>
-                        <span className="font-bold">{toPersianDigits(govSharePct)}٪</span>
+                        <span className="font-bold"><Num value={toPersianDigits(govSharePct)} />٪</span>
                       </div>
                       <div id="create-project-view-budget-composition-breakdown-6" className="flex items-center justify-between text-amber-800">
                         <span>سهم دهیاری / عوارض آلایندگی:</span>
-                        <span className="font-bold">{toPersianDigits(dehyariSharePct)}٪</span>
+                        <span className="font-bold"><Num value={toPersianDigits(dehyariSharePct)} />٪</span>
                       </div>
                       {bankSharePct > 0 && (
                         <div id="create-project-view-budget-composition-breakdown-7" className="flex items-center justify-between text-purple-800">
                           <span>تسهیلات بانکی و تبصره ۲:</span>
-                          <span className="font-bold">{toPersianDigits(bankSharePct)}٪</span>
+                          <span className="font-bold"><Num value={toPersianDigits(bankSharePct)} />٪</span>
                         </div>
                       )}
                       {charitySharePct > 0 && (
                         <div id="create-project-view-budget-composition-breakdown-8" className="flex items-center justify-between text-rose-800">
                           <span>مشارکت خیرین:</span>
-                          <span className="font-bold">{toPersianDigits(charitySharePct)}٪</span>
+                          <span className="font-bold"><Num value={toPersianDigits(charitySharePct)} />٪</span>
                         </div>
                       )}
                     </div>
@@ -3258,7 +3258,7 @@ export const CreateProjectView: React.FC = () => {
                     </div>
                     <div id="create-project-view-demographics-per-capita-3" className="flex items-center justify-between">
                       <span className="text-slate-500">جمعیت بهره‌بردار مستقیم:</span>
-                      <span className="font-bold text-slate-800">{formatNumber(beneficiariesCount)} نفر</span>
+                      <span className="font-bold text-slate-800"><Num value={formatNumber(beneficiariesCount)} unit="نفر" /></span>
                     </div>
                     <div id="create-project-view-demographics-per-capita-4" className="flex items-center justify-between">
                       <span className="text-slate-500">هزینه سرانه هر نفر:</span>
@@ -3294,7 +3294,7 @@ export const CreateProjectView: React.FC = () => {
             >
               <div className="space-y-1">
                 <div className="text-xs font-semibold text-slate-300">
-                  گام {toPersianDigits(activeStep)} از {toPersianDigits(FORM_STEPS.length)} — {FORM_STEPS[activeStep - 1].label}
+                  گام <Num value={toPersianDigits(activeStep)} /> از <Num value={toPersianDigits(FORM_STEPS.length)} /> — {FORM_STEPS[activeStep - 1].label}
                 </div>
                 <div className="text-sm font-bold text-white flex flex-wrap items-center gap-1.5">
                   <span>ارزش کل طرح:</span>
@@ -3508,37 +3508,37 @@ export const CreateProjectView: React.FC = () => {
                     <div id="create-project-view-regional-demographic-snapshot-4" className="bg-slate-50 p-2 rounded-lg border border-slate-200">
                       <div id="create-project-view-regional-demographic-snapshot-5" className="text-xs text-slate-500">جمعیت کل</div>
                       <div id="create-project-view-regional-demographic-snapshot-6" className="text-xs font-bold text-slate-900 mt-0.5">
-                        {formatNumber(activeLocationData?.totalPopulation || 0)} نفر
+                        <Num value={formatNumber(activeLocationData?.totalPopulation || 0)} unit="نفر" />
                       </div>
                     </div>
                     <div id="create-project-view-regional-demographic-snapshot-7" className="bg-slate-50 p-2 rounded-lg border border-slate-200">
                       <div id="create-project-view-regional-demographic-snapshot-8" className="text-xs text-amber-600">اقشار آسیب‌پذیر</div>
                       <div id="create-project-view-regional-demographic-snapshot-9" className="text-xs font-bold text-amber-600 mt-0.5">
-                        {formatNumber(activeLocationData?.vulnerablePopulation || 0)} نفر
+                        <Num value={formatNumber(activeLocationData?.vulnerablePopulation || 0)} unit="نفر" />
                       </div>
                     </div>
                     <div id="create-project-view-regional-demographic-snapshot-10" className="bg-slate-50 p-2 rounded-lg border border-slate-200">
                       <div id="create-project-view-regional-demographic-snapshot-11" className="text-xs text-rose-600">کمبود زیرساخت</div>
                       <div id="create-project-view-regional-demographic-snapshot-12" className="text-xs font-bold text-rose-600 mt-0.5">
-                        {toPersianDigits(activeLocationData?.indicators.infrastructureDeficitPct)}٪
+                        <Num value={toPersianDigits(activeLocationData?.indicators.infrastructureDeficitPct)} />٪
                       </div>
                     </div>
                     <div id="create-project-view-regional-demographic-snapshot-13" className="bg-slate-50 p-2 rounded-lg border border-slate-200">
                       <div id="create-project-view-regional-demographic-snapshot-14" className="text-xs text-cyan-600">کمبود دسترسی سلامت</div>
                       <div id="create-project-view-regional-demographic-snapshot-15" className="text-xs font-bold text-cyan-600 mt-0.5">
-                        {toPersianDigits(activeLocationData?.indicators.healthAccessDeficitPct)}٪
+                        <Num value={toPersianDigits(activeLocationData?.indicators.healthAccessDeficitPct)} />٪
                       </div>
                     </div>
                     <div id="create-project-view-regional-demographic-snapshot-16" className="bg-slate-50 p-2 rounded-lg border border-slate-200">
                       <div id="create-project-view-regional-demographic-snapshot-17" className="text-xs text-purple-600">نرخ فقر / بیکاری</div>
                       <div id="create-project-view-regional-demographic-snapshot-18" className="text-xs font-bold text-purple-600 mt-0.5">
-                        {toPersianDigits(activeLocationData?.indicators.povertyRatePct)}٪
+                        <Num value={toPersianDigits(activeLocationData?.indicators.povertyRatePct)} />٪
                       </div>
                     </div>
                     <div id="create-project-view-regional-demographic-snapshot-19" className="bg-slate-50 p-2 rounded-lg border border-slate-200">
                       <div id="create-project-view-regional-demographic-snapshot-20" className="text-xs text-emerald-600">ریسک محیط‌زیستی</div>
                       <div id="create-project-view-regional-demographic-snapshot-21" className="text-xs font-bold text-emerald-600 mt-0.5">
-                        {toPersianDigits(activeLocationData?.indicators.environmentalRiskScore)}٪
+                        <Num value={toPersianDigits(activeLocationData?.indicators.environmentalRiskScore)} />٪
                       </div>
                     </div>
                   </div>
@@ -3555,7 +3555,7 @@ export const CreateProjectView: React.FC = () => {
                       </span>
                     </span>
                     <span className="text-xs text-slate-500">
-                      {toPersianDigits(demographicPrioritySuggestions.length)} پروژه اولویت‌دار شناسایی شد
+                      <Num value={toPersianDigits(demographicPrioritySuggestions.length)} unit="پروژه" /> اولویت‌دار شناسایی شد
                     </span>
                   </div>
 
@@ -3570,7 +3570,7 @@ export const CreateProjectView: React.FC = () => {
                           <div id={`create-project-view-priority-cards-list-6-${prop.id}`} className="space-y-1.5 flex-1 min-w-0">
                             <div id={`create-project-view-priority-cards-list-7-${prop.id}`} className="flex items-center gap-2 flex-wrap">
                               <span className="text-xs bg-cyan-500 text-slate-950 font-bold px-2 py-0.5 rounded-md">
-                                اولویت پیشنهادی {toPersianDigits(idx + 1)}
+                                اولویت پیشنهادی <Num value={toPersianDigits(idx + 1)} />
                               </span>
                               <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md border border-slate-200">
                                 {prop.categoryFa}
@@ -3600,7 +3600,7 @@ export const CreateProjectView: React.FC = () => {
                               <span>
                                 جمعیت هدف مستقیم:{' '}
                                 <strong className="text-slate-900 font-bold">
-                                  {formatNumber(prop.beneficiariesCount)} نفر
+                                  <Num value={formatNumber(prop.beneficiariesCount)} unit="نفر" />
                                 </strong>
                               </span>
                               <span>•</span>

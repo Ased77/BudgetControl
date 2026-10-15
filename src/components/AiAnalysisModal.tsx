@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { OrganizationConfig, LocalIndicators, CsrPriority } from '../types';
 import { toPersianDigits } from '../utils/numberUtils';
+import { Num } from './Num';
 import { useOutsideClick } from '../hooks/useOutsideClick';
 import { Sparkles, Bot, Check, Copy, X, Loader2, FileText, Lightbulb } from 'lucide-react';
 
@@ -112,7 +113,7 @@ ${report.strategicAdvice}
               <div id="ai-analysis-modal-body-3">
                 <h4 className="font-bold text-slate-900 text-sm">تولید گزارش کارشناسی خودکار با هوش مصنوعی</h4>
                 <p className="text-slate-500 mt-1 max-w-md mx-auto">
-                  هوش مصنوعی داده‌های مربوط به نرخ فقر ({toPersianDigits(indicators.povertyRate)}٪)، حاشیه‌نشینی ({toPersianDigits(indicators.marginalizationRate)}٪) و اعتبارات {orgConfig.name} را تحلیل کرده و گزارش رسمی تولید می‌کند.
+                  هوش مصنوعی داده‌های مربوط به نرخ فقر (<Num value={`${toPersianDigits(indicators.povertyRate)}٪`} />)، حاشیه‌نشینی (<Num value={`${toPersianDigits(indicators.marginalizationRate)}٪`} />) و اعتبارات {orgConfig.name} را تحلیل کرده و گزارش رسمی تولید می‌کند.
                 </p>
               </div>
               <button

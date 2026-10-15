@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CsrPriority, LocalIndicators, OrganizationConfig, SmartRecommendationResult } from '../types';
 import { toPersianDigits, formatCurrency } from '../utils/numberUtils';
 import { Sparkles, BrainCircuit, Check, HelpCircle, ChevronDown, ChevronUp, AlertTriangle, ShieldCheck, Flame, Globe2, MapPin, Building2 } from 'lucide-react';
+import { Num } from './Num';
 
 interface SmartRecommendationViewProps {
   priorities: CsrPriority[];
@@ -91,7 +92,7 @@ export const SmartRecommendationView: React.FC<SmartRecommendationViewProps> = (
               </div>
             </div>
             <span className="text-lg font-black text-rose-700">
-              {toPersianDigits(recommendations.localHotspotCount || 0)}
+              <Num value={toPersianDigits(recommendations.localHotspotCount || 0)} />
             </span>
           </div>
           <p className="mt-2 text-[11px] text-slate-600 leading-snug">
@@ -119,7 +120,7 @@ export const SmartRecommendationView: React.FC<SmartRecommendationViewProps> = (
               </div>
             </div>
             <span className="text-lg font-black text-purple-700">
-              {toPersianDigits(recommendations.universalCriticalCount || 0)}
+              <Num value={toPersianDigits(recommendations.universalCriticalCount || 0)} />
             </span>
           </div>
           <p className="mt-2 text-[11px] text-slate-600 leading-snug">
@@ -140,7 +141,7 @@ export const SmartRecommendationView: React.FC<SmartRecommendationViewProps> = (
               </div>
             </div>
             <span className="text-lg font-black text-blue-700">
-              {toPersianDigits(recommendations.overallVulnerabilityIndex)} <span className="text-xs text-slate-400 font-normal">از ۱۰۰</span>
+              <Num value={toPersianDigits(recommendations.overallVulnerabilityIndex)} /> <span className="text-xs text-slate-400 font-normal">از ۱۰۰</span>
             </span>
           </div>
           <p className="mt-2 text-[11px] text-slate-600 leading-snug">
@@ -160,7 +161,7 @@ export const SmartRecommendationView: React.FC<SmartRecommendationViewProps> = (
               filterTier === 'ALL' ? 'bg-indigo-600 text-white font-bold' : 'bg-white text-slate-700 hover:bg-slate-200'
             }`}
           >
-            همه سرفصل‌ها ({toPersianDigits(priorities.length)})
+            همه سرفصل‌ها (<Num value={toPersianDigits(priorities.length)} />)
           </button>
           <button
             onClick={() => setFilterTier('HOTSPOT')}
@@ -169,7 +170,7 @@ export const SmartRecommendationView: React.FC<SmartRecommendationViewProps> = (
             }`}
           >
             <Flame className="w-3 h-3" />
-            <span>کانون‌های بحران محلی ({toPersianDigits(recommendations.localHotspotCount || 0)})</span>
+            <span>کانون‌های بحران محلی (<Num value={toPersianDigits(recommendations.localHotspotCount || 0)} />)</span>
           </button>
           <button
             onClick={() => setFilterTier('UNIVERSAL')}
@@ -178,7 +179,7 @@ export const SmartRecommendationView: React.FC<SmartRecommendationViewProps> = (
             }`}
           >
             <Globe2 className="w-3 h-3" />
-            <span>فراگیری همه‌جانبه ({toPersianDigits(recommendations.universalCriticalCount || 0)})</span>
+            <span>فراگیری همه‌جانبه (<Num value={toPersianDigits(recommendations.universalCriticalCount || 0)} />)</span>
           </button>
         </div>
       </div>
@@ -217,7 +218,7 @@ export const SmartRecommendationView: React.FC<SmartRecommendationViewProps> = (
                 >
                   <div id={`smart-recommendation-view-detailed-priority-score-5-${p.id}`} className="flex items-center gap-3">
                     <span className="w-7 h-7 rounded-lg bg-blue-100 text-blue-800 font-bold flex items-center justify-center text-xs shrink-0">
-                      {toPersianDigits(p.code)}
+                      <Num value={toPersianDigits(p.code)} />
                     </span>
                     <div id={`smart-recommendation-view-detailed-priority-score-6-${p.id}`}>
                       <div id={`smart-recommendation-view-detailed-priority-score-7-${p.id}`} className="flex items-center gap-2 flex-wrap">
@@ -242,10 +243,10 @@ export const SmartRecommendationView: React.FC<SmartRecommendationViewProps> = (
                   <div id={`smart-recommendation-view-detailed-priority-score-9-${p.id}`} className="flex items-center justify-between md:justify-end gap-4 shrink-0">
                     <div id={`smart-recommendation-view-detailed-priority-score-10-${p.id}`} className="text-left">
                       <div id={`smart-recommendation-view-detailed-priority-score-11-${p.id}`} className="text-sm font-extrabold text-blue-700 dir-rtl">
-                        {toPersianDigits(scorePct)}٪
+                        <Num value={toPersianDigits(scorePct)} />٪
                       </div>
                       <div id={`smart-recommendation-view-detailed-priority-score-12-${p.id}`} className="text-[11px] text-slate-500 dir-rtl">
-                        {formatCurrency(amountToman, 'TOMAN', true)}
+                        <Num value={formatCurrency(amountToman, 'TOMAN', true)} />
                       </div>
                     </div>
                     {isExpanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
@@ -275,7 +276,7 @@ export const SmartRecommendationView: React.FC<SmartRecommendationViewProps> = (
                           <div id={`smart-recommendation-view-level-1-national-${p.id}`} className="p-2.5 rounded-lg bg-white border border-slate-200">
                             <div id={`smart-recommendation-view-level-1-national-2-${p.id}`} className="text-[10px] text-slate-500 font-semibold mb-1">۱. میانگین کشوری</div>
                             <div id={`smart-recommendation-view-level-1-national-3-${p.id}`} className="text-base font-black text-slate-800">
-                              {toPersianDigits(prev.national)} <span className="text-[10px] font-normal text-slate-500">{prev.unit}</span>
+                              <Num value={toPersianDigits(prev.national)} /> <span className="text-[10px] font-normal text-slate-500">{prev.unit}</span>
                             </div>
                             <div id={`smart-recommendation-view-level-1-national-4-${p.id}`} className="w-full bg-slate-100 rounded-full h-1.5 mt-2">
                               <div id={`smart-recommendation-view-level-1-national-5-${p.id}`} className="bg-slate-400 h-1.5 rounded-full" style={{ width: `${Math.min(100, prev.national)}%` }}></div>
@@ -286,7 +287,7 @@ export const SmartRecommendationView: React.FC<SmartRecommendationViewProps> = (
                           <div id={`smart-recommendation-view-level-2-provincial-${p.id}`} className="p-2.5 rounded-lg bg-white border border-slate-200">
                             <div id={`smart-recommendation-view-level-2-provincial-2-${p.id}`} className="text-[10px] text-slate-500 font-semibold mb-1">۲. میانگین استانی ({orgConfig.province})</div>
                             <div id={`smart-recommendation-view-level-2-provincial-3-${p.id}`} className="text-base font-black text-indigo-700">
-                              {toPersianDigits(prev.provincial)} <span className="text-[10px] font-normal text-slate-500">{prev.unit}</span>
+                              <Num value={toPersianDigits(prev.provincial)} /> <span className="text-[10px] font-normal text-slate-500">{prev.unit}</span>
                             </div>
                             <div id={`smart-recommendation-view-level-2-provincial-4-${p.id}`} className="w-full bg-slate-100 rounded-full h-1.5 mt-2">
                               <div id={`smart-recommendation-view-level-2-provincial-5-${p.id}`} className="bg-indigo-400 h-1.5 rounded-full" style={{ width: `${Math.min(100, prev.provincial)}%` }}></div>
@@ -297,7 +298,7 @@ export const SmartRecommendationView: React.FC<SmartRecommendationViewProps> = (
                           <div id={`smart-recommendation-view-level-3-county-${p.id}`} className="p-2.5 rounded-lg bg-white border border-slate-200">
                             <div id={`smart-recommendation-view-level-3-county-2-${p.id}`} className="text-[10px] text-slate-500 font-semibold mb-1">۳. میانگین شهرستانی ({orgConfig.county})</div>
                             <div id={`smart-recommendation-view-level-3-county-3-${p.id}`} className="text-base font-black text-blue-700">
-                              {toPersianDigits(prev.county)} <span className="text-[10px] font-normal text-slate-500">{prev.unit}</span>
+                              <Num value={toPersianDigits(prev.county)} /> <span className="text-[10px] font-normal text-slate-500">{prev.unit}</span>
                             </div>
                             <div id={`smart-recommendation-view-level-3-county-4-${p.id}`} className="w-full bg-slate-100 rounded-full h-1.5 mt-2">
                               <div id={`smart-recommendation-view-level-3-county-5-${p.id}`} className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${Math.min(100, prev.county)}%` }}></div>
@@ -308,7 +309,7 @@ export const SmartRecommendationView: React.FC<SmartRecommendationViewProps> = (
                           <div id={`smart-recommendation-view-level-4-local-hotspot-${p.id}`} className={`p-2.5 rounded-lg border ${exp.isLocalHotspot ? 'bg-rose-50 border-rose-300' : 'bg-white border-slate-200'}`}>
                             <div id={`smart-recommendation-view-level-4-local-hotspot-2-${p.id}`} className="text-[10px] text-slate-500 font-semibold mb-1">۴. کانون محلی پیرامون صنعت</div>
                             <div id={`smart-recommendation-view-level-4-local-hotspot-3-${p.id}`} className={`text-base font-black ${exp.isLocalHotspot ? 'text-rose-700' : 'text-emerald-700'}`}>
-                              {toPersianDigits(prev.local)} <span className="text-[10px] font-normal text-slate-500">{prev.unit}</span>
+                              <Num value={toPersianDigits(prev.local)} /> <span className="text-[10px] font-normal text-slate-500">{prev.unit}</span>
                             </div>
                             <div id={`smart-recommendation-view-level-4-local-hotspot-4-${p.id}`} className="w-full bg-slate-100 rounded-full h-1.5 mt-2">
                               <div id={`smart-recommendation-view-level-4-local-hotspot-5-${p.id}`} className={`${exp.isLocalHotspot ? 'bg-rose-500' : 'bg-emerald-500'} h-1.5 rounded-full`} style={{ width: `${Math.min(100, prev.local)}%` }}></div>
@@ -321,7 +322,7 @@ export const SmartRecommendationView: React.FC<SmartRecommendationViewProps> = (
                         <div id={`smart-recommendation-view-divergence-evaluation-${p.id}`} className="p-2.5 bg-indigo-50/70 border border-indigo-100 rounded-lg text-[11px] text-indigo-900 flex items-start gap-2">
                           <AlertTriangle className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
                           <div id={`smart-recommendation-view-divergence-evaluation-2-${p.id}`}>
-                            <span className="font-bold">تحلیل نسبت‌سنجی (LQ = {toPersianDigits(prev.locationQuotient)} برابر میانگین کشوری): </span>
+                            <span className="font-bold">تحلیل نسبت‌سنجی (LQ = <Num value={toPersianDigits(prev.locationQuotient)} /> برابر میانگین کشوری): </span>
                             <span>{prev.divergenceDescription}</span>
                           </div>
                         </div>
@@ -338,7 +339,7 @@ export const SmartRecommendationView: React.FC<SmartRecommendationViewProps> = (
                     {p.subItems && p.subItems.length > 0 && (
                       <div id={`smart-recommendation-view-sub-items-${p.id}`} className="pt-2 border-t border-slate-100">
                         <strong className="text-slate-800 block mb-1.5 text-xs">
-                          لیست کامل مسئولیت‌های تفکیکی CSR ({toPersianDigits(p.subItems.length)} اقدام اجرایی):
+                          لیست کامل مسئولیت‌های تفکیکی CSR (<Num value={toPersianDigits(p.subItems.length)} /> اقدام اجرایی):
                         </strong>
                         <div id={`smart-recommendation-view-sub-items-2-${p.id}`} className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
                           {p.subItems.map((sub, i) => (

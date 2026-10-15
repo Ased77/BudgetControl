@@ -18,7 +18,8 @@ import {
   AlertCircle,
   X,
 } from 'lucide-react';
-import { compactToman, formatToman, toPersianDigits } from '../utils/numberUtils';
+import { compactToman, formatMoneyParts, formatPercent, formatToman, formatNumber, toPersianDigits } from '../utils/numberUtils';
+import { Num } from './Num';
 import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
 import { useConfirmDelete } from './ConfirmDeleteModal';
 
@@ -241,19 +242,19 @@ export const BudgetSourcesView: React.FC = () => {
         <div id="budget-sources-view-aggregate-kpi-strip" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-emerald-200/60">
           <div id="budget-sources-view-aggregate-kpi-strip-2" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">کل منابع اعتباری مصوب</span>
-            <span className="text-xl font-black text-emerald-700 mt-0.5 block font-mono">{formatToman(grandTotal)}</span>
+            <Num {...formatMoneyParts(grandTotal)} className="text-xl font-black text-emerald-700 mt-0.5 block font-mono" />
           </div>
           <div id="budget-sources-view-aggregate-kpi-strip-3" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">اعتبارات تخصیص‌یافته به پروژه‌ها</span>
-            <span className="text-xl font-black text-blue-700 mt-0.5 block font-mono">{formatToman(grandAllocated)}</span>
+            <Num {...formatMoneyParts(grandAllocated)} className="text-xl font-black text-blue-700 mt-0.5 block font-mono" />
           </div>
           <div id="budget-sources-view-aggregate-kpi-strip-4" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">مانده آزاد و قابل تخصیص</span>
-            <span className="text-xl font-black text-amber-700 mt-0.5 block font-mono">{formatToman(grandRemaining)}</span>
+            <Num {...formatMoneyParts(grandRemaining)} className="text-xl font-black text-amber-700 mt-0.5 block font-mono" />
           </div>
           <div id="budget-sources-view-aggregate-kpi-strip-5" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">درصد پوشش تعهدات</span>
-            <span className="text-xl font-black text-slate-900 mt-0.5 block font-mono">{toPersianDigits(allocationRate)}٪</span>
+            <Num value={formatPercent(allocationRate)} className="text-xl font-black text-slate-900 mt-0.5 block font-mono" />
           </div>
         </div>
       </div>
@@ -401,9 +402,7 @@ export const BudgetSourcesView: React.FC = () => {
                         strokeDashoffset={2 * Math.PI * USAGE_GAUGE_RADIUS * (1 - usagePercent / 100)}
                       />
                     </svg>
-                    <span className="absolute inset-0 flex items-center justify-center text-xs font-black text-slate-800 dark:text-slate-100">
-                      {toPersianDigits(usagePercent)}٪
-                    </span>
+                    <Num value={formatPercent(usagePercent)} className="absolute inset-0 flex items-center justify-center text-xs font-black text-slate-800 dark:text-slate-100" />
                   </div>
                 </div>
 
@@ -411,7 +410,7 @@ export const BudgetSourcesView: React.FC = () => {
                   id={`budget-sources-view-card-allocated-metric-${source.id}`}
                   className="flex flex-col items-center justify-center gap-0.5 px-1 py-3 border-x border-slate-100 dark:border-slate-800 text-center"
                 >
-                  <span className="text-base font-black text-slate-900 dark:text-slate-100 leading-none">{allocated.value}</span>
+                  <Num value={allocated.value} className="text-base font-black text-slate-900 dark:text-slate-100 leading-none" />
                   <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
                     <Banknote className="w-3 h-3 text-slate-400" />
                     تخصیص‌یافته ({allocated.unit})
@@ -422,9 +421,7 @@ export const BudgetSourcesView: React.FC = () => {
                   id={`budget-sources-view-card-projects-metric-${source.id}`}
                   className="flex flex-col items-center justify-center gap-0.5 px-1 py-3 text-center"
                 >
-                  <span className="text-base font-black text-slate-900 dark:text-slate-100 leading-none">
-                    {toPersianDigits(linkedProjects.length)}
-                  </span>
+                  <Num value={formatNumber(linkedProjects.length)} className="text-base font-black text-slate-900 dark:text-slate-100 leading-none" />
                   <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
                     <Layers className="w-3 h-3 text-slate-400" />
                     پروژه تأمین‌شده
@@ -543,9 +540,7 @@ export const BudgetSourcesView: React.FC = () => {
                         <Layers className="w-3.5 h-3.5" />
                         پروژه‌های تأمین‌شده
                       </span>
-                      <span className="font-bold text-slate-800 dark:text-slate-200">
-                        {toPersianDigits(linkedProjects.length)} پروژه
-                      </span>
+                      <Num value={formatNumber(linkedProjects.length)} unit="پروژه" className="font-bold text-slate-800 dark:text-slate-200" />
                     </div>
                   </div>
 
@@ -586,9 +581,7 @@ export const BudgetSourcesView: React.FC = () => {
                           />
                         </svg>
                         <span className="absolute inset-0 flex flex-col items-center justify-center">
-                          <span className="text-sm font-black text-slate-800 dark:text-slate-100">
-                            {toPersianDigits(usagePercent)}٪
-                          </span>
+                          <Num value={formatPercent(usagePercent)} className="text-sm font-black text-slate-800 dark:text-slate-100" />
                           <span className="text-[9px] text-slate-400">نرخ تعهد</span>
                         </span>
                       </div>
@@ -596,19 +589,15 @@ export const BudgetSourcesView: React.FC = () => {
                       <div className="flex-1 space-y-2 min-w-0">
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-slate-500 dark:text-slate-400 text-[11px]">سقف کل اعتبار</span>
-                          <span className="font-black text-slate-900 dark:text-slate-100">
-                            {formatToman(detailSource.totalAmountToman)}
-                          </span>
+                          <Num {...formatMoneyParts(detailSource.totalAmountToman)} className="font-black text-slate-900 dark:text-slate-100" />
                         </div>
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-slate-500 dark:text-slate-400 text-[11px]">تخصیص‌یافته به پروژه‌ها</span>
-                          <span className="font-bold text-blue-600 dark:text-blue-400">
-                            {formatToman(detailSource.allocatedAmountToman)}
-                          </span>
+                          <Num {...formatMoneyParts(detailSource.allocatedAmountToman)} className="font-bold text-blue-600 dark:text-blue-400" />
                         </div>
                         <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
                           <span className="text-slate-500 dark:text-slate-400 text-[11px]">مانده قابل مصرف</span>
-                          <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatToman(remainingToman)}</span>
+                          <Num {...formatMoneyParts(remainingToman)} className="font-bold text-emerald-600 dark:text-emerald-400" />
                         </div>
                       </div>
                     </div>
@@ -643,7 +632,7 @@ export const BudgetSourcesView: React.FC = () => {
                         پروژه‌های تأمین‌شده از این منبع
                       </span>
                       <span className="text-[10px] text-slate-400">
-                        {toPersianDigits(linkedProjects.length)} پروژه ثبت‌شده
+                        <Num value={formatNumber(linkedProjects.length)} unit="پروژه" unitClassName="text-[0.9em] font-bold text-slate-400 ms-0.5" /> ثبت‌شده
                       </span>
                     </div>
 
@@ -687,12 +676,8 @@ export const BudgetSourcesView: React.FC = () => {
                                   style={{ width: `${Math.min(100, proj.progressPercentage)}%` }}
                                 />
                               </div>
-                              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 w-9 text-left shrink-0">
-                                {toPersianDigits(proj.progressPercentage)}٪
-                              </span>
-                              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono shrink-0">
-                                {formatToman(proj.estimatedCostToman)}
-                              </span>
+                              <Num value={formatPercent(proj.progressPercentage)} className="text-[10px] font-bold text-slate-500 dark:text-slate-400 w-9 text-left shrink-0" />
+                              <Num {...formatMoneyParts(proj.estimatedCostToman)} className="text-[10px] text-slate-500 dark:text-slate-400 font-mono shrink-0" />
                             </div>
                           </div>
                         ))}

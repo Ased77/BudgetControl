@@ -6,6 +6,7 @@ import { useOutsideClick } from '../hooks/useOutsideClick';
 import { ComparativeHarmsTable } from './ComparativeHarmsTable';
 import { PageHeader } from './PageHeader';
 import FilterBadges from './FilterBadges/FilterBadges';
+import { Num } from './Num';
 
 /**
  * The eleven local indicators every location record carries, in the order the
@@ -318,13 +319,13 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
                     <div id={`location-module-location-cards-grid-9-${loc.id}`} className="flex items-center justify-between text-[11px] text-slate-500">
                       <span>جمعیت محلی:</span>
                       <strong className="text-slate-800">
-                        {toPersianDigits(loc.population.toLocaleString('fa-IR'))} نفر
+                        <Num value={toPersianDigits(loc.population.toLocaleString('fa-IR'))} unit="نفر" />
                       </strong>
                     </div>
                     <div id={`location-module-location-cards-grid-10-${loc.id}`} className="flex items-center justify-between text-[11px] text-slate-500">
                       <span>نرخ فقر:</span>
                       <strong className="text-rose-600 font-bold">
-                        {toPersianDigits(loc.indicators.povertyRate)}٪
+                        <Num value={toPersianDigits(loc.indicators.povertyRate)} />٪
                       </strong>
                     </div>
                   </div>
@@ -345,9 +346,9 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
               id="location-module-region-selector-pagination-summary"
               className="text-[11px] font-bold text-slate-500"
             >
-              نمایش {toPersianDigits((safeLocationPage - 1) * LOCATION_PAGE_SIZE + 1)} تا{' '}
-              {toPersianDigits(Math.min(safeLocationPage * LOCATION_PAGE_SIZE, filteredLocations.length))} از{' '}
-              {toPersianDigits(filteredLocations.length)} لوکیشن
+              نمایش <Num value={toPersianDigits((safeLocationPage - 1) * LOCATION_PAGE_SIZE + 1)} /> تا{' '}
+              <Num value={toPersianDigits(Math.min(safeLocationPage * LOCATION_PAGE_SIZE, filteredLocations.length))} /> از{' '}
+              <Num value={toPersianDigits(filteredLocations.length)} unit="لوکیشن" />
             </span>
 
             <div id="location-module-region-selector-pagination-controls" className="flex items-center gap-1.5 flex-wrap">
@@ -377,12 +378,12 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
                         : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                     }`}
                   >
-                    {toPersianDigits(page)}
+                    <Num value={toPersianDigits(page)} />
                   </button>
                 ))
               ) : (
                 <span id="location-module-region-selector-pagination-position" className="px-1 text-xs font-bold text-slate-600">
-                  صفحه {toPersianDigits(safeLocationPage)} از {toPersianDigits(locationPageCount)}
+                  صفحه <Num value={toPersianDigits(safeLocationPage)} /> از <Num value={toPersianDigits(locationPageCount)} />
                 </span>
               )}
 
@@ -429,7 +430,7 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
           <div id="location-module-poverty-rate" className="bg-slate-50 p-4 rounded-xl border border-slate-200">
             <div id="location-module-poverty-rate-2" className="flex justify-between font-bold text-slate-800 mb-1">
               <span>نرخ فقر و محرومیت</span>
-              <span className="text-blue-700">{toPersianDigits(selectedLocation.indicators.povertyRate)}٪</span>
+              <span className="text-blue-700"><Num value={toPersianDigits(selectedLocation.indicators.povertyRate)} />٪</span>
             </div>
             <input
               type="range"
@@ -448,7 +449,7 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
           <div id="location-module-marginalization-rate" className="bg-slate-50 p-4 rounded-xl border border-slate-200">
             <div id="location-module-marginalization-rate-2" className="flex justify-between font-bold text-slate-800 mb-1">
               <span>درصد حاشیه‌نشینی</span>
-              <span className="text-blue-700">{toPersianDigits(selectedLocation.indicators.marginalizationRate)}٪</span>
+              <span className="text-blue-700"><Num value={toPersianDigits(selectedLocation.indicators.marginalizationRate)} />٪</span>
             </div>
             <input
               type="range"
@@ -467,7 +468,7 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
           <div id="location-module-unemployment-rate" className="bg-slate-50 p-4 rounded-xl border border-slate-200">
             <div id="location-module-unemployment-rate-2" className="flex justify-between font-bold text-slate-800 mb-1">
               <span>نرخ بیکاری محلی</span>
-              <span className="text-blue-700">{toPersianDigits(selectedLocation.indicators.unemploymentRate)}٪</span>
+              <span className="text-blue-700"><Num value={toPersianDigits(selectedLocation.indicators.unemploymentRate)} />٪</span>
             </div>
             <input
               type="range"
@@ -486,7 +487,7 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
           <div id="location-module-social-harms-index" className="bg-slate-50 p-4 rounded-xl border border-slate-200">
             <div id="location-module-social-harms-index-2" className="flex justify-between font-bold text-slate-800 mb-1">
               <span>شاخص آسیب‌های اجتماعی</span>
-              <span className="text-rose-700">{toPersianDigits(selectedLocation.indicators.socialHarmsIndex)} از ۱۰۰</span>
+              <span className="text-rose-700"><Num value={toPersianDigits(selectedLocation.indicators.socialHarmsIndex)} unit="از ۱۰۰" /></span>
             </div>
             <input
               type="range"
@@ -505,7 +506,7 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
           <div id="location-module-health-deficit" className="bg-slate-50 p-4 rounded-xl border border-slate-200">
             <div id="location-module-health-deficit-2" className="flex justify-between font-bold text-slate-800 mb-1">
               <span>کمبود دسترسی درمان و بهداشت</span>
-              <span className="text-blue-700">{toPersianDigits(selectedLocation.indicators.healthAccessDeficit)}٪</span>
+              <span className="text-blue-700"><Num value={toPersianDigits(selectedLocation.indicators.healthAccessDeficit)} />٪</span>
             </div>
             <input
               type="range"
@@ -524,7 +525,7 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
           <div id="location-module-environmental-risk" className="bg-slate-50 p-4 rounded-xl border border-slate-200">
             <div id="location-module-environmental-risk-2" className="flex justify-between font-bold text-slate-800 mb-1">
               <span>ریسک آلودگی زیست‌محیطی</span>
-              <span className="text-amber-700">{toPersianDigits(selectedLocation.indicators.environmentalRiskScore)} از ۱۰۰</span>
+              <span className="text-amber-700"><Num value={toPersianDigits(selectedLocation.indicators.environmentalRiskScore)} unit="از ۱۰۰" /></span>
             </div>
             <input
               type="range"
@@ -612,7 +613,7 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
                 <div id="location-module-edit-modal-population-2" className="flex items-center justify-between gap-2 mb-1">
                   <span className="text-xs font-bold text-slate-800">جمعیت محلی</span>
                   <span className="text-xs font-black text-blue-700">
-                    {toPersianDigits(draftPopulation.toLocaleString('fa-IR'))} نفر
+                    <Num value={toPersianDigits(draftPopulation.toLocaleString('fa-IR'))} unit="نفر" />
                   </span>
                 </div>
                 <input
@@ -644,7 +645,7 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
                       <div id={`location-module-edit-modal-indicator-${field.key}-2`} className="flex items-center justify-between gap-2 mb-1">
                         <span className="text-[11px] font-bold text-slate-800">{field.label}</span>
                         <span className="text-[11px] font-black text-blue-700">
-                          {toPersianDigits(value)} {field.unit}
+                          <Num value={toPersianDigits(value)} /> {field.unit}
                         </span>
                       </div>
                       {field.max !== null ? (

@@ -8,22 +8,31 @@ import { useEffect, useRef, useState } from 'react';
  * from the currently displayed figure, so a live edit slides to the new value
  * instead of resetting to zero.
  *
- * The hook owns per-frame state — keep it in a small leaf component so only
- * the digits re-render while the rest of the page stays put.
- * `prefers-reduced-motion` users (and non-finite targets) get the final value
- * immediately, with no animation at all.
+ * `enabled=false` (or `prefers-reduced-motion`, or a non-finite target) jumps
+ * straight to the final value with no animation. The hook owns per-frame
+ * state, so it renders only the digits that read it.
+ *
+ * `resetKey` is the visibility epoch of a view that stays mounted (the
+ * charts panel): changing it snaps the displayed figure back to 0 and replays
+ * the entrance, as if the page had just loaded.
  */
-export function useCountUp(target: number, durationMs = 800): number {
-  const [value, setValue] = useState(() => (prefersReducedMotion() ? target : 0));
+export function useCountUp(target: number, durationMs = 800, enabled = true, resetKey = 0): number {
+  const [value, setValue] = useState(() =>
+    enabled ? (prefersReducedMotion() ? target : 0) : target
+  );
   const displayedRef = useRef(value);
   const frameRef = useRef(0);
+  const lastResetKeyRef = useRef(resetKey);
 
   useEffect(() => {
-    if (prefersReducedMotion() || !Number.isFinite(target)) {
+    const reset = lastResetKeyRef.current !== resetKey;
+    lastResetKeyRef.current = resetKey;
+    if (!enabled || prefersReducedMotion() || !Number.isFinite(target)) {
       displayedRef.current = target;
       setValue(target);
       return;
     }
+    if (reset) displayedRef.current = 0;
     const from = displayedRef.current;
     if (from === target) return;
     const startedAt = performance.now();
@@ -39,7 +48,7 @@ export function useCountUp(target: number, durationMs = 800): number {
     };
     frameRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frameRef.current);
-  }, [target, durationMs]);
+  }, [target, durationMs, enabled, resetKey]);
 
   return value;
 }

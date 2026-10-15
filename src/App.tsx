@@ -13,6 +13,7 @@ import { ExecutorsView } from './components/ExecutorsView';
 import { ContractorsView } from './components/ContractorsView';
 import { ProjectsView } from './components/ProjectsView';
 import { ChartsView } from './components/ChartsView';
+import { NumCountUpTriggerContext } from './components/Num';
 import { LocationModule } from './components/LocationModule';
 import { PopulationView } from './components/PopulationView';
 import { CreateProjectView } from './components/CreateProjectView';
@@ -219,6 +220,21 @@ function AppContent() {
         window.dispatchEvent(new Event('resize'));
       }, 60);
       return () => clearTimeout(timer);
+    }
+  }, [activeTab]);
+
+  // The charts panel is kept mounted (its bubble chart's animation and state
+  // must survive tab switches), so its figures never see a fresh mount and
+  // would never play their count-up entrance. This epoch — bumped on every
+  // transition into the tab, never on boot — replays the entrance for them
+  // via `NumCountUpTriggerContext` (reset to 0, ease in again).
+  const [chartsCountUpEpoch, setChartsCountUpEpoch] = useState(0);
+  const prevActiveTabRef = useRef(activeTab);
+  useEffect(() => {
+    const prev = prevActiveTabRef.current;
+    prevActiveTabRef.current = activeTab;
+    if (activeTab === 'CHARTS' && prev !== 'CHARTS') {
+      setChartsCountUpEpoch((epoch) => epoch + 1);
     }
   }, [activeTab]);
 
@@ -608,9 +624,11 @@ function AppContent() {
           {activeTab === 'PROJECTS' && <ProjectsView />}
 
           {/* Charts View: Kept mounted in DOM with display style so Bubble Chart animation & state survive seamlessly */}
-          <div id="app-charts-view-kept-mounted-in-dom" style={{ display: activeTab === 'CHARTS' ? 'block' : 'none' }}>
-            <ChartsView />
-          </div>
+          <NumCountUpTriggerContext.Provider value={chartsCountUpEpoch}>
+            <div id="app-charts-view-kept-mounted-in-dom" style={{ display: activeTab === 'CHARTS' ? 'block' : 'none' }}>
+              <ChartsView />
+            </div>
+          </NumCountUpTriggerContext.Provider>
 
           {activeTab === 'LOCATIONS' && (
             <LocationModule

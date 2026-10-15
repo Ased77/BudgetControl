@@ -24,7 +24,8 @@ import {
   FolderGit2,
   ListChecks,
 } from 'lucide-react';
-import { formatNumber, formatToman, toPersianDigits } from '../utils/numberUtils';
+import { formatMoneyParts, formatPercent, formatNumber, formatToman, toPersianDigits } from '../utils/numberUtils';
+import { Num } from './Num';
 import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
 import { useConfirmDelete } from './ConfirmDeleteModal';
 
@@ -311,7 +312,7 @@ export const CrisesHarmsView: React.FC = () => {
     {
       id: 'total',
       label: 'کل موارد ثبت‌شده',
-      value: `${toPersianDigits(crisesHarms.length)} مورد`,
+      figure: { value: formatNumber(crisesHarms.length), unit: 'مورد' },
       icon: ListChecks,
       card: 'border-cyan-200 dark:border-cyan-900/70 bg-cyan-50/40 dark:bg-cyan-950/20',
       tile: 'bg-cyan-100 dark:bg-cyan-950/60 border-cyan-200 dark:border-cyan-800 text-cyan-700 dark:text-cyan-300',
@@ -320,7 +321,7 @@ export const CrisesHarmsView: React.FC = () => {
     {
       id: 'critical',
       label: 'کانون‌های بحرانی',
-      value: `${toPersianDigits(criticalCount)} کانون`,
+      figure: { value: formatNumber(criticalCount), unit: 'کانون' },
       icon: Flame,
       card: 'border-rose-200 dark:border-rose-900/70 bg-rose-50/40 dark:bg-rose-950/20',
       tile: 'bg-rose-100 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300',
@@ -329,7 +330,7 @@ export const CrisesHarmsView: React.FC = () => {
     {
       id: 'affected',
       label: 'جمعیت متأثر',
-      value: `${formatNumber(totalAffected)} نفر`,
+      figure: { value: formatNumber(totalAffected), unit: 'نفر' },
       icon: Users,
       card: 'border-amber-200 dark:border-amber-900/70 bg-amber-50/40 dark:bg-amber-950/20',
       tile: 'bg-amber-100 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300',
@@ -338,7 +339,7 @@ export const CrisesHarmsView: React.FC = () => {
     {
       id: 'intervention',
       label: 'در حال مداخله',
-      value: `${toPersianDigits(underInterventionCount)} مورد`,
+      figure: { value: formatNumber(underInterventionCount), unit: 'مورد' },
       icon: FolderGit2,
       card: 'border-emerald-200 dark:border-emerald-900/70 bg-emerald-50/40 dark:bg-emerald-950/20',
       tile: 'bg-emerald-100 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300',
@@ -373,7 +374,11 @@ export const CrisesHarmsView: React.FC = () => {
                 <KpiIcon className="w-5 h-5" />
               </div>
               <div id={`crises-harms-view-kpi-card-body-${kpi.id}`} className="min-w-0">
-                <span className={`block text-base font-black leading-tight truncate ${kpi.valueClass}`}>{kpi.value}</span>
+                <Num
+                  value={kpi.figure.value}
+                  unit={kpi.figure.unit}
+                  className={`block text-base font-black leading-tight truncate ${kpi.valueClass}`}
+                />
                 <span className="block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{kpi.label}</span>
               </div>
             </div>
@@ -404,7 +409,7 @@ export const CrisesHarmsView: React.FC = () => {
               className="text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 whitespace-nowrap"
             >
               <ListChecks className="w-3.5 h-3.5 text-rose-500" />
-              {toPersianDigits(filteredCrises.length)} مورد یافت شد
+              <Num value={toPersianDigits(filteredCrises.length)} unit="مورد" /> یافت شد
             </span>
           </div>
 
@@ -453,7 +458,7 @@ export const CrisesHarmsView: React.FC = () => {
                 : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
             }`}
           >
-            همه ({toPersianDigits(crisesHarms.length)})
+            همه (<Num value={toPersianDigits(crisesHarms.length)} />)
           </button>
 
           {URGENCY_ORDER.filter((urgency) => (urgencyCounts[urgency] || 0) > 0).map((urgency) => {
@@ -475,7 +480,7 @@ export const CrisesHarmsView: React.FC = () => {
                 <ChipIcon className="w-3.5 h-3.5 shrink-0" />
                 <span>{style.label}</span>
                 <span className={`text-[10px] ${isSelected ? 'opacity-80' : 'text-slate-400'}`}>
-                  ({toPersianDigits(urgencyCounts[urgency] || 0)})
+                  (<Num value={toPersianDigits(urgencyCounts[urgency] || 0)} />)
                 </span>
               </button>
             );
@@ -600,9 +605,7 @@ export const CrisesHarmsView: React.FC = () => {
                         />
                       </svg>
                       <span className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-sm font-black text-slate-800 dark:text-slate-100 leading-none">
-                          {toPersianDigits(item.severityScore)}
-                        </span>
+                        <Num value={formatNumber(item.severityScore)} className="text-sm font-black text-slate-800 dark:text-slate-100 leading-none" />
                         <span className="text-[9px] text-slate-400 mt-0.5">از ۱۰۰</span>
                       </span>
                     </div>
@@ -612,9 +615,7 @@ export const CrisesHarmsView: React.FC = () => {
                     id={`crises-harms-view-card-population-metric-${item.id}`}
                     className="flex flex-col items-center justify-center gap-0.5 px-1 py-3 border-x border-slate-100 dark:border-slate-800 text-center"
                   >
-                    <span className="text-sm font-black text-slate-900 dark:text-slate-100 leading-none">
-                      {formatNumber(item.affectedPopulation)}
-                    </span>
+                    <Num value={formatNumber(item.affectedPopulation)} className="text-sm font-black text-slate-900 dark:text-slate-100 leading-none" />
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
                       <Users className="w-3 h-3 text-slate-400" />
                       نفر متأثر
@@ -625,9 +626,7 @@ export const CrisesHarmsView: React.FC = () => {
                     id={`crises-harms-view-card-projects-metric-${item.id}`}
                     className="flex flex-col items-center justify-center gap-0.5 px-1 py-3 text-center"
                   >
-                    <span className="text-sm font-black text-slate-900 dark:text-slate-100 leading-none">
-                      {toPersianDigits(matchedProjects.length)}
-                    </span>
+                    <Num value={formatNumber(matchedProjects.length)} className="text-sm font-black text-slate-900 dark:text-slate-100 leading-none" />
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
                       <FolderGit2 className="w-3 h-3 text-slate-400" />
                       پروژه فعال
@@ -762,9 +761,7 @@ export const CrisesHarmsView: React.FC = () => {
                           />
                         </svg>
                         <span className="absolute inset-0 flex flex-col items-center justify-center">
-                          <span className="text-sm font-black text-slate-800 dark:text-slate-100">
-                            {toPersianDigits(detailCrisis.severityScore)}
-                          </span>
+                          <Num value={formatNumber(detailCrisis.severityScore)} className="text-sm font-black text-slate-800 dark:text-slate-100" />
                           <span className="text-[9px] text-slate-400">از ۱۰۰</span>
                         </span>
                       </div>
@@ -772,15 +769,11 @@ export const CrisesHarmsView: React.FC = () => {
                       <div className="flex-1 space-y-2 min-w-0">
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-slate-500 dark:text-slate-400 text-[11px]">جمعیت متأثر</span>
-                          <span className="font-black text-slate-900 dark:text-slate-100">
-                            {formatNumber(detailCrisis.affectedPopulation)} نفر
-                          </span>
+                          <Num value={formatNumber(detailCrisis.affectedPopulation)} unit="نفر" className="font-black text-slate-900 dark:text-slate-100" />
                         </div>
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-slate-500 dark:text-slate-400 text-[11px]">پروژه‌های در حال اجرا</span>
-                          <span className="font-bold text-indigo-600 dark:text-indigo-400">
-                            {toPersianDigits(matchedProjects.length)} پروژه
-                          </span>
+                          <Num value={formatNumber(matchedProjects.length)} unit="پروژه" className="font-bold text-indigo-600 dark:text-indigo-400" />
                         </div>
                         <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
                           <span className="text-slate-500 dark:text-slate-400 text-[11px]">شاخص کمبود محلی</span>
@@ -876,7 +869,7 @@ export const CrisesHarmsView: React.FC = () => {
                         پروژه‌های پاسخ‌دهنده به این بحران
                       </span>
                       <span className="text-[10px] text-slate-400">
-                        {toPersianDigits(matchedProjects.length)} پروژه ثبت‌شده
+                        <Num value={formatNumber(matchedProjects.length)} unit="پروژه" unitClassName="text-[0.9em] font-bold text-slate-400 ms-0.5" /> ثبت‌شده
                       </span>
                     </div>
 
@@ -920,12 +913,8 @@ export const CrisesHarmsView: React.FC = () => {
                                   style={{ width: `${Math.min(100, proj.progressPercentage)}%` }}
                                 />
                               </div>
-                              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 w-9 text-left shrink-0">
-                                {toPersianDigits(proj.progressPercentage)}٪
-                              </span>
-                              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono shrink-0">
-                                {formatToman(proj.estimatedCostToman)}
-                              </span>
+                              <Num value={formatPercent(proj.progressPercentage)} className="text-[10px] font-bold text-slate-500 dark:text-slate-400 w-9 text-left shrink-0" />
+                              <Num {...formatMoneyParts(proj.estimatedCostToman)} className="text-[10px] text-slate-500 dark:text-slate-400 font-mono shrink-0" />
                             </div>
                           </div>
                         ))}

@@ -21,6 +21,7 @@ import {
 import { useAppContext } from '../context/AppContext';
 import { CsrPriority } from '../types';
 import { toPersianDigits, formatCurrency } from '../utils/numberUtils';
+import { Num } from './Num';
 import { useConfirmDelete } from './ConfirmDeleteModal';
 import { useOutsideClick } from '../hooks/useOutsideClick';
 import { HelpTooltip } from './HelpTooltip';
@@ -227,12 +228,12 @@ export const CsrDomainsCatalogView: React.FC = () => {
             <div id="csr-domains-catalog-view-top-banner-header-summary-light-7" className="bg-white border border-slate-200 rounded-xl px-3.5 py-2 flex items-center gap-3 text-xs shadow-2xs">
               <div id="csr-domains-catalog-view-top-banner-header-summary-light-8">
                 <span className="text-slate-500 block text-[10px]">عناوین مسئولیت اجتماعی:</span>
-                <span className="font-bold text-slate-800 text-sm">{toPersianDigits(priorities.length)} سرفصل</span>
+                <span className="font-bold text-slate-800 text-sm"><Num value={toPersianDigits(priorities.length)} unit="سرفصل" /></span>
               </div>
               <div id="csr-domains-catalog-view-top-banner-header-summary-light-9" className="w-px h-6 bg-slate-200" />
               <div id="csr-domains-catalog-view-top-banner-header-summary-light-10">
                 <span className="text-slate-500 block text-[10px]">مجموع زیرمجموعه‌ها:</span>
-                <span className="font-bold text-emerald-700 text-sm">{toPersianDigits(totalSubItemsCount)} اقدام</span>
+                <span className="font-bold text-emerald-700 text-sm"><Num value={toPersianDigits(totalSubItemsCount)} unit="اقدام" /></span>
               </div>
             </div>
 
@@ -305,7 +306,7 @@ export const CsrDomainsCatalogView: React.FC = () => {
               >
                 <div id="csr-domains-catalog-view-main-interactive-dropdown-button" className="flex items-center gap-3">
                   <span className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
-                    {toPersianDigits(activeDomain?.code || 1)}
+                    <Num value={toPersianDigits(activeDomain?.code || 1)} />
                   </span>
                   <div id="csr-domains-catalog-view-main-interactive-dropdown-button-2">
                     <div id="csr-domains-catalog-view-main-interactive-dropdown-button-3" className="flex items-center gap-1.5 min-w-0">
@@ -323,10 +324,10 @@ export const CsrDomainsCatalogView: React.FC = () => {
                 <div id="csr-domains-catalog-view-main-interactive-dropdown-button-4" className="flex items-center gap-3">
                   <div id="csr-domains-catalog-view-main-interactive-dropdown-button-5" className="hidden sm:flex flex-col items-end text-xs">
                     <span className="font-bold text-indigo-700">
-                      {toPersianDigits(currentPercentages[activeDomain.id] ?? activeDomain.defaultPercentage)}٪ تخصیص بودجه
+                      <Num value={toPersianDigits(currentPercentages[activeDomain.id] ?? activeDomain.defaultPercentage)} />٪ تخصیص بودجه
                     </span>
                     <span className="text-[10px] text-slate-500">
-                      {toPersianDigits(activeDomain?.subItems?.length || 0)} اقدام و زیرمجموعه
+                      <Num value={toPersianDigits(activeDomain?.subItems?.length || 0)} unit="اقدام" /> و زیرمجموعه
                     </span>
                   </div>
                   <div id="csr-domains-catalog-view-main-interactive-dropdown-button-6" className={`p-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 transition-transform ${isDropdownOpen ? 'rotate-180 text-indigo-600' : ''}`}>
@@ -378,7 +379,7 @@ export const CsrDomainsCatalogView: React.FC = () => {
                             <span className={`w-6 h-6 rounded-md flex items-center justify-center text-[11px] font-bold ${
                               isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-700'
                             }`}>
-                              {toPersianDigits(p.code)}
+                              <Num value={toPersianDigits(p.code)} />
                             </span>
                             <div id={`csr-domains-catalog-view-dropdown-options-list-3-${p.id}`} className="min-w-0">
                               <div id={`csr-domains-catalog-view-dropdown-options-list-4-${p.id}`} className="flex items-center gap-1.5">
@@ -393,10 +394,10 @@ export const CsrDomainsCatalogView: React.FC = () => {
 
                           <div id={`csr-domains-catalog-view-dropdown-options-list-5-${p.id}`} className="flex items-center gap-3">
                             <span className="text-xs text-indigo-600 font-semibold dir-rtl">
-                              {toPersianDigits(pct)}٪
+                              <Num value={toPersianDigits(pct)} />٪
                             </span>
                             <span className="text-[11px] text-slate-400">
-                              ({toPersianDigits(subCount)} زیرمجموعه)
+                              (<Num value={toPersianDigits(subCount)} unit="زیرمجموعه" />)
                             </span>
                             {isSelected && (
                               <Check className="w-4 h-4 text-indigo-600" />
@@ -464,7 +465,7 @@ export const CsrDomainsCatalogView: React.FC = () => {
                 >
                   <div id={`csr-domains-catalog-view-accordion-header-click-to-${domain.id}`} className="flex items-center gap-3 min-w-0">
                     <span className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
-                      {toPersianDigits(domain.code)}
+                      <Num value={toPersianDigits(domain.code)} />
                     </span>
                     <div id={`csr-domains-catalog-view-accordion-header-click-to-2-${domain.id}`} className="min-w-0">
                       <div id={`csr-domains-catalog-view-accordion-header-click-to-3-${domain.id}`} className="flex items-center gap-1.5">
@@ -481,10 +482,10 @@ export const CsrDomainsCatalogView: React.FC = () => {
 
                   <div id={`csr-domains-catalog-view-accordion-header-click-to-4-${domain.id}`} className="flex items-center gap-3">
                     <span className="text-xs font-bold text-indigo-700 dir-rtl">
-                      {toPersianDigits(pct)}٪
+                      <Num value={toPersianDigits(pct)} />٪
                     </span>
                     <span className="text-xs text-slate-500">
-                      {toPersianDigits(subItems.length)} اقدام
+                      <Num value={toPersianDigits(subItems.length)} unit="اقدام" />
                     </span>
                     <div id={`csr-domains-catalog-view-accordion-header-click-to-5-${domain.id}`} className="p-1 rounded-md bg-white border border-slate-200 text-slate-600">
                       {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -520,7 +521,7 @@ export const CsrDomainsCatalogView: React.FC = () => {
                         >
                           <div id={`csr-domains-catalog-view-accordion-content-sub-items-for-5-${sIdx}`} className="flex items-start gap-2.5">
                             <span className="w-5 h-5 rounded-md bg-indigo-50 text-indigo-700 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
-                              {toPersianDigits(sIdx + 1)}
+                              <Num value={toPersianDigits(sIdx + 1)} />
                             </span>
                             <span className="text-xs font-semibold text-slate-800 leading-snug">
                               {sub}
@@ -570,7 +571,7 @@ export const CsrDomainsCatalogView: React.FC = () => {
                   {activeDomain.category}
                 </span>
                 <span className="text-xs font-bold text-slate-600">
-                  کد عنوان: {toPersianDigits(activeDomain.code)}
+                  کد عنوان: <Num value={toPersianDigits(activeDomain.code)} />
                 </span>
               </div>
 
@@ -588,22 +589,22 @@ export const CsrDomainsCatalogView: React.FC = () => {
                 <div id="csr-domains-catalog-view-financial-allocation-summary-2" className="flex items-center justify-between">
                   <span className="text-slate-500">سهم تخصیص بودجه سال جاری:</span>
                   <span className="font-bold text-indigo-600 text-sm">
-                    {toPersianDigits(currentPercentages[activeDomain.id] ?? activeDomain.defaultPercentage)}٪
+                    <Num value={toPersianDigits(currentPercentages[activeDomain.id] ?? activeDomain.defaultPercentage)} />٪
                   </span>
                 </div>
                 <div id="csr-domains-catalog-view-financial-allocation-summary-3" className="flex items-center justify-between">
                   <span className="text-slate-500">معادل ریالی/تومانی:</span>
                   <span className="font-semibold text-slate-800">
-                    {formatCurrency(
+                    <Num value={formatCurrency(
                       (orgConfig.totalBudget * (currentPercentages[activeDomain.id] ?? activeDomain.defaultPercentage)) / 100,
                       orgConfig.currencyUnit
-                    )}
+                    )} />
                   </span>
                 </div>
                 <div id="csr-domains-catalog-view-financial-allocation-summary-4" className="flex items-center justify-between">
                   <span className="text-slate-500">پروژه‌های اجرایی فعال:</span>
                   <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
-                    {toPersianDigits(activeDomainProjects.length)} پروژه
+                    <Num value={toPersianDigits(activeDomainProjects.length)} unit="پروژه" />
                   </span>
                 </div>
               </div>
@@ -640,7 +641,7 @@ export const CsrDomainsCatalogView: React.FC = () => {
                       زیرمجموعه‌ها و اقدامات اجرایی «{activeDomain.title}»
                     </h3>
                     <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-bold">
-                      {toPersianDigits(activeDomain.subItems?.length || 0)} اقدام
+                      <Num value={toPersianDigits(activeDomain.subItems?.length || 0)} unit="اقدام" />
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 mt-0.5">
@@ -701,7 +702,7 @@ export const CsrDomainsCatalogView: React.FC = () => {
                       >
                         <div id={`csr-domains-catalog-view-sub-items-cards-list-4-${index}`} className="flex items-start gap-3">
                           <span className="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
-                            {toPersianDigits(index + 1)}
+                            <Num value={toPersianDigits(index + 1)} />
                           </span>
                           <div id={`csr-domains-catalog-view-sub-items-cards-list-5-${index}`}>
                             <h4 className="text-xs font-bold text-slate-800 leading-relaxed">
@@ -987,7 +988,7 @@ export const CsrDomainsCatalogView: React.FC = () => {
                     required
                   />
                   <span className="text-[10px] text-indigo-600 mt-1 block">
-                    {formatCurrency(projCostToman, 'TOMAN')}
+                    <Num value={formatCurrency(projCostToman, 'TOMAN')} />
                   </span>
                 </div>
 
@@ -1003,7 +1004,7 @@ export const CsrDomainsCatalogView: React.FC = () => {
                     required
                   />
                   <span className="text-[10px] text-slate-500 mt-1 block">
-                    {toPersianDigits(projBeneficiaries)} نفر
+                    <Num value={toPersianDigits(projBeneficiaries)} unit="نفر" />
                   </span>
                 </div>
               </div>

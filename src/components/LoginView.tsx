@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { toPersianDigits } from '../utils/numberUtils';
+import { Num } from './Num';
 import { LocationCascade } from './LocationCascade';
 import {
   ShieldCheck,
@@ -133,7 +134,7 @@ export const LoginView: React.FC = () => {
               اختیارات ویرایش و گزارش‌های در دسترس بر اساس نقش انتخابی تعیین می‌شود.
             </p>
             <span className="inline-block mt-3 text-[10px] font-mono font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
-              {toPersianDigits(users.length)} هویت سازمانی فعال در {selectedLocation.county}
+              <Num value={toPersianDigits(users.length)} unit="هویت سازمانی" /> فعال در {selectedLocation.county}
             </span>
           </div>
 

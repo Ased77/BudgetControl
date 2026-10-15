@@ -21,7 +21,8 @@ import {
   Award,
 } from 'lucide-react';
 import { useConfirmDelete } from './ConfirmDeleteModal';
-import { formatToman, toPersianDigits } from '../utils/numberUtils';
+import { formatMoneyParts, formatPercent, formatToman, formatNumber, toPersianDigits } from '../utils/numberUtils';
+import { Num } from './Num';
 import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
 
 /** Radius of the success-rate ring drawn on each executor card. */
@@ -228,19 +229,19 @@ export const ExecutorsView: React.FC = () => {
         <div id="executors-view-micro-kpi-strip" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-cyan-200/60">
           <div id="executors-view-micro-kpi-strip-2" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">کل مجریان شناسنامه‌دار</span>
-            <span className="text-xl font-black text-slate-900 mt-0.5 block font-mono">{toPersianDigits(executors.length)} نهاد</span>
+            <Num value={formatNumber(executors.length)} unit="نهاد" className="text-xl font-black text-slate-900 mt-0.5 block font-mono" />
           </div>
           <div id="executors-view-micro-kpi-strip-3" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">پروژه‌های با موفقیت تحویل‌شده</span>
-            <span className="text-xl font-black text-emerald-700 mt-0.5 block font-mono">{toPersianDigits(totalCompleted)} پروژه</span>
+            <Num value={formatNumber(totalCompleted)} unit="پروژه" className="text-xl font-black text-emerald-700 mt-0.5 block font-mono" />
           </div>
           <div id="executors-view-micro-kpi-strip-4" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">میانگین نرخ موفقیت میدانی</span>
-            <span className="text-xl font-black text-cyan-700 mt-0.5 block font-mono">{toPersianDigits(avgSuccess)}٪</span>
+            <Num value={formatPercent(avgSuccess)} className="text-xl font-black text-cyan-700 mt-0.5 block font-mono" />
           </div>
           <div id="executors-view-micro-kpi-strip-5" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">مجریان دارای ظرفیت آزاد</span>
-            <span className="text-xl font-black text-amber-700 mt-0.5 block font-mono">{toPersianDigits(availableCount)} مجری</span>
+            <Num value={formatNumber(availableCount)} unit="مجری" className="text-xl font-black text-amber-700 mt-0.5 block font-mono" />
           </div>
         </div>
       </div>
@@ -385,9 +386,7 @@ export const ExecutorsView: React.FC = () => {
                           strokeDashoffset={2 * Math.PI * GAUGE_RADIUS * (1 - exec.successRate / 100)}
                         />
                       </svg>
-                      <span className="absolute inset-0 flex items-center justify-center text-xs font-black text-slate-800 dark:text-slate-100">
-                        {toPersianDigits(exec.successRate)}٪
-                      </span>
+                      <Num value={formatPercent(exec.successRate)} className="absolute inset-0 flex items-center justify-center text-xs font-black text-slate-800 dark:text-slate-100" />
                     </div>
                   </div>
 
@@ -395,9 +394,7 @@ export const ExecutorsView: React.FC = () => {
                     id={`executors-view-card-active-metric-${exec.id}`}
                     className="flex flex-col items-center justify-center gap-0.5 px-1 py-3 border-x border-slate-100 dark:border-slate-800 text-center"
                   >
-                    <span className="text-base font-black text-slate-900 dark:text-slate-100 leading-none">
-                      {toPersianDigits(execProjects.length)}
-                    </span>
+                    <Num value={formatNumber(execProjects.length)} className="text-base font-black text-slate-900 dark:text-slate-100 leading-none" />
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
                       <FolderGit2 className="w-3 h-3 text-slate-400" />
                       پروژه جاری
@@ -408,9 +405,7 @@ export const ExecutorsView: React.FC = () => {
                     id={`executors-view-card-completed-metric-${exec.id}`}
                     className="flex flex-col items-center justify-center gap-0.5 px-1 py-3 text-center"
                   >
-                    <span className="text-base font-black text-slate-900 dark:text-slate-100 leading-none">
-                      {toPersianDigits(exec.completedProjectsCount)}
-                    </span>
+                    <Num value={formatNumber(exec.completedProjectsCount)} className="text-base font-black text-slate-900 dark:text-slate-100 leading-none" />
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
                       <CheckCircle2 className="w-3 h-3 text-slate-400" />
                       خاتمه‌یافته
@@ -531,7 +526,7 @@ export const ExecutorsView: React.FC = () => {
                         <FolderGit2 className="w-3.5 h-3.5" />
                         پروژه‌های جاری
                       </span>
-                      <span className="font-bold text-slate-800 dark:text-slate-200">{toPersianDigits(execProjects.length)} پروژه</span>
+                      <Num value={formatNumber(execProjects.length)} unit="پروژه" className="font-bold text-slate-800 dark:text-slate-200" />
                     </div>
                   </div>
 
@@ -572,9 +567,7 @@ export const ExecutorsView: React.FC = () => {
                           />
                         </svg>
                         <span className="absolute inset-0 flex flex-col items-center justify-center">
-                          <span className="text-sm font-black text-slate-800 dark:text-slate-100">
-                            {toPersianDigits(detailExec.successRate)}٪
-                          </span>
+                          <Num value={formatPercent(detailExec.successRate)} className="text-sm font-black text-slate-800 dark:text-slate-100" />
                           <span className="text-[9px] text-slate-400">نرخ موفقیت</span>
                         </span>
                       </div>
@@ -582,13 +575,11 @@ export const ExecutorsView: React.FC = () => {
                       <div className="flex-1 space-y-2 min-w-0">
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-slate-500 dark:text-slate-400 text-[11px]">پروژه‌های جاری</span>
-                          <span className="font-bold text-slate-900 dark:text-slate-100">{toPersianDigits(execProjects.length)} پروژه</span>
+                          <Num value={formatNumber(execProjects.length)} unit="پروژه" className="font-bold text-slate-900 dark:text-slate-100" />
                         </div>
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-slate-500 dark:text-slate-400 text-[11px]">پروژه‌های خاتمه‌یافته</span>
-                          <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                            {toPersianDigits(detailExec.completedProjectsCount)} پروژه
-                          </span>
+                          <Num value={formatNumber(detailExec.completedProjectsCount)} unit="پروژه" className="font-bold text-emerald-600 dark:text-emerald-400" />
                         </div>
                         <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
                           <span className="text-slate-500 dark:text-slate-400 text-[11px]">وضعیت ظرفیت اجرایی</span>
@@ -605,7 +596,7 @@ export const ExecutorsView: React.FC = () => {
                         <FolderGit2 className="w-3.5 h-3.5 text-cyan-500" />
                         پروژه‌های سپرده‌شده به این مجری
                       </span>
-                      <span className="text-[10px] text-slate-400">{toPersianDigits(execProjects.length)} پروژه ثبت‌شده</span>
+                      <span className="text-[10px] text-slate-400"><Num value={formatNumber(execProjects.length)} unit="پروژه" unitClassName="text-[0.9em] font-bold text-slate-400 ms-0.5" /> ثبت‌شده</span>
                     </div>
 
                     {execProjects.length === 0 ? (
@@ -642,12 +633,8 @@ export const ExecutorsView: React.FC = () => {
                                   style={{ width: `${Math.min(100, proj.progressPercentage)}%` }}
                                 />
                               </div>
-                              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 w-9 text-left shrink-0">
-                                {toPersianDigits(proj.progressPercentage)}٪
-                              </span>
-                              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono shrink-0">
-                                {formatToman(proj.estimatedCostToman)}
-                              </span>
+                              <Num value={formatPercent(proj.progressPercentage)} className="text-[10px] font-bold text-slate-500 dark:text-slate-400 w-9 text-left shrink-0" />
+                              <Num {...formatMoneyParts(proj.estimatedCostToman)} className="text-[10px] text-slate-500 dark:text-slate-400 font-mono shrink-0" />
                             </div>
                           </div>
                         ))}

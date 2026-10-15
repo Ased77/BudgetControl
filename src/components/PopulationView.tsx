@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { formatNumber, toPersianDigits } from '../utils/numberUtils';
+import { formatNumber, formatPercent, toPersianDigits } from '../utils/numberUtils';
+import { Num } from './Num';
 import { PageHeader } from './PageHeader';
 import { HelpTooltip } from './HelpTooltip';
 import {
@@ -198,31 +199,25 @@ export const PopulationView: React.FC = () => {
         <div id="population-view-4-core-county-kpi-cards" className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <div id="population-view-4-core-county-kpi-cards-2" className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
             <span className="text-xs text-slate-500 font-semibold block mb-1">کل جمعیت {countyRow.county}</span>
-            <span className="text-2xl md:text-3xl font-black text-slate-900 font-mono block">
-              {formatNumber(totalCountyPopulation)}
-            </span>
+            <Num value={formatNumber(totalCountyPopulation)} className="text-2xl md:text-3xl font-black text-slate-900 font-mono block" />
             <span className="text-[11px] text-slate-500 mt-1 block">
-              {formatNumber(totalHouseholds)} خانوار (بعد {toPersianDigits(householdAverageSize)})
+              <Num value={formatNumber(totalHouseholds)} unit="خانوار" unitClassName="text-[0.85em] font-bold text-slate-500 ms-0.5" /> (بعد <Num value={formatNumber(householdAverageSize)} />)
             </span>
           </div>
 
           <div id="population-view-4-core-county-kpi-cards-3" className="bg-blue-50/70 p-4 rounded-2xl border border-blue-200">
             <span className="text-xs text-blue-700 font-semibold block mb-1">جمعیت شهری {selectedLocation.city}</span>
-            <span className="text-2xl md:text-3xl font-black text-blue-900 font-mono block">
-              {formatNumber(urbanPopulation)}
-            </span>
+            <Num value={formatNumber(urbanPopulation)} className="text-2xl md:text-3xl font-black text-blue-900 font-mono block" />
             <span className="text-[11px] text-blue-700 mt-1 block">
-              {toPersianDigits(((urbanPopulation / (totalCountyPopulation || 1)) * 100).toFixed(1))}٪ جمعیت کل
+              <Num value={formatPercent((urbanPopulation / (totalCountyPopulation || 1)) * 100, { fractionDigits: 1 })} /> جمعیت کل
             </span>
           </div>
 
           <div id="population-view-4-core-county-kpi-cards-4" className="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-200">
             <span className="text-xs text-emerald-700 font-semibold block mb-1">جمعیت روستایی {selectedLocation.city}</span>
-            <span className="text-2xl md:text-3xl font-black text-emerald-900 font-mono block">
-              {formatNumber(ruralPopulation)}
-            </span>
+            <Num value={formatNumber(ruralPopulation)} className="text-2xl md:text-3xl font-black text-emerald-900 font-mono block" />
             <span className="text-[11px] text-emerald-700 mt-1 block">
-              {toPersianDigits(((ruralPopulation / (totalCountyPopulation || 1)) * 100).toFixed(1))}٪ جمعیت کل
+              <Num value={formatPercent((ruralPopulation / (totalCountyPopulation || 1)) * 100, { fractionDigits: 1 })} /> جمعیت کل
             </span>
           </div>
 
@@ -231,11 +226,9 @@ export const PopulationView: React.FC = () => {
               <span className="text-xs text-rose-700 font-semibold block mb-1">کل جمعیت محروم و آسیب‌پذیر</span>
               <AlertTriangle className="w-4 h-4 text-rose-600" />
             </div>
-            <span className="text-2xl md:text-3xl font-black text-rose-900 font-mono block">
-              {formatNumber(totalDeprivedVulnerable)} نفر
-            </span>
+            <Num value={formatNumber(totalDeprivedVulnerable)} unit="نفر" className="text-2xl md:text-3xl font-black text-rose-900 font-mono block" />
             <span className="text-[11px] text-rose-700 mt-1 font-bold block">
-              {toPersianDigits(deprivedPercentage)}٪ از جمعیت کل شهرستان
+              <Num value={formatPercent(Number(deprivedPercentage))} /> از جمعیت کل شهرستان
             </span>
           </div>
         </div>
@@ -260,7 +253,7 @@ export const PopulationView: React.FC = () => {
           {clarificationExpanded && (
             <p className="text-amber-800">
               برخی پروژه‌های عمومی عام‌المنفعه ماهیت فراگیر داشته و به کل جمعیت {formatNumber(totalCountyPopulation)} نفری شهرستان و مسافران خدمات می‌دهند. اما در محاسبات تخصیص محرومیت،{' '}
-              <strong>جمعیت محروم {countyRow.county} دقیقاً {formatNumber(totalDeprivedVulnerable)} نفر ({toPersianDigits(deprivedPercentage)}٪)</strong> است و بودجه‌های حمایتی نظیر جهیزیه، وام اشتغال خرد، آبرسانی روستاهای دارای تنش و درمان ناباروری مستقیماً به این جامعه هدف تخصیص می‌یابد.
+              <strong>جمعیت محروم {countyRow.county} دقیقاً <Num value={formatNumber(totalDeprivedVulnerable)} unit="نفر" unitClassName="text-[0.85em] font-bold text-amber-800 ms-1" /> (<Num value={`${toPersianDigits(deprivedPercentage)}٪`} />)</strong> است و بودجه‌های حمایتی نظیر جهیزیه، وام اشتغال خرد، آبرسانی روستاهای دارای تنش و درمان ناباروری مستقیماً به این جامعه هدف تخصیص می‌یابد.
             </p>
           )}
         </div>
@@ -320,7 +313,7 @@ export const PopulationView: React.FC = () => {
                 <MapPin className="w-5 h-5 text-blue-600" />
                 <h3 className="font-black text-slate-900 text-base">توزیع جمعیتی بر حسب بخش‌های {countyRow.county}</h3>
               </div>
-              <span className="text-xs text-slate-500 font-mono">مجموع: {formatNumber(totalCountyPopulation)} نفر</span>
+              <span className="text-xs text-slate-500 font-mono">مجموع: <Num value={formatNumber(totalCountyPopulation)} unit="نفر" unitClassName="text-[0.85em] font-bold text-slate-500 ms-0.5" /></span>
             </div>
 
             <div id="population-view-population-distribution-by-4" className="space-y-4">
@@ -331,8 +324,8 @@ export const PopulationView: React.FC = () => {
                     <div id={`population-view-population-distribution-by-6-${district.id}`} className="flex items-center justify-between text-xs">
                       <span className="font-bold text-slate-800">{district.name}</span>
                       <div id={`population-view-population-distribution-by-7-${district.id}`} className="flex items-center gap-2 font-mono">
-                        <span className="text-slate-900 font-bold">{formatNumber(district.population)} نفر</span>
-                        <span className="text-slate-400">({toPersianDigits(sharePercent)}٪)</span>
+                        <Num value={formatNumber(district.population)} unit="نفر" unitClassName="text-[0.85em] font-bold text-slate-900 ms-0.5" className="font-bold" />
+                        <span className="text-slate-400">(<Num value={formatPercent(Number(sharePercent))} className="text-slate-400" />)</span>
                       </div>
                     </div>
                     <div id={`population-view-population-distribution-by-8-${district.id}`} className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden flex">
@@ -345,7 +338,7 @@ export const PopulationView: React.FC = () => {
                     <div id={`population-view-population-distribution-by-10-${district.id}`} className="flex items-center justify-between text-[11px] text-slate-500">
                       <span>{district.urbanShare}</span>
                       <span className="text-rose-600 font-medium">
-                        محرومیت: {formatNumber(district.deprivedCount)} نفر ({toPersianDigits(district.deprivedRate)}٪)
+                        محرومیت: <Num value={formatNumber(district.deprivedCount)} unit="نفر" unitClassName="text-[0.85em] font-bold text-rose-600 ms-0.5" /> (<Num value={formatPercent(district.deprivedRate)} />)
                       </span>
                     </div>
                   </div>
@@ -370,24 +363,22 @@ export const PopulationView: React.FC = () => {
               <div id="population-view-urban-vs-rural-vulnerability-5" className="grid grid-cols-2 gap-3 mb-4">
                 <div id="population-view-urban-vs-rural-vulnerability-6" className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
                   <span className="text-[11px] text-slate-500 block mb-1">نرخ حاشیه‌نشینی شهری</span>
-                  <span className="text-xl font-black text-slate-900 font-mono">{toPersianDigits(countyRow.indicators.marginalizationRate)}٪</span>
+                  <Num value={formatPercent(countyRow.indicators.marginalizationRate)} className="text-xl font-black text-slate-900 font-mono" />
                   <span className="text-[10px] text-slate-500 block mt-1">سکونتگاه‌های غیررسمی {selectedLocation.city}</span>
                 </div>
                 <div id="population-view-urban-vs-rural-vulnerability-7" className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
                   <span className="text-[11px] text-slate-500 block mb-1">نرخ بیکاری رسمی</span>
-                  <span className="text-xl font-black text-slate-900 font-mono">{toPersianDigits(countyRow.indicators.unemploymentRate)}٪</span>
+                  <Num value={formatPercent(countyRow.indicators.unemploymentRate)} className="text-xl font-black text-slate-900 font-mono" />
                   <span className="text-[10px] text-slate-500 block mt-1">تمرکز در جوانان و فارغ‌التحصیلان</span>
                 </div>
                 <div id="population-view-urban-vs-rural-vulnerability-8" className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
                   <span className="text-[11px] text-slate-500 block mb-1">کمبود زیرساخت پایه</span>
-                  <span className="text-xl font-black text-amber-700 font-mono">{toPersianDigits(countyRow.indicators.infrastructureDeficit)}٪</span>
+                  <Num value={formatPercent(countyRow.indicators.infrastructureDeficit)} className="text-xl font-black text-amber-700 font-mono" />
                   <span className="text-[10px] text-amber-700 block mt-1">آب شرب، راه و خدمات روستایی</span>
                 </div>
                 <div id="population-view-urban-vs-rural-vulnerability-9" className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
                   <span className="text-[11px] text-slate-500 block mb-1">پوشش زیرساخت پایه (برآورد)</span>
-                  <span className="text-xl font-black text-emerald-700 font-mono">
-                    {toPersianDigits((100 - countyRow.indicators.infrastructureDeficit).toFixed(1))}٪
-                  </span>
+                  <Num value={formatPercent(100 - countyRow.indicators.infrastructureDeficit, { fractionDigits: 1 })} className="text-xl font-black text-emerald-700 font-mono" />
                   <span className="text-[10px] text-emerald-700 block mt-1">مکمل شاخص کمبود زیرساخت منطقه</span>
                 </div>
               </div>
@@ -395,7 +386,7 @@ export const PopulationView: React.FC = () => {
 
             <div id="population-view-urban-vs-rural-vulnerability-10" className="p-4 bg-blue-50/80 rounded-2xl border border-blue-200 text-xs text-blue-900">
               <span className="font-bold block mb-1">📌 نتیجه‌گیری تحلیلی فرمانداری و ستاد:</span>
-              نرخ محرومیت شناسایی‌شده در {countyRow.county} معادل {toPersianDigits(deprivedPercentage)}٪ جمعیت است، اما عمق محرومیت در بخش‌های دارای کمبود آب شرب و ریسک بالای زیست‌محیطی، نیازمند مداخله هدفمند و تخصیص اعتبارات متناسب است.
+              نرخ محرومیت شناسایی‌شده در {countyRow.county} معادل <Num value={`${toPersianDigits(deprivedPercentage)}٪`} /> جمعیت است، اما عمق محرومیت در بخش‌های دارای کمبود آب شرب و ریسک بالای زیست‌محیطی، نیازمند مداخله هدفمند و تخصیص اعتبارات متناسب است.
             </div>
           </div>
         </div>
@@ -429,15 +420,15 @@ export const PopulationView: React.FC = () => {
                 {districtList.map((d) => (
                   <tr key={d.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="p-3.5 font-bold text-slate-900">{d.name}</td>
-                    <td className="p-3.5 font-mono font-bold text-slate-800">{formatNumber(d.population)}</td>
-                    <td className="p-3.5 text-slate-600">{toPersianDigits(d.riskScore)} از ۱۰۰</td>
-                    <td className="p-3.5 font-mono font-bold text-rose-700">{formatNumber(d.deprivedCount)}</td>
+                    <td className="p-3.5 font-mono font-bold text-slate-800"><Num value={formatNumber(d.population)} className="font-mono font-bold text-slate-800" /></td>
+                    <td className="p-3.5 text-slate-600"><Num value={formatNumber(d.riskScore)} unit="از ۱۰۰" unitClassName="text-[0.85em] font-bold text-slate-600 ms-0.5" /></td>
+                    <td className="p-3.5 font-mono font-bold text-rose-700"><Num value={formatNumber(d.deprivedCount)} className="font-mono font-bold text-rose-700" /></td>
                     <td className="p-3.5 font-mono font-black text-rose-700">
                       <span className="px-2 py-0.5 rounded-md bg-rose-50 border border-rose-200">
-                        {toPersianDigits(d.deprivedRate)}٪
+                        <Num value={formatPercent(d.deprivedRate)} />
                       </span>
                     </td>
-                    <td className="p-3.5 font-mono text-slate-600">{toPersianDigits(d.infraDeficit)}٪</td>
+                    <td className="p-3.5 font-mono text-slate-600"><Num value={formatPercent(d.infraDeficit)} className="font-mono text-slate-600" /></td>
                     <td className="p-3.5 text-slate-600 max-w-xs">{d.mainChallenge}</td>
                     <td className="p-3.5">
                       <button
@@ -489,18 +480,18 @@ export const PopulationView: React.FC = () => {
                         <h4 className="font-bold text-slate-900 text-sm">{item.title}</h4>
                       </div>
                       <span className="text-xs font-bold font-mono text-slate-700 bg-white px-2 py-0.5 rounded-md border border-slate-200">
-                        {toPersianDigits(item.coverageShare)}٪
+                        <Num value={formatPercent(item.coverageShare)} />
                       </span>
                     </div>
 
                     <div id={`population-view-sub-tab-3-vulnerable-groups-9-${idx}`} className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200 text-xs">
                       <div id={`population-view-sub-tab-3-vulnerable-groups-10-${idx}`}>
                         <span className="text-slate-500 text-[11px] block">تعداد خانوار:</span>
-                        <span className="font-bold text-slate-800 font-mono">{formatNumber(item.households)} خانوار</span>
+                        <Num value={formatNumber(item.households)} unit="خانوار" unitClassName="text-[0.85em] font-bold text-slate-800 ms-0.5" className="font-bold font-mono" />
                       </div>
                       <div id={`population-view-sub-tab-3-vulnerable-groups-11-${idx}`}>
                         <span className="text-slate-500 text-[11px] block">جمعیت تحت پوشش:</span>
-                        <span className="font-black text-rose-700 font-mono">{formatNumber(item.population)} نفر</span>
+                        <Num value={formatNumber(item.population)} unit="نفر" unitClassName="text-[0.85em] font-black text-rose-700 ms-0.5" className="font-black font-mono" />
                       </div>
                     </div>
 
@@ -537,15 +528,13 @@ export const PopulationView: React.FC = () => {
                   <span className="ms-5 inline-flex items-center gap-1.5 rounded-t-xl bg-slate-50 border border-b-0 border-slate-200 px-4 py-1.5 text-[10px] font-black text-slate-600">
                     <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${cohort.color}`} />
                     {cohort.tab}
-                    <span className="font-mono text-slate-400">{toPersianDigits(cohort.percent)}٪</span>
+                    <Num value={formatPercent(cohort.percent)} className="font-mono text-slate-400" />
                   </span>
                 </div>
                 <div className="space-y-1.5 bg-slate-50 p-4 rounded-2xl rounded-tr-none border border-slate-200">
                 <div id={`population-view-sub-tab-4-age-cohorts-and-6-${index}`} className="flex items-center justify-between text-xs">
                   <span className="font-bold text-slate-900 text-sm">{cohort.label}</span>
-                  <span id={`population-view-sub-tab-4-age-cohorts-and-7-${index}`} className="font-black text-slate-900 font-mono">
-                    {formatNumber(cohort.count)} نفر
-                  </span>
+                  <Num value={formatNumber(cohort.count)} unit="نفر" unitClassName="text-[0.85em] font-black text-slate-900 ms-0.5" className="font-black font-mono" />
                 </div>
 
                 <div id={`population-view-sub-tab-4-age-cohorts-and-8-${index}`} className="w-full bg-slate-200 h-3 rounded-full overflow-hidden">
@@ -566,7 +555,7 @@ export const PopulationView: React.FC = () => {
 
           <div id="population-view-sub-tab-4-age-cohorts-and-10" className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 text-xs text-emerald-900 leading-relaxed">
             <span className="font-bold block mb-1">🌟 تحلیل پنجره جمعیتی {countyRow.county}:</span>
-            بیش از <strong>{toPersianDigits(ageCohorts.filter((c) => c.tab.includes('۱۵') || c.tab.includes('۳۰')).reduce((sum, c) => sum + c.percent, 0).toFixed(1))}٪ از جمعیت {selectedLocation.city}</strong> در سنین فعال کار و جوانی (۱۵ تا ۶۴ سال) قرار دارند. این پنجره جمعیتی طلایی نشان می‌دهد که اولویت شماره یک تخصیص منابع CSR و بودجه عمومی باید معطوف به <strong>تسهیلات اشتغال خرد، رفع موانع ازدواج، تامین مسکن و درمان ناباروری</strong> باشد تا از تله جمعیتی و مهاجرت نخبگان جلوگیری به عمل آید.
+            بیش از <strong><Num value={`${toPersianDigits(ageCohorts.filter((c) => c.tab.includes('۱۵') || c.tab.includes('۳۰')).reduce((sum, c) => sum + c.percent, 0).toFixed(1))}٪`} /> از جمعیت {selectedLocation.city}</strong> در سنین فعال کار و جوانی (۱۵ تا ۶۴ سال) قرار دارند. این پنجره جمعیتی طلایی نشان می‌دهد که اولویت شماره یک تخصیص منابع CSR و بودجه عمومی باید معطوف به <strong>تسهیلات اشتغال خرد، رفع موانع ازدواج، تامین مسکن و درمان ناباروری</strong> باشد تا از تله جمعیتی و مهاجرت نخبگان جلوگیری به عمل آید.
           </div>
         </div>      )}
         </div>

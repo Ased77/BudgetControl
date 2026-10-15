@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { CsrPriority } from '../types';
-import { formatToman, roundPercentage, toPersianDigits } from '../utils/numberUtils';
+import { formatMoneyParts, formatToman, roundPercentage, toPersianDigits } from '../utils/numberUtils';
 import { useConfirmDelete } from './ConfirmDeleteModal';
 import { useOutsideClick } from '../hooks/useOutsideClick';
 import { PageHeader } from './PageHeader';
@@ -27,6 +27,7 @@ import {
   Coins,
 } from 'lucide-react';
 import { HelpTooltip } from './HelpTooltip';
+import { Num } from './Num';
 
 const FULL_PRIORITY_TITLES: Record<number, string> = {
   1: 'توسعه زیرساخت‌های عمومی، عمران و خدمات شهری/روستایی',
@@ -221,12 +222,12 @@ export const PrioritiesView: React.FC = () => {
                   : 'bg-rose-100 text-rose-800 border border-rose-200 animate-pulse'
               }`}
             >
-              {toPersianDigits(currentSum)}٪
+              <Num value={toPersianDigits(currentSum)} />٪
             </span>
             {!isExact100 && (
               <span className="text-rose-700 font-medium text-[11px] flex items-center gap-1">
                 <AlertCircle className="w-3.5 h-3.5" />
-                {currentSum > 100 ? `${toPersianDigits((currentSum - 100).toFixed(1))}٪ بیش از سقف!` : `${toPersianDigits((100 - currentSum).toFixed(1))}٪ کمتر از کل`}
+                {currentSum > 100 ? <><Num value={toPersianDigits((currentSum - 100).toFixed(1))} />٪ بیش از سقف!</> : <><Num value={toPersianDigits((100 - currentSum).toFixed(1))} />٪ کمتر از کل</>}
               </span>
             )}
             {isExact100 && (
@@ -238,7 +239,7 @@ export const PrioritiesView: React.FC = () => {
           </div>
 
           <div id="priorities-view-sum-indicator-strip-3" className="text-xs text-slate-400 font-mono">
-            کل بودجه محاسباتی: <span className="text-white font-bold">{formatToman(orgConfig.totalBudget)}</span>
+            کل بودجه محاسباتی: <span className="text-white font-bold"><Num {...formatMoneyParts(orgConfig.totalBudget)} /></span>
           </div>
         </div>
       </div>
@@ -363,7 +364,7 @@ export const PrioritiesView: React.FC = () => {
                           ) : (
                             <Sparkles className="w-3 h-3" />
                           )}
-                          <span>{currentPct === aiRecPct ? 'هم‌خوان با AI' : `اعمال پیشنهاد AI (${toPersianDigits(aiRecPct)}٪)`}</span>
+                          <span>{currentPct === aiRecPct ? 'هم‌خوان با AI' : <>اعمال پیشنهاد AI (<Num value={toPersianDigits(aiRecPct)} />٪)</>}</span>
                         </button>
                       )}
                       {isLocked && (
@@ -376,7 +377,7 @@ export const PrioritiesView: React.FC = () => {
                         </span>
                       )}
                       <span className="font-black text-lg font-mono text-purple-700 dark:text-purple-300">
-                        {toPersianDigits(currentPct)}٪
+                        <Num value={toPersianDigits(currentPct)} />٪
                       </span>
                     </div>
                   </div>
@@ -395,8 +396,8 @@ export const PrioritiesView: React.FC = () => {
                       className="priority-range w-full"
                     />
                     <div className="flex items-center justify-between mt-1 text-[9px] font-mono text-slate-400 dark:text-slate-500">
-                      <span>حداقل: {toPersianDigits(sliderMin)}٪</span>
-                      <span>حداکثر: {toPersianDigits(sliderMax)}٪</span>
+                      <span>حداقل: <Num value={toPersianDigits(sliderMin)} />٪</span>
+                      <span>حداکثر: <Num value={toPersianDigits(sliderMax)} />٪</span>
                     </div>
                   </div>
 
@@ -406,7 +407,7 @@ export const PrioritiesView: React.FC = () => {
                       بودجه متناظر ریالی:
                     </span>
                     <span className="font-bold text-slate-800 dark:text-slate-200 text-xs font-mono">
-                      {formatToman(allocatedToman)}
+                      <Num {...formatMoneyParts(allocatedToman)} />
                     </span>
                   </div>
                 </div>
@@ -419,7 +420,7 @@ export const PrioritiesView: React.FC = () => {
                   >
                     <span className="flex items-center gap-1.5 font-medium">
                       <FolderTree className="w-3.5 h-3.5 text-purple-500" />
-                      زیرمجموعه‌ها و اقدامات فرعی ({toPersianDigits(p.subItems?.length || 0)})
+                      زیرمجموعه‌ها و اقدامات فرعی (<Num value={toPersianDigits(p.subItems?.length || 0)} />)
                     </span>
                     {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                   </button>

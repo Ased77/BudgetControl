@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { LocationData, LocalIndicators } from '../types';
 import { toPersianDigits } from '../utils/numberUtils';
+import { Num } from './Num';
 import {
   BarChart3,
   TrendingUp,
@@ -392,7 +393,7 @@ const IndicatorGauge: React.FC<IndicatorGaugeProps> = ({
         </svg>
         <span className="absolute inset-0 flex items-center justify-center">
           <GaugeHoverTip text={tip}>
-            <span className="text-[11px] font-black text-slate-800">{toPersianDigits(value)}٪</span>
+            <span className="text-[11px] font-black text-slate-800"><Num value={`${toPersianDigits(value)}٪`} /></span>
           </GaugeHoverTip>
         </span>
       </div>
@@ -558,7 +559,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
           <div id="comparative-harms-table-kpi-cards-strip-7">
             <span className="text-[11px] font-bold text-amber-800">شاخص‌های در آستانه بحران حاد</span>
             <div id="comparative-harms-table-kpi-cards-strip-8" className="text-lg font-black text-amber-900 mt-0.5">
-              {toPersianDigits(locationStats.criticalCount)} شاخص حساس
+              <Num value={toPersianDigits(locationStats.criticalCount)} unit="شاخص حساس" />
             </div>
             <span className="text-[10px] text-amber-700">بالاتر از حد مجاز استاندارد</span>
           </div>
@@ -571,7 +572,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
           <div id="comparative-harms-table-kpi-cards-strip-11">
             <span className="text-[11px] font-bold text-indigo-800">ضریب تمرکز تجمیعی آسیب‌ها (LQ)</span>
             <div id="comparative-harms-table-kpi-cards-strip-12" className="text-lg font-black text-indigo-900 mt-0.5">
-              {toPersianDigits(locationStats.avgLq)} برابر کشور
+              <Num value={toPersianDigits(locationStats.avgLq)} unit="برابر کشور" />
             </div>
             <span className="text-[10px] text-indigo-600">تراکم آسیب نسبت به کل ایران</span>
           </div>
@@ -674,7 +675,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                 دریل‌داون تحلیلی حوزه «{categoryDrilldown.title}»
               </strong>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700">
-                {toPersianDigits(categoryDrilldown.rows.length)} شاخص
+                <Num value={toPersianDigits(categoryDrilldown.rows.length)} unit="شاخص" />
               </span>
             </div>
             <button
@@ -693,7 +694,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
               <span className="text-[10px] text-slate-500 block">کانون بحران</span>
               <span className="text-sm font-black text-rose-700 flex items-center gap-1 mt-0.5">
                 <Flame className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                {toPersianDigits(categoryDrilldown.hotspots)} شاخص
+                <Num value={toPersianDigits(categoryDrilldown.hotspots)} unit="شاخص" />
               </span>
             </div>
 
@@ -701,7 +702,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
               <span className="text-[10px] text-slate-500 block">هشدار آسیب</span>
               <span className="text-sm font-black text-amber-700 flex items-center gap-1 mt-0.5">
                 <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                {toPersianDigits(categoryDrilldown.warnings)} شاخص
+                <Num value={toPersianDigits(categoryDrilldown.warnings)} unit="شاخص" />
               </span>
             </div>
 
@@ -709,7 +710,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
               <span className="text-[10px] text-slate-500 block">پایدار / عادی</span>
               <span className="text-sm font-black text-emerald-700 flex items-center gap-1 mt-0.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                {toPersianDigits(categoryDrilldown.stable)} شاخص
+                <Num value={toPersianDigits(categoryDrilldown.stable)} unit="شاخص" />
               </span>
             </div>
 
@@ -717,7 +718,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
               <span className="text-[10px] text-slate-500 block">میانگین ضریب LQ حوزه</span>
               <span className="text-sm font-black text-indigo-700 flex items-center gap-1 mt-0.5">
                 <TrendingUp className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                {toPersianDigits(categoryDrilldown.avgLq.toFixed(2))} برابر
+                <Num value={toPersianDigits(categoryDrilldown.avgLq.toFixed(2))} unit="برابر" />
               </span>
             </div>
 
@@ -727,7 +728,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                 {categoryDrilldown.worst.item.title}
               </span>
               <span className="text-[10px] font-black text-rose-600">
-                LQ {toPersianDigits(categoryDrilldown.worst.lq.toFixed(2))}
+                LQ <Num value={toPersianDigits(categoryDrilldown.worst.lq.toFixed(2))} />
               </span>
             </div>
           </div>
@@ -756,7 +757,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                       <span className="text-[11px] font-bold text-slate-800 truncate">{row.item.title}</span>
                     </div>
                     <div className="text-[10px] text-slate-400 mt-0.5">
-                      آستانه هشدار: {toPersianDigits(row.item.criticalThreshold)} {row.item.unit}
+                      آستانه هشدار: <Num value={toPersianDigits(row.item.criticalThreshold)} /> {row.item.unit}
                     </div>
                   </div>
 
@@ -771,7 +772,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                         />
                       </div>
                       <span className="text-[10px] font-black text-rose-700 font-mono w-10 text-left shrink-0">
-                        {toPersianDigits(row.localVal)}
+                        <Num value={toPersianDigits(row.localVal)} />
                       </span>
                     </div>
 
@@ -785,7 +786,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                           />
                         </div>
                         <span className="text-[10px] font-bold text-indigo-700 font-mono w-10 text-left shrink-0">
-                          {toPersianDigits(row.provVal)}
+                          <Num value={toPersianDigits(row.provVal)} />
                         </span>
                       </div>
                     )}
@@ -800,7 +801,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                           />
                         </div>
                         <span className="text-[10px] font-bold text-slate-600 font-mono w-10 text-left shrink-0">
-                          {toPersianDigits(row.natVal)}
+                          <Num value={toPersianDigits(row.natVal)} />
                         </span>
                       </div>
                     )}
@@ -820,7 +821,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                       ) : (
                         <TrendingDown className="w-3 h-3" />
                       )}
-                      LQ {toPersianDigits(row.lq.toFixed(2))}
+                      LQ <Num value={toPersianDigits(row.lq.toFixed(2))} />
                     </span>
                   </div>
                 </div>
@@ -954,11 +955,11 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                           <span className={`font-black text-xs ${
                             isWorseThanNat ? 'text-rose-700' : 'text-emerald-700'
                           }`}>
-                            {toPersianDigits(lq)} برابر
+                            <Num value={toPersianDigits(lq)} unit="برابر" />
                           </span>
                         </div>
                         <span className="text-[10px] text-slate-500">
-                          ({isWorseThanNat ? '+' : ''}{toPersianDigits(diffNatPct)}٪ نسبت به کشور)
+                          (<Num value={`${isWorseThanNat ? '+' : ''}${toPersianDigits(diffNatPct)}٪`} /> نسبت به کشور)
                         </span>
                       </div>
                     </td>
@@ -1009,7 +1010,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                               </strong>
                             </div>
                             <span className="text-[11px] font-bold text-slate-500">
-                              آستانه هشدار بحران کشوری: {toPersianDigits(item.criticalThreshold)} {item.unit}
+                              آستانه هشدار بحران کشوری: <Num value={toPersianDigits(item.criticalThreshold)} /> {item.unit}
                             </span>
                           </div>
 
