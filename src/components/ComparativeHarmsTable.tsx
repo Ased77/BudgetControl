@@ -295,14 +295,12 @@ interface IndicatorGaugeProps {
   value: number;
   /** Static Tailwind stroke-* class so the arc tone survives class purging. */
   toneClass: string;
-  footer?: React.ReactNode;
 }
 
 const IndicatorGauge: React.FC<IndicatorGaugeProps> = ({
   id,
   value,
   toneClass,
-  footer,
 }) => {
   const pct = Math.min(100, Math.max(0, value));
   return (
@@ -333,7 +331,6 @@ const IndicatorGauge: React.FC<IndicatorGaugeProps> = ({
           {toPersianDigits(value)}٪
         </span>
       </div>
-      {footer}
     </div>
   );
 };
@@ -853,6 +850,14 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                             کانون بحران
                           </span>
                         )}
+                        {(comparisonTarget === 'BOTH' || comparisonTarget === 'PROVINCE') &&
+                          localVal !== provVal && (
+                            <span className={`text-[10px] font-bold ${
+                              isWorseThanProv ? 'text-rose-600' : 'text-emerald-600'
+                            }`}>
+                              {isWorseThanProv ? '▲ بالاتر از استان' : '▼ پایین‌تر از استان'}
+                            </span>
+                          )}
                         <HelpTooltip portal text={item.description} label="مشاهده توضیح شاخص" size="sm" />
                       </div>
                       <span className="text-[10px] text-slate-400 font-mono">
@@ -876,15 +881,6 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                           id={`comparative-harms-table-province-average-${item.key}`}
                           value={provVal}
                           toneClass="stroke-indigo-400"
-                          footer={
-                            localVal !== provVal ? (
-                              <span className={`text-[10px] font-bold ${
-                                isWorseThanProv ? 'text-rose-600' : 'text-emerald-600'
-                              }`}>
-                                {isWorseThanProv ? '▲ بالاتر از استان' : '▼ پایین‌تر از استان'}
-                              </span>
-                            ) : undefined
-                          }
                         />
                       </td>
                     )}
