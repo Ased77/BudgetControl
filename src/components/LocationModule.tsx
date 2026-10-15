@@ -307,19 +307,31 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
                       )}
                     </div>
 
-                    <h3 className="font-extrabold text-slate-900 text-sm mt-1">
-                      شهرستان {loc.county}
-                    </h3>
+                    <div id={`location-module-location-cards-grid-6-${loc.id}`} className="flex items-center gap-2.5 mt-1">
+                      <div
+                        id={`location-module-location-cards-grid-7-${loc.id}`}
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                          isSelected
+                            ? 'bg-blue-600 text-white shadow-xs'
+                            : 'bg-blue-50 text-blue-600'
+                        }`}
+                      >
+                        <MapPin className="w-6 h-6" />
+                      </div>
+                      <h3 className="font-extrabold text-slate-900 text-sm">
+                        شهرستان {loc.county}
+                      </h3>
+                    </div>
                   </div>
 
-                  <div id={`location-module-location-cards-grid-6-${loc.id}`} className="mt-3 pt-2 border-t border-slate-100 space-y-1.5">
-                    <div id={`location-module-location-cards-grid-7-${loc.id}`} className="flex items-center justify-between text-[11px] text-slate-500">
+                  <div id={`location-module-location-cards-grid-8-${loc.id}`} className="mt-3 pt-2 border-t border-slate-100 space-y-1.5">
+                    <div id={`location-module-location-cards-grid-9-${loc.id}`} className="flex items-center justify-between text-[11px] text-slate-500">
                       <span>جمعیت محلی:</span>
                       <strong className="text-slate-800">
                         {toPersianDigits(loc.population.toLocaleString('fa-IR'))} نفر
                       </strong>
                     </div>
-                    <div id={`location-module-location-cards-grid-8-${loc.id}`} className="flex items-center justify-between text-[11px] text-slate-500">
+                    <div id={`location-module-location-cards-grid-10-${loc.id}`} className="flex items-center justify-between text-[11px] text-slate-500">
                       <span>نرخ فقر:</span>
                       <strong className="text-rose-600 font-bold">
                         {toPersianDigits(loc.indicators.povertyRate)}٪

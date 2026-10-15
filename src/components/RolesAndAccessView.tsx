@@ -2,6 +2,14 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { UserProfile, UserPermissionField, AuditActionType, AuditLogItem } from '../types';
 import { useOutsideClick } from '../hooks/useOutsideClick';
+import {
+  DEFAULT_ROLES_SUB_TAB,
+  hashForRolesSubTab,
+  persistRolesSubTab,
+  readPersistedRolesSubTab,
+  rolesSubTabFromHash,
+  type RolesViewSubTab,
+} from '../utils/rolesViewTab';
 import { PageHeader } from './PageHeader';
 import {
   ShieldCheck,
@@ -67,7 +75,55 @@ export const RolesAndAccessView: React.FC = () => {
     setCurrentUser,
   } = useAppContext();
 
-  const [activeSubTab, setActiveSubTab] = useState<'ROLES_MATRIX' | 'AUDIT_LOGS'>('ROLES_MATRIX');
+  // Which sub-tab is open. Read order: the URL hash, then the last visit on this
+  // browser, then the matrix. The hash comes first because the two sub-tabs are
+  // mounted conditionally — the audit table's ids exist only while its own
+  // sub-tab is active, so a `#audit-logs` link has to win over whatever was open
+  // in a previous session.
+  const [activeSubTab, setActiveSubTab] = useState<RolesViewSubTab>(
+    () => rolesSubTabFromHash(window.location.hash) ?? readPersistedRolesSubTab() ?? DEFAULT_ROLES_SUB_TAB
+  );
+
+  /**
+   * Switch sub-tabs, mirroring the choice into the URL and the last-visit key.
+   *
+   * `replaceState` rather than `pushState`: a sub-tab is a view of the page
+   * already on screen, not a page of its own, so it must not add history entries
+   * the back button would have to walk through first. Path and query are carried
+   * over untouched — the shell owns them.
+   */
+  const selectSubTab = (tab: RolesViewSubTab) => {
+    setActiveSubTab(tab);
+    persistRolesSubTab(tab);
+    const { pathname, search } = window.location;
+    window.history.replaceState(null, '', `${pathname}${search}${hashForRolesSubTab(tab)}`);
+  };
+
+  // A hash typed into the address bar, a bookmark, or a back/forward step between
+  // two hashes of this page adopts the sub-tab it names.
+  useEffect(() => {
+    const handleHashChange = () => {
+      const fromHash = rolesSubTabFromHash(window.location.hash);
+      if (!fromHash) return;
+      setActiveSubTab(fromHash);
+      persistRolesSubTab(fromHash);
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // Keep the address bar in step with the view. A session that resumes on the
+  // audit trail — the shell rewrote the entry's path without a hash, or the page
+  // was typed — gets the hash that addresses what is on screen, so the link in
+  // the address bar always reproduces the current view (and can be handed to
+  // someone else). The default sub-tab has no hash and is left alone.
+  useEffect(() => {
+    const hash = hashForRolesSubTab(activeSubTab);
+    if (!hash || window.location.hash === hash) return;
+    const { pathname, search } = window.location;
+    window.history.replaceState(null, '', `${pathname}${search}${hash}`);
+  }, [activeSubTab]);
+
   const [logSearch, setLogSearch] = useState('');
   const [selectedActionFilter, setSelectedActionFilter] = useState<string>('ALL');
   // Audit-trail ordering. Default is newest first, which is the order the log
@@ -244,7 +300,7 @@ export const RolesAndAccessView: React.FC = () => {
         {/* Sub-tab switcher */}
         <div id="roles-and-access-view-sub-tab-switcher" className="flex items-center gap-2 mt-6 pt-4 border-t border-indigo-200/60">
           <button
-            onClick={() => setActiveSubTab('ROLES_MATRIX')}
+            onClick={() => selectSubTab('ROLES_MATRIX')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
               activeSubTab === 'ROLES_MATRIX'
                 ? 'bg-indigo-600 text-white shadow-md'
@@ -256,7 +312,7 @@ export const RolesAndAccessView: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setActiveSubTab('AUDIT_LOGS')}
+            onClick={() => selectSubTab('AUDIT_LOGS')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
               activeSubTab === 'AUDIT_LOGS'
                 ? 'bg-indigo-600 text-white shadow-md'

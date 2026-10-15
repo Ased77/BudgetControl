@@ -8,15 +8,11 @@ import { PageHeader } from './PageHeader';
 import {
   ShieldAlert,
   Wallet,
-  Building2,
   FolderKanban,
   Users2,
-  HardHat,
   ArrowRight,
-  Flame,
   CheckCircle2,
   Sparkles,
-  Scale,
   Activity,
   X,
 } from 'lucide-react';
@@ -36,13 +32,8 @@ const KPI_CARD_TONES: Record<'neutral' | 'warning' | 'success', { icon: string; 
 export const NationalDashboardView: React.FC = () => {
   const [isBudgetSourcesModalOpen, setIsBudgetSourcesModalOpen] = useState(false);
   const {
-    departments,
     budgetSources,
     projects,
-    executors,
-    contractors,
-    crisesHarms,
-    priorities,
     selectedLocation,
     optimizationMetrics,
     setActiveTab,
@@ -101,63 +92,6 @@ export const NationalDashboardView: React.FC = () => {
         </button>
       </PageHeader>
 
-      {/* Quick Navigation Cards to All System Pillars */}
-      <div id="national-dashboard-view-quick-navigation-cards-to-all" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        <button
-          onClick={() => setActiveTab('DEPARTMENTS')}
-          className="bg-white p-4 rounded-xl border border-slate-200 hover:border-indigo-400 transition-colors text-start group"
-        >
-          <Building2 className="w-5 h-5 text-slate-500 group-hover:text-indigo-600 mb-2 transition-colors" aria-hidden="true" />
-          <span className="font-bold text-xs text-slate-900 block">نهادها و ادارات</span>
-          <span className="text-xs text-slate-500 mt-0.5 block">{formatNumber(departments.length)} متولی</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('BUDGET_SOURCES')}
-          className="bg-white p-4 rounded-xl border border-slate-200 hover:border-emerald-400 transition-colors text-start group"
-        >
-          <Wallet className="w-5 h-5 text-slate-500 group-hover:text-emerald-600 mb-2 transition-colors" aria-hidden="true" />
-          <span className="font-bold text-xs text-slate-900 block">منابع و بودجه</span>
-          <span className="text-xs text-slate-500 mt-0.5 block">{formatNumber(budgetSources.length)} سرفصل مالی</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('EXECUTORS')}
-          className="bg-white p-4 rounded-xl border border-slate-200 hover:border-cyan-400 transition-colors text-start group"
-        >
-          <Users2 className="w-5 h-5 text-slate-500 group-hover:text-cyan-600 mb-2 transition-colors" aria-hidden="true" />
-          <span className="font-bold text-xs text-slate-900 block">مجریان طرح‌ها</span>
-          <span className="text-xs text-slate-500 mt-0.5 block">{formatNumber(executors.length)} نهاد مجری</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('CONTRACTORS')}
-          className="bg-white p-4 rounded-xl border border-slate-200 hover:border-amber-400 transition-colors text-start group"
-        >
-          <HardHat className="w-5 h-5 text-slate-500 group-hover:text-amber-600 mb-2 transition-colors" aria-hidden="true" />
-          <span className="font-bold text-xs text-slate-900 block">پیمانکاران ذیصلاح</span>
-          <span className="text-xs text-slate-500 mt-0.5 block">{formatNumber(contractors.length)} شرکت معتبر</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('PRIORITIES')}
-          className="bg-white p-4 rounded-xl border border-slate-200 hover:border-purple-400 transition-colors text-start group"
-        >
-          <Scale className="w-5 h-5 text-slate-500 group-hover:text-purple-600 mb-2 transition-colors" aria-hidden="true" />
-          <span className="font-bold text-xs text-slate-900 block">اولویت‌های توسعه</span>
-          <span className="text-xs text-slate-500 mt-0.5 block">{formatNumber(priorities.length)} سرفصل اولویت</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('CRISES_HARMS')}
-          className="bg-white p-4 rounded-xl border border-slate-200 hover:border-rose-400 transition-colors text-start group"
-        >
-          <Flame className="w-5 h-5 text-slate-500 group-hover:text-rose-600 mb-2 transition-colors" aria-hidden="true" />
-          <span className="font-bold text-xs text-slate-900 block">آسیب‌ها و بحران‌ها</span>
-          <span className="text-xs text-slate-500 mt-0.5 block">{formatNumber(crisesHarms.length)} مورد ثبت‌شده</span>
-        </button>
-      </div>
-
       {/* Primary Macro KPI Cards — compact strip so the forecast chart below
           stays visible on a 1080p screen without scrolling. */}
       <div id="national-dashboard-view-primary-macro-kpi-cards" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
@@ -182,8 +116,18 @@ export const NationalDashboardView: React.FC = () => {
           </span>
         </button>
 
-        {/* پروژه‌های اجرایی فعال — regular KPI: neutral ink */}
-        <div id="national-dashboard-view-kpi-projects" className="bg-white rounded-2xl p-4 border border-slate-200 flex flex-col gap-2 h-full min-h-28">
+        {/* پروژه‌های اجرایی فعال — regular KPI: neutral ink. The figure is a
+            doorway: the card navigates to the projects page, so a real <button>
+            carries it rather than a div with role="button" — Enter and Space come
+            from the element itself, and the whole card is one hit target. */}
+        <button
+          id="national-dashboard-view-kpi-projects"
+          type="button"
+          onClick={() => setActiveTab('PROJECTS')}
+          aria-label={`پروژه‌های اجرایی فعال ${formatNumber(projects.length)} پروژه — مشاهده صفحه پروژه‌ها`}
+          title="کلیک برای مشاهده صفحه پروژه‌ها"
+          className="bg-white hover:bg-blue-50/40 rounded-2xl p-4 border border-slate-200 hover:border-blue-300 transition-colors cursor-pointer text-start flex flex-col gap-2 h-full min-h-28"
+        >
           <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
             <span>پروژه‌های اجرایی فعال</span>
             <FolderKanban className={`w-4 h-4 ${KPI_CARD_TONES.neutral.icon}`} aria-hidden="true" />
@@ -197,7 +141,7 @@ export const NationalDashboardView: React.FC = () => {
           <span className="text-xs text-slate-500">
             ارزش: <Num value={formatMoney(totalAllocatedToProjects)} className="font-bold text-slate-700" />
           </span>
-        </div>
+        </button>
 
         {/* جمعیت محروم — deprivation is a risk indicator: warning amber */}
         <div

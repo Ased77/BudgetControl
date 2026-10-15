@@ -341,7 +341,7 @@ export const AnalysisSourcesView: React.FC = () => {
 
       {/* Sources list */}
       {filteredSources.length > 0 ? (
-        <div id="analysis-sources-view-list" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div id="analysis-sources-view-list" className="grid grid-cols-3 gap-4">
           {filteredSources.map((source) => {
             const origin = ORIGIN_META[source.origin];
             const kind = KIND_META[source.kind];
