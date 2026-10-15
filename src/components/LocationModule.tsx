@@ -5,6 +5,7 @@ import { MapPin, Sliders, CheckCircle2, Search, Filter, Globe, Pencil, X, Chevro
 import { useOutsideClick } from '../hooks/useOutsideClick';
 import { ComparativeHarmsTable } from './ComparativeHarmsTable';
 import { PageHeader } from './PageHeader';
+import FilterBadges from './FilterBadges/FilterBadges';
 
 /**
  * The eleven local indicators every location record carries, in the order the
@@ -188,49 +189,26 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
           <div id="location-module-filter-and-search-bar" className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 min-w-0">
 
             {/* Province Filter Pills */}
-            <div id="location-module-province-filter-pills" className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
-              <span className="text-xs font-bold text-slate-500 flex items-center gap-1 shrink-0 ml-1">
+            <div id="location-module-province-filter-pills" className="flex items-center gap-1.5 min-w-0">
+              <span className="text-xs font-bold text-slate-500 flex items-center gap-1 shrink-0">
                 <Filter className="w-3.5 h-3.5 text-slate-400" />
                 فیلتر استان:
               </span>
 
-              <button
-                onClick={() => setSelectedProvinceFilter(selectedLocation.province)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
-                  selectedProvinceFilter === selectedLocation.province
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                }`}
-              >
-                استان {selectedLocation.province} (فعال)
-              </button>
-
-              <button
-                onClick={() => setSelectedProvinceFilter('ALL')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
-                  selectedProvinceFilter === 'ALL'
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                }`}
-              >
-                همه استان‌ها ({toPersianDigits(locations.length)})
-              </button>
-
-              {provinces
-                .filter((p) => p !== selectedLocation.province)
-                .map((prov) => (
-                  <button
-                    key={prov}
-                    onClick={() => setSelectedProvinceFilter(prov)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
-                      selectedProvinceFilter === prov
-                        ? 'bg-blue-600 text-white shadow-xs'
-                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                    }`}
-                  >
-                    {prov}
-                  </button>
-                ))}
+              <FilterBadges
+                className="min-w-0"
+                size="sm"
+                defaultFilter={selectedLocation.province}
+                value={selectedProvinceFilter}
+                onChange={(prov) => setSelectedProvinceFilter(prov)}
+                filters={[
+                  { value: selectedLocation.province, label: `استان ${selectedLocation.province} (فعال)` },
+                  { value: 'ALL', label: `همه استان‌ها (${toPersianDigits(locations.length)})` },
+                  ...provinces
+                    .filter((p) => p !== selectedLocation.province)
+                    .map((prov) => ({ value: prov, label: prov })),
+                ]}
+              />
             </div>
 
             {/* Search Box */}

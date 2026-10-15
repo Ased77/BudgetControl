@@ -24,6 +24,7 @@ import {
   Check
 } from 'lucide-react';
 import { HelpTooltip } from './HelpTooltip';
+import FilterBadges from './FilterBadges/FilterBadges';
 
 export interface SocialHarmIndicatorDef {
   key: keyof LocalIndicators;
@@ -637,34 +638,18 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
         {/* Search & Compare Scope Buttons */}
         <div id="comparative-harms-table-search-compare-scope-buttons" className="flex items-center gap-2">
           {/* Comparison target toggle */}
-          <div id="comparative-harms-table-comparison-target-toggle" className="inline-flex rounded-lg border border-slate-300 bg-white p-0.5 text-xs">
-            <button
-              type="button"
-              onClick={() => setComparisonTarget('BOTH')}
-              className={`px-2.5 py-1 rounded-md font-bold transition-colors ${
-                comparisonTarget === 'BOTH' ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              هر دو میانگین
-            </button>
-            <button
-              type="button"
-              onClick={() => setComparisonTarget('NATIONAL')}
-              className={`px-2.5 py-1 rounded-md font-bold transition-colors ${
-                comparisonTarget === 'NATIONAL' ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              فقط کشوری
-            </button>
-            <button
-              type="button"
-              onClick={() => setComparisonTarget('PROVINCE')}
-              className={`px-2.5 py-1 rounded-md font-bold transition-colors ${
-                comparisonTarget === 'PROVINCE' ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              فقط استانی
-            </button>
+          <div id="comparative-harms-table-comparison-target-toggle" className="flex items-center">
+            <FilterBadges
+              size="sm"
+              defaultFilter="BOTH"
+              value={comparisonTarget}
+              onChange={(target) => setComparisonTarget(target as 'BOTH' | 'NATIONAL' | 'PROVINCE')}
+              filters={[
+                { value: 'BOTH', label: 'هر دو میانگین' },
+                { value: 'NATIONAL', label: 'فقط کشوری' },
+                { value: 'PROVINCE', label: 'فقط استانی' },
+              ]}
+            />
           </div>
 
           {/* Quick Search */}

@@ -1,0 +1,33 @@
+.filter-badges {
+  --fb-track: #eef2f7;
+  --fb-thumb: #2563eb;
+  --fb-ink: #475569;
+  --fb-ink-active: #ffffff;
+
+  display: inline-flex;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* 2px so the item focus ring (outline offset 3) is not clipped. */
+  padding: 2px;
+}
+
+.dark .filter-badges {
+  --fb-track: #1e293b;
+  --fb-thumb: #3b82f6;
+  --fb-ink: #cbd5e1;
+  --fb-ink-active: #0f172a;
+}
+
+.filter-badges__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filter-badges__count {
+  font-size: 0.85em;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.55;
+}
