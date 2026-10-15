@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { LocationData, LocalIndicators } from '../types';
 import { toPersianDigits } from '../utils/numberUtils';
 import {
@@ -284,6 +285,64 @@ const CATEGORY_OPTIONS: { id: string; label: string }[] = [
 ];
 
 /**
+ * Hover tooltip for the gauge percentages. Renders in a body portal with fixed
+ * positioning because the main table scrolls horizontally (overflow-x-auto) and
+ * would clip a plain absolutely-positioned bubble. Hides on scroll so a
+ * mid-hover pan can never leave a stale bubble behind.
+ */
+const GaugeHoverTip: React.FC<{ text: string; children: React.ReactNode }> = ({ text, children }) => {
+  const [coords, setCoords] = useState<{ top: number; left: number; up: boolean; caretLeft: number } | null>(null);
+  const triggerRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (!coords) return;
+    const close = () => setCoords(null);
+    window.addEventListener('scroll', close, true);
+    return () => window.removeEventListener('scroll', close, true);
+  }, [coords]);
+
+  const show = () => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const approxWidth = 300;
+    const viewWidth = window.innerWidth;
+    const left = Math.min(Math.max(8, rect.left + rect.width / 2 - approxWidth / 2), viewWidth - approxWidth - 8);
+    const up = rect.bottom + 180 > window.innerHeight;
+    setCoords({
+      top: up ? rect.top - 8 : rect.bottom + 8,
+      left,
+      up,
+      caretLeft: Math.min(Math.max(rect.left + rect.width / 2 - left, 14), approxWidth - 14),
+    });
+  };
+
+  return (
+    <span ref={triggerRef} onMouseEnter={show} onMouseLeave={() => setCoords(null)} className="inline-flex cursor-help">
+      {children}
+      {coords &&
+        createPortal(
+          <span
+            dir="rtl"
+            className={`fixed z-50 w-72 max-w-[80vw] pointer-events-none bg-slate-900 text-slate-100 text-xs leading-relaxed rounded-xl p-3 shadow-xl border border-slate-700 ${coords.up ? '-translate-y-full' : ''}`}
+            style={{ top: coords.top, left: coords.left }}
+          >
+            <span
+              className="absolute w-2 h-2 bg-slate-900 rotate-45 border-slate-700"
+              style={
+                coords.up
+                  ? { bottom: '-5px', left: coords.caretLeft, borderBottomWidth: 1, borderLeftWidth: 1 }
+                  : { top: '-5px', left: coords.caretLeft, borderTopWidth: 1, borderRightWidth: 1 }
+              }
+            />
+            {text}
+          </span>,
+          document.body
+        )}
+    </span>
+  );
+};
+
+/**
  * Circular progress ring for the 0-100 indicator values shown in the main
  * comparison table columns. Mirrors the gauge used by CrisesHarmsView: a fixed
  * track circle plus a value arc whose dash offset encodes the percentage.
@@ -295,12 +354,15 @@ interface IndicatorGaugeProps {
   value: number;
   /** Static Tailwind stroke-* class so the arc tone survives class purging. */
   toneClass: string;
+  /** Explanatory tooltip shown on hover over the percentage. */
+  tip: string;
 }
 
 const IndicatorGauge: React.FC<IndicatorGaugeProps> = ({
   id,
   value,
   toneClass,
+  tip,
 }) => {
   const pct = Math.min(100, Math.max(0, value));
   return (
@@ -327,8 +389,10 @@ const IndicatorGauge: React.FC<IndicatorGaugeProps> = ({
             strokeDashoffset={2 * Math.PI * GAUGE_RADIUS * (1 - pct / 100)}
           />
         </svg>
-        <span className="absolute inset-0 flex items-center justify-center text-[11px] font-black text-slate-800">
-          {toPersianDigits(value)}٪
+        <span className="absolute inset-0 flex items-center justify-center">
+          <GaugeHoverTip text={tip}>
+            <span className="text-[11px] font-black text-slate-800">{toPersianDigits(value)}٪</span>
+          </GaugeHoverTip>
         </span>
       </div>
     </div>
@@ -844,12 +908,6 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                     <td className="py-3 px-3">
                       <div id={`comparative-harms-table-indicator-title-description-${item.key}`} className="font-extrabold text-slate-900 flex items-center gap-1.5 flex-wrap">
                         <span>{item.title}</span>
-                        {isHotspot && (
-                          <span className="text-[10px] font-black px-1.5 py-0.2 rounded bg-rose-100 text-rose-700 border border-rose-300 flex items-center gap-0.5">
-                            <Flame className="w-3 h-3 text-rose-600" />
-                            کانون بحران
-                          </span>
-                        )}
                         {(comparisonTarget === 'BOTH' || comparisonTarget === 'PROVINCE') &&
                           localVal !== provVal && (
                             <span className={`text-[10px] font-bold ${
@@ -871,6 +929,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                         id={`comparative-harms-table-local-value-${item.key}`}
                         value={localVal}
                         toneClass={isHotspot ? 'stroke-rose-500' : isWorseThanNat ? 'stroke-amber-500' : 'stroke-emerald-500'}
+                        tip={`«${item.title}» — مقدار سنجش‌شده در منطقه جاری (استان ${currentLocation.province} - شهرستان ${currentLocation.county}): ${toPersianDigits(localVal)}٪ از ۱۰۰. میانگین کشوری: ${toPersianDigits(natVal)}٪.`}
                       />
                     </td>
 
@@ -881,6 +940,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                           id={`comparative-harms-table-province-average-${item.key}`}
                           value={provVal}
                           toneClass="stroke-indigo-400"
+                          tip={`میانگین رسمی «${item.title}» در استان ${currentProvince}: ${toPersianDigits(provVal)}٪ از ۱۰۰ — مبنای مقایسه استانی.`}
                         />
                       </td>
                     )}
@@ -892,6 +952,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                           id={`comparative-harms-table-national-average-${item.key}`}
                           value={natVal}
                           toneClass="stroke-slate-400"
+                          tip={`میانگین رسمی کشوری «${item.title}» (${item.source}): ${toPersianDigits(natVal)}٪ از ۱۰۰.`}
                         />
                       </td>
                     )}
