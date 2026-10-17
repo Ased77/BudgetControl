@@ -3,6 +3,7 @@ import { useAppContext } from '../context/AppContext';
 import { BudgetSource, BudgetSourceType } from '../types';
 import { useOutsideClick } from '../hooks/useOutsideClick';
 import { PageHeader } from './PageHeader';
+import { AnimatedGauge } from './AnimatedGauge';
 import {
   Wallet,
   Plus,
@@ -380,30 +381,14 @@ export const BudgetSourcesView: React.FC = () => {
                   id={`budget-sources-view-card-gauge-${source.id}`}
                   className="flex items-center justify-center py-3"
                 >
-                  <div className="relative w-14 h-14">
-                    <svg viewBox="0 0 56 56" className="w-14 h-14 -rotate-90">
-                      <circle
-                        cx="28"
-                        cy="28"
-                        r={USAGE_GAUGE_RADIUS}
-                        fill="none"
-                        strokeWidth="6"
-                        className="stroke-slate-200 dark:stroke-slate-700"
-                      />
-                      <circle
-                        cx="28"
-                        cy="28"
-                        r={USAGE_GAUGE_RADIUS}
-                        fill="none"
-                        strokeWidth="6"
-                        strokeLinecap="round"
-                        className={`transition-all duration-500 ${usageGaugeTone(usagePercent)}`}
-                        strokeDasharray={2 * Math.PI * USAGE_GAUGE_RADIUS}
-                        strokeDashoffset={2 * Math.PI * USAGE_GAUGE_RADIUS * (1 - usagePercent / 100)}
-                      />
-                    </svg>
+                  <AnimatedGauge
+                    value={usagePercent}
+                    radius={USAGE_GAUGE_RADIUS}
+                    toneClassName={usageGaugeTone(usagePercent)}
+                    className="w-14 h-14"
+                  >
                     <Num value={formatPercent(usagePercent)} className="absolute inset-0 flex items-center justify-center text-xs font-black text-slate-800 dark:text-slate-100" />
-                  </div>
+                  </AnimatedGauge>
                 </div>
 
                 <div
@@ -558,33 +543,19 @@ export const BudgetSourcesView: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-4">
-                      <div className="relative w-20 h-20 shrink-0">
-                        <svg viewBox="0 0 80 80" className="w-20 h-20 -rotate-90">
-                          <circle
-                            cx="40"
-                            cy="40"
-                            r={detailGaugeRadius}
-                            fill="none"
-                            strokeWidth="8"
-                            className="stroke-slate-200 dark:stroke-slate-700"
-                          />
-                          <circle
-                            cx="40"
-                            cy="40"
-                            r={detailGaugeRadius}
-                            fill="none"
-                            strokeWidth="8"
-                            strokeLinecap="round"
-                            className={`transition-all duration-500 ${usageGaugeTone(usagePercent)}`}
-                            strokeDasharray={2 * Math.PI * detailGaugeRadius}
-                            strokeDashoffset={2 * Math.PI * detailGaugeRadius * (1 - usagePercent / 100)}
-                          />
-                        </svg>
+                      <AnimatedGauge
+                        value={usagePercent}
+                        radius={detailGaugeRadius}
+                        center={40}
+                        strokeWidth={8}
+                        toneClassName={usageGaugeTone(usagePercent)}
+                        className="w-20 h-20 shrink-0"
+                      >
                         <span className="absolute inset-0 flex flex-col items-center justify-center">
                           <Num value={formatPercent(usagePercent)} className="text-sm font-black text-slate-800 dark:text-slate-100" />
                           <span className="text-[9px] text-slate-400">نرخ تعهد</span>
                         </span>
-                      </div>
+                      </AnimatedGauge>
 
                       <div className="flex-1 space-y-2 min-w-0">
                         <div className="flex items-center justify-between gap-2">

@@ -2,8 +2,8 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Department, AdministrativeLevel } from '../types';
 import { useOutsideClick } from '../hooks/useOutsideClick';
-import { useCountUp } from '../hooks/useCountUp';
 import { PageHeader } from './PageHeader';
+import { AnimatedGauge } from './AnimatedGauge';
 import {
   Building2,
   Plus,
@@ -193,49 +193,6 @@ function absorptionGaugeTone(absorptionRate: number): string {
   if (absorptionRate >= 50) return 'stroke-amber-500 dark:stroke-amber-400';
   return 'stroke-rose-500 dark:stroke-rose-400';
 }
-
-/**
- * Absorption ring for a department card. The arc fills from empty to the
- * department's absorption rate when the card mounts, sharing `useCountUp`'s
- * easing with the percent label inside it so the ring and the digits move as
- * one gauge. The hook honours `prefers-reduced-motion` and re-eases from the
- * current fill if the rate changes after load. The tone keeps its own colour
- * transition, since the dash offset is now driven frame-by-frame.
- */
-const DepartmentAbsorptionGauge: React.FC<{ rate: number }> = ({ rate }) => {
-  const animatedRate = useCountUp(rate);
-  const circumference = 2 * Math.PI * GAUGE_RADIUS;
-
-  return (
-    <div className="relative w-14 h-14">
-      <svg viewBox="0 0 56 56" className="w-14 h-14 -rotate-90">
-        <circle
-          cx="28"
-          cy="28"
-          r={GAUGE_RADIUS}
-          fill="none"
-          strokeWidth="6"
-          className="stroke-slate-200 dark:stroke-slate-700"
-        />
-        <circle
-          cx="28"
-          cy="28"
-          r={GAUGE_RADIUS}
-          fill="none"
-          strokeWidth="6"
-          strokeLinecap="round"
-          className={`transition-colors duration-500 ${absorptionGaugeTone(rate)}`}
-          strokeDasharray={circumference}
-          strokeDashoffset={circumference * (1 - animatedRate / 100)}
-        />
-      </svg>
-      <Num
-        value={formatPercent(rate)}
-        className="absolute inset-0 flex items-center justify-center text-xs font-black text-slate-800 dark:text-slate-100"
-      />
-    </div>
-  );
-};
 
 export const DepartmentsView: React.FC = () => {
   const {
@@ -773,7 +730,17 @@ export const DepartmentsView: React.FC = () => {
                     id={`departments-view-card-gauge-${dept.id}`}
                     className="flex items-center justify-center py-3"
                   >
-                    <DepartmentAbsorptionGauge rate={absorptionRate} />
+                    <AnimatedGauge
+                      value={absorptionRate}
+                      radius={GAUGE_RADIUS}
+                      toneClassName={absorptionGaugeTone(absorptionRate)}
+                      className="w-14 h-14"
+                    >
+                      <Num
+                        value={formatPercent(absorptionRate)}
+                        className="absolute inset-0 flex items-center justify-center text-xs font-black text-slate-800 dark:text-slate-100"
+                      />
+                    </AnimatedGauge>
                   </div>
 
                   <div
@@ -993,33 +960,19 @@ export const DepartmentsView: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-4">
-                      <div className="relative w-20 h-20 shrink-0">
-                        <svg viewBox="0 0 80 80" className="w-20 h-20 -rotate-90">
-                          <circle
-                            cx="40"
-                            cy="40"
-                            r={detailGaugeRadius}
-                            fill="none"
-                            strokeWidth="8"
-                            className="stroke-slate-200 dark:stroke-slate-700"
-                          />
-                          <circle
-                            cx="40"
-                            cy="40"
-                            r={detailGaugeRadius}
-                            fill="none"
-                            strokeWidth="8"
-                            strokeLinecap="round"
-                            className={`transition-all duration-500 ${catStyle.ring}`}
-                            strokeDasharray={2 * Math.PI * detailGaugeRadius}
-                            strokeDashoffset={2 * Math.PI * detailGaugeRadius * (1 - absorptionRate / 100)}
-                          />
-                        </svg>
+                      <AnimatedGauge
+                        value={absorptionRate}
+                        radius={detailGaugeRadius}
+                        center={40}
+                        strokeWidth={8}
+                        toneClassName={catStyle.ring}
+                        className="w-20 h-20 shrink-0"
+                      >
                         <span className="absolute inset-0 flex flex-col items-center justify-center">
                           <Num value={formatPercent(absorptionRate)} className="text-sm font-black text-slate-800 dark:text-slate-100" />
                           <span className="text-[9px] text-slate-400">جذب بودجه</span>
                         </span>
-                      </div>
+                      </AnimatedGauge>
 
                       <div className="flex-1 space-y-2 min-w-0">
                         <div className="flex items-center justify-between gap-2">

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { LocationData, LocalIndicators } from '../types';
 import { toPersianDigits } from '../utils/numberUtils';
 import { Num } from './Num';
+import { AnimatedGauge } from './AnimatedGauge';
 import {
   BarChart3,
   TrendingUp,
@@ -369,34 +370,19 @@ const IndicatorGauge: React.FC<IndicatorGaugeProps> = ({
   const pct = Math.min(100, Math.max(0, value));
   return (
     <div id={id} className="flex flex-col items-center">
-      <div className="relative w-12 h-12">
-        <svg viewBox="0 0 56 56" className="w-12 h-12 -rotate-90">
-          <circle
-            cx="28"
-            cy="28"
-            r={GAUGE_RADIUS}
-            fill="none"
-            strokeWidth="6"
-            className="stroke-slate-200"
-          />
-          <circle
-            cx="28"
-            cy="28"
-            r={GAUGE_RADIUS}
-            fill="none"
-            strokeWidth="6"
-            strokeLinecap="round"
-            className={`transition-all duration-500 ${toneClass}`}
-            strokeDasharray={2 * Math.PI * GAUGE_RADIUS}
-            strokeDashoffset={2 * Math.PI * GAUGE_RADIUS * (1 - pct / 100)}
-          />
-        </svg>
+      <AnimatedGauge
+        value={pct}
+        radius={GAUGE_RADIUS}
+        trackClassName="stroke-slate-200"
+        toneClassName={toneClass}
+        className="w-12 h-12"
+      >
         <span className="absolute inset-0 flex items-center justify-center">
           <GaugeHoverTip text={tip}>
             <span className="text-[11px] font-black text-slate-800"><Num value={`${toPersianDigits(value)}٪`} /></span>
           </GaugeHoverTip>
         </span>
-      </div>
+      </AnimatedGauge>
     </div>
   );
 };

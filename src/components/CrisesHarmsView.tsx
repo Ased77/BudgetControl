@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { formatMoneyParts, formatPercent, formatNumber, formatToman, toPersianDigits } from '../utils/numberUtils';
 import { Num } from './Num';
+import { AnimatedGauge } from './AnimatedGauge';
 import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
 import { useConfirmDelete } from './ConfirmDeleteModal';
 
@@ -582,33 +583,17 @@ export const CrisesHarmsView: React.FC = () => {
                     id={`crises-harms-view-card-gauge-${item.id}`}
                     className="flex items-center justify-center py-3"
                   >
-                    <div className="relative w-14 h-14">
-                      <svg viewBox="0 0 56 56" className="w-14 h-14 -rotate-90">
-                        <circle
-                          cx="28"
-                          cy="28"
-                          r={GAUGE_RADIUS}
-                          fill="none"
-                          strokeWidth="6"
-                          className="stroke-slate-200 dark:stroke-slate-700"
-                        />
-                        <circle
-                          cx="28"
-                          cy="28"
-                          r={GAUGE_RADIUS}
-                          fill="none"
-                          strokeWidth="6"
-                          strokeLinecap="round"
-                          className={`transition-all duration-500 ${severityGaugeTone(item.severityScore)}`}
-                          strokeDasharray={2 * Math.PI * GAUGE_RADIUS}
-                          strokeDashoffset={2 * Math.PI * GAUGE_RADIUS * (1 - item.severityScore / 100)}
-                        />
-                      </svg>
+                    <AnimatedGauge
+                      value={item.severityScore}
+                      radius={GAUGE_RADIUS}
+                      toneClassName={severityGaugeTone(item.severityScore)}
+                      className="w-14 h-14"
+                    >
                       <span className="absolute inset-0 flex flex-col items-center justify-center">
                         <Num value={formatNumber(item.severityScore)} className="text-sm font-black text-slate-800 dark:text-slate-100 leading-none" />
                         <span className="text-[9px] text-slate-400 mt-0.5">از ۱۰۰</span>
                       </span>
-                    </div>
+                    </AnimatedGauge>
                   </div>
 
                   <div
@@ -738,33 +723,19 @@ export const CrisesHarmsView: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-4">
-                      <div className="relative w-20 h-20 shrink-0">
-                        <svg viewBox="0 0 80 80" className="w-20 h-20 -rotate-90">
-                          <circle
-                            cx="40"
-                            cy="40"
-                            r={DETAIL_GAUGE_RADIUS}
-                            fill="none"
-                            strokeWidth="8"
-                            className="stroke-slate-200 dark:stroke-slate-700"
-                          />
-                          <circle
-                            cx="40"
-                            cy="40"
-                            r={DETAIL_GAUGE_RADIUS}
-                            fill="none"
-                            strokeWidth="8"
-                            strokeLinecap="round"
-                            className={`transition-all duration-500 ${severityGaugeTone(detailCrisis.severityScore)}`}
-                            strokeDasharray={2 * Math.PI * DETAIL_GAUGE_RADIUS}
-                            strokeDashoffset={2 * Math.PI * DETAIL_GAUGE_RADIUS * (1 - detailCrisis.severityScore / 100)}
-                          />
-                        </svg>
+                      <AnimatedGauge
+                        value={detailCrisis.severityScore}
+                        radius={DETAIL_GAUGE_RADIUS}
+                        center={40}
+                        strokeWidth={8}
+                        toneClassName={severityGaugeTone(detailCrisis.severityScore)}
+                        className="w-20 h-20 shrink-0"
+                      >
                         <span className="absolute inset-0 flex flex-col items-center justify-center">
                           <Num value={formatNumber(detailCrisis.severityScore)} className="text-sm font-black text-slate-800 dark:text-slate-100" />
                           <span className="text-[9px] text-slate-400">از ۱۰۰</span>
                         </span>
-                      </div>
+                      </AnimatedGauge>
 
                       <div className="flex-1 space-y-2 min-w-0">
                         <div className="flex items-center justify-between gap-2">

@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { formatMoney, formatMoneyParts, formatNumber, formatPercent } from '../utils/numberUtils';
 import { Num } from './Num';
+import { AnimatedGauge } from './AnimatedGauge';
 import { DashboardPredictiveEngine } from './DashboardPredictiveEngine';
 import { DashboardChartsPanel } from './DashboardChartsPanel';
 import { PageHeader } from './PageHeader';
@@ -280,47 +281,25 @@ export const NationalDashboardView: React.FC = () => {
                     >
                       <div id={`national-dashboard-view-card-1-multi-source-budget-7-${source.id}`} className="grid grid-cols-[auto_auto_minmax(0,1fr)] items-stretch gap-3">
                         <div className="flex flex-col items-center justify-center gap-1">
-                          <svg
-                            id={`national-dashboard-view-card-1-multi-source-budget-9-${source.id}`}
-                            viewBox="0 0 64 64"
+                          <AnimatedGauge
+                            svgId={`national-dashboard-view-card-1-multi-source-budget-9-${source.id}`}
+                            progressId={`national-dashboard-view-card-1-multi-source-budget-10-${source.id}`}
+                            value={progressPercent}
+                            radius={26}
+                            center={32}
+                            strokeWidth={5}
+                            trackClassName="text-slate-100"
+                            toneClassName="text-emerald-500"
+                            pathLength={100}
+                            rotateArc
+                            ariaLabel={`درصد مصرف‌شده: ${formatPercent(percent)}`}
                             className="h-20 w-20 shrink-0 sm:h-24 sm:w-24"
-                            role="img"
-                            aria-label={`درصد مصرف‌شده: ${formatPercent(percent)}`}
                           >
-                            <circle
-                              cx="32"
-                              cy="32"
-                              r="26"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="5"
-                              className="text-slate-100"
+                            <Num
+                              value={formatPercent(percent)}
+                              className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-slate-700"
                             />
-                            <circle
-                              id={`national-dashboard-view-card-1-multi-source-budget-10-${source.id}`}
-                              cx="32"
-                              cy="32"
-                              r="26"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="5"
-                              strokeLinecap="round"
-                              strokeDasharray="100"
-                              strokeDashoffset={100 - progressPercent}
-                              pathLength="100"
-                              transform="rotate(-90 32 32)"
-                              className="text-emerald-500 transition-all duration-500"
-                            />
-                            <text
-                              x="32"
-                              y="32"
-                              textAnchor="middle"
-                              dominantBaseline="central"
-                              className="fill-slate-700 text-[10px] font-bold"
-                            >
-                              {formatPercent(percent)}
-                            </text>
-                          </svg>
+                          </AnimatedGauge>
                           <span className="text-[10px] font-medium text-slate-500">مصرف‌شده</span>
                         </div>
                         <div className="flex min-w-[6.5rem] flex-col justify-center rounded-lg bg-emerald-50 px-2.5 py-2 text-left">

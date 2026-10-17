@@ -4,6 +4,7 @@ import { Contractor, ContractorGrade } from '../types';
 import { useOutsideClick } from '../hooks/useOutsideClick';
 import { compactToman, formatMoneyParts, formatPercent, formatToman, formatNumber, toPersianDigits } from '../utils/numberUtils';
 import { Num } from './Num';
+import { AnimatedGauge } from './AnimatedGauge';
 import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
 import { PageHeader } from './PageHeader';
 import {
@@ -379,30 +380,14 @@ export const ContractorsView: React.FC = () => {
                   className="mt-auto grid grid-cols-3 items-stretch border-y border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30 rounded-b-2xl"
                 >
                   <div id={`contractors-view-card-gauge-${cnt.id}`} className="flex items-center justify-center py-3">
-                    <div className="relative w-14 h-14">
-                      <svg viewBox="0 0 56 56" className="w-14 h-14 -rotate-90">
-                        <circle
-                          cx="28"
-                          cy="28"
-                          r={GAUGE_RADIUS}
-                          fill="none"
-                          strokeWidth="6"
-                          className="stroke-slate-200 dark:stroke-slate-700"
-                        />
-                        <circle
-                          cx="28"
-                          cy="28"
-                          r={GAUGE_RADIUS}
-                          fill="none"
-                          strokeWidth="6"
-                          strokeLinecap="round"
-                          className={`transition-all duration-500 ${qualityGaugeTone(cnt.performanceScore)}`}
-                          strokeDasharray={2 * Math.PI * GAUGE_RADIUS}
-                          strokeDashoffset={2 * Math.PI * GAUGE_RADIUS * (1 - cnt.performanceScore / 100)}
-                        />
-                      </svg>
+                    <AnimatedGauge
+                      value={cnt.performanceScore}
+                      radius={GAUGE_RADIUS}
+                      toneClassName={qualityGaugeTone(cnt.performanceScore)}
+                      className="w-14 h-14"
+                    >
                       <Num value={formatNumber(cnt.performanceScore)} className="absolute inset-0 flex items-center justify-center text-xs font-black text-slate-800 dark:text-slate-100" />
-                    </div>
+                    </AnimatedGauge>
                   </div>
 
                   <div
@@ -562,33 +547,19 @@ export const ContractorsView: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-4">
-                      <div className="relative w-20 h-20 shrink-0">
-                        <svg viewBox="0 0 80 80" className="w-20 h-20 -rotate-90">
-                          <circle
-                            cx="40"
-                            cy="40"
-                            r={detailGaugeRadius}
-                            fill="none"
-                            strokeWidth="8"
-                            className="stroke-slate-200 dark:stroke-slate-700"
-                          />
-                          <circle
-                            cx="40"
-                            cy="40"
-                            r={detailGaugeRadius}
-                            fill="none"
-                            strokeWidth="8"
-                            strokeLinecap="round"
-                            className={`transition-all duration-500 ${qualityGaugeTone(detailCnt.performanceScore)}`}
-                            strokeDasharray={2 * Math.PI * detailGaugeRadius}
-                            strokeDashoffset={2 * Math.PI * detailGaugeRadius * (1 - detailCnt.performanceScore / 100)}
-                          />
-                        </svg>
+                      <AnimatedGauge
+                        value={detailCnt.performanceScore}
+                        radius={detailGaugeRadius}
+                        center={40}
+                        strokeWidth={8}
+                        toneClassName={qualityGaugeTone(detailCnt.performanceScore)}
+                        className="w-20 h-20 shrink-0"
+                      >
                         <span className="absolute inset-0 flex flex-col items-center justify-center">
                           <Num value={formatNumber(detailCnt.performanceScore)} className="text-sm font-black text-slate-800 dark:text-slate-100" />
                           <span className="text-[9px] text-slate-400">از ۱۰۰</span>
                         </span>
-                      </div>
+                      </AnimatedGauge>
 
                       <div className="flex-1 space-y-2 min-w-0">
                         <div className="flex items-center justify-between gap-2">
