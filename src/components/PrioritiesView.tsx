@@ -9,7 +9,6 @@ import {
   ListChecks,
   Plus,
   Search,
-  Filter,
   Lock,
   Unlock,
   Sparkles,
@@ -66,7 +65,6 @@ export const PrioritiesView: React.FC = () => {
   } = useAppContext();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [expandedSubItemId, setExpandedSubItemId] = useState<string | null>(null);
   const [newSubItemText, setNewSubItemText] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -96,18 +94,13 @@ export const PrioritiesView: React.FC = () => {
   // Filtered
   const filteredPriorities = useMemo(() => {
     return priorities.filter((p) => {
-      const matchQ =
+      return (
         p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.category.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchCat = selectedCategory === 'ALL' || p.category === selectedCategory;
-      return matchQ && matchCat;
+        p.category.toLowerCase().includes(searchQuery.toLowerCase())
+      );
     });
-  }, [priorities, searchQuery, selectedCategory]);
-
-  const categories = useMemo(() => {
-    return Array.from(new Set(priorities.map((p) => p.category)));
-  }, [priorities]);
+  }, [priorities, searchQuery]);
 
   const handleOpenAdd = () => {
     setEditingPriority(null);
@@ -255,25 +248,6 @@ export const PrioritiesView: React.FC = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pr-10 pl-3 py-2 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none"
           />
-        </div>
-
-        <div id="priorities-view-filter-and-search-bar-3" className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          <div id="priorities-view-filter-and-search-bar-4" className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-            <Filter className="w-3.5 h-3.5" />
-            <span>دسته‌بندی:</span>
-          </div>
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500"
-          >
-            <option value="ALL">همه دسته‌ها ({priorities.length})</option>
-            {categories.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
         </div>
 
         {/* Priorities Grid */}

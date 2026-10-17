@@ -21,6 +21,7 @@ import {
   ChevronDown,
   Check,
   Loader2,
+  Layers,
   Gauge,
   Wallet,
   Banknote,
@@ -519,7 +520,7 @@ export const DepartmentsView: React.FC = () => {
         })}
       </div>
 
-      {/* Toolbar — search, result count, level filter, add action and category chips */}
+      {/* Toolbar — search, result count, level/category filters and the add action */}
       <div
         id="departments-view-toolbar"
         className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs p-4 space-y-3"
@@ -569,6 +570,30 @@ export const DepartmentsView: React.FC = () => {
               </select>
             </div>
 
+            <div
+              id="departments-view-category-filter"
+              className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400"
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>حوزه فعالیت:</span>
+              <select
+                id="departments-view-category-chips"
+                value={selectedCategory}
+                onChange={(e) => {
+                  setSelectedCategory(e.target.value);
+                  resetPaging();
+                }}
+                className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="ALL">همه حوزه‌ها ({toPersianDigits(departments.length)})</option>
+                {CATEGORY_ORDER.filter((cat) => (categoryCounts[cat] || 0) > 0).map((cat) => (
+                  <option key={cat} value={cat}>
+                    {categoryLabels[cat]} ({toPersianDigits(categoryCounts[cat] || 0)})
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {canEdit && (
               <button
                 id="btn-add-department"
@@ -582,56 +607,6 @@ export const DepartmentsView: React.FC = () => {
           </div>
         </div>
 
-        {/* Category chips */}
-        <div
-          id="departments-view-category-chips"
-          className="flex items-center gap-1.5 flex-wrap pt-3 border-t border-slate-100 dark:border-slate-800"
-        >
-          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 ml-1">حوزه فعالیت:</span>
-          <button
-            id="departments-view-category-chip-ALL"
-            type="button"
-            onClick={() => {
-              setSelectedCategory('ALL');
-              resetPaging();
-            }}
-            className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
-              selectedCategory === 'ALL'
-                ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100 shadow-sm'
-                : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
-            }`}
-          >
-            همه (<Num value={toPersianDigits(departments.length)} />)
-          </button>
-
-          {CATEGORY_ORDER.filter((cat) => (categoryCounts[cat] || 0) > 0).map((cat) => {
-            const style = DEPARTMENT_CATEGORY_STYLE[cat];
-            const ChipIcon = style.icon;
-            const isSelected = selectedCategory === cat;
-            return (
-              <button
-                id={`departments-view-category-chip-${cat}`}
-                key={cat}
-                type="button"
-                onClick={() => {
-                  setSelectedCategory(cat);
-                  resetPaging();
-                }}
-                className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
-                  isSelected
-                    ? style.chip
-                    : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
-                }`}
-              >
-                <ChipIcon className="w-3.5 h-3.5 shrink-0" />
-                <span>{categoryLabels[cat]}</span>
-                <span className={`text-[10px] ${isSelected ? 'opacity-80' : 'text-slate-400'}`}>
-                  (<Num value={toPersianDigits(categoryCounts[cat] || 0)} />)
-                </span>
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       {/* Departments Grid */}

@@ -19,6 +19,7 @@ import { PopulationView } from './components/PopulationView';
 import { CreateProjectView } from './components/CreateProjectView';
 import { RolesAndAccessView } from './components/RolesAndAccessView';
 import { AnalysisSourcesView } from './components/AnalysisSourcesView';
+import { SettingsView } from './components/SettingsView';
 import BranchedMenu, { type BranchedMenuItem } from './components/BranchedMenu';
 import { AiAnalysisModal } from './components/AiAnalysisModal';
 import { GlobalLocationSelector } from './components/GlobalLocationSelector';
@@ -57,6 +58,7 @@ import {
   Network,
   Workflow,
   HelpCircle,
+  Settings,
   Bell,
   LogOut,
   Menu,
@@ -128,6 +130,9 @@ const NAV_MENU_ITEMS: BranchedMenuItem[] = [
       { value: 'ROLES_PERMISSIONS', label: 'نقش‌ها و دسترسی', icon: ShieldCheck, hue: 'var(--color-slate-500)' },
     ],
   },
+  // Settings is a destination rather than a group of tools, so it sits at the
+  // end of the tree as a leaf, like the dashboard at the top.
+  { value: 'SETTINGS', label: 'تنظیمات', icon: Settings, hue: 'var(--color-slate-600)' },
 ];
 
 function AppContent() {
@@ -643,6 +648,8 @@ function AppContent() {
           {activeTab === 'ANALYSIS_SOURCES' && <AnalysisSourcesView />}
 
           {activeTab === 'ROLES_PERMISSIONS' && <RolesAndAccessView />}
+
+          {activeTab === 'SETTINGS' && <SettingsView />}
         </div>
       </div>
 

@@ -387,7 +387,7 @@ export const CrisesHarmsView: React.FC = () => {
         })}
       </div>
 
-      {/* Toolbar — search, result count, status filter, add action and urgency chips */}
+      {/* Toolbar — search, result count, status/urgency filters and the add action */}
       <div
         id="crises-harms-view-toolbar"
         className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs p-4 space-y-3"
@@ -430,6 +430,27 @@ export const CrisesHarmsView: React.FC = () => {
               </select>
             </div>
 
+            <div
+              id="crises-harms-view-urgency-filter"
+              className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400"
+            >
+              <Flame className="w-3.5 h-3.5" />
+              <span>سطح فوریت:</span>
+              <select
+                id="crises-harms-view-urgency-chips"
+                value={selectedUrgency}
+                onChange={(e) => setSelectedUrgency(e.target.value)}
+                className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-rose-500"
+              >
+                <option value="ALL">همه سطوح ({toPersianDigits(crisesHarms.length)})</option>
+                {URGENCY_ORDER.filter((urgency) => (urgencyCounts[urgency] || 0) > 0).map((urgency) => (
+                  <option key={urgency} value={urgency}>
+                    {URGENCY_STYLE[urgency].label} ({toPersianDigits(urgencyCounts[urgency] || 0)})
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {canManage && (
               <button
                 id="btn-add-crisis"
@@ -443,50 +464,6 @@ export const CrisesHarmsView: React.FC = () => {
           </div>
         </div>
 
-        {/* Urgency chips */}
-        <div
-          id="crises-harms-view-urgency-chips"
-          className="flex items-center gap-1.5 flex-wrap pt-3 border-t border-slate-100 dark:border-slate-800"
-        >
-          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 ml-1">سطح فوریت:</span>
-          <button
-            id="crises-harms-view-urgency-chip-ALL"
-            type="button"
-            onClick={() => setSelectedUrgency('ALL')}
-            className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
-              selectedUrgency === 'ALL'
-                ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100 shadow-sm'
-                : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
-            }`}
-          >
-            همه (<Num value={toPersianDigits(crisesHarms.length)} />)
-          </button>
-
-          {URGENCY_ORDER.filter((urgency) => (urgencyCounts[urgency] || 0) > 0).map((urgency) => {
-            const style = URGENCY_STYLE[urgency];
-            const ChipIcon = style.icon;
-            const isSelected = selectedUrgency === urgency;
-            return (
-              <button
-                id={`crises-harms-view-urgency-chip-${urgency}`}
-                key={urgency}
-                type="button"
-                onClick={() => setSelectedUrgency(urgency)}
-                className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
-                  isSelected
-                    ? style.chip
-                    : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
-                }`}
-              >
-                <ChipIcon className="w-3.5 h-3.5 shrink-0" />
-                <span>{style.label}</span>
-                <span className={`text-[10px] ${isSelected ? 'opacity-80' : 'text-slate-400'}`}>
-                  (<Num value={toPersianDigits(urgencyCounts[urgency] || 0)} />)
-                </span>
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       {/* Crises Grid — every card is a door into the record's own page, so the

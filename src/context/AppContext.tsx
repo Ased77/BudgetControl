@@ -63,6 +63,7 @@ const VALID_TABS = [
   'LOCATIONS',
   'ANALYSIS_SOURCES',
   'ROLES_PERMISSIONS',
+  'SETTINGS',
 ];
 
 /** Persisted identity survives a refresh. Storage may be unavailable (private
@@ -126,6 +127,7 @@ const TAB_PATHS: Record<string, string> = {
   LOCATIONS: '/locations',
   ANALYSIS_SOURCES: '/analysis-sources',
   ROLES_PERMISSIONS: '/roles-permissions',
+  SETTINGS: '/settings',
 };
 
 function pathForTab(tab: string): string {

@@ -86,7 +86,12 @@ export function useCountUp(
       setValue(target);
       return;
     }
-    if (reset) displayedRef.current = 0;
+    if (reset) {
+      // Snap the visible figure back to zero before replaying, even when the
+      // display resolution would suppress the first few commits.
+      displayedRef.current = 0;
+      setValue(0);
+    }
     const from = displayedRef.current;
     if (from === target) return;
 
