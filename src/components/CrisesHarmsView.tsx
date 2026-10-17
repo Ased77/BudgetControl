@@ -572,7 +572,7 @@ export const CrisesHarmsView: React.FC = () => {
                           countUpDelayMs={gaugeDelayMs}
                           className="text-sm font-black text-slate-800 dark:text-slate-100 leading-none"
                         />
-                        <span className="text-[9px] text-slate-400 mt-0.5">از ۱۰۰</span>
+                        <span className="text-[9px] text-slate-400 mt-0.5">٪</span>
                       </span>
                     </AnimatedGauge>
                   </div>
@@ -714,7 +714,7 @@ export const CrisesHarmsView: React.FC = () => {
                       >
                         <span className="absolute inset-0 flex flex-col items-center justify-center">
                           <Num value={formatNumber(detailCrisis.severityScore)} className="text-sm font-black text-slate-800 dark:text-slate-100" />
-                          <span className="text-[9px] text-slate-400">از ۱۰۰</span>
+                          <span className="text-[9px] text-slate-400">٪</span>
                         </span>
                       </AnimatedGauge>
 

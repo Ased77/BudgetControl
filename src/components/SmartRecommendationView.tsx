@@ -141,7 +141,7 @@ export const SmartRecommendationView: React.FC<SmartRecommendationViewProps> = (
               </div>
             </div>
             <span className="text-lg font-black text-blue-700">
-              <Num value={toPersianDigits(recommendations.overallVulnerabilityIndex)} /> <span className="text-xs text-slate-400 font-normal">از ۱۰۰</span>
+              <Num value={toPersianDigits(recommendations.overallVulnerabilityIndex)} /> <span className="text-xs text-slate-400 font-normal">٪</span>
             </span>
           </div>
           <p className="mt-2 text-[11px] text-slate-600 leading-snug">

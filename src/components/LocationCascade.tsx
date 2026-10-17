@@ -133,7 +133,7 @@ export const LocationCascade: React.FC<LocationCascadeProps> = ({
             <div className="text-xs font-extrabold text-amber-600 flex items-center gap-1">
               <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
               <span>
-                <Num value={toPersianDigits(selectedLocation.indicators.overallVulnerabilityScore || 45)} unit="از ۱۰۰" />
+                <Num value={toPersianDigits(selectedLocation.indicators.overallVulnerabilityScore || 45)} unit="٪" />
               </span>
             </div>
           </div>

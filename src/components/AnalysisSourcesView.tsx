@@ -506,7 +506,7 @@ export const AnalysisSourcesView: React.FC = () => {
                     <Gauge className="w-3.5 h-3.5 text-violet-500" />
                     امتیاز اعتبار و اتکاپذیری منبع
                   </span>
-                  <Num value={formatNumber(detailSource.reliabilityScore)} unit="از ۱۰۰" className="font-bold text-slate-800 dark:text-slate-200" />
+                  <Num value={formatNumber(detailSource.reliabilityScore)} unit="٪" className="font-bold text-slate-800 dark:text-slate-200" />
                 </div>
                 <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                   <div className={`h-full rounded-full ${reliabilityTone(detailSource.reliabilityScore)}`} style={{ width: `${detailSource.reliabilityScore}%` }} />
@@ -770,7 +770,7 @@ export const AnalysisSourcesView: React.FC = () => {
                     onChange={(e) => setFormReliability(Number(e.target.value))}
                     className="w-full mt-2 accent-violet-600"
                   />
-                  <span className="text-[11px] text-slate-500 font-bold"><Num value={formatNumber(formReliability)} unit="از ۱۰۰" unitClassName="text-[0.85em] font-bold text-slate-500 ms-0.5" /></span>
+                  <span className="text-[11px] text-slate-500 font-bold"><Num value={formatNumber(formReliability)} unit="٪" unitClassName="text-[0.85em] font-bold text-slate-500 ms-0.5" /></span>
                 </div>
               </div>
 

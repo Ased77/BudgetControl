@@ -233,9 +233,9 @@ export function calculateSmartRecommendations(
         rawScore = (indicators.infrastructureDeficit * 0.45) + (indicators.povertyRate * 0.3) + (indicators.healthAccessDeficit * 0.25);
         primaryDriver = `کاستی زیرساخت‌های عمران و ایمنی راه‌ها (${toPersianDigits(indicators.infrastructureDeficit)}٪) و فقر (${toPersianDigits(indicators.povertyRate)}٪)`;
         keyMetrics.push(
-          { label: 'کمبود زیرساخت و راه‌ها', value: `${toPersianDigits(indicators.infrastructureDeficit)} از ۱۰۰` },
+          { label: 'کمبود زیرساخت و راه‌ها', value: `${toPersianDigits(indicators.infrastructureDeficit)}٪` },
           { label: 'نرخ فقر خانوارها', value: `${toPersianDigits(indicators.povertyRate)}٪` },
-          { label: 'میانگین زیرساخت کشور', value: `${toPersianDigits(prevalence.national)} از ۱۰۰` }
+          { label: 'میانگین زیرساخت کشور', value: `${toPersianDigits(prevalence.national)}٪` }
         );
         rationale = `تجهیز و روشنایی راه‌های مواصلاتی، رفع نقاط حادثه‌خیز، آبرسانی شرب پایدار و بهسازی معابر عمومی در ${locationName}.`;
         break;
@@ -245,7 +245,7 @@ export function calculateSmartRecommendations(
         primaryDriver = `بیکاری جوانان (${toPersianDigits(indicators.unemploymentRate)}٪) و توانمندسازی افراد در معرض بزهکاری و بهبودیافتگان`;
         keyMetrics.push(
           { label: 'بیکاری در منطقه پیرامونی', value: `${toPersianDigits(indicators.unemploymentRate)}٪` },
-          { label: 'ضریب آسیب و بزهکاری', value: `${toPersianDigits(indicators.socialHarmsIndex)} از ۱۰۰` },
+          { label: 'ضریب آسیب و بزهکاری', value: `${toPersianDigits(indicators.socialHarmsIndex)}٪` },
           { label: 'ضریب تمرکز اشتغال (LQ)', value: `${toPersianDigits(prevalence.locationQuotient)} برابر` }
         );
         rationale = `جذب اولویت‌دار جوانان بومی، اعطای وام خوداشتغالی به بهبودیافتگان از اعتیاد و زندانیان آزادشده برای قطع ریشه‌ای چرخه سرقت‌های خرد و بزهکاری در ${locationName}.`;
@@ -256,7 +256,7 @@ export function calculateSmartRecommendations(
         primaryDriver = `بحران موالید/ناباروری، جمعیت ${indicators.vulnerableGroupsPopulation.toLocaleString('fa-IR')} نفری نیازمندان و آسیب‌های خانوادگی`;
         keyMetrics.push(
           { label: 'مددجویان و نیازمندان خاص', value: `${indicators.vulnerableGroupsPopulation.toLocaleString('fa-IR')} نفر` },
-          { label: 'شاخص آسیب‌های اجتماعی و بزه', value: `${toPersianDigits(indicators.socialHarmsIndex)} از ۱۰۰` },
+          { label: 'شاخص آسیب‌های اجتماعی و بزه', value: `${toPersianDigits(indicators.socialHarmsIndex)}٪` },
           { label: 'اولویت جوانی جمعیت', value: 'فوری و راهبردی' }
         );
         rationale = `پوشش کامل هزینه‌های درمان ناباروری (IVF/IUI)، وام‌های فرزندآوری، تامین جهیزیه، تجهیز اورژانس اجتماعی ۱۲۳، خانه‌های امن بانوان و ساماندهی مراکز بازپروری معتادان متجاهر (ماده ۱۶) در ${locationName}.`;
@@ -267,7 +267,7 @@ export function calculateSmartRecommendations(
         primaryDriver = `فوریت مقابله با مسمومیت‌های متانولی، پیشگیری از خودکشی و سم‌زدایی اعتیاد صنعتی`;
         keyMetrics.push(
           { label: 'کمبود دسترسی به خدمات درمانی', value: `${toPersianDigits(indicators.healthAccessDeficit)}٪` },
-          { label: 'شاخص بحران سلامت روان و مواد', value: `${toPersianDigits(indicators.socialHarmsIndex)} از ۱۰۰` },
+          { label: 'شاخص بحران سلامت روان و مواد', value: `${toPersianDigits(indicators.socialHarmsIndex)}٪` },
           { label: 'فوریت خط مداخله در بحران', value: '۲۴ ساعته شبانه‌روزی' }
         );
         rationale = `تجهیز بخش اورژانس و دیالیز تخصصی برای درمان مسمومیت‌های حاد الکلی، راه‌اندازی مرکز جامع سلامت روان و خط مداخله فوری در بحران خودکشی، کلینیک‌های ترک اعتیاد و غربالگری ادواری در ${locationName}.`;
@@ -275,10 +275,10 @@ export function calculateSmartRecommendations(
 
       case 5: // محیط‌زیست و کیفیت زندگی شهری/روستایی
         rawScore = (indicators.environmentalRiskScore * 0.65) + (indicators.infrastructureDeficit * 0.35);
-        primaryDriver = `ریسک زیست‌محیطی صنعتی (${toPersianDigits(indicators.environmentalRiskScore)} از ۱۰۰) در برابر کشور (${toPersianDigits(prevalence.national)})`;
+        primaryDriver = `ریسک زیست‌محیطی صنعتی (${toPersianDigits(indicators.environmentalRiskScore)}٪) در برابر کشور (${toPersianDigits(prevalence.national)})`;
         keyMetrics.push(
-          { label: 'شاخص آلودگی در کانون صنعت', value: `${toPersianDigits(indicators.environmentalRiskScore)} از ۱۰۰` },
-          { label: 'میانگین آلایندگی کشور', value: `${toPersianDigits(prevalence.national)} از ۱۰۰` },
+          { label: 'شاخص آلودگی در کانون صنعت', value: `${toPersianDigits(indicators.environmentalRiskScore)}٪` },
+          { label: 'میانگین آلایندگی کشور', value: `${toPersianDigits(prevalence.national)}٪` },
           { label: 'ضریب شدت محلی (LQ)', value: `${toPersianDigits(prevalence.locationQuotient)} برابر` }
         );
         rationale = `کاهش آلایندگی‌های شرکت، ایجاد کمربند سبز، بازیافت پسماند و مقابله با ریزگردها جهت حفظ محیط‌زیست ${locationName}.`;
@@ -288,8 +288,8 @@ export function calculateSmartRecommendations(
         rawScore = (indicators.socialHarmsIndex * 0.5) + (indicators.culturalDeficitScore * 0.35) + (indicators.educationDropOutRate * 0.15);
         primaryDriver = `آسیب‌های خانواده، نرخ بالای طلاق و ضرورت نشاط جمعی جایگزین رفتارهای پرخطر و شرب خمر`;
         keyMetrics.push(
-          { label: 'شاخص طلاق و آسیب‌های خانواده', value: `${toPersianDigits(indicators.socialHarmsIndex)} از ۱۰۰` },
-          { label: 'میانگین آسیب خانواده کشور', value: `${toPersianDigits(prevalence.national)} از ۱۰۰` },
+          { label: 'شاخص طلاق و آسیب‌های خانواده', value: `${toPersianDigits(indicators.socialHarmsIndex)}٪` },
+          { label: 'میانگین آسیب خانواده کشور', value: `${toPersianDigits(prevalence.national)}٪` },
           { label: 'فراگیری ۴ سطحی', value: prevalence.tierLabelFa }
         );
         rationale = `راه‌اندازی مراکز داوری و مشاوره پیش از طلاق با دادگستری، کارگاه‌های مهارت زندگی و کنترل خشم، و توسعه امکانات ورزشی و نشاط اجتماعی به عنوان تفریح سالم بازدارنده از مصرف الکل و رفتارهای ضداجتماعی در ${locationName}.`;
@@ -300,7 +300,7 @@ export function calculateSmartRecommendations(
         primaryDriver = `پیشگیری از ترک تحصیل و مصون‌سازی دانش‌آموزان در برابر مواد مخدر، الکل و بزهکاری`;
         keyMetrics.push(
           { label: 'ترک تحصیل در منطقه', value: `${toPersianDigits(indicators.educationDropOutRate)}٪` },
-          { label: 'شاخص آسیب دانش‌آموزی', value: `${toPersianDigits(indicators.socialHarmsIndex)} از ۱۰۰` },
+          { label: 'شاخص آسیب دانش‌آموزی', value: `${toPersianDigits(indicators.socialHarmsIndex)}٪` },
           { label: 'نسبت فقر آموزشی', value: `${toPersianDigits(prevalence.locationQuotient)} برابر` }
         );
         rationale = `اجرای طرح مدارس عاری از مواد و الکل، آموزش مهارت‌های زندگی و نه گفتن، اعطای بورسیه به دانش‌آموزان نیازمند و هوشمندسازی مدارس در ${locationName}.`;
@@ -318,10 +318,10 @@ export function calculateSmartRecommendations(
 
       case 9: // مدیریت بحران و تاب‌آوری جامعه
         rawScore = (indicators.crisisVulnerabilityScore * 0.6) + (indicators.infrastructureDeficit * 0.4);
-        primaryDriver = `آسیب‌پذیری در حوادث طبیعی (${toPersianDigits(indicators.crisisVulnerabilityScore)} از ۱۰۰) در برابر کشور (${toPersianDigits(prevalence.national)})`;
+        primaryDriver = `آسیب‌پذیری در حوادث طبیعی (${toPersianDigits(indicators.crisisVulnerabilityScore)}٪) در برابر کشور (${toPersianDigits(prevalence.national)})`;
         keyMetrics.push(
-          { label: 'خطر حوادث طبیعی در منطقه', value: `${toPersianDigits(indicators.crisisVulnerabilityScore)} از ۱۰۰` },
-          { label: 'میانگین ریسک کشور', value: `${toPersianDigits(prevalence.national)} از ۱۰۰` }
+          { label: 'خطر حوادث طبیعی در منطقه', value: `${toPersianDigits(indicators.crisisVulnerabilityScore)}٪` },
+          { label: 'میانگین ریسک کشور', value: `${toPersianDigits(prevalence.national)}٪` }
         );
         rationale = `آماده‌باش امدادرسانی، انبارهای ذخیره اضطراری، بازسازی منازل آسیب‌دیده و آموزش مانورهای تاب‌آوری.`;
         break;

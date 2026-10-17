@@ -408,7 +408,7 @@ export const PopulationView: React.FC = () => {
                 <tr>
                   <th className="p-3.5 font-black">نام بخش و محدوده جغرافیایی</th>
                   <th className="p-3.5 font-black font-mono">جمعیت کل</th>
-                  <th className="p-3.5 font-black">ریسک محیط‌زیستی (از ۱۰۰)</th>
+                  <th className="p-3.5 font-black">ریسک محیط‌زیستی (٪)</th>
                   <th className="p-3.5 font-black font-mono text-rose-700">جمعیت محروم (نفر)</th>
                   <th className="p-3.5 font-black font-mono text-rose-700">درصد محرومیت</th>
                   <th className="p-3.5 font-black">کمبود زیرساخت</th>
@@ -421,7 +421,7 @@ export const PopulationView: React.FC = () => {
                   <tr key={d.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="p-3.5 font-bold text-slate-900">{d.name}</td>
                     <td className="p-3.5 font-mono font-bold text-slate-800"><Num value={formatNumber(d.population)} className="font-mono font-bold text-slate-800" /></td>
-                    <td className="p-3.5 text-slate-600"><Num value={formatNumber(d.riskScore)} unit="از ۱۰۰" unitClassName="text-[0.85em] font-bold text-slate-600 ms-0.5" /></td>
+                    <td className="p-3.5 text-slate-600"><Num value={formatNumber(d.riskScore)} unit="٪" unitClassName="text-[0.85em] font-bold text-slate-600 ms-0.5" /></td>
                     <td className="p-3.5 font-mono font-bold text-rose-700"><Num value={formatNumber(d.deprivedCount)} className="font-mono font-bold text-rose-700" /></td>
                     <td className="p-3.5 font-mono font-black text-rose-700">
                       <span className="px-2 py-0.5 rounded-md bg-rose-50 border border-rose-200">

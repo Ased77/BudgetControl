@@ -926,8 +926,8 @@ export const CreateProjectView: React.FC = () => {
             title: `${meta.titlePrefix} در ${crisis.districtOrVillage || districtLabel}`,
             category: meta.category,
             categoryFa: meta.categoryFa,
-            demographicRationale: `شدت شاخص «${crisis.title}» در ${county} معادل ${toPersianDigits(crisis.severityScore)} از ۱۰۰ و جمعیت تحت تأثیر حدود ${formatNumber(crisis.affectedPopulation)} نفر است. ${crisis.recommendedIntervention}`,
-            keyIndicatorBadge: `شدت بحران محلی: ${toPersianDigits(crisis.severityScore)} از ۱۰۰`,
+            demographicRationale: `شدت شاخص «${crisis.title}» در ${county} معادل ${toPersianDigits(crisis.severityScore)}٪ و جمعیت تحت تأثیر حدود ${formatNumber(crisis.affectedPopulation)} نفر است. ${crisis.recommendedIntervention}`,
+            keyIndicatorBadge: `شدت بحران محلی: ${toPersianDigits(crisis.severityScore)}٪`,
             urgency,
             estimatedCostToman: Math.max(Math.round(activeLocationData.totalPopulation * 4_000_000), 20_000_000_000),
             beneficiariesCount: crisis.affectedPopulation || activeLocationData.totalPopulation,
@@ -3035,7 +3035,7 @@ export const CreateProjectView: React.FC = () => {
                   </select>
                   {selectedContractor && (
                     <div id="create-project-view-section-6-execution-contracting-12" className="mt-1 text-xs text-slate-500">
-                      مدیرعامل: {selectedContractor.ceoName} | امتیاز عملکرد: <Num value={toPersianDigits(selectedContractor.performanceScore)} unit="از ۱۰۰" />
+                      مدیرعامل: {selectedContractor.ceoName} | امتیاز عملکرد: <Num value={toPersianDigits(selectedContractor.performanceScore)} unit="٪" />
                     </div>
                   )}
                 </div>

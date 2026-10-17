@@ -286,7 +286,7 @@ export const ContractorsView: React.FC = () => {
             <span className="text-xs text-slate-500 block">میانگین نمره ارزیابی کیفی</span>
             <span className="text-xl font-black text-emerald-700 mt-0.5 block flex items-center gap-1 font-mono">
               <Star className="w-4 h-4 fill-emerald-600 text-emerald-600" />
-              <Num value={formatNumber(avgScore)} unit="از ۱۰۰" unitClassName="text-[0.6em] font-bold text-emerald-700 ms-1" />
+              <Num value={formatNumber(avgScore)} unit="٪" unitClassName="text-[0.6em] font-bold text-emerald-700 ms-1" />
             </span>
           </div>
           <div id="contractors-view-micro-kpi-strip-5" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
@@ -597,7 +597,7 @@ export const ContractorsView: React.FC = () => {
                       >
                         <span className="absolute inset-0 flex flex-col items-center justify-center">
                           <Num value={formatNumber(detailCnt.performanceScore)} className="text-sm font-black text-slate-800 dark:text-slate-100" />
-                          <span className="text-[9px] text-slate-400">از ۱۰۰</span>
+                          <span className="text-[9px] text-slate-400">٪</span>
                         </span>
                       </AnimatedGauge>
 

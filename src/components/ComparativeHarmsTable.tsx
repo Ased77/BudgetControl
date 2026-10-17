@@ -53,7 +53,7 @@ export const SOCIAL_HARM_BENCHMARKS: SocialHarmIndicatorDef[] = [
     title: 'شاخص ترکیبی آسیب‌های اجتماعی و جرایم خرد',
     category: 'HARMS_CRIMES',
     categoryTitle: 'آسیب‌های اجتماعی و امنیت',
-    unit: 'نمره از ۱۰۰',
+    unit: '٪',
     nationalAvg: 38.0,
     provinceAvgs: {
       'کرمان': 48.5,
@@ -145,7 +145,7 @@ export const SOCIAL_HARM_BENCHMARKS: SocialHarmIndicatorDef[] = [
     title: 'کمبود دسترسی درمانی، بهداشت و سلامت روان',
     category: 'INFRA_HEALTH',
     categoryTitle: 'زیرساخت، درمان و آموزش',
-    unit: 'شاخص محرومیت از ۱۰۰',
+    unit: '٪',
     nationalAvg: 34.0,
     provinceAvgs: {
       'کرمان': 42.0,
@@ -191,7 +191,7 @@ export const SOCIAL_HARM_BENCHMARKS: SocialHarmIndicatorDef[] = [
     title: 'کاستی زیرساخت‌های عمرانی، راه‌ها و تنش آبی',
     category: 'INFRA_HEALTH',
     categoryTitle: 'زیرساخت، درمان و آموزش',
-    unit: 'شاخص محرومیت از ۱۰۰',
+    unit: '٪',
     nationalAvg: 36.0,
     provinceAvgs: {
       'کرمان': 46.0,
@@ -214,7 +214,7 @@ export const SOCIAL_HARM_BENCHMARKS: SocialHarmIndicatorDef[] = [
     title: 'ریسک آلایندگی صنعتی، پساب و سلامت محیط',
     category: 'ENVIRONMENT_RISK',
     categoryTitle: 'محیط‌زیست و سلامت عمومی',
-    unit: 'نمره از ۱۰۰',
+    unit: '٪',
     nationalAvg: 40.0,
     provinceAvgs: {
       'کرمان': 65.0,
@@ -237,7 +237,7 @@ export const SOCIAL_HARM_BENCHMARKS: SocialHarmIndicatorDef[] = [
     title: 'کمبود نشاط اجتماعی، ورزش و مراکز خانواده',
     category: 'POVERTY_FAMILY',
     categoryTitle: 'اشتغال و فقر',
-    unit: 'شاخص کمبود از ۱۰۰',
+    unit: '٪',
     nationalAvg: 35.0,
     provinceAvgs: {
       'کرمان': 41.0,
@@ -260,7 +260,7 @@ export const SOCIAL_HARM_BENCHMARKS: SocialHarmIndicatorDef[] = [
     title: 'آسیب‌پذیری در برابر بحران‌ها و حوادث طبیعی',
     category: 'ENVIRONMENT_RISK',
     categoryTitle: 'محیط‌زیست و سلامت عمومی',
-    unit: 'شاخص ریسک از ۱۰۰',
+    unit: '٪',
     nationalAvg: 42.0,
     provinceAvgs: {
       'کرمان': 58.0,
@@ -902,7 +902,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                         id={`comparative-harms-table-local-value-${item.key}`}
                         value={localVal}
                         toneClass={isHotspot ? GAUGE_TONES.risk : isWorseThanNat ? GAUGE_TONES.warning : GAUGE_TONES.good}
-                        tip={`«${item.title}» — مقدار سنجش‌شده در منطقه جاری (استان ${currentLocation.province} - شهرستان ${currentLocation.county}): ${toPersianDigits(localVal)}٪ از ۱۰۰. میانگین کشوری: ${toPersianDigits(natVal)}٪.`}
+                        tip={`«${item.title}» — مقدار سنجش‌شده در منطقه جاری (استان ${currentLocation.province} - شهرستان ${currentLocation.county}): ${toPersianDigits(localVal)}٪. میانگین کشوری: ${toPersianDigits(natVal)}٪.`}
                       />
                     </td>
 
@@ -913,7 +913,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                           id={`comparative-harms-table-province-average-${item.key}`}
                           value={provVal}
                           toneClass="stroke-indigo-400"
-                          tip={`میانگین رسمی «${item.title}» در استان ${currentProvince}: ${toPersianDigits(provVal)}٪ از ۱۰۰ — مبنای مقایسه استانی.`}
+                          tip={`میانگین رسمی «${item.title}» در استان ${currentProvince}: ${toPersianDigits(provVal)}٪ — مبنای مقایسه استانی.`}
                         />
                       </td>
                     )}
@@ -925,7 +925,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                           id={`comparative-harms-table-national-average-${item.key}`}
                           value={natVal}
                           toneClass="stroke-slate-400"
-                          tip={`میانگین رسمی کشوری «${item.title}» (${item.source}): ${toPersianDigits(natVal)}٪ از ۱۰۰.`}
+                          tip={`میانگین رسمی کشوری «${item.title}» (${item.source}): ${toPersianDigits(natVal)}٪.`}
                         />
                       </td>
                     )}

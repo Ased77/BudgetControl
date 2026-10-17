@@ -468,7 +468,7 @@ export const DepartmentsView: React.FC = () => {
     {
       id: 'performance',
       label: 'میانگین امتیاز عملکرد',
-      figure: { value: formatNumber(avgPerformance), unit: 'از ۱۰۰' },
+      figure: { value: formatNumber(avgPerformance), unit: '٪' },
       icon: Award,
       card: 'border-amber-200 dark:border-amber-900/70 bg-amber-50/40 dark:bg-amber-950/20',
       tile: 'bg-amber-100 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300',

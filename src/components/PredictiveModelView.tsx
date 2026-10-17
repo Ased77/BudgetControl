@@ -280,7 +280,7 @@ export const PredictiveModelView: React.FC<PredictiveModelViewProps> = ({
             const formatUnit = (val: number) => {
               if (item.unit === 'PERCENT') return `${toPersianDigits(val)}٪`;
               if (item.unit === 'POPULATION') return `${toPersianDigits(val.toLocaleString('fa-IR'))} نفر`;
-              return `${toPersianDigits(val)} از ۱۰۰`;
+              return `${toPersianDigits(val)}٪`;
             };
 
             return (

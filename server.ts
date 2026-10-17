@@ -360,11 +360,11 @@ async function startServer() {
       executiveSummary: `تحلیل هوشمند برای ${countyLabel} (${location?.city ?? locationName}) بر اساس شاخص‌های محرومیت محلی و بودجه ${Number(totalBudgetToman || 0).toLocaleString('fa-IR')} تومان:`,
       keyTakeaways: [
         topCrisis
-          ? `بالاترین شدت بحران ثبت‌شده در ${countyLabel} مربوط به «${topCrisis.title}» با شدت ${toPersianDigits(topCrisis.severityScore)} از ۱۰۰ و جمعیت تحت تأثیر ${topCrisis.affectedPopulation.toLocaleString('fa-IR')} نفر است.`
+          ? `بالاترین شدت بحران ثبت‌شده در ${countyLabel} مربوط به «${topCrisis.title}» با شدت ${toPersianDigits(topCrisis.severityScore)}٪ و جمعیت تحت تأثیر ${topCrisis.affectedPopulation.toLocaleString('fa-IR')} نفر است.`
           : `داده بحران محلی برای ${countyLabel} ثبت نشده است و نیازسنجی میدانی توصیه می‌شود.`,
         `از ${toPersianDigits(countyProjects.length)} پروژه ثبت‌شده این شهرستان، ${toPersianDigits(countyProjects.filter((p) => p.status === 'IN_PROGRESS').length)} پروژه در حال اجرا و ${toPersianDigits(countyProjects.filter((p) => p.antiOverlapStatus !== 'CLEAR').length)} مورد نیازمند بازبینی هم‌پوشانی است.`,
         indicators
-          ? `شاخص‌های کلیدی ${countyLabel}: نرخ فقر ${toPersianDigits(indicators.povertyRate)}٪، بیکاری ${toPersianDigits(indicators.unemploymentRate)}٪، کمبود زیرساخت ${toPersianDigits(indicators.infrastructureDeficit)}٪ و ریسک محیط‌زیستی ${toPersianDigits(indicators.environmentalRiskScore)} از ۱۰۰.`
+          ? `شاخص‌های کلیدی ${countyLabel}: نرخ فقر ${toPersianDigits(indicators.povertyRate)}٪، بیکاری ${toPersianDigits(indicators.unemploymentRate)}٪، کمبود زیرساخت ${toPersianDigits(indicators.infrastructureDeficit)}٪ و ریسک محیط‌زیستی ${toPersianDigits(indicators.environmentalRiskScore)}٪.`
           : `پایش فصلی پروژه‌ها توسط شورای راهبری محلی توصیه می‌شود.`,
       ],
       strategicAdvice: `جهت حداکثرسازی اثرگذاری ملموس برای عموم شهروندان ${countyLabel}، پروژه‌هایی با اولویت «${topCrisis?.recommendedIntervention ?? 'تکمیل زیرساخت پایه' }» در فاز نخست اجرا شوند و تخصیص منابع متناسب با شاخص‌های محرومیت همین شهرستان بازنگری گردد.`,

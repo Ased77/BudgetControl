@@ -23,13 +23,13 @@ const LOCATION_INDICATOR_FIELDS: Array<{
   { key: 'povertyRate', label: 'نرخ فقر و محرومیت', hint: 'خانوار زیر خط فقر نسبی', max: 100, unit: '٪' },
   { key: 'marginalizationRate', label: 'درصد حاشیه‌نشینی', hint: 'سکونتگاه‌های غیررسمی', max: 100, unit: '٪' },
   { key: 'unemploymentRate', label: 'نرخ بیکاری محلی', hint: 'جوانان جویای کار منطقه', max: 100, unit: '٪' },
-  { key: 'socialHarmsIndex', label: 'شاخص آسیب‌های اجتماعی', hint: 'اعتیاد، طلاق و بزهکاری', max: 100, unit: 'از ۱۰۰' },
-  { key: 'healthAccessDeficit', label: 'کمبود دسترسی درمان و بهداشت', hint: 'تخت و کلینیک به ازای جمعیت', max: 100, unit: 'از ۱۰۰' },
+  { key: 'socialHarmsIndex', label: 'شاخص آسیب‌های اجتماعی', hint: 'اعتیاد، طلاق و بزهکاری', max: 100, unit: '٪' },
+  { key: 'healthAccessDeficit', label: 'کمبود دسترسی درمان و بهداشت', hint: 'تخت و کلینیک به ازای جمعیت', max: 100, unit: '٪' },
   { key: 'educationDropOutRate', label: 'نرخ ترک تحصیل', hint: 'بازماندگی دانش‌آموزان', max: 100, unit: '٪' },
-  { key: 'infrastructureDeficit', label: 'کمبود زیرساخت عمرانی', hint: 'راه، آب شرب و تأسیسات پایه', max: 100, unit: 'از ۱۰۰' },
-  { key: 'culturalDeficitScore', label: 'کمبود زیرساخت فرهنگی و نشاط', hint: 'ورزش، فرهنگ‌سرا و مشاوره', max: 100, unit: 'از ۱۰۰' },
-  { key: 'crisisVulnerabilityScore', label: 'آسیب‌پذیری در برابر بحران', hint: 'زلزله، سیلاب و آمادگی امداد', max: 100, unit: 'از ۱۰۰' },
-  { key: 'environmentalRiskScore', label: 'ریسک آلودگی زیست‌محیطی', hint: 'فلر، پساب و فضای سبز', max: 100, unit: 'از ۱۰۰' },
+  { key: 'infrastructureDeficit', label: 'کمبود زیرساخت عمرانی', hint: 'راه، آب شرب و تأسیسات پایه', max: 100, unit: '٪' },
+  { key: 'culturalDeficitScore', label: 'کمبود زیرساخت فرهنگی و نشاط', hint: 'ورزش، فرهنگ‌سرا و مشاوره', max: 100, unit: '٪' },
+  { key: 'crisisVulnerabilityScore', label: 'آسیب‌پذیری در برابر بحران', hint: 'زلزله، سیلاب و آمادگی امداد', max: 100, unit: '٪' },
+  { key: 'environmentalRiskScore', label: 'ریسک آلودگی زیست‌محیطی', hint: 'فلر، پساب و فضای سبز', max: 100, unit: '٪' },
   { key: 'vulnerableGroupsPopulation', label: 'جمعیت گروه‌های آسیب‌پذیر', hint: 'افراد نیازمند حمایت مستقیم', max: null, unit: 'نفر' },
 ];
 
@@ -487,7 +487,7 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
           <div id="location-module-social-harms-index" className="bg-slate-50 p-4 rounded-xl border border-slate-200">
             <div id="location-module-social-harms-index-2" className="flex justify-between font-bold text-slate-800 mb-1">
               <span>شاخص آسیب‌های اجتماعی</span>
-              <span className="text-rose-700"><Num value={toPersianDigits(selectedLocation.indicators.socialHarmsIndex)} unit="از ۱۰۰" /></span>
+              <span className="text-rose-700"><Num value={toPersianDigits(selectedLocation.indicators.socialHarmsIndex)} unit="٪" /></span>
             </div>
             <input
               type="range"
@@ -525,7 +525,7 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
           <div id="location-module-environmental-risk" className="bg-slate-50 p-4 rounded-xl border border-slate-200">
             <div id="location-module-environmental-risk-2" className="flex justify-between font-bold text-slate-800 mb-1">
               <span>ریسک آلودگی زیست‌محیطی</span>
-              <span className="text-amber-700"><Num value={toPersianDigits(selectedLocation.indicators.environmentalRiskScore)} unit="از ۱۰۰" /></span>
+              <span className="text-amber-700"><Num value={toPersianDigits(selectedLocation.indicators.environmentalRiskScore)} unit="٪" /></span>
             </div>
             <input
               type="range"
