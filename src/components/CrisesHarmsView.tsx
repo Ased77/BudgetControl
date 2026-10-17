@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { formatMoneyParts, formatPercent, formatNumber, formatToman, toPersianDigits } from '../utils/numberUtils';
 import { gaugeTone } from '../utils/gaugeTone';
+import { gaugeStaggerDelay } from '../utils/gaugeStagger';
 import { Num } from './Num';
 import { AnimatedGauge } from './AnimatedGauge';
 import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
@@ -467,7 +468,8 @@ export const CrisesHarmsView: React.FC = () => {
           grid only has to carry the identity, the state and three numbers. */}
       {filteredCrises.length > 0 ? (
         <div id="crises-harms-view-crises-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filteredCrises.map((item) => {
+          {filteredCrises.map((item, index) => {
+            const gaugeDelayMs = gaugeStaggerDelay(index);
             const style = URGENCY_STYLE[item.urgency];
             const UrgencyIcon = style.icon;
             const matchedProjects = projects.filter((p) => p.crisisHarmId === item.id);
@@ -562,9 +564,14 @@ export const CrisesHarmsView: React.FC = () => {
                       radius={GAUGE_RADIUS}
                       toneClassName={gaugeTone(item.severityScore, 'HIGHER_IS_WORSE')}
                       className="w-14 h-14"
+                      delayMs={gaugeDelayMs}
                     >
                       <span className="absolute inset-0 flex flex-col items-center justify-center">
-                        <Num value={formatNumber(item.severityScore)} className="text-sm font-black text-slate-800 dark:text-slate-100 leading-none" />
+                        <Num
+                          value={formatNumber(item.severityScore)}
+                          countUpDelayMs={gaugeDelayMs}
+                          className="text-sm font-black text-slate-800 dark:text-slate-100 leading-none"
+                        />
                         <span className="text-[9px] text-slate-400 mt-0.5">از ۱۰۰</span>
                       </span>
                     </AnimatedGauge>

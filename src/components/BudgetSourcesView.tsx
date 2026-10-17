@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { compactToman, formatMoneyParts, formatPercent, formatToman, formatNumber, toPersianDigits } from '../utils/numberUtils';
 import { gaugeTone } from '../utils/gaugeTone';
+import { gaugeStaggerDelay } from '../utils/gaugeStagger';
 import { Num } from './Num';
 import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
 import { useConfirmDelete } from './ConfirmDeleteModal';
@@ -299,7 +300,8 @@ export const BudgetSourcesView: React.FC = () => {
 
       {/* Sources Grid — a section of its own, exactly like the departments cards. */}
       <div id="budget-sources-view-sources-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {filteredSources.map((source) => {
+        {filteredSources.map((source, index) => {
+          const gaugeDelayMs = gaugeStaggerDelay(index);
           const linkedProjects = projects.filter((p) => p.budgetSourceId === source.id);
           const usagePercent =
             source.totalAmountToman > 0
@@ -389,8 +391,13 @@ export const BudgetSourcesView: React.FC = () => {
                     radius={USAGE_GAUGE_RADIUS}
                     toneClassName={gaugeTone(usagePercent, 'UTILIZATION')}
                     className="w-14 h-14"
+                    delayMs={gaugeDelayMs}
                   >
-                    <Num value={formatPercent(usagePercent)} className="absolute inset-0 flex items-center justify-center text-xs font-black text-slate-800 dark:text-slate-100" />
+                    <Num
+                      value={formatPercent(usagePercent)}
+                      countUpDelayMs={gaugeDelayMs}
+                      className="absolute inset-0 flex items-center justify-center text-xs font-black text-slate-800 dark:text-slate-100"
+                    />
                   </AnimatedGauge>
                 </div>
 

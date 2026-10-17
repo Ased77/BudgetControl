@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import { compactToman, formatMoneyParts, formatPercent, formatToman, formatNumber, toPersianDigits } from '../utils/numberUtils';
 import { gaugeTone } from '../utils/gaugeTone';
+import { gaugeStaggerDelay } from '../utils/gaugeStagger';
 import { Num } from './Num';
 import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
 import { useConfirmDelete } from './ConfirmDeleteModal';
@@ -609,8 +610,11 @@ export const DepartmentsView: React.FC = () => {
           id="departments-view-departments-grid"
           className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
         >
-          {visibleDepartments.map((dept) => {
+          {visibleDepartments.map((dept, index) => {
             const catStyle = DEPARTMENT_CATEGORY_STYLE[dept.category];
+            // Ripple within the revealed batch, so a batch pulled in by
+            // infinite scroll replays the wave instead of waiting out the cap.
+            const gaugeDelayMs = gaugeStaggerDelay(index % PAGE_SIZE);
             const DeptIcon = catStyle.icon;
             const deptProjects = projects.filter((p) => p.departmentId === dept.id);
             const absorptionRate =
@@ -704,9 +708,11 @@ export const DepartmentsView: React.FC = () => {
                       radius={GAUGE_RADIUS}
                       toneClassName={gaugeTone(absorptionRate)}
                       className="w-14 h-14"
+                      delayMs={gaugeDelayMs}
                     >
                       <Num
                         value={formatPercent(absorptionRate)}
+                        countUpDelayMs={gaugeDelayMs}
                         className="absolute inset-0 flex items-center justify-center text-xs font-black text-slate-800 dark:text-slate-100"
                       />
                     </AnimatedGauge>

@@ -4,6 +4,7 @@ import { Contractor, ContractorGrade } from '../types';
 import { useOutsideClick } from '../hooks/useOutsideClick';
 import { compactToman, formatMoneyParts, formatPercent, formatToman, formatNumber, toPersianDigits } from '../utils/numberUtils';
 import { gaugeTone } from '../utils/gaugeTone';
+import { gaugeStaggerDelay } from '../utils/gaugeStagger';
 import { Num } from './Num';
 import { AnimatedGauge } from './AnimatedGauge';
 import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
@@ -295,7 +296,8 @@ export const ContractorsView: React.FC = () => {
       {/* Contractors Grid — each card summarises one contractor and opens a drill-down modal */}
       {filteredContractors.length > 0 ? (
         <div id="contractors-view-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filteredContractors.map((cnt) => {
+          {filteredContractors.map((cnt, index) => {
+            const gaugeDelayMs = gaugeStaggerDelay(index);
             const cntProjects = projects.filter((p) => p.contractorId === cnt.id);
             const contractValue = compactToman(cnt.totalContractValueToman);
 
@@ -381,8 +383,13 @@ export const ContractorsView: React.FC = () => {
                       radius={GAUGE_RADIUS}
                       toneClassName={gaugeTone(cnt.performanceScore)}
                       className="w-14 h-14"
+                      delayMs={gaugeDelayMs}
                     >
-                      <Num value={formatNumber(cnt.performanceScore)} className="absolute inset-0 flex items-center justify-center text-xs font-black text-slate-800 dark:text-slate-100" />
+                      <Num
+                        value={formatNumber(cnt.performanceScore)}
+                        countUpDelayMs={gaugeDelayMs}
+                        className="absolute inset-0 flex items-center justify-center text-xs font-black text-slate-800 dark:text-slate-100"
+                      />
                     </AnimatedGauge>
                   </div>
 

@@ -25,6 +25,12 @@ type NumProps = {
   className?: string;
   unitClassName?: string;
   title?: string;
+  /**
+   * Hold the count-up at its opening figure for this long after mount, so a
+   * card grid can stagger its figures in a ripple (see `utils/gaugeStagger`).
+   * Gauge labels pass the same value their ring receives.
+   */
+  countUpDelayMs?: number;
 };
 
 const PERSIAN_DIGITS = '۰۱۲۳۴۵۶۷۸۹';
@@ -91,12 +97,20 @@ export const Num: React.FC<NumProps> = ({
   className = '',
   unitClassName = 'text-[0.6em] font-bold text-slate-500 ms-1',
   title,
+  countUpDelayMs = 0,
 }) => {
   const countUpEnabled = useContext(NumCountUpContext);
   const trigger = useContext(NumCountUpTriggerContext);
   const parsed = parseNumeral(value);
   const animate = countUpEnabled && parsed !== null;
-  const animated = useCountUp(parsed?.target ?? 0, 800, animate, trigger, parsed?.fractionDigits);
+  const animated = useCountUp(
+    parsed?.target ?? 0,
+    800,
+    animate,
+    trigger,
+    parsed?.fractionDigits,
+    countUpDelayMs
+  );
   const display =
     countUpEnabled && parsed
       ? `${parsed.prefix}${formatNumber(animated, true, parsed.fractionDigits)}${parsed.suffix}`

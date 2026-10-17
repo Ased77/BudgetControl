@@ -23,6 +23,7 @@ import {
 import { useConfirmDelete } from './ConfirmDeleteModal';
 import { formatMoneyParts, formatPercent, formatToman, formatNumber, toPersianDigits } from '../utils/numberUtils';
 import { gaugeTone } from '../utils/gaugeTone';
+import { gaugeStaggerDelay } from '../utils/gaugeStagger';
 import { Num } from './Num';
 import { AnimatedGauge } from './AnimatedGauge';
 import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
@@ -291,7 +292,8 @@ export const ExecutorsView: React.FC = () => {
       {/* Executors Grid — each card summarises one executor and opens a drill-down modal */}
       {filteredExecutors.length > 0 ? (
         <div id="executors-view-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filteredExecutors.map((exec) => {
+          {filteredExecutors.map((exec, index) => {
+            const gaugeDelayMs = gaugeStaggerDelay(index);
             const execProjects = projects.filter((p) => p.executorId === exec.id);
 
             return (
@@ -366,8 +368,13 @@ export const ExecutorsView: React.FC = () => {
                       radius={GAUGE_RADIUS}
                       toneClassName={gaugeTone(exec.successRate)}
                       className="w-14 h-14"
+                      delayMs={gaugeDelayMs}
                     >
-                      <Num value={formatPercent(exec.successRate)} className="absolute inset-0 flex items-center justify-center text-xs font-black text-slate-800 dark:text-slate-100" />
+                      <Num
+                        value={formatPercent(exec.successRate)}
+                        countUpDelayMs={gaugeDelayMs}
+                        className="absolute inset-0 flex items-center justify-center text-xs font-black text-slate-800 dark:text-slate-100"
+                      />
                     </AnimatedGauge>
                   </div>
 

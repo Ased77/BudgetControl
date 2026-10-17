@@ -64,13 +64,24 @@ function subscribeToFrames(callback: FrameCallback): () => void {
  * the per-frame render work on pages with dozens of counts. It is purely a
  * rendering optimisation: the eased clock still runs at full resolution and
  * the resting value is always the exact target.
+ *
+ * `delayMs` holds an entrance run at its opening figure for that long after
+ * the first painted frame. A card grid uses it to start its rings a few dozen
+ * milliseconds apart (see `utils/gaugeStagger`), so the fill ripples across
+ * the grid instead of every card opening at once. The hold rides the shared
+ * frame clock, so it costs no extra timer per card.
+ *
+ * The hold is skipped when the run starts from a non-zero figure — a value
+ * edited later in a card should slide straight to the new number, not wait out
+ * the card's entrance offset again.
  */
 export function useCountUp(
   target: number,
   durationMs = 800,
   enabled = true,
   resetKey = 0,
-  fractionDigits?: number
+  fractionDigits?: number,
+  delayMs = 0
 ): number {
   const [value, setValue] = useState(() =>
     enabled ? (prefersReducedMotion() ? target : 0) : target
@@ -99,12 +110,15 @@ export function useCountUp(
     const snap = fractionDigits === undefined ? 0 : 10 ** -fractionDigits;
     let lastCommitted = displayedRef.current;
     let startedAt = -1;
+    const holdMs = from === 0 ? Math.max(0, delayMs) : 0;
 
     const frame: FrameCallback = (now) => {
       // Start on the first painted frame instead of at effect time, so a heavy
-      // first render cannot swallow the opening milliseconds of the run.
-      if (startedAt < 0) startedAt = now;
-      const t = Math.min(1, (now - startedAt) / durationMs);
+      // first render cannot swallow the opening milliseconds of the run. The
+      // hold is shifted into the start time, so the opening frames clamp to
+      // t = 0 and simply re-render the opening figure.
+      if (startedAt < 0) startedAt = now + holdMs;
+      const t = Math.min(1, Math.max(0, (now - startedAt) / durationMs));
       const next = t >= 1 ? target : from + (target - from) * easeSmootherstep(t);
       displayedRef.current = next;
       // Land exactly on the target even when it is finer than the display
@@ -117,7 +131,7 @@ export function useCountUp(
     };
 
     return subscribeToFrames(frame);
-  }, [target, durationMs, enabled, resetKey, fractionDigits]);
+  }, [target, durationMs, enabled, resetKey, fractionDigits, delayMs]);
 
   return value;
 }

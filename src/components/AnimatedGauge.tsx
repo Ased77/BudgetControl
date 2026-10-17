@@ -24,6 +24,12 @@ type AnimatedGaugeProps = {
   pathLength?: number;
   /** Rotate the arc inside the SVG instead of rotating the SVG itself. */
   rotateArc?: boolean;
+  /**
+   * Hold the fill at empty for this long after mount. Card grids pass a small
+   * per-card offset so their rings fill as a ripple (see `utils/gaugeStagger`).
+   * Pair it with the same `countUpDelayMs` on the `Num` label inside.
+   */
+  delayMs?: number;
   svgId?: string;
   progressId?: string;
   ariaLabel?: string;
@@ -33,7 +39,8 @@ type AnimatedGaugeProps = {
  * Shared circular gauge. The arc fills from empty to `value` over 800ms on
  * mount, using the same `useCountUp` easing as the `Num` label inside it, so
  * the ring and the digits move as one instrument. Newly mounted cards replay
- * the entrance; a later value change re-eases from the current fill.
+ * the entrance; a later value change re-eases from the current fill. A
+ * `delayMs` lead-in lets the card grids start their rings in a ripple.
  *
  * `useCountUp` immediately returns the final value under
  * `prefers-reduced-motion`, and the ring is drawn with a colour-only
@@ -50,11 +57,12 @@ export const AnimatedGauge: React.FC<AnimatedGaugeProps> = ({
   children,
   pathLength,
   rotateArc = false,
+  delayMs = 0,
   svgId,
   progressId,
   ariaLabel,
 }) => {
-  const animatedValue = useCountUp(value);
+  const animatedValue = useCountUp(value, 800, true, 0, undefined, delayMs);
   const dashLength = pathLength ?? 2 * Math.PI * radius;
   const side = center * 2;
 
