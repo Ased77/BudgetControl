@@ -166,7 +166,8 @@ export const RolesAndAccessView: React.FC = () => {
   const permissionCols: Array<{ key: UserPermissionField; label: string }> = [
     { key: 'canManagePriorities', label: 'تنظیم اولویت‌ها' },
     { key: 'canManageBudget', label: 'تخصیص و منابع بودجه' },
-    { key: 'canApproveProjects', label: 'تصویب و ثبت پروژه' },
+    { key: 'canCreateProject', label: 'ثبت پروژه' },
+    { key: 'canApproveProjects', label: 'تصویب پروژه' },
     { key: 'canManageCrises', label: 'مدیریت بحران‌ها' },
     { key: 'canManageExecutors', label: 'مدیریت مجریان' },
     { key: 'canManageContractors', label: 'مدیریت پیمانکاران' },

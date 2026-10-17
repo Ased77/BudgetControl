@@ -33,6 +33,7 @@ import {
   FolderPlus,
 } from 'lucide-react';
 import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
+import { hasOwnProjectScope, projectsForUser } from '../utils/recordScope';
 
 export const ProjectsView: React.FC = () => {
   const {
@@ -95,6 +96,15 @@ export const ProjectsView: React.FC = () => {
 
   const userPerm = getUserPermissions(currentUser);
   const canManage = userPerm ? userPerm.canApproveProjects : currentUser.role === 'ADMIN';
+  // Missing on rows seeded before the flag existed: preserve the old open door.
+  const canCreateProject = userPerm ? userPerm.canCreateProject !== false : true;
+  // «رئیس اداره» works on its own portfolio only; every other role keeps the
+  // location-scoped list the context handed it.
+  const ownProjectScope = hasOwnProjectScope(currentUser.role);
+  const visibleProjects = useMemo(
+    () => projectsForUser(projects, currentUser),
+    [projects, currentUser]
+  );
 
   // Live calculation of per-capita in the modal
   const computedPerCapita = useMemo(() => {
@@ -223,7 +233,7 @@ export const ProjectsView: React.FC = () => {
 
   // Filtered
   const filteredProjects = useMemo(() => {
-    return projects.filter((p) => {
+    return visibleProjects.filter((p) => {
       const matchQ =
         p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -236,12 +246,12 @@ export const ProjectsView: React.FC = () => {
       const matchOverlap = selectedOverlapFilter === 'ALL' || p.antiOverlapStatus === selectedOverlapFilter;
       return matchQ && matchDept && matchSource && matchStatus && matchOverlap;
     });
-  }, [projects, searchQuery, selectedDeptFilter, selectedSourceFilter, selectedStatusFilter, selectedOverlapFilter]);
+  }, [visibleProjects, searchQuery, selectedDeptFilter, selectedSourceFilter, selectedStatusFilter, selectedOverlapFilter]);
 
   // Aggregate stats
-  const totalBudget = useMemo(() => projects.reduce((s, p) => s + p.estimatedCostToman, 0), [projects]);
-  const totalBeneficiaries = useMemo(() => projects.reduce((s, p) => s + p.beneficiariesCount, 0), [projects]);
-  const flaggedCount = useMemo(() => projects.filter((p) => p.antiOverlapStatus !== 'CLEAR').length, [projects]);
+  const totalBudget = useMemo(() => visibleProjects.reduce((s, p) => s + p.estimatedCostToman, 0), [visibleProjects]);
+  const totalBeneficiaries = useMemo(() => visibleProjects.reduce((s, p) => s + p.beneficiariesCount, 0), [visibleProjects]);
+  const flaggedCount = useMemo(() => visibleProjects.filter((p) => p.antiOverlapStatus !== 'CLEAR').length, [visibleProjects]);
 
   return (
     <div id="projects-view-root" className="space-y-6">
@@ -250,7 +260,11 @@ export const ProjectsView: React.FC = () => {
         id="projects-view-page-header"
         icon={FolderKanban}
         title="پروژه‌های عمرانی و توسعه‌ای سامانه ملی"
-        subtitle="اتصال کامل به ادارات، سرفصل بودجه، مجریان و بحران‌ها"
+        subtitle={
+          ownProjectScope
+            ? 'فقط پروژه‌هایی که خودتان ثبت کرده‌اید؛ پیمانکاران تخصیص‌یافته به همین پروژه‌ها در صفحه پیمانکاران دیده می‌شوند'
+            : 'اتصال کامل به ادارات، سرفصل بودجه، مجریان و بحران‌ها'
+        }
         tone="text-blue-600"
       />
 
@@ -260,18 +274,29 @@ export const ProjectsView: React.FC = () => {
           <div id="projects-view-header-banner-light-theme-4" className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200 flex items-center gap-1">
               <FolderKanban className="w-3.5 h-3.5 text-blue-600" />
-              رصد پروژه‌های اجرایی و ممانعت از موازی‌کاری
+              {ownProjectScope ? 'پروژه‌های ثبت‌شده توسط شما' : 'رصد پروژه‌های اجرایی و ممانعت از موازی‌کاری'}
             </span>
+            {ownProjectScope && (
+              <span
+                id="projects-view-own-scope-badge"
+                className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white text-slate-600 border border-slate-200 flex items-center gap-1"
+              >
+                <Filter className="w-3.5 h-3.5 text-slate-400" />
+                محدوده شخصی
+              </span>
+            )}
           </div>
 
           <div id="projects-view-header-banner-light-theme-5" className="flex items-center gap-3 self-start md:self-auto">
-            <button
-              onClick={() => setActiveTab('CREATE_PROJECT')}
-              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-md shadow-indigo-600/25 transition-all hover:scale-105 active:scale-95"
-            >
-              <FolderPlus className="w-4 h-4" />
-              <span>تب تعریف جامع و بین‌دستگاهی پروژه</span>
-            </button>
+            {canCreateProject && (
+              <button
+                onClick={() => setActiveTab('CREATE_PROJECT')}
+                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-md shadow-indigo-600/25 transition-all hover:scale-105 active:scale-95"
+              >
+                <FolderPlus className="w-4 h-4" />
+                <span>ثبت پروژه جدید</span>
+              </button>
+            )}
             {canManage && (
               <button
                 id="btn-add-project"
@@ -288,8 +313,10 @@ export const ProjectsView: React.FC = () => {
         {/* Micro-KPI Strip */}
         <div id="projects-view-micro-kpi-strip" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-blue-200/60">
           <div id="projects-view-micro-kpi-strip-2" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
-            <span className="text-xs text-slate-500 block">کل پروژه‌های ثبت‌شده</span>
-            <Num value={formatNumber(projects.length)} unit="پروژه" className="text-xl font-black text-slate-900 mt-0.5 block font-mono" />
+            <span className="text-xs text-slate-500 block">
+              {ownProjectScope ? 'پروژه‌های ثبت‌شده توسط شما' : 'کل پروژه‌های ثبت‌شده'}
+            </span>
+            <Num value={formatNumber(visibleProjects.length)} unit="پروژه" className="text-xl font-black text-slate-900 mt-0.5 block font-mono" />
           </div>
           <div id="projects-view-micro-kpi-strip-3" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">ارزش کل اعتبارات پروژه‌ها</span>

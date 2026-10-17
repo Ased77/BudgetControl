@@ -781,6 +781,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const costPer = Math.round(newP.estimatedCostToman / beneficiaries);
     const proj: ExecutiveProject = {
       ...newP,
+      // Ownership is stamped here rather than by the form: the creator is the
+      // signed-in user, and the «رئیس اداره» scope reads this field back.
+      createdByUserId: currentUser.id,
+      createdByName: currentUser.name,
       id: `proj-${Date.now()}`,
       costPerBeneficiaryToman: costPer,
       antiOverlapStatus: 'CLEAR',

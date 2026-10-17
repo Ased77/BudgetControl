@@ -8,6 +8,7 @@ export type UserRole =
   | 'ADMIN'                 // مدیر ارشد کشوری / ملی
   | 'PROVINCIAL_GOVERNOR'   // استاندار / فرماندار
   | 'DEPARTMENT_HEAD'       // مدیر اداره / دستگاه اجرایی
+  | 'OFFICE_HEAD'           // رئیس اداره — ثبت پروژه و پیگیری پروژه‌های خودش
   | 'REGIONAL_MANAGER'      // مدیر منطقه‌ای و توسعه روستایی
   | 'PLANNING_SPECIALIST'   // کارشناس ارشد برنامه‌ریزی و بودجه
   | 'AUDITOR'               // حسابرس و ناظر عالی شفافیت
@@ -256,6 +257,13 @@ export interface ExecutiveProject {
   executorName: string;
   contractorId?: string;      // پیمانکار پروژه
   contractorName?: string;
+  /**
+   * کاربری که رکورد را ثبت کرده است. نقش «رئیس اداره» فقط پروژه‌های خودش را
+   * می‌بیند، پس مالکیت رکورد باید روی خود پروژه ذخیره شود؛ رکوردهای قدیمی که
+   * این فیلد را ندارند در هیچ فهرست شخصی ظاهر نمی‌شوند.
+   */
+  createdByUserId?: string;
+  createdByName?: string;
   crisisHarmId?: string;      // آسیب / بحران متناظر
   crisisHarmTitle?: string;
   urgencyLevel?: UrgencyLevel;
@@ -321,6 +329,8 @@ export interface SystemRolePermission {
   canManageBudget: boolean;
   canManageCrises: boolean;
   canManagePriorities: boolean;
+  /** اجازه ورود به گردش‌کار ثبت پروژه (متمایز از تصویب پروژه). */
+  canCreateProject: boolean;
   canApproveProjects: boolean;
   canManageExecutors: boolean;
   canManageContractors: boolean;
@@ -336,6 +346,7 @@ export type UserPermissionField =
   | 'canManageBudget'
   | 'canManageCrises'
   | 'canManagePriorities'
+  | 'canCreateProject'
   | 'canApproveProjects'
   | 'canManageExecutors'
   | 'canManageContractors'

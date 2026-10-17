@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AppProvider, useAppContext } from './context/AppContext';
 import { exportToCsv } from './utils/excelExport';
 import { triggerPrintPdf } from './utils/pdfExport';
@@ -153,7 +153,25 @@ function AppContent() {
     handleUpdateLocation,
     optimizationMetrics,
     addAuditLog,
+    getUserPermissions,
   } = useAppContext();
+
+  // The nav tree is the app's access map: «ثبت پروژه» is listed only for a user
+  // whose effective permissions still include project creation (a per-user
+  // override can revoke it). Roles seeded before this flag existed leave it
+  // undefined, so they keep the old behaviour and still see the entry.
+  const canCreateProject = getUserPermissions(currentUser)?.canCreateProject ?? true;
+  const navMenuItems = useMemo(
+    () =>
+      canCreateProject
+        ? NAV_MENU_ITEMS
+        : NAV_MENU_ITEMS.map((item) =>
+            item.children
+              ? { ...item, children: item.children.filter((child) => child.value !== 'CREATE_PROJECT') }
+              : item
+          ),
+    [canCreateProject]
+  );
 
   const [showAiModal, setShowAiModal] = useState(false);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
@@ -383,7 +401,7 @@ function AppContent() {
               selection made anywhere else keeps the menu in step. */}
           <div className="scrollbar-none py-2 overflow-y-auto min-h-0 max-lg:flex-1">
             <BranchedMenu
-              items={NAV_MENU_ITEMS}
+              items={navMenuItems}
               active={activeTab}
               open={openSectionsWithHover}
               onSelect={(value) => {
@@ -624,7 +642,23 @@ function AppContent() {
 
           {activeTab === 'CONTRACTORS' && <ContractorsView />}
 
-          {activeTab === 'CREATE_PROJECT' && <CreateProjectView />}
+          {activeTab === 'CREATE_PROJECT' &&
+            (canCreateProject ? (
+              <CreateProjectView />
+            ) : (
+              <div
+                id="app-create-project-access-denied"
+                className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs p-10 text-center"
+              >
+                <ShieldCheck className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+                <h2 className="font-black text-sm text-slate-800 dark:text-slate-100">
+                  دسترسی ثبت پروژه برای شما فعال نیست
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
+                  این مجوز را مدیر سامانه می‌تواند از صفحه «نقش‌ها و دسترسی» برای کاربر شما فعال کند.
+                </p>
+              </div>
+            ))}
 
           {activeTab === 'PROJECTS' && <ProjectsView />}
 

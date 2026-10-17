@@ -5,6 +5,7 @@ import { useOutsideClick } from '../hooks/useOutsideClick';
 import { compactToman, formatMoneyParts, formatPercent, formatToman, formatNumber, toPersianDigits } from '../utils/numberUtils';
 import { gaugeTone } from '../utils/gaugeTone';
 import { gaugeStaggerDelay } from '../utils/gaugeStagger';
+import { contractorsForUser, hasOwnProjectScope, projectsForUser } from '../utils/recordScope';
 import { Num } from './Num';
 import { AnimatedGauge } from './AnimatedGauge';
 import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
@@ -93,6 +94,18 @@ export const ContractorsView: React.FC = () => {
 
   const userPerm = getUserPermissions(currentUser);
   const canManage = userPerm ? userPerm.canManageContractors : currentUser.role === 'ADMIN';
+  // «رئیس اداره» sees only the contractors assigned to projects it created;
+  // the project links on each card are narrowed to the same portfolio so the
+  // counts never mention a project outside the reader's scope.
+  const ownProjectScope = hasOwnProjectScope(currentUser.role);
+  const visibleProjects = useMemo(
+    () => projectsForUser(projects, currentUser),
+    [projects, currentUser]
+  );
+  const visibleContractors = useMemo(
+    () => contractorsForUser(contractors, projects, currentUser),
+    [contractors, projects, currentUser]
+  );
 
   const gradeLabels: Record<ContractorGrade, string> = {
     GRADE_1: 'پایه ۱ (کشوری / نامحدود)',
@@ -176,7 +189,7 @@ export const ContractorsView: React.FC = () => {
 
   // Filtered
   const filteredContractors = useMemo(() => {
-    return contractors.filter((c) => {
+    return visibleContractors.filter((c) => {
       const matchQ =
         c.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         c.ceoName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -185,7 +198,7 @@ export const ContractorsView: React.FC = () => {
       const matchS = selectedSpecialty === 'ALL' || c.specialtyField.includes(selectedSpecialty);
       return matchQ && matchG && matchS;
     });
-  }, [contractors, searchQuery, selectedGrade, selectedSpecialty]);
+  }, [visibleContractors, searchQuery, selectedGrade, selectedSpecialty]);
 
   const resetFilters = () => {
     setSearchQuery('');
@@ -194,12 +207,21 @@ export const ContractorsView: React.FC = () => {
   };
 
   // Aggregate stats
-  const totalContractsValue = useMemo(() => contractors.reduce((s, c) => s + c.totalContractValueToman, 0), [contractors]);
-  const avgScore = useMemo(
-    () => (contractors.length > 0 ? Math.round(contractors.reduce((s, c) => s + c.performanceScore, 0) / contractors.length) : 0),
-    [contractors]
+  const totalContractsValue = useMemo(
+    () => visibleContractors.reduce((s, c) => s + c.totalContractValueToman, 0),
+    [visibleContractors]
   );
-  const localVerifiedCount = useMemo(() => contractors.filter((c) => c.grade === 'LOCAL_AUTHORIZED').length, [contractors]);
+  const avgScore = useMemo(
+    () =>
+      visibleContractors.length > 0
+        ? Math.round(visibleContractors.reduce((s, c) => s + c.performanceScore, 0) / visibleContractors.length)
+        : 0,
+    [visibleContractors]
+  );
+  const localVerifiedCount = useMemo(
+    () => visibleContractors.filter((c) => c.grade === 'LOCAL_AUTHORIZED').length,
+    [visibleContractors]
+  );
 
   return (
     <div id="contractors-view-root" className="space-y-6">
@@ -208,7 +230,11 @@ export const ContractorsView: React.FC = () => {
         id="contractors-view-page-header"
         icon={HardHat}
         title="بانک اطلاعات پیمانکاران احراز صلاحیت‌شده"
-        subtitle={`${toPersianDigits(contractors.length)} شرکت ثبت‌شده — صلاحیت، ظرفیت و کیفیت هر پیمانکار در ${selectedLocation.province} - ${selectedLocation.county}`}
+        subtitle={
+          ownProjectScope
+            ? `${toPersianDigits(visibleContractors.length)} پیمانکار تخصیص‌یافته به پروژه‌های ثبت‌شده توسط شما — ${selectedLocation.province} - ${selectedLocation.county}`
+            : `${toPersianDigits(visibleContractors.length)} شرکت ثبت‌شده — صلاحیت، ظرفیت و کیفیت هر پیمانکار در ${selectedLocation.province} - ${selectedLocation.county}`
+        }
         tone="text-amber-600"
       />
 
@@ -217,8 +243,17 @@ export const ContractorsView: React.FC = () => {
         <div id="contractors-view-header-banner-light-theme-2" className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div id="contractors-view-header-banner-light-theme-4" className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-              پیمانکاران ذیصلاح و شرکت‌های فنی‌مهندسی
+              {ownProjectScope ? 'پیمانکاران پروژه‌های شما' : 'پیمانکاران ذی‌صلاح و شرکت‌های فنی‌مهندسی'}
             </span>
+            {ownProjectScope && (
+              <span
+                id="contractors-view-own-scope-badge"
+                className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white text-slate-600 border border-slate-200 flex items-center gap-1"
+              >
+                <Filter className="w-3.5 h-3.5 text-slate-400" />
+                تخصیص‌یافته به پروژه‌های شما
+              </span>
+            )}
           </div>
 
           <div id="contractors-view-header-banner-light-theme-5" className="flex items-center gap-3 self-start md:self-auto">
@@ -238,8 +273,10 @@ export const ContractorsView: React.FC = () => {
         {/* Micro-KPI Strip */}
         <div id="contractors-view-micro-kpi-strip" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-amber-200/60">
           <div id="contractors-view-micro-kpi-strip-2" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
-            <span className="text-xs text-slate-500 block">پیمانکاران احراز صلاحیت شده</span>
-            <Num value={formatNumber(contractors.length)} unit="شرکت" className="text-xl font-black text-slate-900 mt-0.5 block font-mono" />
+            <span className="text-xs text-slate-500 block">
+              {ownProjectScope ? 'پیمانکاران پروژه‌های شما' : 'پیمانکاران احراز صلاحیت شده'}
+            </span>
+            <Num value={formatNumber(visibleContractors.length)} unit="شرکت" className="text-xl font-black text-slate-900 mt-0.5 block font-mono" />
           </div>
           <div id="contractors-view-micro-kpi-strip-3" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">ارزش کل پیمان‌های فعال</span>
@@ -282,7 +319,7 @@ export const ContractorsView: React.FC = () => {
             onChange={(e) => setSelectedGrade(e.target.value)}
             className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-500"
           >
-            <option value="ALL">همه پایه‌ها ({toPersianDigits(contractors.length)})</option>
+            <option value="ALL">همه پایه‌ها ({toPersianDigits(visibleContractors.length)})</option>
             <option value="GRADE_1">پایه ۱ (کشوری)</option>
             <option value="GRADE_2">پایه ۲</option>
             <option value="GRADE_3">پایه ۳</option>
@@ -298,7 +335,7 @@ export const ContractorsView: React.FC = () => {
         <div id="contractors-view-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filteredContractors.map((cnt, index) => {
             const gaugeDelayMs = gaugeStaggerDelay(index);
-            const cntProjects = projects.filter((p) => p.contractorId === cnt.id);
+            const cntProjects = visibleProjects.filter((p) => p.contractorId === cnt.id);
             const contractValue = compactToman(cnt.totalContractValueToman);
 
             return (
@@ -442,7 +479,7 @@ export const ContractorsView: React.FC = () => {
       {/* Contractor Drill-down Modal */}
       {detailCnt &&
         (() => {
-          const cntProjects = projects.filter((p) => p.contractorId === detailCnt.id);
+          const cntProjects = visibleProjects.filter((p) => p.contractorId === detailCnt.id);
           const detailGaugeRadius = 32;
 
           return (

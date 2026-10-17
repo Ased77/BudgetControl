@@ -357,6 +357,77 @@ const migratePriorityTitles = db.transaction(() => {
 
 migratePriorityTitles();
 
+/**
+ * Incremental seed for the «رئیس اداره» role.
+ *
+ * The main seed is version-gated, so a database created before this role
+ * existed never receives it — and bumping `SCHEMA_VERSION` would rewrite every
+ * operator-owned record. This migration only adds what is missing:
+ *
+ *  1. the `canCreateProject` capability on roles stored before it existed
+ *     (their current behaviour allowed project creation, so it defaults on);
+ *  2. the role row and its demo user, when absent;
+ *  3. the creator stamp on the demo projects that belong to that user, so the
+ *     role's own-records scope has something to show on an existing install.
+ *
+ * Nothing is overwritten: a role/user already present is left exactly as the
+ * operator has it, and a project that already names a creator keeps it.
+ */
+function ensureOfficeHeadRole(): void {
+  const role = INITIAL_ROLES_PERMISSIONS.find((r) => r.role === 'OFFICE_HEAD');
+  const demoUser = INITIAL_USERS.find((u) => u.role === 'OFFICE_HEAD');
+
+  const roleRows = db
+    .prepare('SELECT role, payload FROM roles_permissions')
+    .all() as Array<{ role: string; payload: string }>;
+  const updateRole = db.prepare('UPDATE roles_permissions SET payload = ? WHERE role = ?');
+
+  for (const row of roleRows) {
+    const permission = JSON.parse(row.payload) as SystemRolePermission;
+    if (permission.canCreateProject !== undefined) continue;
+    updateRole.run(JSON.stringify({ ...permission, canCreateProject: true }), row.role);
+  }
+
+  if (role && !db.prepare('SELECT role FROM roles_permissions WHERE role = ?').get(role.role)) {
+    db.prepare('INSERT INTO roles_permissions (role, payload) VALUES (?, ?)').run(
+      role.role,
+      JSON.stringify(role)
+    );
+    console.log(`[db] Added role ${role.role}`);
+  }
+
+  if (demoUser && !db.prepare('SELECT id FROM users WHERE id = ?').get(demoUser.id)) {
+    db.prepare('INSERT INTO users (id, name, role, payload) VALUES (?, ?, ?, ?)').run(
+      demoUser.id,
+      demoUser.name,
+      demoUser.role,
+      JSON.stringify(demoUser)
+    );
+    console.log(`[db] Added demo user ${demoUser.id}`);
+  }
+
+  if (!demoUser) return;
+  const findProject = db.prepare('SELECT payload FROM projects WHERE id = ?');
+  const stampProject = db.prepare('UPDATE projects SET payload = ? WHERE id = ?');
+  for (const seeded of INITIAL_PROJECTS) {
+    if (seeded.createdByUserId !== demoUser.id) continue;
+    const row = findProject.get(seeded.id) as { payload: string } | undefined;
+    if (!row) continue;
+    const stored = JSON.parse(row.payload) as ExecutiveProject;
+    if (stored.createdByUserId) continue;
+    stampProject.run(
+      JSON.stringify({
+        ...stored,
+        createdByUserId: seeded.createdByUserId,
+        createdByName: seeded.createdByName,
+      }),
+      seeded.id
+    );
+  }
+}
+
+ensureOfficeHeadRole();
+
 /* =========================================================================
    Typed accessors
    ========================================================================= */
