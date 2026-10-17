@@ -96,7 +96,7 @@ export const Num: React.FC<NumProps> = ({
   const trigger = useContext(NumCountUpTriggerContext);
   const parsed = parseNumeral(value);
   const animate = countUpEnabled && parsed !== null;
-  const animated = useCountUp(parsed?.target ?? 0, 800, animate, trigger);
+  const animated = useCountUp(parsed?.target ?? 0, 800, animate, trigger, parsed?.fractionDigits);
   const display =
     countUpEnabled && parsed
       ? `${parsed.prefix}${formatNumber(animated, true, parsed.fractionDigits)}${parsed.suffix}`
