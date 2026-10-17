@@ -3,6 +3,7 @@ import { useAppContext } from '../context/AppContext';
 import { Contractor, ContractorGrade } from '../types';
 import { useOutsideClick } from '../hooks/useOutsideClick';
 import { compactToman, formatMoneyParts, formatPercent, formatToman, formatNumber, toPersianDigits } from '../utils/numberUtils';
+import { gaugeTone } from '../utils/gaugeTone';
 import { Num } from './Num';
 import { AnimatedGauge } from './AnimatedGauge';
 import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
@@ -44,17 +45,12 @@ const STATUS_PILL: Record<Contractor['status'], string> = {
   SUSPENDED: 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300',
 };
 
-/**
- * Colour of the quality gauge follows the score itself rather than the
- * contractor's grade, so the ring reads delivery quality at a glance: a strong
- * record writes green (≥ ۹۰), a passable one amber (۸۴–۸۹) and a weak one red
- * (below ۸۴).
+/*
+ * Quality rings read on the shared higher-is-better gauge scale (see
+ * `utils/gaugeTone`): ≥ ۷۰ green, ۵۰–۶۹ amber, below ۵۰ red. The score itself
+ * — not the contractor's grade — drives the colour, so the ring is a delivery
+ * quality reading at a glance.
  */
-function qualityGaugeTone(score: number): string {
-  if (score >= 90) return 'stroke-emerald-500 dark:stroke-emerald-400';
-  if (score >= 84) return 'stroke-amber-500 dark:stroke-amber-400';
-  return 'stroke-rose-500 dark:stroke-rose-400';
-}
 
 export const ContractorsView: React.FC = () => {
   const {
@@ -383,7 +379,7 @@ export const ContractorsView: React.FC = () => {
                     <AnimatedGauge
                       value={cnt.performanceScore}
                       radius={GAUGE_RADIUS}
-                      toneClassName={qualityGaugeTone(cnt.performanceScore)}
+                      toneClassName={gaugeTone(cnt.performanceScore)}
                       className="w-14 h-14"
                     >
                       <Num value={formatNumber(cnt.performanceScore)} className="absolute inset-0 flex items-center justify-center text-xs font-black text-slate-800 dark:text-slate-100" />
@@ -552,7 +548,7 @@ export const ContractorsView: React.FC = () => {
                         radius={detailGaugeRadius}
                         center={40}
                         strokeWidth={8}
-                        toneClassName={qualityGaugeTone(detailCnt.performanceScore)}
+                        toneClassName={gaugeTone(detailCnt.performanceScore)}
                         className="w-20 h-20 shrink-0"
                       >
                         <span className="absolute inset-0 flex flex-col items-center justify-center">

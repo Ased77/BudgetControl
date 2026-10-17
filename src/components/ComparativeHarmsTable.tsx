@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { LocationData, LocalIndicators } from '../types';
 import { toPersianDigits } from '../utils/numberUtils';
+import { GAUGE_TONES } from '../utils/gaugeTone';
 import { Num } from './Num';
 import { AnimatedGauge } from './AnimatedGauge';
 import {
@@ -900,7 +901,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                       <IndicatorGauge
                         id={`comparative-harms-table-local-value-${item.key}`}
                         value={localVal}
-                        toneClass={isHotspot ? 'stroke-rose-500' : isWorseThanNat ? 'stroke-amber-500' : 'stroke-emerald-500'}
+                        toneClass={isHotspot ? GAUGE_TONES.risk : isWorseThanNat ? GAUGE_TONES.warning : GAUGE_TONES.good}
                         tip={`«${item.title}» — مقدار سنجش‌شده در منطقه جاری (استان ${currentLocation.province} - شهرستان ${currentLocation.county}): ${toPersianDigits(localVal)}٪ از ۱۰۰. میانگین کشوری: ${toPersianDigits(natVal)}٪.`}
                       />
                     </td>

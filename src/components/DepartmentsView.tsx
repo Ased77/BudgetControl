@@ -36,6 +36,7 @@ import {
   Landmark,
 } from 'lucide-react';
 import { compactToman, formatMoneyParts, formatPercent, formatToman, formatNumber, toPersianDigits } from '../utils/numberUtils';
+import { gaugeTone } from '../utils/gaugeTone';
 import { Num } from './Num';
 import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
 import { useConfirmDelete } from './ConfirmDeleteModal';
@@ -182,19 +183,12 @@ function readLogoAsDataUrl(file: File): Promise<string> {
   });
 }
 
-/**
- * Colour of the absorption gauge follows the fill level itself — how much of the
- * approved budget the department has actually absorbed — rather than the
- * department's category, so a glance at the ring reads execution health:
- * a well-absorbed budget writes green (≥ ۷۰٪), a sluggish one amber (۵۰–۶۹٪)
- * and a stalled one red (below ۵۰٪).
+/*
+ * Absorption rings read on the shared higher-is-better gauge scale (see
+ * `utils/gaugeTone`): ≥ ۷۰٪ green, ۵۰–۶۹٪ amber, below ۵۰٪ red. The fill
+ * follows the absorbed share rather than the department's category, so the ring
+ * is an execution-health reading at a glance.
  */
-function absorptionGaugeTone(absorptionRate: number): string {
-  if (absorptionRate >= 70) return 'stroke-emerald-500 dark:stroke-emerald-400';
-  if (absorptionRate >= 50) return 'stroke-amber-500 dark:stroke-amber-400';
-  return 'stroke-rose-500 dark:stroke-rose-400';
-}
-
 export const DepartmentsView: React.FC = () => {
   const {
     departments,
@@ -708,7 +702,7 @@ export const DepartmentsView: React.FC = () => {
                     <AnimatedGauge
                       value={absorptionRate}
                       radius={GAUGE_RADIUS}
-                      toneClassName={absorptionGaugeTone(absorptionRate)}
+                      toneClassName={gaugeTone(absorptionRate)}
                       className="w-14 h-14"
                     >
                       <Num

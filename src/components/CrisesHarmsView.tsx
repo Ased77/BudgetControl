@@ -25,6 +25,7 @@ import {
   ListChecks,
 } from 'lucide-react';
 import { formatMoneyParts, formatPercent, formatNumber, formatToman, toPersianDigits } from '../utils/numberUtils';
+import { gaugeTone } from '../utils/gaugeTone';
 import { Num } from './Num';
 import { AnimatedGauge } from './AnimatedGauge';
 import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
@@ -101,17 +102,13 @@ const ADMIN_LEVEL_LABELS: Record<AdministrativeLevel, string> = {
   RURAL_DISTRICT: 'بخشداری / دهیاری',
 };
 
-/**
- * Severity gauge colour follows the score itself — how deprived the area is,
- * which is a health reading — rather than the row's urgency, exactly as the
- * departments absorption ring follows the absorbed share rather than the
- * department's category: ۷۰ and up writes rose, ۵۰–۶۹ amber, below that emerald.
+/*
+ * Severity rings read on the shared higher-is-worse gauge scale (see
+ * `utils/gaugeTone`): ≥ ۷۰ rose, ۵۰–۶۹ amber, below ۵۰ emerald. The score —
+ * how deprived the area is, a health reading — drives the colour, not the
+ * row's urgency, exactly as the departments absorption ring follows the
+ * absorbed share rather than the department's category.
  */
-function severityGaugeTone(severityScore: number): string {
-  if (severityScore >= 70) return 'stroke-rose-500 dark:stroke-rose-400';
-  if (severityScore >= 50) return 'stroke-amber-500 dark:stroke-amber-400';
-  return 'stroke-emerald-500 dark:stroke-emerald-400';
-}
 
 /**
  * Status pill for a crisis — label, icon and tint from one helper, because the
@@ -563,7 +560,7 @@ export const CrisesHarmsView: React.FC = () => {
                     <AnimatedGauge
                       value={item.severityScore}
                       radius={GAUGE_RADIUS}
-                      toneClassName={severityGaugeTone(item.severityScore)}
+                      toneClassName={gaugeTone(item.severityScore, 'HIGHER_IS_WORSE')}
                       className="w-14 h-14"
                     >
                       <span className="absolute inset-0 flex flex-col items-center justify-center">
@@ -705,7 +702,7 @@ export const CrisesHarmsView: React.FC = () => {
                         radius={DETAIL_GAUGE_RADIUS}
                         center={40}
                         strokeWidth={8}
-                        toneClassName={severityGaugeTone(detailCrisis.severityScore)}
+                        toneClassName={gaugeTone(detailCrisis.severityScore, 'HIGHER_IS_WORSE')}
                         className="w-20 h-20 shrink-0"
                       >
                         <span className="absolute inset-0 flex flex-col items-center justify-center">

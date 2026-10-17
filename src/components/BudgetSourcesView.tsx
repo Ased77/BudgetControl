@@ -20,6 +20,7 @@ import {
   X,
 } from 'lucide-react';
 import { compactToman, formatMoneyParts, formatPercent, formatToman, formatNumber, toPersianDigits } from '../utils/numberUtils';
+import { gaugeTone } from '../utils/gaugeTone';
 import { Num } from './Num';
 import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
 import { useConfirmDelete } from './ConfirmDeleteModal';
@@ -27,9 +28,11 @@ import { useConfirmDelete } from './ConfirmDeleteModal';
 /** Radius of the commitment gauge on both the card strip and the dialog. */
 const USAGE_GAUGE_RADIUS = 22;
 
-/** Commitment rate tone: nearly spent reads amber, healthy reads emerald. */
-const usageGaugeTone = (percent: number) =>
-  percent >= 90 ? 'stroke-amber-500' : percent >= 50 ? 'stroke-emerald-500' : 'stroke-blue-500';
+/*
+ * Commitment gauges read on the shared utilization scale (see
+ * `utils/gaugeTone`): below ۵۰٪ still-uncommitted blue, ۵۰–۸۹٪ healthy
+ * emerald, ≥ ۹۰٪ nearly exhausted amber.
+ */
 
 /**
  * Status pill for a funding source. The cards and the drill-down dialog read
@@ -384,7 +387,7 @@ export const BudgetSourcesView: React.FC = () => {
                   <AnimatedGauge
                     value={usagePercent}
                     radius={USAGE_GAUGE_RADIUS}
-                    toneClassName={usageGaugeTone(usagePercent)}
+                    toneClassName={gaugeTone(usagePercent, 'UTILIZATION')}
                     className="w-14 h-14"
                   >
                     <Num value={formatPercent(usagePercent)} className="absolute inset-0 flex items-center justify-center text-xs font-black text-slate-800 dark:text-slate-100" />
@@ -548,7 +551,7 @@ export const BudgetSourcesView: React.FC = () => {
                         radius={detailGaugeRadius}
                         center={40}
                         strokeWidth={8}
-                        toneClassName={usageGaugeTone(usagePercent)}
+                        toneClassName={gaugeTone(usagePercent, 'UTILIZATION')}
                         className="w-20 h-20 shrink-0"
                       >
                         <span className="absolute inset-0 flex flex-col items-center justify-center">

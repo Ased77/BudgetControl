@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useConfirmDelete } from './ConfirmDeleteModal';
 import { formatMoneyParts, formatPercent, formatToman, formatNumber, toPersianDigits } from '../utils/numberUtils';
+import { gaugeTone } from '../utils/gaugeTone';
 import { Num } from './Num';
 import { AnimatedGauge } from './AnimatedGauge';
 import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
@@ -42,17 +43,12 @@ const CAPACITY_PILL: Record<ProjectExecutor['capacityStatus'], string> = {
   OVERLOADED: 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300',
 };
 
-/**
- * Colour of the field-success gauge follows the rate itself rather than the
- * executor's structural type, so the ring reads delivery health at a glance:
- * a proven executor writes green (≥ ۹۲٪), an acceptable one amber (۸۸–۹۱٪)
- * and a shaky one red (below ۸۸٪).
+/*
+ * Success rings read on the shared higher-is-better gauge scale (see
+ * `utils/gaugeTone`): ≥ ۷۰٪ green, ۵۰–۶۹٪ amber, below ۵۰٪ red. The rate —
+ * not the executor's structural type — drives the colour, so the ring is a
+ * delivery-health reading at a glance.
  */
-function successGaugeTone(rate: number): string {
-  if (rate >= 92) return 'stroke-emerald-500 dark:stroke-emerald-400';
-  if (rate >= 88) return 'stroke-amber-500 dark:stroke-amber-400';
-  return 'stroke-rose-500 dark:stroke-rose-400';
-}
 
 export const ExecutorsView: React.FC = () => {
   const {
@@ -368,7 +364,7 @@ export const ExecutorsView: React.FC = () => {
                     <AnimatedGauge
                       value={exec.successRate}
                       radius={GAUGE_RADIUS}
-                      toneClassName={successGaugeTone(exec.successRate)}
+                      toneClassName={gaugeTone(exec.successRate)}
                       className="w-14 h-14"
                     >
                       <Num value={formatPercent(exec.successRate)} className="absolute inset-0 flex items-center justify-center text-xs font-black text-slate-800 dark:text-slate-100" />
@@ -534,7 +530,7 @@ export const ExecutorsView: React.FC = () => {
                         radius={detailGaugeRadius}
                         center={40}
                         strokeWidth={8}
-                        toneClassName={successGaugeTone(detailExec.successRate)}
+                        toneClassName={gaugeTone(detailExec.successRate)}
                         className="w-20 h-20 shrink-0"
                       >
                         <span className="absolute inset-0 flex flex-col items-center justify-center">
