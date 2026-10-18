@@ -6,3 +6,6 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Vercel writes the client bundle here (its Express preset serves public/)
+/public/

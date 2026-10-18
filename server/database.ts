@@ -278,6 +278,13 @@ async function seed(): Promise<void> {
   };
 
   await withTransaction(async (client) => {
+    // Serialize with any other instance booting at the same moment: two
+    // serverless cold starts (or two containers) would otherwise seed the same
+    // rows concurrently and deadlock inside the multi-row upserts. The lock is
+    // transaction-scoped, so it releases on commit or rollback either way.
+    await client.query('SELECT pg_advisory_xact_lock($1)', [INIT_LOCK_KEY]);
+    if ((await getMeta('schema_version', client)) === SCHEMA_VERSION) return;
+
     push('organization', [INITIAL_ORGANIZATION.id, toJson(INITIAL_ORGANIZATION)]);
 
     for (const loc of INITIAL_LOCATIONS) {
@@ -367,6 +374,9 @@ async function seedAnalysisSources(): Promise<void> {
   if ((await getMeta(key)) === '1') return;
 
   await withTransaction(async (client) => {
+    await client.query('SELECT pg_advisory_xact_lock($1)', [INIT_LOCK_KEY]);
+    if ((await getMeta(key, client)) === '1') return;
+
     await upsertMany(
       client,
       'analysis_sources',
@@ -404,6 +414,7 @@ const PRIORITY_TITLE_MIGRATIONS: Record<string, { previous: string; current: str
 
 async function migratePriorityTitles(): Promise<void> {
   await withTransaction(async (client) => {
+    await client.query('SELECT pg_advisory_xact_lock($1)', [INIT_LOCK_KEY]);
     for (const [id, titles] of Object.entries(PRIORITY_TITLE_MIGRATIONS)) {
       const found = await client.query<PayloadRow>('SELECT payload FROM priorities WHERE id = $1', [id]);
       if (found.rowCount === 0) continue;
@@ -442,6 +453,7 @@ async function ensureOfficeHeadRole(): Promise<void> {
   const demoUser = INITIAL_USERS.find((u) => u.role === 'OFFICE_HEAD');
 
   await withTransaction(async (client) => {
+    await client.query('SELECT pg_advisory_xact_lock($1)', [INIT_LOCK_KEY]);
     const roleRows = await client.query<{ role: string; payload: unknown }>(
       'SELECT role, payload FROM roles_permissions',
     );

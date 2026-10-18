@@ -43,7 +43,7 @@ FROM deps AS builder
 # present: esbuild resolves a bare "server.ts" as a *package* specifier and fails
 # with "cannot be marked as external" when the file is missing.
 COPY tsconfig.json vite.config.ts index.html server.ts ./
-COPY public ./public
+COPY static ./static
 COPY src ./src
 COPY server ./server
 COPY scripts ./scripts

@@ -1,7 +1,7 @@
 import { CsrPriority, OrganizationConfig, LocalIndicators } from '../types';
 import { formatCurrency, formatLargeBudgetPersian, toPersianDigits } from './numberUtils';
 
-/** Keep in sync with the @font-face list in src/index.css (and public/fonts/README.md).
+/** Keep in sync with the @font-face list in src/index.css (and static/fonts/README.md).
  *  Only Regular and Bold cuts exist in the distribution, so Bold is aliased
  *  across the whole heavy range — same as the app stylesheet. */
 const IRANSANSX_FACES: Array<{ file: string; range: string }> = [
