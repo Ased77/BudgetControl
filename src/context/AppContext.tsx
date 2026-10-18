@@ -41,10 +41,9 @@ import { calculateSmartRecommendations } from '../utils/recommendationEngine';
 import { formatMoney, formatNumber, roundPercentage, toPersianDigits } from '../utils/numberUtils';
 import { analyzeProjectDuplicatesAndEfficiency, OptimizationMetrics } from '../utils/antiDuplicationEngine';
 import { api } from '../services/api';
+import { useAuth } from './AuthContext';
 
-const AUTH_STORAGE_KEY = 'csr.auth.userId';
 const TAB_STORAGE_KEY = 'csr.activeTab';
-
 // Every navigable workspace tab. Used to validate the persisted tab so a
 // stale/unknown stored value falls back to the dashboard instead of stranding
 // the app on a blank page.
@@ -66,27 +65,11 @@ const VALID_TABS = [
   'SETTINGS',
 ];
 
-/** Persisted identity survives a refresh. Storage may be unavailable (private
- *  mode, quota, SSR), in which case the session simply stays in-memory. */
-function readPersistedUserId(): string | null {
-  try {
-    return window.localStorage.getItem(AUTH_STORAGE_KEY);
-  } catch {
-    return null;
-  }
-}
-
-function persistUserId(userId: string | null) {
-  try {
-    if (userId) {
-      window.localStorage.setItem(AUTH_STORAGE_KEY, userId);
-    } else {
-      window.localStorage.removeItem(AUTH_STORAGE_KEY);
-    }
-  } catch {
-    /* ignore — the gate still works for this session */
-  }
-}
+/**
+ * Identity is NO LONGER persisted client-side: the session lives in
+ * httpOnly cookies owned by the server. These two helpers (the localStorage
+ * identity cache of the old simulation) are removed — see AuthContext.
+ */
 
 /** Persisted active tab survives a refresh, so reloading any page stays on
  *  that page instead of redirecting home. */
@@ -166,7 +149,7 @@ interface AppContextType {
   currentUser: UserProfile;
   activeTab: string;
 
-  // Access gate (identity simulation)
+  // Verified-access gate: true only while the server session lives
   isAuthenticated: boolean;
 
   // Analysis & Engine
@@ -175,9 +158,10 @@ interface AppContextType {
 
   // Actions
   setActiveTab: (tab: string) => void;
-  setCurrentUser: (user: UserProfile) => void;
-  login: (userId: string) => void;
-  logout: () => void;
+  /** Email+password login against /api/auth; resolves after the server-side
+   *  session (httpOnly cookies) is established. */
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
   setAdministrativeScope: (scope: AdministrativeLevel) => void;
   handleSelectLocation: (newLoc: LocationData) => void;
   handleUpdateIndicators: (newIndicators: LocalIndicators) => void;
@@ -278,13 +262,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // changed flags are stored; everything else inherits the role default.
   const [userPermissionOverrides, setUserPermissionOverrides] = useState<Record<string, UserPermissionOverride>>({});
   const [users, setUserDatabase] = useState<UserProfile[]>(INITIAL_USERS);
-  const [currentUser, setCurrentUser] = useState<UserProfile>(() => {
-    const persistedId = readPersistedUserId();
-    return INITIAL_USERS.find((u) => u.id === persistedId) ?? INITIAL_USERS[0];
-  });
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() =>
-    INITIAL_USERS.some((u) => u.id === readPersistedUserId())
-  );
+  // Verified identity — sourced ONLY from the AuthContext session (which
+  // re-validates against the server on every mount and cannot be forged by
+  // client storage). It replaces the old localStorage identity simulation.
+  const auth = useAuth();
+  const currentUser = useMemo<UserProfile>(() => auth.user ?? INITIAL_USERS[0], [auth.user]);
+  const isAuthenticated = auth.status === 'authenticated';
   // The active tab is mirrored into the URL, so the browser's back and forward
   // buttons walk the pages the user actually visited and every page is
   // addressable. Precedence on first load: deep link → last session → home.
@@ -381,7 +364,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setAuditLogs(logs);
         setAnalysisSources(analysisSrcs);
         setUserDatabase(users);
-        setCurrentUser((prev) => users.find((u) => u.id === prev.id) ?? prev);
       } catch {
         // Server unreachable — keep the bundled seed data so the app stays usable offline.
       }
@@ -430,30 +412,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     api.auditLogs.create(newEntry).catch(() => {});
   };
 
-  // --- Access gate (organizational identity simulation) ---
-  const login = (userId: string) => {
-    const user = users.find((u) => u.id === userId) ?? INITIAL_USERS[0];
-    setCurrentUser(user);
-    setIsAuthenticated(true);
+  // --- Verified access gate (replaces the identity simulation) -------------
+  // The API call and the audit trail both authenticate through the same
+  // httpOnly session; a LOGIN/LOGOUT entry is stamped with the verified
+  // identity — the audit-log route overwrites the actor FK server-side, so
+  // even this narrative cannot claim an identity by name.
+  const login = async (email: string, password: string) => {
+    const verified = await auth.login(email, password);
     setActiveTab('DASHBOARD');
-    persistUserId(user.id);
-    addAuditLog('LOGIN', 'ورود به سامانه', '-', user.roleFa, `ورود ${user.name} به سامانه مدیریت توسعه`, user);
+    addAuditLog('LOGIN', 'ورود به سامانه', '-', verified.roleFa, `ورود ${verified.name} به سامانه مدیریت توسعه`, verified);
   };
 
-  const logout = () => {
+  const logout = async () => {
+    // Log out while still authenticated so the audit entry gets valid actor
+    // stamping from the server, then drop the session.
     addAuditLog('LOGOUT', 'خروج از سامانه', currentUser.roleFa, '-', `خروج ${currentUser.name} از سامانه مدیریت توسعه`, currentUser);
-    setIsAuthenticated(false);
+    await auth.logout();
     setActiveTab('DASHBOARD');
-    persistUserId(null);
-  };
-
-  // Persona switching from the header / نقش‌ها tab keeps the persisted identity
-  // in step, but only while signed in.
-  const handleSetCurrentUser = (user: UserProfile) => {
-    setCurrentUser(user);
-    if (isAuthenticated) {
-      persistUserId(user.id);
-    }
   };
 
   // --- Location-scoped entity views -----------------------------------------
@@ -1037,7 +1012,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     antiDuplicationAlerts,
     optimizationMetrics,
     setActiveTab,
-    setCurrentUser: handleSetCurrentUser,
     login,
     logout,
     setAdministrativeScope,

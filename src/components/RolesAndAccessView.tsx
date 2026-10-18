@@ -72,7 +72,7 @@ export const RolesAndAccessView: React.FC = () => {
     auditLogs,
     users,
     currentUser,
-    setCurrentUser,
+    logout,
   } = useAppContext();
 
   // Which sub-tab is open. Read order: the URL hash, then the last visit on this
@@ -351,17 +351,16 @@ export const RolesAndAccessView: React.FC = () => {
                   id={`roles-and-access-view-active-user-switcher-5-${u.id}`}
                   className={`flex items-center gap-2 p-2 ${isActiveUser ? 'bg-indigo-50/60' : ''}`}
                 >
-                  <button
+                  <div
                     id={`roles-and-access-view-active-user-switcher-6-${u.id}`}
-                    onClick={() => setCurrentUser(u)}
-                    title={`فعال‌سازی ${u.name} به عنوان کاربر جاری`}
-                    className="flex-1 min-w-0 text-right"
+                    title="هویت فعال از نشست احرازشدهٔ سرور می‌آید و از این صفحه قابل تغییر نیست"
+                    className="flex-1 min-w-0 text-right cursor-default"
                   >
                     <span className="block text-[11px] font-bold text-slate-900 truncate">{u.name}</span>
                     <span className="block text-[10px] text-slate-500 truncate">
                       {u.roleFa} — {u.organization}
                     </span>
-                  </button>
+                  </div>
 
                   {isActiveUser && (
                     <span className="px-1.5 py-0.5 text-[9px] rounded bg-indigo-600 text-white font-bold shrink-0">

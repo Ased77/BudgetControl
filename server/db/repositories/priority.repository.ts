@@ -16,10 +16,12 @@ type PriorityExecutor = DrizzleDb | Tx;
 
 type PriorityInsert = typeof priorities.$inferInsert;
 
-/** DTO → row (storage-bound). Undefined optionals become column defaults/nulls. */
-export function priorityToRow(p: CsrPriority): PriorityInsert {
+/** DTO → row (storage-bound). Undefined optionals become column defaults/nulls.
+ *  `actorId` is the verified author identity — never a client-supplied field. */
+export function priorityToRow(p: CsrPriority, actorId: string): PriorityInsert {
   return {
     id: p.id,
+    createdByUserId: actorId,
     code: Math.round(Number(p.code)),
     title: p.title,
     description: p.description ?? '',
@@ -61,7 +63,7 @@ function toDto(row: typeof priorities.$inferSelect): CsrPriority {
 }
 
 const MAX_INSERT_PARAMS = 60_000; // bind-parameter ceiling per statement
-const PRIORITY_COLUMNS = 15;
+const PRIORITY_COLUMNS = 16;
 const CHUNK_SIZE = Math.max(1, Math.floor(MAX_INSERT_PARAMS / PRIORITY_COLUMNS));
 
 export async function listPriorities(): Promise<CsrPriority[]> {
@@ -78,9 +80,9 @@ export async function getPriority(id: string): Promise<CsrPriority | undefined> 
   });
 }
 
-export async function upsertPriority(p: CsrPriority, executor: PriorityExecutor = db): Promise<void> {
+export async function upsertPriority(p: CsrPriority, actorId: string, executor: PriorityExecutor = db): Promise<void> {
   return withDbErrorMapping(async () => {
-    const row = priorityToRow(p);
+    const row = priorityToRow(p, actorId);
     await executor.insert(priorities).values(row).onConflictDoUpdate({ target: priorities.id, set: { ...row, id: undefined } });
   });
 }
@@ -97,12 +99,12 @@ export async function deletePriority(id: string): Promise<boolean> {
  * Replace the whole priority set in one transaction: the CSV import flow
  * expects "everything included in the file, nothing carried over".
  */
-export async function replaceAllPriorities(items: CsrPriority[]): Promise<void> {
+export async function replaceAllPriorities(items: CsrPriority[], actorId: string): Promise<void> {
   return withDbErrorMapping(async () => {
     await db.transaction(async (tx) => {
       await tx.delete(priorities);
       for (let offset = 0; offset < items.length; offset += CHUNK_SIZE) {
-        const chunk = items.slice(offset, offset + CHUNK_SIZE).map(priorityToRow);
+        const chunk = items.slice(offset, offset + CHUNK_SIZE).map((p) => priorityToRow(p, actorId));
         await tx.insert(priorities).values(chunk);
       }
     });

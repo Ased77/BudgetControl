@@ -80,11 +80,14 @@ function toDto(row: typeof auditLogs.$inferSelect): AuditLogItem {
   };
 }
 
-export async function addAuditLog(entry: AuditLogItem, executor: Executor = db): Promise<void> {
+/** `actorId` is the verified session identity (JWT `sub`) — server-stamped;
+ *  `userName`/`userRole` remain display values carried by the entry. */
+export async function addAuditLog(entry: AuditLogItem, actorId: string, executor: Executor = db): Promise<void> {
   return withDbErrorMapping(async () => {
     const row: typeof auditLogs.$inferInsert = {
       id: entry.id,
       timestamp: entry.timestamp,
+      actorUserId: actorId,
       userName: entry.userName,
       userRole: entry.userRole,
       actionType: entry.actionType,

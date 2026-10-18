@@ -378,8 +378,11 @@ END $$;
 -- first" ordering survives the import; the identity sequence is reset.
 DO $$
 BEGIN
-IF to_regclass('public.legacy_audit_logs') IS NOT NULL
-   AND EXISTS (SELECT 1 FROM legacy_audit_logs) THEN
+-- NOTE: Nest the empty-check INSIDE the existence check. Writing both on one
+-- `IF ... AND ...` line makes PL/pgSQL plan `legacy_audit_logs` eagerly and
+-- abort with 42P01 on a fresh database where the table never existed.
+IF to_regclass('public.legacy_audit_logs') IS NOT NULL THEN
+  IF EXISTS (SELECT 1 FROM legacy_audit_logs) THEN
   INSERT INTO audit_logs (id, seq, timestamp, user_name, user_role, action_type,
     target_priority_title, old_value, new_value, rationale, province, county)
   OVERRIDING SYSTEM VALUE
@@ -405,14 +408,15 @@ IF to_regclass('public.legacy_audit_logs') IS NOT NULL
     COALESCE((SELECT MAX(seq) FROM public.audit_logs), 0) + 1,
     false
   );
+  END IF;
 END IF;
 END $$;
 
 -- ------------------------------------------------------------- analysis_sources
 DO $$
 BEGIN
-IF to_regclass('public.legacy_analysis_sources') IS NOT NULL
-   AND EXISTS (SELECT 1 FROM legacy_analysis_sources) THEN
+IF to_regclass('public.legacy_analysis_sources') IS NOT NULL THEN
+  IF EXISTS (SELECT 1 FROM legacy_analysis_sources) THEN
   INSERT INTO analysis_sources (id, seq, title, summary, origin, kind, provider,
     source_url, published_at, linked_areas, reliability_score, status, reviewed_by,
     review_note, province, county, created_at)
@@ -448,6 +452,7 @@ IF to_regclass('public.legacy_analysis_sources') IS NOT NULL
     COALESCE((SELECT MAX(seq) FROM public.analysis_sources), 0) + 1,
     false
   );
+  END IF;
 END IF;
 END $$;
 

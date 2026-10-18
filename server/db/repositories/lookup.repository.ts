@@ -56,7 +56,7 @@ export async function listDepartments(): Promise<Department[]> {
   });
 }
 
-function departmentToRow(d: Department): typeof departments.$inferInsert {
+function departmentToRow(d: Department, actorId: string): typeof departments.$inferInsert {
   return {
     id: d.id,
     name: d.name,
@@ -75,12 +75,13 @@ function departmentToRow(d: Department): typeof departments.$inferInsert {
     province: d.province,
     county: d.county ?? null,
     description: d.description ?? '',
+    createdByUserId: actorId,
   };
 }
 
-export async function upsertDepartment(d: Department, executor: Executor = db): Promise<void> {
+export async function upsertDepartment(d: Department, actorId: string, executor: Executor = db): Promise<void> {
   return withDbErrorMapping(async () => {
-    const row = departmentToRow(d);
+    const row = departmentToRow(d, actorId);
     await executor.insert(departments).values(row).onConflictDoUpdate({ target: departments.id, set: row });
   });
 }
@@ -118,7 +119,7 @@ export async function listBudgetSources(): Promise<BudgetSource[]> {
   });
 }
 
-function budgetSourceToRow(s: BudgetSource): typeof budgetSources.$inferInsert {
+function budgetSourceToRow(s: BudgetSource, actorId: string): typeof budgetSources.$inferInsert {
   return {
     id: s.id,
     title: s.title,
@@ -135,12 +136,13 @@ function budgetSourceToRow(s: BudgetSource): typeof budgetSources.$inferInsert {
     status: s.status,
     province: s.province ?? null,
     county: s.county ?? null,
+    createdByUserId: actorId,
   };
 }
 
-export async function upsertBudgetSource(s: BudgetSource, executor: Executor = db): Promise<void> {
+export async function upsertBudgetSource(s: BudgetSource, actorId: string, executor: Executor = db): Promise<void> {
   return withDbErrorMapping(async () => {
-    const row = budgetSourceToRow(s);
+    const row = budgetSourceToRow(s, actorId);
     await executor.insert(budgetSources).values(row).onConflictDoUpdate({ target: budgetSources.id, set: row });
   });
 }
@@ -179,7 +181,7 @@ export async function listCrisesHarms(): Promise<CrisisHarmItem[]> {
   });
 }
 
-function crisisHarmToRow(c: CrisisHarmItem): typeof crisesHarms.$inferInsert {
+function crisisHarmToRow(c: CrisisHarmItem, actorId: string): typeof crisesHarms.$inferInsert {
   return {
     id: c.id,
     title: c.title,
@@ -197,12 +199,13 @@ function crisisHarmToRow(c: CrisisHarmItem): typeof crisesHarms.$inferInsert {
     status: c.status,
     activeProjectsCount: Math.round(Number(c.activeProjectsCount)) || 0,
     deficitIndexFa: c.deficitIndexFa,
+    createdByUserId: actorId,
   };
 }
 
-export async function upsertCrisisHarm(c: CrisisHarmItem, executor: Executor = db): Promise<void> {
+export async function upsertCrisisHarm(c: CrisisHarmItem, actorId: string, executor: Executor = db): Promise<void> {
   return withDbErrorMapping(async () => {
-    const row = crisisHarmToRow(c);
+    const row = crisisHarmToRow(c, actorId);
     await executor.insert(crisesHarms).values(row).onConflictDoUpdate({ target: crisesHarms.id, set: row });
   });
 }
@@ -239,7 +242,7 @@ export async function listExecutors(): Promise<ProjectExecutor[]> {
   });
 }
 
-function executorToRow(e: ProjectExecutor): typeof executors.$inferInsert {
+function executorToRow(e: ProjectExecutor, actorId: string): typeof executors.$inferInsert {
   return {
     id: e.id,
     name: e.name,
@@ -255,12 +258,13 @@ function executorToRow(e: ProjectExecutor): typeof executors.$inferInsert {
     coverageRegion: e.coverageRegion,
     province: e.province ?? null,
     county: e.county ?? null,
+    createdByUserId: actorId,
   };
 }
 
-export async function upsertExecutor(e: ProjectExecutor, executorDb: Executor = db): Promise<void> {
+export async function upsertExecutor(e: ProjectExecutor, actorId: string, executorDb: Executor = db): Promise<void> {
   return withDbErrorMapping(async () => {
-    const row = executorToRow(e);
+    const row = executorToRow(e, actorId);
     await executorDb.insert(executors).values(row).onConflictDoUpdate({ target: executors.id, set: row });
   });
 }
@@ -299,7 +303,7 @@ export async function listContractors(): Promise<Contractor[]> {
   });
 }
 
-function contractorToRow(c: Contractor): typeof contractors.$inferInsert {
+function contractorToRow(c: Contractor, actorId: string): typeof contractors.$inferInsert {
   return {
     id: c.id,
     companyName: c.companyName,
@@ -317,12 +321,13 @@ function contractorToRow(c: Contractor): typeof contractors.$inferInsert {
     status: c.status,
     province: c.province ?? null,
     county: c.county ?? null,
+    createdByUserId: actorId,
   };
 }
 
-export async function upsertContractor(c: Contractor, executor: Executor = db): Promise<void> {
+export async function upsertContractor(c: Contractor, actorId: string, executor: Executor = db): Promise<void> {
   return withDbErrorMapping(async () => {
-    const row = contractorToRow(c);
+    const row = contractorToRow(c, actorId);
     await executor.insert(contractors).values(row).onConflictDoUpdate({ target: contractors.id, set: row });
   });
 }

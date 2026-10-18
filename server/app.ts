@@ -1,4 +1,5 @@
 import express from 'express';
+import cookieParser from 'cookie-parser';
 import path from 'path';
 import {
   getOrganization,
@@ -40,6 +41,8 @@ import {
   getPoolStats,
 } from './database.js';
 import type { RequestHandler } from 'express';
+import { authRouter } from './auth/routes.js';
+import { requireAuth, requirePermission } from './auth/middleware.js';
 import { calculateSmartRecommendations } from '../src/utils/recommendationEngine.js';
 import { toPersianDigits } from '../src/utils/numberUtils.js';
 import type { CsrPriority, ExecutiveProject, OrganizationConfig } from '../src/types.js';
@@ -48,6 +51,19 @@ import type { CsrPriority, ExecutiveProject, OrganizationConfig } from '../src/t
 const wrap = (fn: express.RequestHandler): express.RequestHandler => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);
 };
+
+/**
+ * The verified user_id of the request — only ever read from `req.auth`,
+ * which exists exactly when requireAuth has passed. Throwing (never
+ * returning a placeholder) keeps the invariant: no verified identity,
+ * no business logic.
+ */
+function actorId(req: express.Request): string {
+  if (!req.auth) {
+    throw Object.assign(new Error('user_id missing from request context'), { status: 401 });
+  }
+  return req.auth.userId;
+}
 
 export interface CreateAppOptions {
   /**
@@ -105,8 +121,14 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
 
   app.use(express.json({ limit: '10mb' }));
 
+  // Parses the httpOnly session cookies (csr_at / csr_rt) into req.cookies.
+  app.use(cookieParser());
+
   // --- API ROUTES ---
 
+  // Identity endpoints are public by definition: they create, exchange or
+  // revoke session credentials. Everything else is behind requireAuth below.
+  app.use('/api/auth', authRouter);
   // Health reflects real persistence state: it pings PostgreSQL on every call
   // and answers 503 while the database is unreachable, so an orchestrator
   // restarts or holds traffic instead of silently serving errors.
@@ -133,8 +155,12 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
   }));
 
   // -----------------------------------------------------------------
-  // PostgreSQL-backed CRUD API
+  // Authenticated CRUD API — requireAuth runs BEFORE any business logic,
+  // so every handler below reads req.auth (verified user_id, role, scope)
+  // from the moment it executes. There is no anonymous path into /api:
+  // this is requirement 1 — authentication-first on every user-data route.
   // -----------------------------------------------------------------
+  app.use('/api', requireAuth);
 
   // Calculate budget allocation in Toman and Rial (from DB priorities)
   app.post('/api/calculate', wrap(async (req, res) => {
@@ -190,9 +216,11 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
   app.get('/api/organization', wrap(async (req, res) => {
     res.json(await getOrganization());
   }));
-  app.put('/api/organization', wrap(async (req, res) => {
+  app.put('/api/organization', requirePermission('canManageBudget'), wrap(async (req, res) => {
     const org = req.body as OrganizationConfig;
-    await saveOrganization(org);
+    // The verified operator is stamped server-side; any client-supplied
+    // updatedByUserId in the payload is discarded.
+    await saveOrganization(org, actorId(req));
     res.json(await getOrganization());
   }));
 
@@ -205,26 +233,26 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
   app.get('/api/priorities', wrap(async (req, res) => {
     res.json(await listPriorities());
   }));
-  app.post('/api/priorities', wrap(async (req, res) => {
+  app.post('/api/priorities', requirePermission('canManagePriorities'), wrap(async (req, res) => {
     const priority = req.body as CsrPriority;
-    await upsertPriority(priority);
+    await upsertPriority(priority, actorId(req));
     res.status(201).json(priority);
   }));
-  app.put('/api/priorities/import', wrap(async (req, res) => {
+  app.put('/api/priorities/import', requirePermission('canManagePriorities'), wrap(async (req, res) => {
     // Bulk replace (CSV/Excel import flow)
     const items = req.body as CsrPriority[];
     if (!Array.isArray(items)) {
       return res.status(400).json({ error: 'Expected an array of priorities' });
     }
-    await replaceAllPriorities(items);
+    await replaceAllPriorities(items, actorId(req));
     res.json({ count: items.length });
   }));
-  app.put('/api/priorities/:id', wrap(async (req, res) => {
+  app.put('/api/priorities/:id', requirePermission('canManagePriorities'), wrap(async (req, res) => {
     const priority = req.body as CsrPriority;
     if (priority.id !== req.params.id) {
       return res.status(400).json({ error: 'Body id must match URL id' });
     }
-    await upsertPriority(priority);
+    await upsertPriority(priority, actorId(req));
     res.json(priority);
   }));
   app.delete('/api/priorities/:id', wrap(async (req, res) => {
@@ -237,17 +265,20 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
   app.get('/api/projects', wrap(async (req, res) => {
     res.json(await listProjects());
   }));
-  app.post('/api/projects', wrap(async (req, res) => {
+  app.post('/api/projects', requirePermission('canCreateProject'), wrap(async (req, res) => {
     const project = req.body as ExecutiveProject;
-    await upsertProject(project);
+    await upsertProject(project, actorId(req));
     res.status(201).json(project);
   }));
-  app.put('/api/projects/:id', wrap(async (req, res) => {
+  app.put('/api/projects/:id', requirePermission('canCreateProject'), wrap(async (req, res) => {
     const project = req.body as ExecutiveProject;
     if (project.id !== req.params.id) {
       return res.status(400).json({ error: 'Body id must match URL id' });
     }
-    await upsertProject(project);
+    // Ownership stamp comes from the session, never the request body —
+    // a client claiming another user's identity gets silently overridden.
+    project.createdByUserId = actorId(req);
+    await upsertProject(project, actorId(req));
     res.json(project);
   }));
   app.patch('/api/projects/:id/status', wrap(async (req, res) => {
@@ -266,13 +297,13 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
   app.get('/api/departments', wrap(async (req, res) => {
     res.json(await listDepartments());
   }));
-  app.post('/api/departments', wrap(async (req, res) => {
-    await upsertDepartment(req.body);
+  app.post('/api/departments', requirePermission('canEditDepartments'), wrap(async (req, res) => {
+    await upsertDepartment(req.body, actorId(req));
     res.status(201).json(req.body);
   }));
-  app.put('/api/departments/:id', wrap(async (req, res) => {
+  app.put('/api/departments/:id', requirePermission('canEditDepartments'), wrap(async (req, res) => {
     if (req.body.id !== req.params.id) return res.status(400).json({ error: 'Body id must match URL id' });
-    await upsertDepartment(req.body);
+    await upsertDepartment(req.body, actorId(req));
     res.json(req.body);
   }));
   app.delete('/api/departments/:id', wrap(async (req, res) => {
@@ -285,13 +316,13 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
   app.get('/api/budget-sources', wrap(async (req, res) => {
     res.json(await listBudgetSources());
   }));
-  app.post('/api/budget-sources', wrap(async (req, res) => {
-    await upsertBudgetSource(req.body);
+  app.post('/api/budget-sources', requirePermission('canManageBudget'), wrap(async (req, res) => {
+    await upsertBudgetSource(req.body, actorId(req));
     res.status(201).json(req.body);
   }));
-  app.put('/api/budget-sources/:id', wrap(async (req, res) => {
+  app.put('/api/budget-sources/:id', requirePermission('canManageBudget'), wrap(async (req, res) => {
     if (req.body.id !== req.params.id) return res.status(400).json({ error: 'Body id must match URL id' });
-    await upsertBudgetSource(req.body);
+    await upsertBudgetSource(req.body, actorId(req));
     res.json(req.body);
   }));
   app.delete('/api/budget-sources/:id', wrap(async (req, res) => {
@@ -304,13 +335,13 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
   app.get('/api/crises-harms', wrap(async (req, res) => {
     res.json(await listCrisesHarms());
   }));
-  app.post('/api/crises-harms', wrap(async (req, res) => {
-    await upsertCrisisHarm(req.body);
+  app.post('/api/crises-harms', requirePermission('canManageCrises'), wrap(async (req, res) => {
+    await upsertCrisisHarm(req.body, actorId(req));
     res.status(201).json(req.body);
   }));
-  app.put('/api/crises-harms/:id', wrap(async (req, res) => {
+  app.put('/api/crises-harms/:id', requirePermission('canManageCrises'), wrap(async (req, res) => {
     if (req.body.id !== req.params.id) return res.status(400).json({ error: 'Body id must match URL id' });
-    await upsertCrisisHarm(req.body);
+    await upsertCrisisHarm(req.body, actorId(req));
     res.json(req.body);
   }));
   app.delete('/api/crises-harms/:id', wrap(async (req, res) => {
@@ -323,13 +354,13 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
   app.get('/api/executors', wrap(async (req, res) => {
     res.json(await listExecutors());
   }));
-  app.post('/api/executors', wrap(async (req, res) => {
-    await upsertExecutor(req.body);
+  app.post('/api/executors', requirePermission('canManageExecutors'), wrap(async (req, res) => {
+    await upsertExecutor(req.body, actorId(req));
     res.status(201).json(req.body);
   }));
-  app.put('/api/executors/:id', wrap(async (req, res) => {
+  app.put('/api/executors/:id', requirePermission('canManageExecutors'), wrap(async (req, res) => {
     if (req.body.id !== req.params.id) return res.status(400).json({ error: 'Body id must match URL id' });
-    await upsertExecutor(req.body);
+    await upsertExecutor(req.body, actorId(req));
     res.json(req.body);
   }));
   app.delete('/api/executors/:id', wrap(async (req, res) => {
@@ -342,13 +373,13 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
   app.get('/api/contractors', wrap(async (req, res) => {
     res.json(await listContractors());
   }));
-  app.post('/api/contractors', wrap(async (req, res) => {
-    await upsertContractor(req.body);
+  app.post('/api/contractors', requirePermission('canManageContractors'), wrap(async (req, res) => {
+    await upsertContractor(req.body, actorId(req));
     res.status(201).json(req.body);
   }));
-  app.put('/api/contractors/:id', wrap(async (req, res) => {
+  app.put('/api/contractors/:id', requirePermission('canManageContractors'), wrap(async (req, res) => {
     if (req.body.id !== req.params.id) return res.status(400).json({ error: 'Body id must match URL id' });
-    await upsertContractor(req.body);
+    await upsertContractor(req.body, actorId(req));
     res.json(req.body);
   }));
   app.delete('/api/contractors/:id', wrap(async (req, res) => {
@@ -366,12 +397,14 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
   }));
 
   // --- Audit Logs ---
-  app.get('/api/audit-logs', wrap(async (req, res) => {
+  app.get('/api/audit-logs', requirePermission('canAuditLogs'), wrap(async (req, res) => {
     const limit = Math.min(Number(req.query.limit) || 200, 1000);
     res.json(await listAuditLogs(limit));
   }));
-  app.post('/api/audit-logs', wrap(async (req, res) => {
-    await addAuditLog(req.body);
+  app.post('/api/audit-logs', requirePermission('canAuditLogs'), wrap(async (req, res) => {
+    // actorUserId is server-derived; callers can contribute narrative text
+    // but never the identity column.
+    await addAuditLog(req.body, actorId(req));
     res.status(201).json({ ok: true });
   }));
 
@@ -382,12 +415,12 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
     res.json(await listAnalysisSources());
   }));
   app.post('/api/analysis-sources', wrap(async (req, res) => {
-    await upsertAnalysisSource(req.body);
+    await upsertAnalysisSource(req.body, actorId(req));
     res.status(201).json(req.body);
   }));
   app.put('/api/analysis-sources/:id', wrap(async (req, res) => {
     if (req.body.id !== req.params.id) return res.status(400).json({ error: 'Body id must match URL id' });
-    await upsertAnalysisSource(req.body);
+    await upsertAnalysisSource(req.body, actorId(req));
     res.json(req.body);
   }));
   app.delete('/api/analysis-sources/:id', wrap(async (req, res) => {

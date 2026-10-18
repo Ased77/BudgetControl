@@ -52,6 +52,7 @@ import {
 import { buildCountyDataset, type CountyDataset } from '../../src/data/countyTemplates.js';
 import { OMIDIYEH_COUNTY } from '../../src/data/omidiyehData.js';
 import { db } from './client.js';
+import { SYSTEM_ACTOR_ID } from './system-actor.js';
 import { projectToRow, contributionsToRows } from './repositories/project.repository.js';
 import { priorityToRow } from './repositories/priority.repository.js';
 import { analysisSourceToRow } from './repositories/analysis-source.repository.js';
@@ -82,7 +83,9 @@ const CHUNK = 200;
 
 type InsertValues = Record<string, unknown>;
 
-/* DataRow builders (local to the seed; repositories own the same tables). */
+/* DataRow builders (local to the seed; repositories own the same tables).
+   Seeded data is system-generated, so every actor column is stamped with
+   the permanent SYSTEM identity — the seed alone writes with it. */
 
 type DepartmentInsert = typeof departmentsTable.$inferInsert;
 type BudgetInsert = typeof budgetSourcesTable.$inferInsert;
@@ -106,6 +109,7 @@ function departmentRow(d: Department): DepartmentInsert {
     performanceScore: Number(d.performanceScore ?? 0),
     administrativeLevel: d.administrativeLevel, province: d.province,
     county: d.county ?? null, description: d.description ?? '',
+    createdByUserId: SYSTEM_ACTOR_ID,
   };
 }
 
@@ -118,6 +122,7 @@ function budgetSourceRow(s: BudgetSource): BudgetInsert {
     fiscalYear: s.fiscalYear, sponsorOrganization: s.sponsorOrganization, targetScope: s.targetScope,
     restrictionNote: s.restrictionNote ?? null, status: s.status,
     province: s.province ?? null, county: s.county ?? null,
+    createdByUserId: SYSTEM_ACTOR_ID,
   };
 }
 
@@ -130,6 +135,7 @@ function crisisRow(c: CrisisHarmItem): CrisisInsert {
     primaryCause: c.primaryCause, recommendedIntervention: c.recommendedIntervention,
     status: c.status, activeProjectsCount: Math.round(Number(c.activeProjectsCount)) || 0,
     deficitIndexFa: c.deficitIndexFa,
+    createdByUserId: SYSTEM_ACTOR_ID,
   };
 }
 
@@ -141,6 +147,7 @@ function executorRow(e: ProjectExecutor): ExecutorInsert {
     completedProjectsCount: Math.round(Number(e.completedProjectsCount)) || 0,
     successRate: Number(e.successRate ?? 0), capacityStatus: e.capacityStatus,
     coverageRegion: e.coverageRegion, province: e.province ?? null, county: e.county ?? null,
+    createdByUserId: SYSTEM_ACTOR_ID,
   };
 }
 
@@ -154,6 +161,7 @@ function contractorRow(c: Contractor): ContractorInsert {
     satisfactionRating: Number(c.satisfactionRating ?? 3),
     freeCapacitySlots: Math.round(Number(c.freeCapacitySlots)) || 0,
     phone: c.phone, status: c.status, province: c.province ?? null, county: c.county ?? null,
+    createdByUserId: SYSTEM_ACTOR_ID,
   };
 }
 
@@ -175,6 +183,7 @@ function auditRow(a: typeof INITIAL_AUDIT_LOGS[number]): AuditInsert {
     actionType: a.actionType, targetPriorityTitle: a.targetPriorityTitle ?? null,
     oldValue: a.oldValue ?? null, newValue: a.newValue ?? null, rationale: a.rationale ?? null,
     province: a.province ?? null, county: a.county ?? null,
+    actorUserId: SYSTEM_ACTOR_ID,
   };
 }
 
@@ -282,7 +291,7 @@ export async function seedDatabase(): Promise<void> {
     await insert(departmentsTable, datasetDepartments.map(departmentRow));
     await insert(budgetSourcesTable, datasetBudgetSources.map(budgetSourceRow));
     await insert(crisesHarmsTable, datasetCrises.map(crisisRow));
-    await insert(prioritiesTable, INITIAL_PRIORITIES.map(priorityToRow));
+    await insert(prioritiesTable, INITIAL_PRIORITIES.map((p) => priorityToRow(p, SYSTEM_ACTOR_ID)));
     await insert(executorsTable, datasetExecutors.map(executorRow));
     await insert(contractorsTable, datasetContractors.map(contractorRow));
     await insert(usersTable, datasetUsers.map((u) => userRow(u, departmentIds)));
@@ -302,6 +311,7 @@ export async function seedDatabase(): Promise<void> {
       fiscalYear: INITIAL_ORGANIZATION.fiscalYear,
       description: INITIAL_ORGANIZATION.description ?? null,
       updatedAt: INITIAL_ORGANIZATION.updatedAt,
+      updatedByUserId: SYSTEM_ACTOR_ID,
     }]);
 
     await insert(rolesTable, INITIAL_ROLES_PERMISSIONS.map((r) => ({
@@ -322,7 +332,7 @@ export async function seedDatabase(): Promise<void> {
       scopeLevel: r.scopeLevel,
     })));
 
-    await insert(projectsTable, repairedProjects.map(projectToRow));
+    await insert(projectsTable, repairedProjects.map((p) => projectToRow(p, SYSTEM_ACTOR_ID)));
 
     const contributionRows: ContributionInsert[] = [];
     for (const p of repairedProjects) {
@@ -335,7 +345,7 @@ export async function seedDatabase(): Promise<void> {
     await insert(projectContributions, contributionRows);
 
     await insert(auditLogsTable, datasetAuditLogs.map(auditRow));
-    await insert(analysisSourcesTable, INITIAL_ANALYSIS_SOURCES.map(analysisSourceToRow));
+    await insert(analysisSourcesTable, INITIAL_ANALYSIS_SOURCES.map((s) => analysisSourceToRow(s, SYSTEM_ACTOR_ID)));
 
     /* The gate rides in the same transaction — atomic with the data. */
     await tx.execute(

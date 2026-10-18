@@ -53,6 +53,8 @@ export interface OrganizationConfig {
   fiscalYear: string;
   description?: string;
   updatedAt: string;
+  /** Last verified operator identity (uuid, server-stamped — display only). */
+  updatedByUserId?: string;
 }
 
 /* =========================================================================
@@ -80,6 +82,8 @@ export interface Department {
   province: string;
   county?: string;
   description: string;
+  /** Author identity (uuid, display only — write paths stamp it from the actor). */
+  createdByUserId?: string;
 }
 
 /* =========================================================================
@@ -111,6 +115,7 @@ export interface BudgetSource {
   province?: string;
   /** شهرستان مالک منبع مالی */
   county?: string;
+  createdByUserId?: string;
 }
 
 /* =========================================================================
@@ -135,6 +140,7 @@ export interface CrisisHarmItem {
   status: 'UNRESOLVED' | 'UNDER_INTERVENTION' | 'CONTROLLED';
   activeProjectsCount: number;
   deficitIndexFa: string; // e.g. "بحران حاد تنش آبی", "کمبود تخت درمانی"
+  createdByUserId?: string;
 }
 
 /* =========================================================================
@@ -157,6 +163,7 @@ export interface CsrPriority {
   minPercent?: number;
   maxPercent?: number;
   subItems?: string[];
+  createdByUserId?: string;
 }
 
 export interface PriorityAllocation {
@@ -198,6 +205,7 @@ export interface ProjectExecutor {
   province?: string;
   /** شهرستان حوزه فعالیت مجری */
   county?: string;
+  createdByUserId?: string;
 }
 
 /* =========================================================================
@@ -224,6 +232,7 @@ export interface Contractor {
   province?: string;
   /** شهرستان محل فعالیت پیمانکار */
   county?: string;
+  createdByUserId?: string;
 }
 
 /* =========================================================================
@@ -518,4 +527,5 @@ export interface AnalysisSource {
   province: string;
   county: string;
   createdAt: string;
+  createdByUserId?: string;
 }

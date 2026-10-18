@@ -320,8 +320,10 @@ export async function countProjectsByStatus(county?: string): Promise<Record<str
 /**
  * Storage-bound projection of the shared DTO. Display names intentionally
  * not stored: the data is not copied; the API recomposites them via joins.
+ * `actorId` is the verified creator (auth layer); the DTO's display-only
+ * `createdByUserId` is legacy identity data and is never written here.
  */
-export function projectToRow(p: ExecutiveProject): typeof projects.$inferInsert {
+export function projectToRow(p: ExecutiveProject, actorId: string): typeof projects.$inferInsert {
   return {
     id: p.id,
     code: p.code,
@@ -334,7 +336,7 @@ export function projectToRow(p: ExecutiveProject): typeof projects.$inferInsert 
     executorId: p.executorId || null,
     contractorId: p.contractorId ?? null,
     crisisHarmId: p.crisisHarmId ?? null,
-    createdByUserId: p.createdByUserId ?? null,
+    createdByUserId: actorId,
     administrativeLevel: p.administrativeLevel,
     province: p.province,
     county: p.county,
@@ -382,10 +384,10 @@ export function contributionsToRows(
  * part of a larger transaction (seed, import) via the `executor` argument
  * — being inside a transaction, it becomes a savepoint automatically.
  */
-export async function upsertProject(p: ExecutiveProject, executor: Executor = db): Promise<void> {
+export async function upsertProject(p: ExecutiveProject, actorId: string, executor: Executor = db): Promise<void> {
   return withDbErrorMapping(async () => {
     await executor.transaction(async (tx) => {
-      const row = projectToRow(p);
+      const row = projectToRow(p, actorId);
       await tx.insert(projects).values(row).onConflictDoUpdate({ target: projects.id, set: row });
 
       await tx.delete(projectContributions).where(eq(projectContributions.projectId, p.id));

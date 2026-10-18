@@ -26,6 +26,7 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { db, closePool, pool } from './client.js';
 import { seedDatabase } from './seed.js';
 import { refreshPriorityTitlesIfNeeded, ensureOfficeHeadRoleIfNeeded } from './repairs.js';
+import { ensureBootstrapAdminIfNeeded } from '../auth/bootstrap.js';
 
 /** Arbitrary but stable key so concurrent replicas cannot race the DDL. */
 const MIGRATION_LOCK_KEY = 4242001002;
@@ -119,6 +120,9 @@ export async function initializeDatabase(): Promise<void> {
   await seedIfEmpty();
   await refreshPriorityTitlesIfNeeded();
   await ensureOfficeHeadRoleIfNeeded();
+  // Last boot step: guarantees ≥ 1 real login exists so the very first
+  // session is a verified identity (the SYSTEM actor is never loggable).
+  await ensureBootstrapAdminIfNeeded();
 }
 
 /** Report which legacy document tables are still around (post-migration). */

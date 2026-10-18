@@ -43,8 +43,12 @@ import {
   pgTable,
   primaryKey,
   text,
+  timestamp,
+  uniqueIndex,
+  uuid,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 
 /* Column names are derived automatically from the property names by the
    `casing: 'snake_case'` config (see drizzle.config.ts and client.ts), so no
@@ -142,6 +146,8 @@ export const organization = pgTable('organization', {
   fiscalYear: text().notNull(),
   description: text(),
   updatedAt: text().notNull(),
+  /** Last verified operator that persisted this configuration. */
+  updatedByUserId: uuid().notNull().references((): AnyPgColumn => authUsers.id),
 }, (t) => [
   check('organization_org_type_check', sql`${t.orgType} IN ('GOVERNMENT', 'PUBLIC', 'PRIVATE', 'SEMI_PRIVATE', 'COOPERATIVE')`),
   check('organization_currency_check', sql`${t.currencyUnit} IN ('TOMAN', 'RIAL')`),
@@ -174,6 +180,10 @@ export const departments = pgTable('departments', {
   province: text().notNull(),
   county: text(),
   description: text().notNull(),
+  /** Author identity — who created this row (auth layer, NOT client input).
+   *  `AnyPgColumn` return annotation breaks the TS cycle through authUsers
+   *  (mutual FKs are fine in SQL but collapse drizzle's alias inference). */
+  createdByUserId: uuid().notNull().references((): AnyPgColumn => authUsers.id),
 }, (t) => [
   check('departments_category_check', sql`${t.category} IN ('INFRASTRUCTURE', 'HEALTH', 'EDUCATION', 'SOCIAL_WELFARE', 'AGRICULTURE', 'ENVIRONMENT', 'MUNICIPAL_RURAL')`),
   check('departments_level_check', sql`${t.administrativeLevel} IN ('NATIONAL', 'PROVINCIAL', 'COUNTY', 'RURAL_DISTRICT')`),
@@ -203,6 +213,7 @@ export const budgetSources = pgTable('budget_sources', {
   status: text().notNull(),
   province: text(),
   county: text(),
+  createdByUserId: uuid().notNull().references((): AnyPgColumn => authUsers.id),
 }, (t) => [
   check('budget_sources_type_check', sql`${t.sourceType} IN ('CSR', 'GOVERNMENT', 'DEHYARI_MUNICIPALITY', 'CHARITY_FOUNDATION', 'BANK_FACILITY', 'PUBLIC_PARTICIPATION')`),
   check('budget_sources_status_check', sql`${t.status} IN ('ACTIVE', 'DEPLETED', 'RESERVED')`),
@@ -234,6 +245,7 @@ export const crisesHarms = pgTable('crises_harms', {
   activeProjectsCount: integer().notNull(),
   /** Persian indicator label, e.g. «بحران حاد تنش آبی». */
   deficitIndexFa: text().notNull(),
+  createdByUserId: uuid().notNull().references((): AnyPgColumn => authUsers.id),
 }, (t) => [
   check('crises_harms_level_check', sql`${t.level} IN ('NATIONAL', 'PROVINCIAL', 'COUNTY', 'RURAL_DISTRICT')`),
   check('crises_harms_urgency_check', sql`${t.urgency} IN ('CRITICAL', 'HIGH', 'MEDIUM', 'LOW')`),
@@ -265,6 +277,7 @@ export const priorities = pgTable('priorities', {
   minPercent: doublePrecision(),
   maxPercent: doublePrecision(),
   subItems: text().array().notNull().default(sql`'{}'::text[]`),
+  createdByUserId: uuid().notNull().references((): AnyPgColumn => authUsers.id),
 }, (t) => [
   check('priorities_code_check', sql`${t.code} >= 1`),
   check('priorities_default_percentage_check', sql`${t.defaultPercentage} BETWEEN 0 AND 100`),
@@ -293,6 +306,7 @@ export const executors = pgTable('executors', {
   coverageRegion: text().notNull(),
   province: text(),
   county: text(),
+  createdByUserId: uuid().notNull().references((): AnyPgColumn => authUsers.id),
 }, (t) => [
   check('executors_type_check', sql`${t.type} IN ('GOVERNMENTAL', 'JIHADI_FOUNDATION', 'PUBLIC_COMMUNITY', 'NGO', 'COOPERATIVE', 'PRIVATE')`),
   check('executors_capacity_check', sql`${t.capacityStatus} IN ('AVAILABLE', 'OPTIMAL', 'OVERLOADED')`),
@@ -323,6 +337,7 @@ export const contractors = pgTable('contractors', {
   status: text().notNull(),
   province: text(),
   county: text(),
+  createdByUserId: uuid().notNull().references((): AnyPgColumn => authUsers.id),
 }, (t) => [
   check('contractors_grade_check', sql`${t.grade} IN ('GRADE_1', 'GRADE_2', 'GRADE_3', 'GRADE_4', 'GRADE_5', 'LOCAL_AUTHORIZED')`),
   check('contractors_status_check', sql`${t.status} IN ('VERIFIED', 'UNDER_EVALUATION', 'SUSPENDED')`),
@@ -406,7 +421,7 @@ export const projects = pgTable('projects', {
   /** The crisis/harm this project answers. */
   crisisHarmId: text().references(() => crisesHarms.id),
   /** Ownership stamp: the OFFICE_HEAD role sees only its own records. */
-  createdByUserId: text().references(() => users.id),
+  createdByUserId: uuid().notNull().references((): AnyPgColumn => authUsers.id),
   /** Multi-agency (اشتراکی/بین‌داشگاهی) project? */
   isMultiDepartment: boolean().notNull().default(false),
 
@@ -497,6 +512,8 @@ export const projectContributions = pgTable('project_contributions', {
 export const auditLogs = pgTable('audit_logs', {
   id: text().primaryKey(),
   seq: bigint({ mode: 'number' }).generatedAlwaysAsIdentity(),
+  /** The verified session identity — server-stamped, never client input. */
+  actorUserId: uuid().notNull().references((): AnyPgColumn => authUsers.id),
   /** Persian display timestamp from the UI. */
   timestamp: text().notNull(),
   userName: text().notNull(),
@@ -541,6 +558,7 @@ export const analysisSources = pgTable('analysis_sources', {
   province: text().notNull(),
   county: text().notNull(),
   createdAt: text().notNull(),
+  actorUserId: uuid().notNull().references((): AnyPgColumn => authUsers.id),
 }, (t) => [
   check('analysis_sources_origin_check', sql`${t.origin} IN ('AI', 'HUMAN')`),
   check('analysis_sources_kind_check', sql`${t.kind} IN ('NEWS', 'OFFICIAL_STAT', 'FIELD_REPORT', 'SATELLITE', 'INTERVIEW', 'SOCIAL_MEDIA')`),
@@ -548,6 +566,74 @@ export const analysisSources = pgTable('analysis_sources', {
   check('analysis_sources_reliability_check', sql`${t.reliabilityScore} BETWEEN 0 AND 100`),
   index('idx_analysis_sources_origin').on(t.origin),
   index('idx_analysis_sources_status').on(t.status),
+]);
+
+/* =========================================================================
+   auth_users — THE SINGLE SOURCE OF TRUTH for identity.
+
+   Every verified user_id in the system is `auth_users.id`: it enters the
+   system only via the auth layer (login/register/refresh), is carried in
+   the JWT `sub` claim, is re-validated against this table on every
+   authenticated request, and is the FK target of every business table's
+   actor column. No other id may represent a person for security purposes.
+   The legacy `users` registry above is display data only (retired).
+   ========================================================================= */
+export const authUsers = pgTable('auth_users', {
+  id: uuid().primaryKey(),
+  /** Login identity, case-insensitively unique (functional unique index). */
+  email: text().notNull(),
+  /** scrypt credential — see server/auth/password.ts for the exact format. */
+  passwordHash: text().notNull(),
+  displayName: text().notNull(),
+  role: text().notNull(),
+  departmentId: text().references((): AnyPgColumn => departments.id),
+  allowedLocationId: text().references((): AnyPgColumn => locations.id),
+  province: text(),
+  county: text(),
+  /** Disabled accounts fail authentication immediately (soft revocation). */
+  isActive: boolean().notNull().default(true),
+  /**
+   * Global revocation gate: access tokens carry their `iat`; any token
+   * issued earlier than this instant is stale and rejected. A password
+   * change (or an admin lockout) bumps it, invalidating every token at
+   * once without touching the refresh-token table.
+   */
+  tokensValidFrom: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('auth_users_email_lower_unique').on(sql`lower(${t.email})`),
+  check('auth_users_role_check', sql`${t.role} IN ('ADMIN', 'PROVINCIAL_GOVERNOR', 'DEPARTMENT_HEAD', 'OFFICE_HEAD', 'REGIONAL_MANAGER', 'PLANNING_SPECIALIST', 'AUDITOR', 'DEHYAR_COUNCIL')`),
+  index('idx_auth_users_role').on(t.role),
+]);
+
+/* =========================================================================
+   refresh_tokens — rotating refresh tokens, hashed at rest.
+
+   One row per issued token. The raw token exists only in the httpOnly
+   cookie; this table stores `sha256(raw)`. Rotation links generations
+   through `family_id`: presenting a token that was already consumed
+   (replay) revokes the entire family — a stolen refresh token cannot
+   outlive its victim's next successful refresh.
+   ========================================================================= */
+export const refreshTokens = pgTable('refresh_tokens', {
+  id: uuid().primaryKey(),
+  userId: uuid().notNull().references((): AnyPgColumn => authUsers.id, { onDelete: 'cascade' }),
+  /** sha256 hex of the raw token — never the raw value itself. */
+  tokenHash: text().notNull(),
+  /** Rotation family: all tokens minted from one login chain. */
+  familyId: uuid().notNull(),
+  userAgent: text(),
+  ipAddress: text(),
+  expiresAt: timestamp({ withTimezone: true }).notNull(),
+  /** Set when this token was traded in for a new one (rotation). */
+  consumedAt: timestamp({ withTimezone: true }),
+  /** Individual revocation (logout / reuse detection / admin action). */
+  revokedAt: timestamp({ withTimezone: true }),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('refresh_tokens_hash_unique').on(t.tokenHash),
+  index('idx_refresh_tokens_user').on(t.userId),
+  index('idx_refresh_tokens_family').on(t.familyId),
 ]);
 
 /* =========================================================================
@@ -561,3 +647,5 @@ export type LocationIndicatorsRow = typeof locationIndicators.$inferSelect;
 export type UserRow = typeof users.$inferSelect;
 export type AuditLogRow = typeof auditLogs.$inferSelect;
 export type AnalysisSourceRow = typeof analysisSources.$inferSelect;
+export type AuthUserRow = typeof authUsers.$inferSelect;
+export type RefreshTokenRow = typeof refreshTokens.$inferSelect;

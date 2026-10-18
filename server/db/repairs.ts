@@ -9,6 +9,7 @@
 
 import { and, eq, isNull } from 'drizzle-orm';
 import { db } from './client.js';
+import { SYSTEM_ACTOR_ID } from './system-actor.js';
 import { priorities, projects, rolesPermissions, users } from './schema.js';
 import { withDbErrorMapping } from './errors.js';
 import { INITIAL_USERS, INITIAL_ROLES_PERMISSIONS, INITIAL_PROJECTS } from '../../src/data/initialData.js';
@@ -117,11 +118,13 @@ export async function ensureOfficeHeadRoleIfNeeded(): Promise<void> {
         }
 
         // (3) creator stamps on the demo projects
+        // (auth_user ids required; the legacy demo user id is display data,
+        // so the stamp is the SYSTEM identity)
         for (const seededProject of INITIAL_PROJECTS) {
           if (seededProject.createdByUserId !== demoUser.id) continue;
           await tx
             .update(projects)
-            .set({ createdByUserId: demoUser.id })
+            .set({ createdByUserId: SYSTEM_ACTOR_ID })
             .where(and(eq(projects.id, seededProject.id), isNull(projects.createdByUserId)));
         }
       }

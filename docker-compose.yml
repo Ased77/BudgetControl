@@ -81,6 +81,16 @@ services:
       PG_CONNECTION_TIMEOUT_MS: ${PG_CONNECTION_TIMEOUT_MS:-5000}
       PG_STATEMENT_TIMEOUT_MS: ${PG_STATEMENT_TIMEOUT_MS:-60000}
       DB_WAIT_TIMEOUT_MS: ${DB_WAIT_TIMEOUT_MS:-60000}
+      # Authentication (see .env.example — required):
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:?generate one with openssl rand -hex 32 and put it in .env}
+      AUTH_ACCESS_TTL_SECONDS: ${AUTH_ACCESS_TTL_SECONDS:-900}
+      AUTH_REFRESH_TTL_DAYS: ${AUTH_REFRESH_TTL_DAYS:-30}
+      AUTH_COOKIE_SAMESITE: ${AUTH_COOKIE_SAMESITE:-lax}
+      AUTH_ALLOW_REGISTRATION: ${AUTH_ALLOW_REGISTRATION:-0}
+      # Optional first-admin bootstrap; unset AUTH_BOOTSTRAP_EMAIL makes the
+      # server generate and print a one-time password on first boot.
+      AUTH_BOOTSTRAP_EMAIL: ${AUTH_BOOTSTRAP_EMAIL:-}
+      AUTH_BOOTSTRAP_PASSWORD: ${AUTH_BOOTSTRAP_PASSWORD:-}
     ports:
       # Loopback by default. Terminate TLS in front of it (nginx, Caddy,
       # Traefik…) and only then widen the binding to 0.0.0.0.

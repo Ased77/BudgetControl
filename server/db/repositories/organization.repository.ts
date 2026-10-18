@@ -39,8 +39,9 @@ export async function getOrganization(): Promise<OrganizationConfig> {
   });
 }
 
-/** Insert-or-replace the single organization row in one statement. */
-export async function saveOrganization(org: OrganizationConfig): Promise<void> {
+/** Insert-or-replace the single organization row in one statement.
+ *  `actorId` stamps `updated_by_user_id` with the verified operator. */
+export async function saveOrganization(org: OrganizationConfig, actorId: string): Promise<void> {
   return withDbErrorMapping(async () => {
     const values = {
       id: org.id || DEFAULT_ID,
@@ -58,6 +59,7 @@ export async function saveOrganization(org: OrganizationConfig): Promise<void> {
       fiscalYear: org.fiscalYear,
       description: org.description ?? null,
       updatedAt: org.updatedAt,
+      updatedByUserId: actorId,
     };
     await db
       .insert(organization)

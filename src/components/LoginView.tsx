@@ -1,74 +1,54 @@
-import React, { useEffect, useState } from 'react';
-import { useAppContext } from '../context/AppContext';
-import { toPersianDigits } from '../utils/numberUtils';
-import { Num } from './Num';
-import { LocationCascade } from './LocationCascade';
+import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import {
   ShieldCheck,
   KeyRound,
-  MapPin,
   LogIn,
-  CheckCircle2,
+  UserPlus,
   AlertTriangle,
   Sparkles,
-  Globe,
+  Loader2,
+  Mail,
+  Lock,
+  User,
 } from 'lucide-react';
 
 /**
  * Access gate for the national development system.
  *
- * This app has no user store, no password and no server session: identities are
- * the organizational personas seeded per county, and "signing in" selects one of
- * them (the same switch the header dropdown and the نقش‌ها tab expose). Because
- * the roster is location-scoped, the gate opens with the same cascading
- * province → county → city filter as the workspace picker, so an operator signs
- * in from — and into — the county they actually serve. The screen says so
- * plainly instead of pretending to authenticate — see the warning panel below.
- * Real authentication would need a server session.
+ * This is real authentication: the email/password pair is verified
+ * server-side, and the session lives in httpOnly cookies the browser can
+ * neither read nor forge. Success means one thing only — an auth_users.id
+ * (the verified user_id) that every API call on the way forward exposes
+ * (as `req.auth.userId`) and every business row references. The previous
+ * identity-picker ("signing in" by choosing a persona) is gone: without
+ * credentials there is no session, and without a session the API answers
+ * 401 to every user-data call.
  */
 export const LoginView: React.FC = () => {
-  const { users, login, locations, selectedLocation, handleSelectLocation } = useAppContext();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  // Remote avatars can fail (offline, blocked host); fall back to initials.
-  const [brokenAvatars, setBrokenAvatars] = useState<Record<string, boolean>>({});
+  const { login, register } = useAuth();
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const selectedUser = users.find((u) => u.id === selectedId) ?? null;
-
-  // Changing the geographic scope swaps the roster; drop a selection that no
-  // longer belongs to the newly selected county so the submit button can never
-  // carry an identity from another location.
-  useEffect(() => {
-    if (selectedId && !users.some((u) => u.id === selectedId)) {
-      setSelectedId(null);
-    }
-  }, [users, selectedId]);
-
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (selectedUser) {
-      login(selectedUser.id);
-    }
-  };
-
-  const moveSelection = (delta: number) => {
-    if (users.length === 0) return;
-    const currentIndex = users.findIndex((u) => u.id === selectedId);
-    const nextIndex =
-      currentIndex === -1
-        ? delta > 0
-          ? 0
-          : users.length - 1
-        : (currentIndex + delta + users.length) % users.length;
-    setSelectedId(users[nextIndex].id);
-  };
-
-  const handleGroupKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
-      event.preventDefault();
-      moveSelection(1);
-    } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
-      event.preventDefault();
-      moveSelection(-1);
+    if (busy) return;
+    setError(null);
+    setBusy(true);
+    try {
+      if (mode === 'login') {
+        await login(email.trim(), password);
+      } else {
+        await register(email.trim(), password, displayName.trim());
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'خطای نامشخص در ورود');
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -78,7 +58,7 @@ export const LoginView: React.FC = () => {
       dir="rtl"
       className="min-h-screen w-full bg-gradient-to-br from-slate-100 via-white to-indigo-50 flex items-stretch lg:items-center justify-center lg:p-8"
     >
-      <div id="login-view-div-2" className="w-full max-w-6xl bg-white lg:rounded-3xl lg:shadow-2xl lg:border lg:border-slate-200 overflow-hidden grid grid-cols-1 lg:grid-cols-[1fr_1.3fr]">
+      <div id="login-view-div-2" className="w-full max-w-4xl bg-white lg:rounded-3xl lg:shadow-2xl lg:border lg:border-slate-200 overflow-hidden grid grid-cols-1 lg:grid-cols-[1fr_1.3fr]">
         {/* ---------------- Brand column ---------------- */}
         <aside className="relative bg-gradient-to-br from-blue-700 via-indigo-700 to-slate-900 text-white p-8 lg:p-10 flex flex-col justify-between gap-10 overflow-hidden">
           <div id="login-view-brand-column" className="absolute -top-24 -left-24 w-72 h-72 bg-blue-400/20 rounded-full blur-3xl pointer-events-none" />
@@ -103,15 +83,15 @@ export const LoginView: React.FC = () => {
             <ul className="space-y-3 pt-2">
               <li className="flex items-start gap-3 text-xs text-blue-50/90">
                 <ShieldCheck className="w-4 h-4 text-emerald-300 shrink-0 mt-0.5" />
-                <span>شفافیت کامل تخصیص اعتبارات و ردگیری تمامی تغییرات در تاریخچه نظارتی</span>
+                <span>احراز هویت رمزنامه‌ای؛ نشست شما در کوکی‌های امنِ غیرقابل‌خواندن برای اسکریپت‌ها ذخیره می‌شود</span>
               </li>
               <li className="flex items-start gap-3 text-xs text-blue-50/90">
                 <KeyRound className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
-                <span>دسترسی مبتنی بر نقش (RBAC) با سطوح اختیارات تفکیک‌شده برای هر نقش</span>
+                <span>دسترسی مبتنی بر نقش (RBAC) با سطوح اختیارات تفکیک‌شده و اعتبارسنجی سمت سرور</span>
               </li>
               <li className="flex items-start gap-3 text-xs text-blue-50/90">
-                <MapPin className="w-4 h-4 text-cyan-300 shrink-0 mt-0.5" />
-                <span>پایش شاخص‌های مکانی محرومیت و هشدار هوشمند موازی‌کاری پروژه‌ها</span>
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>تمام تغییرات با شناسه تأییدشده اپراتور در تاریخچه نظارتی ثبت می‌شود</span>
               </li>
             </ul>
           </div>
@@ -122,143 +102,120 @@ export const LoginView: React.FC = () => {
           </div>
         </aside>
 
-        {/* ---------------- Identity selection ---------------- */}
+        {/* ---------------- Credentials ---------------- */}
         <section className="p-6 lg:p-10 flex flex-col justify-center">
-          <div id="login-view-identity-selection" className="mb-6">
+          <div id="login-view-credentials" className="mb-6">
             <h2 className="text-xl lg:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
               <LogIn className="w-6 h-6 text-blue-600" />
               ورود به سامانه
             </h2>
             <p className="text-slate-600 text-xs mt-2 leading-relaxed">
-              برای ورود، حوزه جغرافیایی خدمت و سپس هویت سازمانی خود را انتخاب کنید. سطح دسترسی،
-              اختیارات ویرایش و گزارش‌های در دسترس بر اساس نقش انتخابی تعیین می‌شود.
+              ایمیل سازمانی و رمز عبور خود را وارد کنید. سطح دسترسی، اختیارات ویرایش و
+              گزارش‌های در دسترس بر اساس نقش تأییدشدهٔ حساب شما سمت سرور تعیین می‌شود.
             </p>
-            <span className="inline-block mt-3 text-[10px] font-mono font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
-              <Num value={toPersianDigits(users.length)} unit="هویت سازمانی" /> فعال در {selectedLocation.county}
-            </span>
           </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-            {/* Geographic scope of the session — drives the identity roster below */}
-            <div
-              id="login-view-geographic-scope"
-              className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3"
-            >
-              <div className="flex items-start gap-2">
-                <div className="p-1.5 bg-blue-100 text-blue-600 rounded-lg border border-blue-200 shrink-0">
-                  <Globe className="w-4 h-4" />
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            {mode === 'register' && (
+              <label className="block">
+                <span className="block text-[11px] font-bold text-slate-700 mb-1.5">نام نمایشی</span>
+                <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
+                  <User className="w-4 h-4 text-slate-400 shrink-0" />
+                  <input
+                    type="text"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    required
+                    minLength={2}
+                    dir="rtl"
+                    placeholder="نام و نام خانوادگی"
+                    className="w-full py-2.5 bg-transparent text-sm outline-none"
+                  />
                 </div>
-                <div className="min-w-0">
-                  <h3 className="text-xs font-black text-slate-900">حوزه جغرافیایی خدمت</h3>
-                  <p className="text-[10px] text-slate-500 leading-relaxed mt-0.5">
-                    استان، شهرستان و شهر/بخش محل ورود را انتخاب کنید؛ فهرست هویت‌های سازمانی و تمام
-                    بخش‌های وابسته سامانه بر همین اساس به‌روزرسانی می‌شود.
-                  </p>
-                </div>
+              </label>
+            )}
+
+            <label className="block">
+              <span className="block text-[11px] font-bold text-slate-700 mb-1.5">ایمیل سازمانی</span>
+              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
+                <Mail className="w-4 h-4 text-slate-400 shrink-0" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="username"
+                  dir="ltr"
+                  placeholder="name@agency.gov"
+                  className="w-full py-2.5 bg-transparent text-sm outline-none text-left"
+                />
               </div>
-              <LocationCascade
-                locations={locations}
-                selectedLocation={selectedLocation}
-                onSelectLocation={handleSelectLocation}
-              />
-              <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-2.5 py-1.5">
-                <MapPin className="w-3.5 h-3.5 shrink-0" />
-                <span>
-                  ورود به عنوان ناحیه: {selectedLocation.province} — {selectedLocation.county} —{' '}
-                  {selectedLocation.city}
-                </span>
+            </label>
+
+            <label className="block">
+              <span className="block text-[11px] font-bold text-slate-700 mb-1.5">رمز عبور</span>
+              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
+                <Lock className="w-4 h-4 text-slate-400 shrink-0" />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={mode === 'register' ? 8 : 1}
+                  autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
+                  dir="ltr"
+                  placeholder="••••••••"
+                  className="w-full py-2.5 bg-transparent text-sm outline-none text-left"
+                />
               </div>
-            </div>
+              {mode === 'register' && (
+                <span className="mt-1 block text-[10px] text-slate-500">رمز عبور باید حداقل ۸ نویسه باشد.</span>
+              )}
+            </label>
 
-            <div
-              id="login-view-identity-selection-2"
-              role="radiogroup"
-              aria-label="انتخاب هویت سازمانی"
-              onKeyDown={handleGroupKeyDown}
-              className="grid grid-cols-1 sm:grid-cols-2 gap-3"
-            >
-              {users.map((user) => {
-                const isSelected = user.id === selectedId;
-                return (
-                  <button
-                    key={user.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={isSelected}
-                    onClick={() => setSelectedId(user.id)}
-                    className={`text-right p-3 rounded-2xl border transition-all flex items-start gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${
-                      isSelected
-                        ? 'border-blue-500 bg-blue-50/70 ring-2 ring-blue-500/30 shadow-sm'
-                        : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50'
-                    }`}
-                  >
-                    {brokenAvatars[user.id] ? (
-                      <span className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black text-sm flex items-center justify-center shrink-0">
-                        {user.name.charAt(0)}
-                      </span>
-                    ) : (
-                      <img
-                        src={user.avatar}
-                        alt=""
-                        onError={() =>
-                          setBrokenAvatars((prev) => ({ ...prev, [user.id]: true }))
-                        }
-                        className="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0"
-                      />
-                    )}
-
-                    <span className="min-w-0 flex-1">
-                      <span className="flex items-center justify-between gap-2">
-                        <span className="font-bold text-xs text-slate-900 truncate">
-                          {user.name}
-                        </span>
-                        {isSelected && (
-                          <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                        )}
-                      </span>
-                      <span
-                        className={`inline-block mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${
-                          isSelected
-                            ? 'bg-white text-blue-700 border-blue-200'
-                            : 'bg-slate-100 text-slate-600 border-slate-200'
-                        }`}
-                      >
-                        {user.roleFa}
-                      </span>
-                      <span className="block mt-1 text-[10px] text-slate-500 leading-relaxed line-clamp-2">
-                        {user.organization}
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {selectedUser && (
-              <div id="login-view-identity-selection-3" className="text-[11px] text-slate-600 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 leading-relaxed">
-                ورود به عنوان <strong className="text-slate-900">{selectedUser.name}</strong> —{' '}
-                <span className="text-slate-700">{selectedUser.roleTitleFa}</span>
+            {error && (
+              <div id="login-view-error" className="flex items-start gap-2 text-[11px] text-rose-800 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2 leading-relaxed">
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0 mt-0.5" />
+                <span>{error}</span>
               </div>
             )}
 
             <button
               type="submit"
-              disabled={!selectedUser}
+              disabled={busy}
               className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-black text-sm transition-all ${
-                selectedUser
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/25'
-                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                busy
+                  ? 'bg-blue-400 text-white cursor-wait'
+                  : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/25'
               }`}
             >
-              <LogIn className="w-4 h-4" />
-              {selectedUser ? 'ورود به سامانه' : 'برای ادامه یک هویت را انتخاب کنید'}
+              {busy ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : mode === 'login' ? (
+                <LogIn className="w-4 h-4" />
+              ) : (
+                <UserPlus className="w-4 h-4" />
+              )}
+              {mode === 'login' ? 'ورود به سامانه' : 'ثبت‌نام و ورود'}
             </button>
 
-            <div id="login-view-identity-selection-4" className="flex items-start gap-2 text-[10px] text-amber-900 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 leading-relaxed">
-              <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+            <button
+              type="button"
+              onClick={() => {
+                setMode((m) => (m === 'login' ? 'register' : 'login'));
+                setError(null);
+              }}
+              className="w-full text-[11px] text-slate-500 hover:text-blue-600 transition-colors py-1"
+            >
+              {mode === 'login' ? 'حساب ندارید؟ ثبت‌نام' : 'حساب دارید؟ بازگشت به ورود'}
+            </button>
+
+            <div id="login-view-note" className="flex items-start gap-2 text-[10px] text-slate-600 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 leading-relaxed">
+              <ShieldCheck className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
               <span>
-                این صفحه دروازه شبیه‌سازی دسترسی سازمانی است؛ رمز عبور و احراز هویت واقعی در سامانه
-                فعال نیست و انتخاب هویت تنها برای نمایش سطح دسترسی نقش‌ها کاربرد دارد.
+                نشست پس از ورود با توکن کوتاه‌عمر (۱۵ دقیقه) و توکن تمدید (۳۰ روز) در کوکی‌های
+                httponly نگه داشته می‌شود؛ کد سمت مرورگر هرگز به آن‌ها دسترسی ندارد و سالخوردگی
+                نشست به‌صورت خودکار و بدون وقفهٔ کاربر تمدید می‌گردد.
               </span>
             </div>
           </form>

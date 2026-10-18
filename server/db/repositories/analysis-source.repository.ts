@@ -48,7 +48,7 @@ function toDto(row: typeof analysisSources.$inferSelect): AnalysisSource {
   };
 }
 
-export function analysisSourceToRow(s: AnalysisSource): typeof analysisSources.$inferInsert {
+export function analysisSourceToRow(s: AnalysisSource, actorId: string): typeof analysisSources.$inferInsert {
   return {
     id: s.id,
     title: s.title,
@@ -66,13 +66,14 @@ export function analysisSourceToRow(s: AnalysisSource): typeof analysisSources.$
     province: s.province,
     county: s.county,
     createdAt: s.createdAt,
+    actorUserId: actorId,
   };
 }
 
 /** Insert-or-replace; the identity `seq` is never written (always generated). */
-export async function upsertAnalysisSource(s: AnalysisSource, executor: Executor = db): Promise<void> {
+export async function upsertAnalysisSource(s: AnalysisSource, actorId: string, executor: Executor = db): Promise<void> {
   return withDbErrorMapping(async () => {
-    const row = analysisSourceToRow(s);
+    const row = analysisSourceToRow(s, actorId);
     await executor
       .insert(analysisSources)
       .values(row)

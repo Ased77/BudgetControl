@@ -1,15 +1,58 @@
 /**
  * Typed fetch wrapper around the Express + PostgreSQL backend.
  * Every call resolves to parsed JSON or throws Error(message) on failure.
+ *
+ * Session transport (auth): the browser holds httpOnly cookies (csr_at /
+ * csr_rt) it cannot read or steal. `credentials: 'include'` ships them on
+ * every call, so requests are authenticated without any token in JS.
+ *
+ * 401 handling: exactly one silent /api/auth/refresh attempt is made and the
+ * original request retried once. If the refresh itself fails (expired
+ * rotation family, disabled account, deadline reached) the unauthorized
+ * hook fires exactly once — the session provider drops to anon/login. This
+ * prevents refresh storms: a dead session triggers the redirect, and a
+ * slow server cannot make every API call enqueue its own refresh first.
  */
 
 const BASE = import.meta.env.VITE_API_BASE ?? '';
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+/** Set by AuthContext so transport and identity stay in one channel. */
+let onUnauthorized: (() => void) | null = null;
+let refreshing: Promise<boolean> | null = null;
+
+export function setUnauthorizedHandler(fn: (() => void) | null): void {
+  onUnauthorized = fn;
+}
+
+async function tryRefresh(): Promise<boolean> {
+  refreshing ??= fetch(`${BASE}/api/auth/refresh`, {
+    method: 'POST',
+    credentials: 'include',
+  })
+    .then((res) => res.ok)
+    .catch(() => false)
+    .finally(() => {
+      refreshing = null;
+    });
+  return refreshing;
+}
+
+async function request<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include', // httpOnly session cookies ride along
     ...options,
   });
+
+  if (res.status === 401 && retried === false && !path.startsWith('/api/auth/')) {
+    // Access token expired: the httpOnly refresh cookie silently converts
+    // into a new pair. If that fails the session is genuinely over.
+    if (await tryRefresh()) {
+      return request<T>(path, options, true);
+    }
+    onUnauthorized?.();
+    throw new Error('انقضای نشست — لطفاً دوباره وارد شوید');
+  }
 
   if (!res.ok) {
     let message = `Request failed: ${res.status}`;

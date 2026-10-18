@@ -15,6 +15,13 @@
       "when": 1792313100000,
       "tag": "0001_import_legacy_documents",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792315288156,
+      "tag": "0002_mixed_rictor",
+      "breakpoints": true
     }
   ]
 }
