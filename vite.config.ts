@@ -4,22 +4,17 @@ import path from 'path';
 import {defineConfig} from 'vite';
 
 /**
- * Vercel's Express preset serves static files from `public/` (its output
- * directory is fixed, not configurable), so on Vercel the client bundle is
- * written there. Everywhere else — local dev, Docker, any other host — the
- * bundle stays in `dist/`, which production Express serves. The source assets
- * therefore live in `static/` rather than `public/`, since `public/` is a build
- * output on one platform and unused on the others.
+ * One build directory, `dist/`, for every target — local, Docker and Vercel.
+ * Vercel's Express preset serves static files from `public/`, so the post-build
+ * step in `scripts/vercel-static.mjs` copies `dist/` there; that keeps the
+ * deployed bytes identical to the ones tested locally and lets the deployment
+ * work whichever preset Vercel resolves the project to. Font sources live in
+ * `static/` (Vite's publicDir) because `public/` is a build output on Vercel.
  */
-const outDir = process.env.VERCEL ? 'public' : 'dist';
-
 export default defineConfig(() => {
   return {
     plugins: [react(), tailwindcss()],
     publicDir: 'static',
-    build: {
-      outDir,
-    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

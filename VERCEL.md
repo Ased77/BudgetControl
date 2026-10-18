@@ -29,10 +29,12 @@ server.ts            default-exports the Express app  -> the Vercel function
                      (same file is the Docker/local bootstrap: it only calls
                      listen() when VERCEL is unset)
 server/app.ts        createApp(): every /api route, no port, no lifecycle
-vercel.json          buildCommand `vite build`, function duration, SPA fallback
-public/              Vite output on Vercel — served by the CDN, not the function
+vercel.json          buildCommand `vite build && node scripts/vercel-static.mjs`,
+                     plus the SPA fallback rewrite
+public/              copy of dist/ made by that script — the Express preset
+                     serves static files from here (the directory is fixed)
 static/              font sources copied into the build (Vite publicDir)
-dist/                Vite output everywhere else (Docker, local)
+dist/                the one build output; Docker, local server and the copy step
 ```
 
 - `/api/*` has no matching static file, so it reaches the Express function with
@@ -44,6 +46,21 @@ dist/                Vite output everywhere else (Docker, local)
   (schema, seed, version-gated repairs), serialized by a transaction-scoped
   PostgreSQL advisory lock so two cold starts cannot seed the same rows at the
   same time.
+
+### Two traps that fail a deployment quietly
+
+- **Do not put `functions` patterns in `vercel.json` for this project.** They
+  only match files inside an `api/` directory; a pattern such as `server.ts`
+  aborts the build with *"The pattern \"server.ts\" defined in `functions`
+  doesn't match any Serverless Functions inside the `api` directory"*. The alias
+  then keeps serving the previous deployment, which looks exactly like the
+  change "not taking effect". Function duration is a project setting (default
+  300s on Fluid compute).
+- **Check which preset Vercel resolved.** Express is detected from `server.ts`
+  (static from `public/`, `/api/*` from the function). If the dashboard pins
+  another preset, the build also produces `dist/`, so the SPA still loads — but
+  `/api/*` will 404 because no function was created. `curl /api/health` is the
+  fastest way to tell.
 
 ## One-time setup
 
@@ -71,8 +88,9 @@ dist/                Vite output everywhere else (Docker, local)
    DATABASE_URL='postgres://…?sslmode=require' bun run db:init
    ```
 
-   Without this, the first request seeds ~22k rows inside the function. That is
-   why the function's `maxDuration` is 60s.
+   Without this, the first request seeds ~22k rows inside the function. Vercel's
+   default function duration (300s on Fluid compute) is plenty of room; if a
+   project overrides it lower, seeds should be run first.
 
 4. Deploy. The build runs `vite build` into `public/`, and `server.ts` is
    compiled into a single Node function with `express` and `pg`.
@@ -91,7 +109,10 @@ Then open the site, hard-refresh a deep link and confirm the SPA still boots.
 
 ## Limits worth knowing
 
-- **No background work.** Everything must fit in a request (60s here).
+- **No background work.** Everything must fit in one request. The default
+  duration on Fluid compute is 300s; it is not configured in `vercel.json`
+  because `functions` patterns only match files under `api/` — a pattern for
+  `server.ts` fails the build with "doesn't match any Serverless Functions".
 - **Cold starts.** A fresh instance pays for the connection plus one version
   check; the seed only runs when the schema version is missing.
 - **Connection count.** Serverless concurrency multiplies pools, so use a pooled

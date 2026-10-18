@@ -1,12 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "vite build",
-  "functions": {
-    "server.ts": {
-      "maxDuration": 60
-    }
-  },
+  "buildCommand": "vite build && node scripts/vercel-static.mjs",
   "rewrites": [
-    { "source": "/((?!api/|assets/|fonts/).*)", "destination": "/index.html" }
+    {
+      "source": "/:path((?!api/|assets/|fonts/|index\\.html).*)",
+      "destination": "/index.html"
+    }
   ]
 }
