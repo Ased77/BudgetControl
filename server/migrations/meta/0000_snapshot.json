@@ -1,0 +1,2271 @@
+{
+  "id": "032eb633-f6fc-4fbd-8a8d-fa5626bfabe7",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.analysis_sources": {
+      "name": "analysis_sources",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "seq": {
+          "name": "seq",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "analysis_sources_seq_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "origin": {
+          "name": "origin",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider": {
+          "name": "provider",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_url": {
+          "name": "source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "published_at": {
+          "name": "published_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "linked_areas": {
+          "name": "linked_areas",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::text[]"
+        },
+        "reliability_score": {
+          "name": "reliability_score",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reviewed_by": {
+          "name": "reviewed_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "review_note": {
+          "name": "review_note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "province": {
+          "name": "province",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "county": {
+          "name": "county",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "idx_analysis_sources_origin": {
+          "name": "idx_analysis_sources_origin",
+          "columns": [
+            {
+              "expression": "origin",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_analysis_sources_status": {
+          "name": "idx_analysis_sources_status",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "analysis_sources_origin_check": {
+          "name": "analysis_sources_origin_check",
+          "value": "\"analysis_sources\".\"origin\" IN ('AI', 'HUMAN')"
+        },
+        "analysis_sources_kind_check": {
+          "name": "analysis_sources_kind_check",
+          "value": "\"analysis_sources\".\"kind\" IN ('NEWS', 'OFFICIAL_STAT', 'FIELD_REPORT', 'SATELLITE', 'INTERVIEW', 'SOCIAL_MEDIA')"
+        },
+        "analysis_sources_status_check": {
+          "name": "analysis_sources_status_check",
+          "value": "\"analysis_sources\".\"status\" IN ('PENDING', 'APPROVED', 'REJECTED')"
+        },
+        "analysis_sources_reliability_check": {
+          "name": "analysis_sources_reliability_check",
+          "value": "\"analysis_sources\".\"reliability_score\" BETWEEN 0 AND 100"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.app_meta": {
+      "name": "app_meta",
+      "schema": "",
+      "columns": {
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.audit_logs": {
+      "name": "audit_logs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "seq": {
+          "name": "seq",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "audit_logs_seq_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "timestamp": {
+          "name": "timestamp",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_name": {
+          "name": "user_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_role": {
+          "name": "user_role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "action_type": {
+          "name": "action_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_priority_title": {
+          "name": "target_priority_title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "old_value": {
+          "name": "old_value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "new_value": {
+          "name": "new_value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rationale": {
+          "name": "rationale",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "province": {
+          "name": "province",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "county": {
+          "name": "county",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "idx_audit_logs_seq": {
+          "name": "idx_audit_logs_seq",
+          "columns": [
+            {
+              "expression": "seq",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_audit_logs_action": {
+          "name": "idx_audit_logs_action",
+          "columns": [
+            {
+              "expression": "action_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.budget_sources": {
+      "name": "budget_sources",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_type": {
+          "name": "source_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_type_fa": {
+          "name": "source_type_fa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_amount_toman": {
+          "name": "total_amount_toman",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "allocated_amount_toman": {
+          "name": "allocated_amount_toman",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "remaining_amount_toman": {
+          "name": "remaining_amount_toman",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fiscal_year": {
+          "name": "fiscal_year",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sponsor_organization": {
+          "name": "sponsor_organization",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_scope": {
+          "name": "target_scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "restriction_note": {
+          "name": "restriction_note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "province": {
+          "name": "province",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "county": {
+          "name": "county",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "budget_sources_type_check": {
+          "name": "budget_sources_type_check",
+          "value": "\"budget_sources\".\"source_type\" IN ('CSR', 'GOVERNMENT', 'DEHYARI_MUNICIPALITY', 'CHARITY_FOUNDATION', 'BANK_FACILITY', 'PUBLIC_PARTICIPATION')"
+        },
+        "budget_sources_status_check": {
+          "name": "budget_sources_status_check",
+          "value": "\"budget_sources\".\"status\" IN ('ACTIVE', 'DEPLETED', 'RESERVED')"
+        },
+        "budget_sources_amount_check": {
+          "name": "budget_sources_amount_check",
+          "value": "\"budget_sources\".\"total_amount_toman\" >= 0 AND \"budget_sources\".\"allocated_amount_toman\" >= 0 AND \"budget_sources\".\"remaining_amount_toman\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.contractors": {
+      "name": "contractors",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "company_name": {
+          "name": "company_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ceo_name": {
+          "name": "ceo_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "national_id": {
+          "name": "national_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "grade": {
+          "name": "grade",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "grade_fa": {
+          "name": "grade_fa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "specialty_field": {
+          "name": "specialty_field",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "active_contracts_count": {
+          "name": "active_contracts_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_contract_value_toman": {
+          "name": "total_contract_value_toman",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "performance_score": {
+          "name": "performance_score",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "satisfaction_rating": {
+          "name": "satisfaction_rating",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "free_capacity_slots": {
+          "name": "free_capacity_slots",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "phone": {
+          "name": "phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "province": {
+          "name": "province",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "county": {
+          "name": "county",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "contractors_grade_check": {
+          "name": "contractors_grade_check",
+          "value": "\"contractors\".\"grade\" IN ('GRADE_1', 'GRADE_2', 'GRADE_3', 'GRADE_4', 'GRADE_5', 'LOCAL_AUTHORIZED')"
+        },
+        "contractors_status_check": {
+          "name": "contractors_status_check",
+          "value": "\"contractors\".\"status\" IN ('VERIFIED', 'UNDER_EVALUATION', 'SUSPENDED')"
+        },
+        "contractors_score_check": {
+          "name": "contractors_score_check",
+          "value": "\"contractors\".\"performance_score\" BETWEEN 0 AND 100"
+        },
+        "contractors_rating_check": {
+          "name": "contractors_rating_check",
+          "value": "\"contractors\".\"satisfaction_rating\" BETWEEN 1 AND 5"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.crises_harms": {
+      "name": "crises_harms",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "level": {
+          "name": "level",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "province": {
+          "name": "province",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "county": {
+          "name": "county",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "district_or_village": {
+          "name": "district_or_village",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "severity_score": {
+          "name": "severity_score",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "urgency": {
+          "name": "urgency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "affected_population": {
+          "name": "affected_population",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "primary_cause": {
+          "name": "primary_cause",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recommended_intervention": {
+          "name": "recommended_intervention",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "active_projects_count": {
+          "name": "active_projects_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "deficit_index_fa": {
+          "name": "deficit_index_fa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "idx_crises_harms_county": {
+          "name": "idx_crises_harms_county",
+          "columns": [
+            {
+              "expression": "county",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_crises_harms_status": {
+          "name": "idx_crises_harms_status",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "crises_harms_level_check": {
+          "name": "crises_harms_level_check",
+          "value": "\"crises_harms\".\"level\" IN ('NATIONAL', 'PROVINCIAL', 'COUNTY', 'RURAL_DISTRICT')"
+        },
+        "crises_harms_urgency_check": {
+          "name": "crises_harms_urgency_check",
+          "value": "\"crises_harms\".\"urgency\" IN ('CRITICAL', 'HIGH', 'MEDIUM', 'LOW')"
+        },
+        "crises_harms_status_check": {
+          "name": "crises_harms_status_check",
+          "value": "\"crises_harms\".\"status\" IN ('UNRESOLVED', 'UNDER_INTERVENTION', 'CONTROLLED')"
+        },
+        "crises_harms_severity_check": {
+          "name": "crises_harms_severity_check",
+          "value": "\"crises_harms\".\"severity_score\" BETWEEN 0 AND 100"
+        },
+        "crises_harms_population_check": {
+          "name": "crises_harms_population_check",
+          "value": "\"crises_harms\".\"affected_population\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.departments": {
+      "name": "departments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category_fa": {
+          "name": "category_fa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "head_person_name": {
+          "name": "head_person_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contact_number": {
+          "name": "contact_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "logo_data_url": {
+          "name": "logo_data_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "allocated_budget_toman": {
+          "name": "allocated_budget_toman",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "absorbed_budget_toman": {
+          "name": "absorbed_budget_toman",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "active_projects_count": {
+          "name": "active_projects_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "performance_score": {
+          "name": "performance_score",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "administrative_level": {
+          "name": "administrative_level",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "province": {
+          "name": "province",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "county": {
+          "name": "county",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "departments_category_check": {
+          "name": "departments_category_check",
+          "value": "\"departments\".\"category\" IN ('INFRASTRUCTURE', 'HEALTH', 'EDUCATION', 'SOCIAL_WELFARE', 'AGRICULTURE', 'ENVIRONMENT', 'MUNICIPAL_RURAL')"
+        },
+        "departments_level_check": {
+          "name": "departments_level_check",
+          "value": "\"departments\".\"administrative_level\" IN ('NATIONAL', 'PROVINCIAL', 'COUNTY', 'RURAL_DISTRICT')"
+        },
+        "departments_score_check": {
+          "name": "departments_score_check",
+          "value": "\"departments\".\"performance_score\" BETWEEN 0 AND 100"
+        },
+        "departments_budget_non_negative_check": {
+          "name": "departments_budget_non_negative_check",
+          "value": "\"departments\".\"allocated_budget_toman\" >= 0 AND \"departments\".\"absorbed_budget_toman\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.executors": {
+      "name": "executors",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type_fa": {
+          "name": "type_fa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "managing_director": {
+          "name": "managing_director",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contact_phone": {
+          "name": "contact_phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "active_projects_count": {
+          "name": "active_projects_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "completed_projects_count": {
+          "name": "completed_projects_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "success_rate": {
+          "name": "success_rate",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "capacity_status": {
+          "name": "capacity_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "coverage_region": {
+          "name": "coverage_region",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "province": {
+          "name": "province",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "county": {
+          "name": "county",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "executors_type_check": {
+          "name": "executors_type_check",
+          "value": "\"executors\".\"type\" IN ('GOVERNMENTAL', 'JIHADI_FOUNDATION', 'PUBLIC_COMMUNITY', 'NGO', 'COOPERATIVE', 'PRIVATE')"
+        },
+        "executors_capacity_check": {
+          "name": "executors_capacity_check",
+          "value": "\"executors\".\"capacity_status\" IN ('AVAILABLE', 'OPTIMAL', 'OVERLOADED')"
+        },
+        "executors_success_rate_check": {
+          "name": "executors_success_rate_check",
+          "value": "\"executors\".\"success_rate\" BETWEEN 0 AND 100"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.location_indicators": {
+      "name": "location_indicators",
+      "schema": "",
+      "columns": {
+        "location_id": {
+          "name": "location_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "poverty_rate": {
+          "name": "poverty_rate",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "marginalization_rate": {
+          "name": "marginalization_rate",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unemployment_rate": {
+          "name": "unemployment_rate",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "social_harms_index": {
+          "name": "social_harms_index",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vulnerable_groups_population": {
+          "name": "vulnerable_groups_population",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "infrastructure_deficit": {
+          "name": "infrastructure_deficit",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "crisis_vulnerability_score": {
+          "name": "crisis_vulnerability_score",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "health_access_deficit": {
+          "name": "health_access_deficit",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "education_drop_out_rate": {
+          "name": "education_drop_out_rate",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cultural_deficit_score": {
+          "name": "cultural_deficit_score",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "environmental_risk_score": {
+          "name": "environmental_risk_score",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "location_indicators_location_id_locations_id_fk": {
+          "name": "location_indicators_location_id_locations_id_fk",
+          "tableFrom": "location_indicators",
+          "tableTo": "locations",
+          "columnsFrom": [
+            "location_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "location_indicators_score_check": {
+          "name": "location_indicators_score_check",
+          "value": "(\"location_indicators\".\"poverty_rate\" BETWEEN 0 AND 100)\n      AND (\"location_indicators\".\"marginalization_rate\" BETWEEN 0 AND 100)\n      AND (\"location_indicators\".\"unemployment_rate\" BETWEEN 0 AND 100)\n      AND (\"location_indicators\".\"social_harms_index\" BETWEEN 0 AND 100)\n      AND (\"location_indicators\".\"infrastructure_deficit\" BETWEEN 0 AND 100)\n      AND (\"location_indicators\".\"crisis_vulnerability_score\" BETWEEN 0 AND 100)\n      AND (\"location_indicators\".\"health_access_deficit\" BETWEEN 0 AND 100)\n      AND (\"location_indicators\".\"education_drop_out_rate\" BETWEEN 0 AND 100)\n      AND (\"location_indicators\".\"cultural_deficit_score\" BETWEEN 0 AND 100)\n      AND (\"location_indicators\".\"environmental_risk_score\" BETWEEN 0 AND 100)"
+        },
+        "location_indicators_population_check": {
+          "name": "location_indicators_population_check",
+          "value": "\"location_indicators\".\"vulnerable_groups_population\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.locations": {
+      "name": "locations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "level": {
+          "name": "level",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "province": {
+          "name": "province",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "county": {
+          "name": "county",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "city": {
+          "name": "city",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "district": {
+          "name": "district",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "population": {
+          "name": "population",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "coordinates_lat": {
+          "name": "coordinates_lat",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "coordinates_lng": {
+          "name": "coordinates_lng",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "idx_locations_county": {
+          "name": "idx_locations_county",
+          "columns": [
+            {
+              "expression": "county",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_locations_province_county": {
+          "name": "idx_locations_province_county",
+          "columns": [
+            {
+              "expression": "province",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "county",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "locations_level_check": {
+          "name": "locations_level_check",
+          "value": "\"locations\".\"level\" IN ('NATIONAL', 'PROVINCIAL', 'COUNTY', 'RURAL_DISTRICT')"
+        },
+        "locations_population_check": {
+          "name": "locations_population_check",
+          "value": "\"locations\".\"population\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.organization": {
+      "name": "organization",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "org_type": {
+          "name": "org_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "activity_sector": {
+          "name": "activity_sector",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "national_code": {
+          "name": "national_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "province": {
+          "name": "province",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "city": {
+          "name": "city",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "county": {
+          "name": "county",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "district": {
+          "name": "district",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_budget": {
+          "name": "total_budget",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "currency_unit": {
+          "name": "currency_unit",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "budget_period": {
+          "name": "budget_period",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fiscal_year": {
+          "name": "fiscal_year",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "organization_org_type_check": {
+          "name": "organization_org_type_check",
+          "value": "\"organization\".\"org_type\" IN ('GOVERNMENT', 'PUBLIC', 'PRIVATE', 'SEMI_PRIVATE', 'COOPERATIVE')"
+        },
+        "organization_currency_check": {
+          "name": "organization_currency_check",
+          "value": "\"organization\".\"currency_unit\" IN ('TOMAN', 'RIAL')"
+        },
+        "organization_budget_period_check": {
+          "name": "organization_budget_period_check",
+          "value": "\"organization\".\"budget_period\" IN ('1_YEAR', '3_YEARS', '5_YEARS')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.priorities": {
+      "name": "priorities",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "code": {
+          "name": "code",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "default_percentage": {
+          "name": "default_percentage",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "current_percentage": {
+          "name": "current_percentage",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recommended_percentage": {
+          "name": "recommended_percentage",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_locked": {
+          "name": "is_locked",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "related_indicators": {
+          "name": "related_indicators",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::text[]"
+        },
+        "icon_name": {
+          "name": "icon_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "weight_factor": {
+          "name": "weight_factor",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "min_percent": {
+          "name": "min_percent",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "max_percent": {
+          "name": "max_percent",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sub_items": {
+          "name": "sub_items",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::text[]"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "priorities_code_unique": {
+          "name": "priorities_code_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "code"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "priorities_code_check": {
+          "name": "priorities_code_check",
+          "value": "\"priorities\".\"code\" >= 1"
+        },
+        "priorities_default_percentage_check": {
+          "name": "priorities_default_percentage_check",
+          "value": "\"priorities\".\"default_percentage\" BETWEEN 0 AND 100"
+        },
+        "priorities_current_percentage_check": {
+          "name": "priorities_current_percentage_check",
+          "value": "\"priorities\".\"current_percentage\" BETWEEN 0 AND 100"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.project_contributions": {
+      "name": "project_contributions",
+      "schema": "",
+      "columns": {
+        "project_id": {
+          "name": "project_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "department_id": {
+          "name": "department_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "share_percentage": {
+          "name": "share_percentage",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "share_amount_toman": {
+          "name": "share_amount_toman",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role_description": {
+          "name": "role_description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "project_contributions_project_id_projects_id_fk": {
+          "name": "project_contributions_project_id_projects_id_fk",
+          "tableFrom": "project_contributions",
+          "tableTo": "projects",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "project_contributions_department_id_departments_id_fk": {
+          "name": "project_contributions_department_id_departments_id_fk",
+          "tableFrom": "project_contributions",
+          "tableTo": "departments",
+          "columnsFrom": [
+            "department_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "project_contributions_project_id_department_id_pk": {
+          "name": "project_contributions_project_id_department_id_pk",
+          "columns": [
+            "project_id",
+            "department_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "project_contributions_share_check": {
+          "name": "project_contributions_share_check",
+          "value": "\"project_contributions\".\"share_percentage\" BETWEEN 0 AND 100"
+        },
+        "project_contributions_amount_check": {
+          "name": "project_contributions_amount_check",
+          "value": "\"project_contributions\".\"share_amount_toman\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.projects": {
+      "name": "projects",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "priority_id": {
+          "name": "priority_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "department_id": {
+          "name": "department_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "requesting_department_id": {
+          "name": "requesting_department_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "budget_source_id": {
+          "name": "budget_source_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "executor_id": {
+          "name": "executor_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contractor_id": {
+          "name": "contractor_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "crisis_harm_id": {
+          "name": "crisis_harm_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by_user_id": {
+          "name": "created_by_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_multi_department": {
+          "name": "is_multi_department",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "administrative_level": {
+          "name": "administrative_level",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "province": {
+          "name": "province",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "county": {
+          "name": "county",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "district": {
+          "name": "district",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_area": {
+          "name": "target_area",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "estimated_cost_toman": {
+          "name": "estimated_cost_toman",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "current_year_allocated_toman": {
+          "name": "current_year_allocated_toman",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "future_years_allocated_toman": {
+          "name": "future_years_allocated_toman",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "csr_share_percentage": {
+          "name": "csr_share_percentage",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "government_share_percentage": {
+          "name": "government_share_percentage",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "charity_share_percentage": {
+          "name": "charity_share_percentage",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dehyari_share_percentage": {
+          "name": "dehyari_share_percentage",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bank_facility_share_percentage": {
+          "name": "bank_facility_share_percentage",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "beneficiaries_count": {
+          "name": "beneficiaries_count",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cost_per_beneficiary_toman": {
+          "name": "cost_per_beneficiary_toman",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_beneficiary_groups": {
+          "name": "target_beneficiary_groups",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::text[]"
+        },
+        "anti_overlap_status": {
+          "name": "anti_overlap_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "overlap_warning_details": {
+          "name": "overlap_warning_details",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "urgency_level": {
+          "name": "urgency_level",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_year": {
+          "name": "start_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_year": {
+          "name": "end_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "duration_months": {
+          "name": "duration_months",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "progress_percentage": {
+          "name": "progress_percentage",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "idx_projects_status": {
+          "name": "idx_projects_status",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_projects_priority": {
+          "name": "idx_projects_priority",
+          "columns": [
+            {
+              "expression": "priority_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_projects_department": {
+          "name": "idx_projects_department",
+          "columns": [
+            {
+              "expression": "department_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_projects_province_county": {
+          "name": "idx_projects_province_county",
+          "columns": [
+            {
+              "expression": "province",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "county",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_projects_executor": {
+          "name": "idx_projects_executor",
+          "columns": [
+            {
+              "expression": "executor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_projects_contractor": {
+          "name": "idx_projects_contractor",
+          "columns": [
+            {
+              "expression": "contractor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "projects_priority_id_priorities_id_fk": {
+          "name": "projects_priority_id_priorities_id_fk",
+          "tableFrom": "projects",
+          "tableTo": "priorities",
+          "columnsFrom": [
+            "priority_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "projects_department_id_departments_id_fk": {
+          "name": "projects_department_id_departments_id_fk",
+          "tableFrom": "projects",
+          "tableTo": "departments",
+          "columnsFrom": [
+            "department_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "projects_requesting_department_id_departments_id_fk": {
+          "name": "projects_requesting_department_id_departments_id_fk",
+          "tableFrom": "projects",
+          "tableTo": "departments",
+          "columnsFrom": [
+            "requesting_department_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "projects_budget_source_id_budget_sources_id_fk": {
+          "name": "projects_budget_source_id_budget_sources_id_fk",
+          "tableFrom": "projects",
+          "tableTo": "budget_sources",
+          "columnsFrom": [
+            "budget_source_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "projects_executor_id_executors_id_fk": {
+          "name": "projects_executor_id_executors_id_fk",
+          "tableFrom": "projects",
+          "tableTo": "executors",
+          "columnsFrom": [
+            "executor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "projects_contractor_id_contractors_id_fk": {
+          "name": "projects_contractor_id_contractors_id_fk",
+          "tableFrom": "projects",
+          "tableTo": "contractors",
+          "columnsFrom": [
+            "contractor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "projects_crisis_harm_id_crises_harms_id_fk": {
+          "name": "projects_crisis_harm_id_crises_harms_id_fk",
+          "tableFrom": "projects",
+          "tableTo": "crises_harms",
+          "columnsFrom": [
+            "crisis_harm_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "projects_created_by_user_id_users_id_fk": {
+          "name": "projects_created_by_user_id_users_id_fk",
+          "tableFrom": "projects",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "projects_status_check": {
+          "name": "projects_status_check",
+          "value": "\"projects\".\"status\" IN ('PROPOSED', 'APPROVED', 'IN_PROGRESS', 'COMPLETED', 'SUSPENDED')"
+        },
+        "projects_level_check": {
+          "name": "projects_level_check",
+          "value": "\"projects\".\"administrative_level\" IN ('NATIONAL', 'PROVINCIAL', 'COUNTY', 'RURAL_DISTRICT')"
+        },
+        "projects_anti_overlap_check": {
+          "name": "projects_anti_overlap_check",
+          "value": "\"projects\".\"anti_overlap_status\" IN ('CLEAR', 'POTENTIAL_DUPLICATE', 'INEFFICIENT_PER_CAPITA', 'UNPRIORITIZED')"
+        },
+        "projects_urgency_check": {
+          "name": "projects_urgency_check",
+          "value": "\"projects\".\"urgency_level\" IS NULL OR \"projects\".\"urgency_level\" IN ('CRITICAL', 'HIGH', 'MEDIUM', 'LOW')"
+        },
+        "projects_progress_check": {
+          "name": "projects_progress_check",
+          "value": "\"projects\".\"progress_percentage\" BETWEEN 0 AND 100"
+        },
+        "projects_years_check": {
+          "name": "projects_years_check",
+          "value": "\"projects\".\"start_year\" <= \"projects\".\"end_year\""
+        },
+        "projects_shares_check": {
+          "name": "projects_shares_check",
+          "value": "(\"projects\".\"csr_share_percentage\" IS NULL OR \"projects\".\"csr_share_percentage\" BETWEEN 0 AND 100)\n      AND (\"projects\".\"government_share_percentage\" IS NULL OR \"projects\".\"government_share_percentage\" BETWEEN 0 AND 100)\n      AND (\"projects\".\"charity_share_percentage\" IS NULL OR \"projects\".\"charity_share_percentage\" BETWEEN 0 AND 100)\n      AND (\"projects\".\"dehyari_share_percentage\" IS NULL OR \"projects\".\"dehyari_share_percentage\" BETWEEN 0 AND 100)\n      AND (\"projects\".\"bank_facility_share_percentage\" IS NULL OR \"projects\".\"bank_facility_share_percentage\" BETWEEN 0 AND 100)"
+        },
+        "projects_cost_check": {
+          "name": "projects_cost_check",
+          "value": "\"projects\".\"estimated_cost_toman\" >= 0 AND \"projects\".\"cost_per_beneficiary_toman\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.roles_permissions": {
+      "name": "roles_permissions",
+      "schema": "",
+      "columns": {
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "role_title_fa": {
+          "name": "role_title_fa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "can_view_dashboard": {
+          "name": "can_view_dashboard",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "can_edit_departments": {
+          "name": "can_edit_departments",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "can_manage_budget": {
+          "name": "can_manage_budget",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "can_manage_crises": {
+          "name": "can_manage_crises",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "can_manage_priorities": {
+          "name": "can_manage_priorities",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "can_create_project": {
+          "name": "can_create_project",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "can_approve_projects": {
+          "name": "can_approve_projects",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "can_manage_executors": {
+          "name": "can_manage_executors",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "can_manage_contractors": {
+          "name": "can_manage_contractors",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "can_export_reports": {
+          "name": "can_export_reports",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "can_audit_logs": {
+          "name": "can_audit_logs",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "scope_level": {
+          "name": "scope_level",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "roles_permissions_role_check": {
+          "name": "roles_permissions_role_check",
+          "value": "\"roles_permissions\".\"role\" IN ('ADMIN', 'PROVINCIAL_GOVERNOR', 'DEPARTMENT_HEAD', 'OFFICE_HEAD', 'REGIONAL_MANAGER', 'PLANNING_SPECIALIST', 'AUDITOR', 'DEHYAR_COUNCIL')"
+        },
+        "roles_permissions_scope_check": {
+          "name": "roles_permissions_scope_check",
+          "value": "\"roles_permissions\".\"scope_level\" IN ('NATIONAL', 'PROVINCIAL', 'COUNTY', 'RURAL_DISTRICT')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role_fa": {
+          "name": "role_fa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role_title_fa": {
+          "name": "role_title_fa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "avatar": {
+          "name": "avatar",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "organization": {
+          "name": "organization",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "department_id": {
+          "name": "department_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "allowed_location_id": {
+          "name": "allowed_location_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "province": {
+          "name": "province",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "county": {
+          "name": "county",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "idx_users_role": {
+          "name": "idx_users_role",
+          "columns": [
+            {
+              "expression": "role",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "users_department_id_departments_id_fk": {
+          "name": "users_department_id_departments_id_fk",
+          "tableFrom": "users",
+          "tableTo": "departments",
+          "columnsFrom": [
+            "department_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "users_allowed_location_id_locations_id_fk": {
+          "name": "users_allowed_location_id_locations_id_fk",
+          "tableFrom": "users",
+          "tableTo": "locations",
+          "columnsFrom": [
+            "allowed_location_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "users_role_check": {
+          "name": "users_role_check",
+          "value": "\"users\".\"role\" IN ('ADMIN', 'PROVINCIAL_GOVERNOR', 'DEPARTMENT_HEAD', 'OFFICE_HEAD', 'REGIONAL_MANAGER', 'PLANNING_SPECIALIST', 'AUDITOR', 'DEHYAR_COUNCIL')"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

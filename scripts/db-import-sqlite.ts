@@ -1,47 +1,41 @@
 /**
- * db:import:sqlite — one-time data migration from the legacy SQLite file into
- * PostgreSQL.
+ * db:import:sqlite — the SQLite cutover import, retargeted at the
+ * normalized relational schema.
  *
- * Every row of every table is copied verbatim: the document `payload` keeps the
- * exact entity the API served before, and the scalar columns keep the same
- * values. Nothing here rewrites business data — the only transformations are
- * the two the storage engine itself requires:
+ * Flow (two phases, explicit on purpose):
+ *   1. STAGE — the SQLite document tables (`id text PK` + `payload jsonb`)
+ *      land in `legacy_*` staging tables with the exact old shape. The
+ *      SQLite file is never modified: reading goes through a byte copy.
+ *   2. NORMALIZE — the data-import migration SQL (0001) is replayed
+ *      against the staging rows: its guarded upserts move every staging
+ *      payload into the normalized tables in one pass.
  *
- *   1. JSON text          -> validated and stored as jsonb (invalid JSON aborts
- *                            the import with the offending table and id);
- *   2. U+0000 code points -> removed, because PostgreSQL rejects NUL bytes in
- *                            text/jsonb while SQLite accepted them silently.
+ * The same 0001 SQL also owns the one-time migration of a PostgreSQL
+ * install created by the previous (document-model) version, so this
+ * script and that migration stay in lockstep by construction.
  *
- * Ordering: `audit_logs` and `analysis_sources` were listed with SQLite's
- * `ORDER BY rowid`. Their PostgreSQL identity columns are fed in that same
- * order, so "newest first" lists exactly as before.
+ * Usage:
+ *   bun run db:import:sqlite --dry-run          # validate, write nothing
+ *   bun run db:import:sqlite --truncate --yes   # exact copy, wipe staging first
+ *   bun run db:import:sqlite                    # merge, keep existing rows
+ *   bun run db:import:sqlite --skip-normalize   # stage only
+ *   bun run db:import:sqlite --sqlite data/csr-app.db
  *
- * Usage (stop the app first — a database being written cannot be copied safely):
- *
- *   bun run db:import:sqlite --dry-run                 # validate only
- *   bun run db:import:sqlite --truncate --yes          # exact copy, wipes target tables
- *   bun run db:import:sqlite                           # idempotent upsert, keeps
- *                                                      # operator edits already in PG
- * Flags:
- *   --sqlite <path>   source file (default data/csr-app.db)
- *   --truncate        TRUNCATE ... RESTART IDENTITY first (exact parity; rows
- *                     deleted in SQLite disappear here too)
- *   --yes             skip the interactive confirmation required by --truncate
- *   --dry-run         read and validate, write nothing
- *   --in-place        read the source directly instead of a temp copy
- *   --allow-diff      exit 0 even if row counts differ (default: exit 1)
+ * Flags: --sqlite <path>, --in-place, --allow-diff, --dry-run, --truncate,
+ * --yes, --skip-normalize.
  */
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { createInterface } from 'node:readline/promises';
-// bun:sqlite is compiled into the Bun runtime: the importer needs no native
-// addon, no compiler toolchain and no prebuilt binary download, which is what
-// keeps the `tools` image small and the build reproducible.
+
 import { Database } from 'bun:sqlite';
 import { Pool, type PoolClient } from 'pg';
 import { loadDatabaseConfig } from '../server/config.js';
-import { SCHEMA_SQL, TABLES } from '../server/schema.js';
+
+/* =========================================================================
+   Staging spec — mirrors the legacy document model one-to-one.
+   ========================================================================= */
 
 type TableSpec = {
   table: string;
@@ -87,6 +81,32 @@ const SPECS: TableSpec[] = [
     ordered: true,
   },
 ];
+
+/** Everything the importer writes lives under the legacy_ prefix. */
+const staging = (spec: TableSpec): string => `legacy_${spec.table}`;
+const STAGING_TABLES = SPECS.map(staging);
+
+/**
+ * The staging DDL — the legacy document model verbatim (indexes omitted:
+ * staging is written once and read once; the normalized tables carry the
+ * indices). `IF NOT EXISTS` keeps the script re-runnable.
+ */
+const STAGING_SCHEMA_SQL = `
+CREATE TABLE IF NOT EXISTS legacy_app_meta          (key text PRIMARY KEY, value text NOT NULL);
+CREATE TABLE IF NOT EXISTS legacy_organization      (id text PRIMARY KEY,  payload text NOT NULL);
+CREATE TABLE IF NOT EXISTS legacy_locations         (id text PRIMARY KEY,  level text NOT NULL, city text NOT NULL, county text NOT NULL, payload text NOT NULL);
+CREATE TABLE IF NOT EXISTS legacy_priorities        (id text PRIMARY KEY,  code integer NOT NULL, title text NOT NULL, category text NOT NULL, payload text NOT NULL);
+CREATE TABLE IF NOT EXISTS legacy_projects          (id text PRIMARY KEY,  code text NOT NULL, title text NOT NULL, status text NOT NULL, priority_id text, department_id text, budget_source_id text, payload text NOT NULL);
+CREATE TABLE IF NOT EXISTS legacy_departments       (id text PRIMARY KEY,  name text NOT NULL, code text NOT NULL, payload text NOT NULL);
+CREATE TABLE IF NOT EXISTS legacy_budget_sources    (id text PRIMARY KEY,  title text NOT NULL, code text NOT NULL, payload text NOT NULL);
+CREATE TABLE IF NOT EXISTS legacy_crises_harms      (id text PRIMARY KEY,  title text NOT NULL, code text NOT NULL, payload text NOT NULL);
+CREATE TABLE IF NOT EXISTS legacy_executors         (id text PRIMARY KEY,  name text NOT NULL, code text NOT NULL, payload text NOT NULL);
+CREATE TABLE IF NOT EXISTS legacy_contractors       (id text PRIMARY KEY,  name text NOT NULL, payload text NOT NULL);
+CREATE TABLE IF NOT EXISTS legacy_users             (id text PRIMARY KEY,  name text NOT NULL, role text NOT NULL, payload text NOT NULL);
+CREATE TABLE IF NOT EXISTS legacy_roles_permissions (role text PRIMARY KEY, payload text NOT NULL);
+CREATE TABLE IF NOT EXISTS legacy_audit_logs        (id text PRIMARY KEY, seq bigint GENERATED ALWAYS AS IDENTITY, created_at text NOT NULL, action_type text NOT NULL, user_name text NOT NULL, payload text NOT NULL);
+CREATE TABLE IF NOT EXISTS legacy_analysis_sources  (id text PRIMARY KEY, seq bigint GENERATED ALWAYS AS IDENTITY, title text NOT NULL, origin text NOT NULL, status text NOT NULL, province text, county text, payload text NOT NULL);
+`;
 
 const MAX_BIND_PARAMS = 60_000;
 const CHUNK_ROWS = 500;
@@ -177,7 +197,7 @@ function convert(spec: TableSpec, column: string, value: unknown, id: unknown): 
 }
 
 /* =========================================================================
-   Target (PostgreSQL)
+   Target (PostgreSQL) — staging tables
    ========================================================================= */
 
 async function copyTable(
@@ -188,6 +208,7 @@ async function copyTable(
 ): Promise<void> {
   if (rows.length === 0) return;
 
+  const target = staging(spec);
   const perStatement = Math.max(1, Math.min(CHUNK_ROWS, Math.floor(MAX_BIND_PARAMS / spec.columns.length)));
   const assignments = spec.columns
     .filter((column) => column !== spec.conflict)
@@ -201,13 +222,35 @@ async function copyTable(
       (row) => `(${row.map((value) => `$${params.push(value)}`).join(', ')})`,
     );
     await client.query(
-      `INSERT INTO ${spec.table} (${spec.columns.join(', ')})
+      `INSERT INTO ${target} (${spec.columns.join(', ')})
        VALUES ${tuples.join(', ')}
        ON CONFLICT (${spec.conflict}) DO UPDATE SET ${assignments}`,
       params,
     );
-    log(`  ${spec.table.padEnd(18, ' ')} ${Math.min(offset + perStatement, rows.length)}/${rows.length}`);
+    log(`  ${target.padEnd(18, ' ')} ${Math.min(offset + perStatement, rows.length)}/${rows.length}`);
   }
+}
+
+/**
+ * Locate the data-import migration (0001) next to the drizzle migrations
+ * and execute it — its guarded upserts are idempotent, so replaying it
+ * after staging new rows is exactly the normalization step.
+ */
+async function normalizeStagedData(pool: Pool): Promise<void> {
+  const candidates = [
+    path.join(process.cwd(), 'server', 'migrations'),
+    path.join(process.cwd(), 'dist', 'migrations'),
+  ];
+  const folder = candidates.find((dir) => fs.existsSync(path.join(dir, '0001_import_legacy_documents.sql')));
+  if (!folder) {
+    throw new Error(
+      `[import] 0001_import_legacy_documents.sql not found (looked in: ${candidates.join('; ')}) — ` +
+        'stage-only import done; run `bun run db:init` before starting the server',
+    );
+  }
+  const sql = fs.readFileSync(path.join(folder, '0001_import_legacy_documents.sql'), 'utf8');
+  await pool.query(sql);
+  console.log('[import] normalization applied (0001_import_legacy_documents.sql)');
 }
 
 /* =========================================================================
@@ -221,7 +264,7 @@ async function confirmTruncate(target: string): Promise<void> {
   }
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   const answer = await rl.question(
-    `This deletes every row in the target tables at ${target}.\nType "truncate ${target}" to continue: `,
+    `This deletes every row in the staging tables at ${target}.\nType "truncate ${target}" to continue: `,
   );
   rl.close();
   if (answer.trim() !== `truncate ${target}`) throw new Error('aborted by operator');
@@ -231,6 +274,7 @@ async function main(): Promise<void> {
   const source = option('sqlite', path.join(process.cwd(), 'data', 'csr-app.db'));
   const truncate = flag('truncate');
   const dryRun = flag('dry-run');
+  const skipNormalize = flag('skip-normalize');
   const settings = loadDatabaseConfig();
   const pool = new Pool(settings.pool);
 
@@ -249,11 +293,11 @@ async function main(): Promise<void> {
     const skipped = SPECS.filter((spec) => !sourceTables.has(spec.table)).map((spec) => spec.table);
     if (skipped.length > 0) console.log(`[import] source has no ${skipped.join(', ')} — skipped`);
 
-    await pool.query(SCHEMA_SQL); // idempotent: guarantees the target shape
+    await pool.query(STAGING_SCHEMA_SQL); // idempotent: guarantees the staging shape
     if (truncate && !dryRun) {
       await confirmTruncate(settings.target);
-      await pool.query(`TRUNCATE TABLE ${TABLES.join(', ')} RESTART IDENTITY`);
-      console.log(`[import] truncated ${TABLES.length} tables`);
+      await pool.query(`TRUNCATE TABLE ${STAGING_TABLES.join(', ')} RESTART IDENTITY CASCADE`);
+      console.log(`[import] truncated ${STAGING_TABLES.length} staging tables`);
     }
 
     const client = await pool.connect();
@@ -287,12 +331,12 @@ async function main(): Promise<void> {
     }
 
     // ---- Verification: row-for-row counts on both sides ------------------
-    console.log('\n[import] row counts  (sqlite -> postgresql)');
+    console.log('\n[import] row counts  (sqlite -> legacy staging)');
     let mismatches = 0;
     for (const spec of SPECS) {
       const expected = sourceCounts.get(spec.table);
       if (expected === undefined) continue;
-      const counted = await pool.query<{ count: string }>(`SELECT count(*)::bigint AS count FROM ${spec.table}`);
+      const counted = await pool.query<{ count: string }>(`SELECT count(*)::bigint AS count FROM ${staging(spec)}`);
       const actual = Number(counted.rows[0].count);
       const ok = actual === expected;
       if (!ok) mismatches += 1;
@@ -301,10 +345,12 @@ async function main(): Promise<void> {
       );
     }
 
-    const schemaVersion = await pool.query<{ value: string }>(
-      "SELECT value FROM app_meta WHERE key = 'schema_version'",
-    );
-    console.log(`[import] app_meta.schema_version = ${schemaVersion.rows[0]?.value ?? 'MISSING'}`);
+    if (!dryRun && !skipNormalize) {
+      await normalizeStagedData(pool);
+      const normalized = await pool.query<{ count: string }>(`SELECT count(*)::bigint AS count FROM projects`);
+      console.log(`[import] normalized projects table now holds ${normalized.rows[0]?.count ?? '0'} rows`);
+    }
+
     console.log(`[import] finished in ${((Date.now() - started) / 1000).toFixed(1)}s`);
 
     if (mismatches > 0) {

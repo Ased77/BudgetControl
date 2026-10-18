@@ -1,5 +1,16 @@
 # SQLite → PostgreSQL + Docker — runbook
 
+> **Superseded data layer.** This document describes the *document-model*
+> port (indexed scalar column + `jsonb payload`) that this repo shipped
+> first. The data layer has since been rebuilt on **Drizzle ORM** with a
+> normalized relational schema and versioned migrations — see
+> [server/db/README.md](server/db/README.md) for the current architecture,
+> commands (`db:generate`, `db:init`, `db:check`, `db:legacy:list`) and the
+> document-model → normalized cutover runbook. Decision #2 below (raw SQL
+> over an ORM) is the one this layer revisits; §5's prediction — "if schema
+> evolution becomes frequent, Drizzle is the natural upgrade" — is what
+> happened.
+
 Everything below was executed against this repository: the SQLite data
 (22,043 rows across 14 tables) was imported into `postgres:16-alpine`, the API
 was exercised against it, and the container stack was built and started.

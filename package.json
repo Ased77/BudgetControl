@@ -6,17 +6,21 @@
   "packageManager": "bun@1.4.2",
   "scripts": {
     "dev": "bun run server.ts",
-    "build": "vite build && esbuild ./server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs && esbuild ./scripts/db-init.ts ./scripts/db-check.ts ./scripts/wait-for-db.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outdir=dist/cli --out-extension:.js=.cjs",
+    "build": "vite build && esbuild ./server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs && esbuild ./scripts/db-init.ts ./scripts/db-check.ts ./scripts/wait-for-db.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outdir=dist/cli --out-extension:.js=.cjs && bun run scripts/sync-migrations.ts",
     "start": "bun dist/server.cjs",
     "clean": "rm -rf dist server.cjs",
     "lint": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:studio": "drizzle-kit studio",
     "db:init": "bun run scripts/db-init.ts",
     "db:check": "bun run scripts/db-check.ts",
     "db:wait": "bun run scripts/wait-for-db.ts",
+    "db:legacy:list": "bun run scripts/db-legacy-list.ts",
     "db:import:sqlite": "bun run scripts/db-import-sqlite.ts"
   },
   "dependencies": {
     "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.45.4",
     "express": "^4.21.2",
     "pg": "^8.23.1"
   },
@@ -27,6 +31,7 @@
     "@types/pg": "^8.23.1",
     "@vitejs/plugin-react": "^5.0.4",
     "autoprefixer": "^10.4.21",
+    "drizzle-kit": "^0.31.11",
     "esbuild": "^0.25.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
