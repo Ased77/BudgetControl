@@ -111,6 +111,12 @@ services:
   # `tools` build stage carries the production dependencies plus the TypeScript
   # sources, so the shipped app image stays free of tooling.
   # Remove `--truncate --yes` to merge instead of replacing.
+  #
+  # Post-Drizzle semantics: `--truncate` wipes only the legacy_* STAGING
+  # tables; the normalization replay (migration 0001) then MERGES staged
+  # rows into the normalized tables (rows already normalized but absent
+  # from the SQLite file are kept). Wipe + re-import of the normalized
+  # tables is a manual step by design — it would destroy operator data.
   # ---------------------------------------------------------------------------
   migrate:
     profiles: ["tools"]
