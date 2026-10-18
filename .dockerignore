@@ -1,0 +1,40 @@
+# =============================================================================
+#  Build-context filter. The Dockerfile copies explicit paths, so this list is
+#  about keeping the context small and secrets out of the daemon.
+# =============================================================================
+
+# Version control and agent/tooling state
+.git
+.gitignore
+.gitattributes
+.freebuff
+.kilo
+state
+
+# Installed and generated inside the image (node_modules alone is ~500 MB)
+node_modules
+dist
+
+# Legacy SQLite database (52 MB). It is mounted as a volume by the `migrate`
+# service when needed and must never be baked into an image.
+data
+
+# Local configuration and secrets — only the template is allowed through
+.env
+.env.*
+!.env.example
+
+# Logs and scratch files
+*.log
+server.err
+*.tmp
+coverage
+
+# Windows convenience launchers and one-off analysis scripts
+run.bat
+scan-digits*.mjs
+scripts/bun-boot-check.log
+
+# Platform metadata not used by the build
+assets
+metadata.json

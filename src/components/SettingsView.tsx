@@ -147,7 +147,7 @@ export const SettingsView: React.FC = () => {
   const budgetHint = formatMoneyParts(totalBudget);
 
   // Live backend/storage status, so «تنظیمات» doubles as the place an operator
-  // checks whether the SQLite persistence layer is actually answering.
+  // checks whether the PostgreSQL persistence layer is actually answering.
   const [health, setHealth] = useState<{ status: string; persistence: string } | null>(null);
   const [healthFailed, setHealthFailed] = useState(false);
   useEffect(() => {
@@ -463,7 +463,7 @@ export const SettingsView: React.FC = () => {
               <span className="font-bold text-rose-600 dark:text-rose-400">اتصال برقرار نشد</span>
             ) : health ? (
               <span className="font-bold text-emerald-700 dark:text-emerald-300">
-                متصل — {health.persistence === 'sqlite' ? 'SQLite' : health.persistence}
+                متصل — {health.persistence === 'postgresql' ? 'PostgreSQL' : health.persistence}
               </span>
             ) : (
               <span className="text-slate-400">در حال بررسی…</span>

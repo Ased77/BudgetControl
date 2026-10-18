@@ -1,0 +1,15 @@
+# Shell scripts must keep LF endings: a CRLF shebang makes the file fail inside
+# a Linux container with "/bin/sh^M: bad interpreter". This repo is checked out
+# on Windows, where the default would otherwise be CRLF.
+*.sh text eol=lf
+docker/entrypoint.sh text eol=lf
+
+# Docker Compose parses these: a trailing CR would end up inside the value
+# (a password with an invisible character at the end is unfixable by hand).
+.env text eol=lf
+.env.example text eol=lf
+
+# Legacy SQLite artifacts are binary — never let git reinterpret their bytes.
+*.db binary
+*.db-shm binary
+*.db-wal binary

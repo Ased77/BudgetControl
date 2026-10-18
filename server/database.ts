@@ -1,6 +1,4 @@
-import Database from 'better-sqlite3';
-import path from 'path';
-import fs from 'fs';
+import { Pool, type PoolClient, type QueryResultRow } from 'pg';
 import {
   OrganizationConfig,
   LocationData,
@@ -33,219 +31,282 @@ import {
 } from '../src/data/initialData.js';
 import { buildCountyDataset, CountyDataset } from '../src/data/countyTemplates.js';
 import { OMIDIYEH_COUNTY } from '../src/data/omidiyehData.js';
-
-// v3 — reseed: the full 36-department registry for شهرستان امیدیه plus an
-// indicator-driven dataset for every other county in the registry, so all
-// dependent sections follow the selected location instead of a single
-// hard-coded county.
-const SCHEMA_VERSION = '4';
+import { loadDatabaseConfig } from './config.js';
+import { SCHEMA_SQL, SCHEMA_VERSION, HARDENING_SQL } from './schema.js';
 
 /* =========================================================================
-   Connection
+   PostgreSQL data access layer
+
+   This module replaced a synchronous better-sqlite3 implementation. Three
+   consequences shaped the port, and all of them are deliberate:
+
+   1. Everything is async. SQLite answered in-process from a file, so the old
+      accessors returned values directly. PostgreSQL is a separate process over
+      TCP, so every accessor is now `async` and every call site `await`s it.
+      The route handlers already ran through the `wrap()` helper in server.ts,
+      so a rejected promise still becomes a 500 JSON error instead of crashing.
+
+   2. Writes are statement-per-round-trip, but batched. The first boot seeds
+      ~22k rows (483 generated county datasets). Handing every row to the
+      driver individually would be ~22k round-trips; `upsertMany()` packs 500
+      rows into one multi-row INSERT, which finishes the whole seed in a few
+      seconds instead of a minute.
+
+   3. No pragmas to mirror: `journal_mode = WAL` and `foreign_keys = ON` are
+      gone. PostgreSQL is always durable and transactional, and the SQLite
+      schema never declared a single FOREIGN KEY — relations between projects,
+      departments and priorities are soft (delete a department and its projects
+      keep the stale id, which the UI tolerates). Adding real FK constraints
+      now would silently break existing delete endpoints, so it is listed as
+      optional hardening instead of being smuggled into the migration.
+
+   The data shape itself is unchanged: a document model with indexed scalar
+   columns plus a JSON `payload`. That is why the frontend types are served
+   byte-for-byte as before.
    ========================================================================= */
 
-const DB_PATH = process.env.SQLITE_PATH || path.join(process.cwd(), 'data', 'csr-app.db');
+const settings = loadDatabaseConfig();
 
-fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+export const pool = new Pool(settings.pool);
 
-export const db = new Database(DB_PATH);
+/**
+ * An error on an *idle* client is emitted by the pool rather than by a query.
+ * Without this listener Node treats it as an unhandled 'error' event and kills
+ * the process — exactly the failure mode you do not want when the database
+ * restarts underneath a running container.
+ */
+pool.on('error', (error) => {
+  console.error('[db] Idle client error:', error.message);
+});
 
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+/** Where the app is connected, with the password removed. Safe to log. */
+export function getDatabaseTarget(): string {
+  return settings.target;
+}
+
+export function getPoolStats(): { total: number; idle: number; waiting: number } {
+  return { total: pool.totalCount, idle: pool.idleCount, waiting: pool.waitingCount };
+}
 
 /* =========================================================================
-   Schema — document model: indexed scalar columns for querying + a JSON
-   payload column holding the full typed entity, so the API can serve the
-   exact frontend types without lossy field mapping.
+   Query helpers
    ========================================================================= */
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS app_meta (
-    key   TEXT PRIMARY KEY,
-    value TEXT NOT NULL
-  );
+type PayloadRow = { payload: unknown };
+type MetaRow = { value: string };
 
-  CREATE TABLE IF NOT EXISTS organization (
-    id      TEXT PRIMARY KEY,
-    payload TEXT NOT NULL
-  );
+export async function query<T extends QueryResultRow = QueryResultRow>(
+  text: string,
+  params: unknown[] = [],
+): Promise<T[]> {
+  const result = await pool.query<T>(text, params);
+  return result.rows;
+}
 
-  CREATE TABLE IF NOT EXISTS locations (
-    id      TEXT PRIMARY KEY,
-    level   TEXT NOT NULL,
-    city    TEXT NOT NULL,
-    county  TEXT NOT NULL,
-    payload TEXT NOT NULL
-  );
+/**
+ * Run `fn` inside a single transaction on one dedicated client, rolling back
+ * on any throw and always returning the client to the pool.
+ */
+export async function withTransaction<T>(fn: (client: PoolClient) => Promise<T>): Promise<T> {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await fn(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (error) {
+    try {
+      await client.query('ROLLBACK');
+    } catch (rollbackError) {
+      console.error('[db] Rollback failed:', (rollbackError as Error).message);
+    }
+    throw error;
+  } finally {
+    client.release();
+  }
+}
 
-  CREATE TABLE IF NOT EXISTS priorities (
-    id       TEXT PRIMARY KEY,
-    code     INTEGER NOT NULL,
-    title    TEXT NOT NULL,
-    category TEXT NOT NULL,
-    payload  TEXT NOT NULL
-  );
+/**
+ * Serialize a document for a `jsonb` column.
+ *
+ * PostgreSQL rejects U+0000 inside text/JSON values ("unsupported Unicode
+ * escape sequence"), which SQLite accepted silently. User-entered text can
+ * contain a stray NUL byte, and without this guard such a write would fail the
+ * whole request with a 500 — so it is removed here, once, for every payload.
+ */
+export function toJson(value: unknown): string {
+  return JSON.stringify(value).replace(/\\u0000/g, '');
+}
 
-  CREATE TABLE IF NOT EXISTS projects (
-    id               TEXT PRIMARY KEY,
-    code             TEXT NOT NULL,
-    title            TEXT NOT NULL,
-    status           TEXT NOT NULL,
-    priority_id      TEXT,
-    department_id    TEXT,
-    budget_source_id TEXT,
-    payload          TEXT NOT NULL
-  );
-  CREATE INDEX IF NOT EXISTS idx_projects_status    ON projects(status);
-  CREATE INDEX IF NOT EXISTS idx_projects_priority  ON projects(priority_id);
-  CREATE INDEX IF NOT EXISTS idx_projects_department ON projects(department_id);
+/** `jsonb` arrives as a parsed object; tolerate a text column for safety. */
+function parsePayload<T>(row: PayloadRow): T {
+  const value = row.payload;
+  if (typeof value === 'string') return JSON.parse(value) as T;
+  return value as T;
+}
 
-  CREATE TABLE IF NOT EXISTS departments (
-    id      TEXT PRIMARY KEY,
-    name    TEXT NOT NULL,
-    code    TEXT NOT NULL,
-    payload TEXT NOT NULL
-  );
+function parseAll<T>(rows: PayloadRow[]): T[] {
+  return rows.map((row) => parsePayload<T>(row));
+}
 
-  CREATE TABLE IF NOT EXISTS budget_sources (
-    id      TEXT PRIMARY KEY,
-    title   TEXT NOT NULL,
-    code    TEXT NOT NULL,
-    payload TEXT NOT NULL
-  );
+const MAX_BIND_PARAMS = 60_000;
 
-  CREATE TABLE IF NOT EXISTS crises_harms (
-    id      TEXT PRIMARY KEY,
-    title   TEXT NOT NULL,
-    code    TEXT NOT NULL,
-    payload TEXT NOT NULL
-  );
+/**
+ * Multi-row upsert: `INSERT ... VALUES ($1,$2),($3,$4) ... ON CONFLICT DO
+ * UPDATE`. Chunked so the bind-parameter ceiling (65535) is never approached,
+ * and used for both seeding and bulk writes.
+ */
+async function upsertMany(
+  client: PoolClient,
+  table: string,
+  columns: string[],
+  rows: unknown[][],
+  conflictTarget: string,
+  chunkSize = 500,
+): Promise<void> {
+  if (rows.length === 0) return;
 
-  CREATE TABLE IF NOT EXISTS executors (
-    id      TEXT PRIMARY KEY,
-    name    TEXT NOT NULL,
-    code    TEXT NOT NULL,
-    payload TEXT NOT NULL
-  );
+  const perStatement = Math.max(1, Math.min(chunkSize, Math.floor(MAX_BIND_PARAMS / columns.length)));
+  const assignments = columns
+    .filter((column) => column !== conflictTarget)
+    .map((column) => `${column} = EXCLUDED.${column}`)
+    .join(', ');
 
-  CREATE TABLE IF NOT EXISTS contractors (
-    id      TEXT PRIMARY KEY,
-    name    TEXT NOT NULL,
-    payload TEXT NOT NULL
-  );
+  for (let offset = 0; offset < rows.length; offset += perStatement) {
+    const chunk = rows.slice(offset, offset + perStatement);
+    const params: unknown[] = [];
+    const tuples = chunk.map((row) => {
+      if (row.length !== columns.length) {
+        throw new Error(`[db] ${table}: expected ${columns.length} values per row, received ${row.length}`);
+      }
+      const placeholders = row.map((value) => {
+        params.push(value);
+        return `$${params.length}`;
+      });
+      return `(${placeholders.join(', ')})`;
+    });
 
-  CREATE TABLE IF NOT EXISTS users (
-    id      TEXT PRIMARY KEY,
-    name    TEXT NOT NULL,
-    role    TEXT NOT NULL,
-    payload TEXT NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS roles_permissions (
-    role    TEXT PRIMARY KEY,
-    payload TEXT NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS audit_logs (
-    id          TEXT PRIMARY KEY,
-    created_at  TEXT NOT NULL,
-    action_type TEXT NOT NULL,
-    user_name   TEXT NOT NULL,
-    payload     TEXT NOT NULL
-  );
-  CREATE INDEX IF NOT EXISTS idx_audit_logs_created  ON audit_logs(created_at);
-  CREATE INDEX IF NOT EXISTS idx_audit_logs_action   ON audit_logs(action_type);
-
-  CREATE TABLE IF NOT EXISTS analysis_sources (
-    id         TEXT PRIMARY KEY,
-    title      TEXT NOT NULL,
-    origin     TEXT NOT NULL,
-    status     TEXT NOT NULL,
-    province   TEXT,
-    county     TEXT,
-    payload    TEXT NOT NULL
-  );
-  CREATE INDEX IF NOT EXISTS idx_analysis_sources_origin ON analysis_sources(origin);
-  CREATE INDEX IF NOT EXISTS idx_analysis_sources_status ON analysis_sources(status);
-`);
-
-/* =========================================================================
-   Seeding — one-time, transactional. Guarded by app_meta.schema_version so
-   existing data is never overwritten on server restart.
-   ========================================================================= */
-
-function seed(): void {
-  const version = db.prepare('SELECT value FROM app_meta WHERE key = ?').get('schema_version') as
-    | { value: string }
-    | undefined;
-  if (version?.value === SCHEMA_VERSION) return;
-
-  const tx = db.transaction(() => {
-    db.prepare(
-      'INSERT INTO organization (id, payload) VALUES (?, ?) ON CONFLICT(id) DO UPDATE SET payload = excluded.payload'
-    ).run(INITIAL_ORGANIZATION.id, JSON.stringify(INITIAL_ORGANIZATION));
-
-    const insLocation = db.prepare(
-      'INSERT OR REPLACE INTO locations (id, level, city, county, payload) VALUES (?, ?, ?, ?, ?)'
+    await client.query(
+      `INSERT INTO ${table} (${columns.join(', ')})
+       VALUES ${tuples.join(', ')}
+       ON CONFLICT (${conflictTarget}) DO UPDATE SET ${assignments}`,
+      params,
     );
+  }
+}
+
+async function getMeta(key: string, client: PoolClient | Pool = pool): Promise<string | undefined> {
+  const result = await client.query<MetaRow>('SELECT value FROM app_meta WHERE key = $1', [key]);
+  return result.rows[0]?.value;
+}
+
+async function setMeta(client: PoolClient, key: string, value: string): Promise<void> {
+  await client.query(
+    `INSERT INTO app_meta (key, value) VALUES ($1, $2)
+     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+    [key, value],
+  );
+}
+
+/* =========================================================================
+   Schema
+   ========================================================================= */
+
+/** Arbitrary but stable key so concurrent replicas cannot race the DDL. */
+const INIT_LOCK_KEY = 4242001001;
+
+/**
+ * Apply the schema (idempotent) under a PostgreSQL advisory lock. Two app
+ * replicas booting at the same moment would otherwise race
+ * `CREATE TABLE IF NOT EXISTS` and one of them would fail with a duplicate
+ * object error; the lock serializes them instead.
+ */
+export async function initializeSchema(options: { hardening?: boolean } = {}): Promise<void> {
+  const client = await pool.connect();
+  try {
+    await client.query('SELECT pg_advisory_lock($1)', [INIT_LOCK_KEY]);
+    await client.query(SCHEMA_SQL);
+    if (options.hardening) await client.query(HARDENING_SQL);
+  } finally {
+    try {
+      await client.query('SELECT pg_advisory_unlock($1)', [INIT_LOCK_KEY]);
+    } finally {
+      client.release();
+    }
+  }
+}
+
+/* =========================================================================
+   Seeding — one-time, transactional, version-gated.
+
+   `app_meta.schema_version` guards the full reseed so an operator's data is
+   never overwritten on restart. Importing an existing SQLite database copies
+   that same key, so a migrated install boots straight past the seed.
+   ========================================================================= */
+
+/** Column list + conflict target for every table the seed writes. */
+const SEED_SPECS: Record<string, { columns: string[]; conflict: string }> = {
+  organization: { columns: ['id', 'payload'], conflict: 'id' },
+  locations: { columns: ['id', 'level', 'city', 'county', 'payload'], conflict: 'id' },
+  priorities: { columns: ['id', 'code', 'title', 'category', 'payload'], conflict: 'id' },
+  projects: {
+    columns: ['id', 'code', 'title', 'status', 'priority_id', 'department_id', 'budget_source_id', 'payload'],
+    conflict: 'id',
+  },
+  departments: { columns: ['id', 'name', 'code', 'payload'], conflict: 'id' },
+  budget_sources: { columns: ['id', 'title', 'code', 'payload'], conflict: 'id' },
+  crises_harms: { columns: ['id', 'title', 'code', 'payload'], conflict: 'id' },
+  executors: { columns: ['id', 'name', 'code', 'payload'], conflict: 'id' },
+  contractors: { columns: ['id', 'name', 'payload'], conflict: 'id' },
+  users: { columns: ['id', 'name', 'role', 'payload'], conflict: 'id' },
+  roles_permissions: { columns: ['role', 'payload'], conflict: 'role' },
+  audit_logs: { columns: ['id', 'created_at', 'action_type', 'user_name', 'payload'], conflict: 'id' },
+  analysis_sources: {
+    columns: ['id', 'title', 'origin', 'status', 'province', 'county', 'payload'],
+    conflict: 'id',
+  },
+};
+
+async function seed(): Promise<void> {
+  const version = await getMeta('schema_version');
+  if (version === SCHEMA_VERSION) return;
+
+  const started = Date.now();
+  const rowsByTable: Record<string, unknown[][]> = {};
+  const push = (table: string, row: unknown[]): void => {
+    (rowsByTable[table] ??= []).push(row);
+  };
+
+  await withTransaction(async (client) => {
+    push('organization', [INITIAL_ORGANIZATION.id, toJson(INITIAL_ORGANIZATION)]);
+
     for (const loc of INITIAL_LOCATIONS) {
-      insLocation.run(loc.id, loc.level, loc.city, loc.county, JSON.stringify(loc));
+      push('locations', [loc.id, loc.level, loc.city, loc.county, toJson(loc)]);
     }
-
-    const insPriority = db.prepare(
-      'INSERT OR REPLACE INTO priorities (id, code, title, category, payload) VALUES (?, ?, ?, ?, ?)'
-    );
     for (const p of INITIAL_PRIORITIES) {
-      insPriority.run(p.id, p.code, p.title, p.category, JSON.stringify(p));
+      push('priorities', [p.id, p.code, p.title, p.category, toJson(p)]);
     }
-
-    const insProject = db.prepare(
-      'INSERT OR REPLACE INTO projects (id, code, title, status, priority_id, department_id, budget_source_id, payload) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-    );
     for (const pr of INITIAL_PROJECTS) {
-      insProject.run(pr.id, pr.code, pr.title, pr.status, pr.priorityId, pr.departmentId, pr.budgetSourceId, JSON.stringify(pr));
+      push('projects', [
+        pr.id,
+        pr.code,
+        pr.title,
+        pr.status,
+        pr.priorityId,
+        pr.departmentId,
+        pr.budgetSourceId,
+        toJson(pr),
+      ]);
     }
-
-    const insDepartment = db.prepare('INSERT OR REPLACE INTO departments (id, name, code, payload) VALUES (?, ?, ?, ?)');
-    for (const d of INITIAL_DEPARTMENTS) {
-      insDepartment.run(d.id, d.name, d.code, JSON.stringify(d));
-    }
-
-    const insSource = db.prepare('INSERT OR REPLACE INTO budget_sources (id, title, code, payload) VALUES (?, ?, ?, ?)');
-    for (const s of INITIAL_BUDGET_SOURCES) {
-      insSource.run(s.id, s.title, s.code, JSON.stringify(s));
-    }
-
-    const insCrisis = db.prepare('INSERT OR REPLACE INTO crises_harms (id, title, code, payload) VALUES (?, ?, ?, ?)');
-    for (const c of INITIAL_CRISES_AND_HARMS) {
-      insCrisis.run(c.id, c.title, c.code, JSON.stringify(c));
-    }
-
-    const insExecutor = db.prepare('INSERT OR REPLACE INTO executors (id, name, code, payload) VALUES (?, ?, ?, ?)');
-    for (const e of INITIAL_EXECUTORS) {
-      insExecutor.run(e.id, e.name, e.code, JSON.stringify(e));
-    }
-
-    const insContractor = db.prepare('INSERT OR REPLACE INTO contractors (id, name, payload) VALUES (?, ?, ?)');
-    for (const c of INITIAL_CONTRACTORS) {
-      insContractor.run(c.id, c.companyName, JSON.stringify(c));
-    }
-
-    const insUser = db.prepare('INSERT OR REPLACE INTO users (id, name, role, payload) VALUES (?, ?, ?, ?)');
-    for (const u of INITIAL_USERS) {
-      insUser.run(u.id, u.name, u.role, JSON.stringify(u));
-    }
-
-    const insRole = db.prepare('INSERT OR REPLACE INTO roles_permissions (role, payload) VALUES (?, ?)');
-    for (const r of INITIAL_ROLES_PERMISSIONS) {
-      insRole.run(r.role, JSON.stringify(r));
-    }
-
-    const insAudit = db.prepare(
-      'INSERT OR REPLACE INTO audit_logs (id, created_at, action_type, user_name, payload) VALUES (?, ?, ?, ?, ?)'
-    );
+    for (const d of INITIAL_DEPARTMENTS) push('departments', [d.id, d.name, d.code, toJson(d)]);
+    for (const s of INITIAL_BUDGET_SOURCES) push('budget_sources', [s.id, s.title, s.code, toJson(s)]);
+    for (const c of INITIAL_CRISES_AND_HARMS) push('crises_harms', [c.id, c.title, c.code, toJson(c)]);
+    for (const e of INITIAL_EXECUTORS) push('executors', [e.id, e.name, e.code, toJson(e)]);
+    for (const c of INITIAL_CONTRACTORS) push('contractors', [c.id, c.companyName, toJson(c)]);
+    for (const u of INITIAL_USERS) push('users', [u.id, u.name, u.role, toJson(u)]);
+    for (const r of INITIAL_ROLES_PERMISSIONS) push('roles_permissions', [r.role, toJson(r)]);
     for (const a of INITIAL_AUDIT_LOGS) {
-      insAudit.run(a.id, a.timestamp, a.actionType, a.userName, JSON.stringify(a));
+      push('audit_logs', [a.id, a.timestamp, a.actionType, a.userName, toJson(a)]);
     }
 
     // ---- Generated datasets for every remaining county --------------------
@@ -254,47 +315,46 @@ function seed(): void {
     // its real population and deprivation indices (src/data/countyTemplates).
     const handcraftedCounties = new Set(['شهرستان رفسنجان', OMIDIYEH_COUNTY]);
     const generatedDatasets: CountyDataset[] = INITIAL_LOCATIONS.filter(
-      (loc) => loc.level === 'COUNTY' && !handcraftedCounties.has(loc.county)
+      (loc) => loc.level === 'COUNTY' && !handcraftedCounties.has(loc.county),
     ).map((loc) => buildCountyDataset(loc));
 
     for (const dataset of generatedDatasets) {
-      for (const d of dataset.departments) {
-        insDepartment.run(d.id, d.name, d.code, JSON.stringify(d));
-      }
-      for (const s of dataset.budgetSources) {
-        insSource.run(s.id, s.title, s.code, JSON.stringify(s));
-      }
-      for (const c of dataset.crisesHarms) {
-        insCrisis.run(c.id, c.title, c.code, JSON.stringify(c));
-      }
-      for (const e of dataset.executors) {
-        insExecutor.run(e.id, e.name, e.code, JSON.stringify(e));
-      }
-      for (const c of dataset.contractors) {
-        insContractor.run(c.id, c.companyName, JSON.stringify(c));
-      }
+      for (const d of dataset.departments) push('departments', [d.id, d.name, d.code, toJson(d)]);
+      for (const s of dataset.budgetSources) push('budget_sources', [s.id, s.title, s.code, toJson(s)]);
+      for (const c of dataset.crisesHarms) push('crises_harms', [c.id, c.title, c.code, toJson(c)]);
+      for (const e of dataset.executors) push('executors', [e.id, e.name, e.code, toJson(e)]);
+      for (const c of dataset.contractors) push('contractors', [c.id, c.companyName, toJson(c)]);
       for (const p of dataset.projects) {
-        insProject.run(p.id, p.code, p.title, p.status, p.priorityId, p.departmentId, p.budgetSourceId, JSON.stringify(p));
+        push('projects', [
+          p.id,
+          p.code,
+          p.title,
+          p.status,
+          p.priorityId,
+          p.departmentId,
+          p.budgetSourceId,
+          toJson(p),
+        ]);
       }
-      for (const u of dataset.users) {
-        insUser.run(u.id, u.name, u.role, JSON.stringify(u));
-      }
-      for (const a of dataset.auditLogs) {
-        insAudit.run(a.id, a.timestamp, a.actionType, a.userName, JSON.stringify(a));
-      }
+      for (const u of dataset.users) push('users', [u.id, u.name, u.role, toJson(u)]);
+      for (const a of dataset.auditLogs) push('audit_logs', [a.id, a.timestamp, a.actionType, a.userName, toJson(a)]);
     }
-    console.log(`[db] Generated dependent datasets for ${generatedDatasets.length} counties`);
 
-    db.prepare(
-      'INSERT INTO app_meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
-    ).run('schema_version', SCHEMA_VERSION);
+    let written = 0;
+    for (const [table, spec] of Object.entries(SEED_SPECS)) {
+      const rows = rowsByTable[table] ?? [];
+      await upsertMany(client, table, spec.columns, rows, spec.conflict);
+      written += rows.length;
+    }
+    await setMeta(client, 'schema_version', SCHEMA_VERSION);
+
+    console.log(
+      `[db] Seeded PostgreSQL (schema v${SCHEMA_VERSION}): ${written.toLocaleString('en-US')} rows ` +
+        `across ${Object.keys(SEED_SPECS).length} tables in ${Date.now() - started}ms ` +
+        `(${generatedDatasets.length} generated county datasets)`,
+    );
   });
-
-  tx();
-  console.log(`[db] Seeded SQLite database at ${DB_PATH}`);
 }
-
-seed();
 
 /**
  * Analysis sources seed themselves on first run (and after a schema upgrade)
@@ -302,28 +362,31 @@ seed();
  * every table, so folding this in would clobber the operator's existing data.
  * Its own meta flag keeps the two lifecycles independent.
  */
-function seedAnalysisSources(): void {
+async function seedAnalysisSources(): Promise<void> {
   const key = 'analysis_sources_seeded';
-  const row = db.prepare('SELECT value FROM app_meta WHERE key = ?').get(key) as { value: string } | undefined;
-  if (row?.value === '1') return;
+  if ((await getMeta(key)) === '1') return;
 
-  const tx = db.transaction(() => {
-    const ins = db.prepare(
-      'INSERT OR REPLACE INTO analysis_sources (id, title, origin, status, province, county, payload) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  await withTransaction(async (client) => {
+    await upsertMany(
+      client,
+      'analysis_sources',
+      SEED_SPECS.analysis_sources.columns,
+      INITIAL_ANALYSIS_SOURCES.map((s) => [
+        s.id,
+        s.title,
+        s.origin,
+        s.status,
+        s.province,
+        s.county,
+        toJson(s),
+      ]),
+      SEED_SPECS.analysis_sources.conflict,
     );
-    for (const s of INITIAL_ANALYSIS_SOURCES) {
-      ins.run(s.id, s.title, s.origin, s.status, s.province, s.county, JSON.stringify(s));
-    }
-    db.prepare(
-      'INSERT INTO app_meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
-    ).run(key, '1');
+    await setMeta(client, key, '1');
   });
 
-  tx();
   console.log(`[db] Seeded ${INITIAL_ANALYSIS_SOURCES.length} analysis sources`);
 }
-
-seedAnalysisSources();
 
 const PRIORITY_TITLE_MIGRATIONS: Record<string, { previous: string; current: string }> = {
   p1: { previous: 'توسعه زیرساخت‌های عمومی، عمران و خدمات شهری/روستایی', current: 'توسعه و عمران' },
@@ -339,23 +402,24 @@ const PRIORITY_TITLE_MIGRATIONS: Record<string, { previous: string; current: str
   p11: { previous: 'دانش‌بنیان، نوآوری و فناوری‌های حل مسائل اجتماعی/عمرانی', current: 'دانش‌بنیان' },
 };
 
-const migratePriorityTitles = db.transaction(() => {
-  const findPriority = db.prepare('SELECT payload FROM priorities WHERE id = ?');
-  const updatePriority = db.prepare('UPDATE priorities SET title = ?, payload = ? WHERE id = ?');
+async function migratePriorityTitles(): Promise<void> {
+  await withTransaction(async (client) => {
+    for (const [id, titles] of Object.entries(PRIORITY_TITLE_MIGRATIONS)) {
+      const found = await client.query<PayloadRow>('SELECT payload FROM priorities WHERE id = $1', [id]);
+      if (found.rowCount === 0) continue;
 
-  for (const [id, titles] of Object.entries(PRIORITY_TITLE_MIGRATIONS)) {
-    const row = findPriority.get(id) as Payload<CsrPriority> | undefined;
-    if (!row) continue;
+      const priority = parsePayload<CsrPriority>(found.rows[0]);
+      if (priority.title !== titles.previous) continue;
 
-    const priority = JSON.parse(row.payload) as CsrPriority;
-    if (priority.title !== titles.previous) continue;
-
-    const updated = { ...priority, title: titles.current };
-    updatePriority.run(updated.title, JSON.stringify(updated), id);
-  }
-});
-
-migratePriorityTitles();
+      const updated = { ...priority, title: titles.current };
+      await client.query('UPDATE priorities SET title = $1, payload = $2 WHERE id = $3', [
+        updated.title,
+        toJson(updated),
+        id,
+      ]);
+    }
+  });
+}
 
 /**
  * Incremental seed for the «رئیس اداره» role.
@@ -373,320 +437,405 @@ migratePriorityTitles();
  * Nothing is overwritten: a role/user already present is left exactly as the
  * operator has it, and a project that already names a creator keeps it.
  */
-function ensureOfficeHeadRole(): void {
+async function ensureOfficeHeadRole(): Promise<void> {
   const role = INITIAL_ROLES_PERMISSIONS.find((r) => r.role === 'OFFICE_HEAD');
   const demoUser = INITIAL_USERS.find((u) => u.role === 'OFFICE_HEAD');
 
-  const roleRows = db
-    .prepare('SELECT role, payload FROM roles_permissions')
-    .all() as Array<{ role: string; payload: string }>;
-  const updateRole = db.prepare('UPDATE roles_permissions SET payload = ? WHERE role = ?');
-
-  for (const row of roleRows) {
-    const permission = JSON.parse(row.payload) as SystemRolePermission;
-    if (permission.canCreateProject !== undefined) continue;
-    updateRole.run(JSON.stringify({ ...permission, canCreateProject: true }), row.role);
-  }
-
-  if (role && !db.prepare('SELECT role FROM roles_permissions WHERE role = ?').get(role.role)) {
-    db.prepare('INSERT INTO roles_permissions (role, payload) VALUES (?, ?)').run(
-      role.role,
-      JSON.stringify(role)
+  await withTransaction(async (client) => {
+    const roleRows = await client.query<{ role: string; payload: unknown }>(
+      'SELECT role, payload FROM roles_permissions',
     );
-    console.log(`[db] Added role ${role.role}`);
-  }
 
-  if (demoUser && !db.prepare('SELECT id FROM users WHERE id = ?').get(demoUser.id)) {
-    db.prepare('INSERT INTO users (id, name, role, payload) VALUES (?, ?, ?, ?)').run(
-      demoUser.id,
-      demoUser.name,
-      demoUser.role,
-      JSON.stringify(demoUser)
-    );
-    console.log(`[db] Added demo user ${demoUser.id}`);
-  }
+    for (const row of roleRows.rows) {
+      const permission = typeof row.payload === 'string'
+        ? (JSON.parse(row.payload) as SystemRolePermission)
+        : (row.payload as SystemRolePermission);
+      if (permission.canCreateProject !== undefined) continue;
+      await client.query('UPDATE roles_permissions SET payload = $1 WHERE role = $2', [
+        toJson({ ...permission, canCreateProject: true }),
+        row.role,
+      ]);
+    }
 
-  if (!demoUser) return;
-  const findProject = db.prepare('SELECT payload FROM projects WHERE id = ?');
-  const stampProject = db.prepare('UPDATE projects SET payload = ? WHERE id = ?');
-  for (const seeded of INITIAL_PROJECTS) {
-    if (seeded.createdByUserId !== demoUser.id) continue;
-    const row = findProject.get(seeded.id) as { payload: string } | undefined;
-    if (!row) continue;
-    const stored = JSON.parse(row.payload) as ExecutiveProject;
-    if (stored.createdByUserId) continue;
-    stampProject.run(
-      JSON.stringify({
-        ...stored,
-        createdByUserId: seeded.createdByUserId,
-        createdByName: seeded.createdByName,
-      }),
-      seeded.id
-    );
+    if (role) {
+      const exists = await client.query('SELECT 1 FROM roles_permissions WHERE role = $1', [role.role]);
+      if (exists.rowCount === 0) {
+        await client.query('INSERT INTO roles_permissions (role, payload) VALUES ($1, $2)', [
+          role.role,
+          toJson(role),
+        ]);
+        console.log(`[db] Added role ${role.role}`);
+      }
+    }
+
+    if (demoUser) {
+      const exists = await client.query('SELECT 1 FROM users WHERE id = $1', [demoUser.id]);
+      if (exists.rowCount === 0) {
+        await client.query('INSERT INTO users (id, name, role, payload) VALUES ($1, $2, $3, $4)', [
+          demoUser.id,
+          demoUser.name,
+          demoUser.role,
+          toJson(demoUser),
+        ]);
+        console.log(`[db] Added demo user ${demoUser.id}`);
+      }
+    }
+
+    if (!demoUser) return;
+
+    for (const seeded of INITIAL_PROJECTS) {
+      if (seeded.createdByUserId !== demoUser.id) continue;
+      const found = await client.query<PayloadRow>('SELECT payload FROM projects WHERE id = $1', [seeded.id]);
+      if (found.rowCount === 0) continue;
+
+      const stored = parsePayload<ExecutiveProject>(found.rows[0]);
+      if (stored.createdByUserId) continue;
+
+      await client.query('UPDATE projects SET payload = $1 WHERE id = $2', [
+        toJson({
+          ...stored,
+          createdByUserId: seeded.createdByUserId,
+          createdByName: seeded.createdByName,
+        }),
+        seeded.id,
+      ]);
+    }
+  });
+}
+
+/**
+ * Bring the database to a runnable state: schema, seed and the incremental
+ * data repairs. Called explicitly from server startup (not as an import side
+ * effect) so failures surface as a clear boot error and so tooling can import
+ * this module without touching the database.
+ */
+export async function initializeDatabase(options: { hardening?: boolean } = {}): Promise<void> {
+  await initializeSchema(options);
+  await seed();
+  await seedAnalysisSources();
+  await migratePriorityTitles();
+  await ensureOfficeHeadRole();
+}
+
+/* =========================================================================
+   Health & shutdown
+   ========================================================================= */
+
+export type DatabaseHealth = {
+  ok: boolean;
+  latencyMs: number;
+  schemaVersion: string | null;
+  error?: string;
+};
+
+/** Never throws: the health endpoint reports a degraded state instead. */
+export async function checkDatabase(): Promise<DatabaseHealth> {
+  const started = Date.now();
+  try {
+    const rows = await query<MetaRow>("SELECT value FROM app_meta WHERE key = 'schema_version'");
+    return { ok: true, latencyMs: Date.now() - started, schemaVersion: rows[0]?.value ?? null };
+  } catch (error) {
+    return {
+      ok: false,
+      latencyMs: Date.now() - started,
+      schemaVersion: null,
+      error: (error as Error).message,
+    };
   }
 }
 
-ensureOfficeHeadRole();
+/** Wait until the server responds, or give up after `timeoutMs`. */
+export async function waitForDatabase(timeoutMs = 60_000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  let delay = 250;
+  for (;;) {
+    try {
+      await query('SELECT 1');
+      return;
+    } catch (error) {
+      if (Date.now() >= deadline) {
+        throw new Error(
+          `[db] PostgreSQL not reachable at ${settings.target} after ${timeoutMs}ms: ${(error as Error).message}`,
+        );
+      }
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      delay = Math.min(delay * 2, 3_000);
+    }
+  }
+}
+
+export async function closePool(): Promise<void> {
+  await pool.end();
+}
 
 /* =========================================================================
    Typed accessors
    ========================================================================= */
 
-type Payload<T> = { payload: string };
-
-function parseAll<T>(rows: Payload<T>[]): T[] {
-  return rows.map((r) => JSON.parse(r.payload) as T);
-}
-
 // --- Organization ---------------------------------------------------------
 
-export function getOrganization(): OrganizationConfig {
-  const row = db.prepare('SELECT payload FROM organization WHERE id = ?').get(INITIAL_ORGANIZATION.id) as
-    | Payload<OrganizationConfig>
-    | undefined;
-  return row ? JSON.parse(row.payload) : INITIAL_ORGANIZATION;
+export async function getOrganization(): Promise<OrganizationConfig> {
+  const rows = await query<PayloadRow>('SELECT payload FROM organization WHERE id = $1', [INITIAL_ORGANIZATION.id]);
+  return rows.length > 0 ? parsePayload<OrganizationConfig>(rows[0]) : INITIAL_ORGANIZATION;
 }
 
-export function saveOrganization(org: OrganizationConfig): void {
-  db.prepare(
-    'INSERT INTO organization (id, payload) VALUES (?, ?) ON CONFLICT(id) DO UPDATE SET payload = excluded.payload'
-  ).run(org.id || INITIAL_ORGANIZATION.id, JSON.stringify(org));
+export async function saveOrganization(org: OrganizationConfig): Promise<void> {
+  await query(
+    `INSERT INTO organization (id, payload) VALUES ($1, $2)
+     ON CONFLICT (id) DO UPDATE SET payload = EXCLUDED.payload`,
+    [org.id || INITIAL_ORGANIZATION.id, toJson(org)],
+  );
 }
 
 // --- Locations ------------------------------------------------------------
 
-export function listLocations(): LocationData[] {
-  const rows = db.prepare('SELECT payload FROM locations ORDER BY id').all() as Payload<LocationData>[];
-  return parseAll(rows);
+export async function listLocations(): Promise<LocationData[]> {
+  return parseAll<LocationData>(await query<PayloadRow>('SELECT payload FROM locations ORDER BY id'));
 }
 
-export function getLocation(id: string): LocationData | undefined {
-  const row = db.prepare('SELECT payload FROM locations WHERE id = ?').get(id) as Payload<LocationData> | undefined;
-  return row ? JSON.parse(row.payload) : undefined;
+export async function getLocation(id: string): Promise<LocationData | undefined> {
+  const rows = await query<PayloadRow>('SELECT payload FROM locations WHERE id = $1', [id]);
+  return rows.length > 0 ? parsePayload<LocationData>(rows[0]) : undefined;
 }
 
-export function upsertLocation(loc: LocationData): void {
-  db.prepare('INSERT OR REPLACE INTO locations (id, level, city, county, payload) VALUES (?, ?, ?, ?, ?)').run(
-    loc.id,
-    loc.level,
-    loc.city,
-    loc.county,
-    JSON.stringify(loc)
+export async function upsertLocation(loc: LocationData): Promise<void> {
+  await query(
+    `INSERT INTO locations (id, level, city, county, payload) VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (id) DO UPDATE SET
+       level = EXCLUDED.level, city = EXCLUDED.city, county = EXCLUDED.county, payload = EXCLUDED.payload`,
+    [loc.id, loc.level, loc.city, loc.county, toJson(loc)],
   );
 }
 
 // --- Priorities -----------------------------------------------------------
 
-export function listPriorities(): CsrPriority[] {
-  const rows = db.prepare('SELECT payload FROM priorities ORDER BY code').all() as Payload<CsrPriority>[];
-  return parseAll(rows);
+export async function listPriorities(): Promise<CsrPriority[]> {
+  return parseAll<CsrPriority>(await query<PayloadRow>('SELECT payload FROM priorities ORDER BY code'));
 }
 
-export function getPriority(id: string): CsrPriority | undefined {
-  const row = db.prepare('SELECT payload FROM priorities WHERE id = ?').get(id) as Payload<CsrPriority> | undefined;
-  return row ? JSON.parse(row.payload) : undefined;
+export async function getPriority(id: string): Promise<CsrPriority | undefined> {
+  const rows = await query<PayloadRow>('SELECT payload FROM priorities WHERE id = $1', [id]);
+  return rows.length > 0 ? parsePayload<CsrPriority>(rows[0]) : undefined;
 }
 
-export function upsertPriority(p: CsrPriority): void {
-  db.prepare('INSERT OR REPLACE INTO priorities (id, code, title, category, payload) VALUES (?, ?, ?, ?, ?)').run(
-    p.id,
-    p.code,
-    p.title,
-    p.category,
-    JSON.stringify(p)
+export async function upsertPriority(p: CsrPriority): Promise<void> {
+  await query(
+    `INSERT INTO priorities (id, code, title, category, payload) VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (id) DO UPDATE SET
+       code = EXCLUDED.code, title = EXCLUDED.title, category = EXCLUDED.category, payload = EXCLUDED.payload`,
+    [p.id, p.code, p.title, p.category, toJson(p)],
   );
 }
 
-export function deletePriority(id: string): boolean {
-  const info = db.prepare('DELETE FROM priorities WHERE id = ?').run(id);
-  return info.changes > 0;
+export async function deletePriority(id: string): Promise<boolean> {
+  const result = await pool.query('DELETE FROM priorities WHERE id = $1', [id]);
+  return (result.rowCount ?? 0) > 0;
 }
 
-export function replaceAllPriorities(items: CsrPriority[]): void {
-  const tx = db.transaction(() => {
-    db.prepare('DELETE FROM priorities').run();
-    const ins = db.prepare('INSERT INTO priorities (id, code, title, category, payload) VALUES (?, ?, ?, ?, ?)');
-    for (const p of items) ins.run(p.id, p.code, p.title, p.category, JSON.stringify(p));
+export async function replaceAllPriorities(items: CsrPriority[]): Promise<void> {
+  await withTransaction(async (client) => {
+    await client.query('DELETE FROM priorities');
+    await upsertMany(
+      client,
+      'priorities',
+      SEED_SPECS.priorities.columns,
+      items.map((p) => [p.id, p.code, p.title, p.category, toJson(p)]),
+      SEED_SPECS.priorities.conflict,
+    );
   });
-  tx();
 }
 
 // --- Projects -------------------------------------------------------------
 
-export function listProjects(): ExecutiveProject[] {
-  const rows = db.prepare('SELECT payload FROM projects ORDER BY id').all() as Payload<ExecutiveProject>[];
-  return parseAll(rows);
+export async function listProjects(): Promise<ExecutiveProject[]> {
+  return parseAll<ExecutiveProject>(await query<PayloadRow>('SELECT payload FROM projects ORDER BY id'));
 }
 
-export function getProject(id: string): ExecutiveProject | undefined {
-  const row = db.prepare('SELECT payload FROM projects WHERE id = ?').get(id) as Payload<ExecutiveProject> | undefined;
-  return row ? JSON.parse(row.payload) : undefined;
+export async function getProject(id: string): Promise<ExecutiveProject | undefined> {
+  const rows = await query<PayloadRow>('SELECT payload FROM projects WHERE id = $1', [id]);
+  return rows.length > 0 ? parsePayload<ExecutiveProject>(rows[0]) : undefined;
 }
 
-export function upsertProject(p: ExecutiveProject): void {
-  db.prepare(
-    'INSERT OR REPLACE INTO projects (id, code, title, status, priority_id, department_id, budget_source_id, payload) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-  ).run(p.id, p.code, p.title, p.status, p.priorityId, p.departmentId, p.budgetSourceId, JSON.stringify(p));
+export async function upsertProject(p: ExecutiveProject): Promise<void> {
+  await query(
+    `INSERT INTO projects (id, code, title, status, priority_id, department_id, budget_source_id, payload)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+     ON CONFLICT (id) DO UPDATE SET
+       code = EXCLUDED.code, title = EXCLUDED.title, status = EXCLUDED.status,
+       priority_id = EXCLUDED.priority_id, department_id = EXCLUDED.department_id,
+       budget_source_id = EXCLUDED.budget_source_id, payload = EXCLUDED.payload`,
+    [p.id, p.code, p.title, p.status, p.priorityId, p.departmentId, p.budgetSourceId, toJson(p)],
+  );
 }
 
-export function deleteProject(id: string): boolean {
-  const info = db.prepare('DELETE FROM projects WHERE id = ?').run(id);
-  return info.changes > 0;
+export async function deleteProject(id: string): Promise<boolean> {
+  const result = await pool.query('DELETE FROM projects WHERE id = $1', [id]);
+  return (result.rowCount ?? 0) > 0;
 }
 
-export function updateProjectStatus(id: string, status: ExecutiveProject['status']): ExecutiveProject | undefined {
-  const project = getProject(id);
+export async function updateProjectStatus(
+  id: string,
+  status: ExecutiveProject['status'],
+): Promise<ExecutiveProject | undefined> {
+  const project = await getProject(id);
   if (!project) return undefined;
   const updated = { ...project, status };
-  upsertProject(updated);
+  await upsertProject(updated);
   return updated;
 }
 
 // --- Departments ----------------------------------------------------------
 
-export function listDepartments(): Department[] {
-  const rows = db.prepare('SELECT payload FROM departments ORDER BY id').all() as Payload<Department>[];
-  return parseAll(rows);
+export async function listDepartments(): Promise<Department[]> {
+  return parseAll<Department>(await query<PayloadRow>('SELECT payload FROM departments ORDER BY id'));
 }
 
-export function upsertDepartment(d: Department): void {
-  db.prepare('INSERT OR REPLACE INTO departments (id, name, code, payload) VALUES (?, ?, ?, ?)').run(
-    d.id,
-    d.name,
-    d.code,
-    JSON.stringify(d)
+export async function upsertDepartment(d: Department): Promise<void> {
+  await query(
+    `INSERT INTO departments (id, name, code, payload) VALUES ($1, $2, $3, $4)
+     ON CONFLICT (id) DO UPDATE SET
+       name = EXCLUDED.name, code = EXCLUDED.code, payload = EXCLUDED.payload`,
+    [d.id, d.name, d.code, toJson(d)],
   );
 }
 
-export function deleteDepartment(id: string): boolean {
-  const info = db.prepare('DELETE FROM departments WHERE id = ?').run(id);
-  return info.changes > 0;
+export async function deleteDepartment(id: string): Promise<boolean> {
+  const result = await pool.query('DELETE FROM departments WHERE id = $1', [id]);
+  return (result.rowCount ?? 0) > 0;
 }
 
 // --- Budget Sources -------------------------------------------------------
 
-export function listBudgetSources(): BudgetSource[] {
-  const rows = db.prepare('SELECT payload FROM budget_sources ORDER BY id').all() as Payload<BudgetSource>[];
-  return parseAll(rows);
+export async function listBudgetSources(): Promise<BudgetSource[]> {
+  return parseAll<BudgetSource>(await query<PayloadRow>('SELECT payload FROM budget_sources ORDER BY id'));
 }
 
-export function upsertBudgetSource(s: BudgetSource): void {
-  db.prepare('INSERT OR REPLACE INTO budget_sources (id, title, code, payload) VALUES (?, ?, ?, ?)').run(
-    s.id,
-    s.title,
-    s.code,
-    JSON.stringify(s)
+export async function upsertBudgetSource(s: BudgetSource): Promise<void> {
+  await query(
+    `INSERT INTO budget_sources (id, title, code, payload) VALUES ($1, $2, $3, $4)
+     ON CONFLICT (id) DO UPDATE SET
+       title = EXCLUDED.title, code = EXCLUDED.code, payload = EXCLUDED.payload`,
+    [s.id, s.title, s.code, toJson(s)],
   );
 }
 
-export function deleteBudgetSource(id: string): boolean {
-  const info = db.prepare('DELETE FROM budget_sources WHERE id = ?').run(id);
-  return info.changes > 0;
+export async function deleteBudgetSource(id: string): Promise<boolean> {
+  const result = await pool.query('DELETE FROM budget_sources WHERE id = $1', [id]);
+  return (result.rowCount ?? 0) > 0;
 }
 
 // --- Crises & Harms -------------------------------------------------------
 
-export function listCrisesHarms(): CrisisHarmItem[] {
-  const rows = db.prepare('SELECT payload FROM crises_harms ORDER BY id').all() as Payload<CrisisHarmItem>[];
-  return parseAll(rows);
+export async function listCrisesHarms(): Promise<CrisisHarmItem[]> {
+  return parseAll<CrisisHarmItem>(await query<PayloadRow>('SELECT payload FROM crises_harms ORDER BY id'));
 }
 
-export function upsertCrisisHarm(c: CrisisHarmItem): void {
-  db.prepare('INSERT OR REPLACE INTO crises_harms (id, title, code, payload) VALUES (?, ?, ?, ?)').run(
-    c.id,
-    c.title,
-    c.code,
-    JSON.stringify(c)
+export async function upsertCrisisHarm(c: CrisisHarmItem): Promise<void> {
+  await query(
+    `INSERT INTO crises_harms (id, title, code, payload) VALUES ($1, $2, $3, $4)
+     ON CONFLICT (id) DO UPDATE SET
+       title = EXCLUDED.title, code = EXCLUDED.code, payload = EXCLUDED.payload`,
+    [c.id, c.title, c.code, toJson(c)],
   );
 }
 
-export function deleteCrisisHarm(id: string): boolean {
-  const info = db.prepare('DELETE FROM crises_harms WHERE id = ?').run(id);
-  return info.changes > 0;
+export async function deleteCrisisHarm(id: string): Promise<boolean> {
+  const result = await pool.query('DELETE FROM crises_harms WHERE id = $1', [id]);
+  return (result.rowCount ?? 0) > 0;
 }
 
 // --- Executors ------------------------------------------------------------
 
-export function listExecutors(): ProjectExecutor[] {
-  const rows = db.prepare('SELECT payload FROM executors ORDER BY id').all() as Payload<ProjectExecutor>[];
-  return parseAll(rows);
+export async function listExecutors(): Promise<ProjectExecutor[]> {
+  return parseAll<ProjectExecutor>(await query<PayloadRow>('SELECT payload FROM executors ORDER BY id'));
 }
 
-export function upsertExecutor(e: ProjectExecutor): void {
-  db.prepare('INSERT OR REPLACE INTO executors (id, name, code, payload) VALUES (?, ?, ?, ?)').run(
-    e.id,
-    e.name,
-    e.code,
-    JSON.stringify(e)
+export async function upsertExecutor(e: ProjectExecutor): Promise<void> {
+  await query(
+    `INSERT INTO executors (id, name, code, payload) VALUES ($1, $2, $3, $4)
+     ON CONFLICT (id) DO UPDATE SET
+       name = EXCLUDED.name, code = EXCLUDED.code, payload = EXCLUDED.payload`,
+    [e.id, e.name, e.code, toJson(e)],
   );
 }
 
-export function deleteExecutor(id: string): boolean {
-  const info = db.prepare('DELETE FROM executors WHERE id = ?').run(id);
-  return info.changes > 0;
+export async function deleteExecutor(id: string): Promise<boolean> {
+  const result = await pool.query('DELETE FROM executors WHERE id = $1', [id]);
+  return (result.rowCount ?? 0) > 0;
 }
 
 // --- Contractors ----------------------------------------------------------
 
-export function listContractors(): Contractor[] {
-  const rows = db.prepare('SELECT payload FROM contractors ORDER BY id').all() as Payload<Contractor>[];
-  return parseAll(rows);
+export async function listContractors(): Promise<Contractor[]> {
+  return parseAll<Contractor>(await query<PayloadRow>('SELECT payload FROM contractors ORDER BY id'));
 }
 
-export function upsertContractor(c: Contractor): void {
-  db.prepare('INSERT OR REPLACE INTO contractors (id, name, payload) VALUES (?, ?, ?)').run(
-    c.id,
-    c.companyName,
-    JSON.stringify(c)
+export async function upsertContractor(c: Contractor): Promise<void> {
+  await query(
+    `INSERT INTO contractors (id, name, payload) VALUES ($1, $2, $3)
+     ON CONFLICT (id) DO UPDATE SET
+       name = EXCLUDED.name, payload = EXCLUDED.payload`,
+    [c.id, c.companyName, toJson(c)],
   );
 }
 
-export function deleteContractor(id: string): boolean {
-  const info = db.prepare('DELETE FROM contractors WHERE id = ?').run(id);
-  return info.changes > 0;
+export async function deleteContractor(id: string): Promise<boolean> {
+  const result = await pool.query('DELETE FROM contractors WHERE id = $1', [id]);
+  return (result.rowCount ?? 0) > 0;
 }
 
 // --- Users & Roles ----------------------------------------------------------
 
-export function listUsers(): UserProfile[] {
-  const rows = db.prepare('SELECT payload FROM users ORDER BY id').all() as Payload<UserProfile>[];
-  return parseAll(rows);
+export async function listUsers(): Promise<UserProfile[]> {
+  return parseAll<UserProfile>(await query<PayloadRow>('SELECT payload FROM users ORDER BY id'));
 }
 
-export function listRolesPermissions(): SystemRolePermission[] {
-  const rows = db.prepare('SELECT payload FROM roles_permissions ORDER BY role').all() as Payload<SystemRolePermission>[];
-  return parseAll(rows);
+export async function listRolesPermissions(): Promise<SystemRolePermission[]> {
+  return parseAll<SystemRolePermission>(
+    await query<PayloadRow>('SELECT payload FROM roles_permissions ORDER BY role'),
+  );
 }
 
 // --- Audit Logs -----------------------------------------------------------
 
-export function listAuditLogs(limit = 200): AuditLogItem[] {
-  const rows = db
-    .prepare('SELECT payload FROM audit_logs ORDER BY rowid DESC LIMIT ?')
-    .all(limit) as Payload<AuditLogItem>[];
-  return parseAll(rows);
+/**
+ * Ordered by the identity column that replaced SQLite's rowid: insertion
+ * order, stable across updates because upserts never touch `seq`.
+ */
+export async function listAuditLogs(limit = 200): Promise<AuditLogItem[]> {
+  return parseAll<AuditLogItem>(
+    await query<PayloadRow>('SELECT payload FROM audit_logs ORDER BY seq DESC LIMIT $1', [limit]),
+  );
 }
 
-export function addAuditLog(entry: AuditLogItem): void {
-  db.prepare(
-    'INSERT OR REPLACE INTO audit_logs (id, created_at, action_type, user_name, payload) VALUES (?, ?, ?, ?, ?)'
-  ).run(entry.id, entry.timestamp, entry.actionType, entry.userName, JSON.stringify(entry));
+export async function addAuditLog(entry: AuditLogItem): Promise<void> {
+  await query(
+    `INSERT INTO audit_logs (id, created_at, action_type, user_name, payload) VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (id) DO UPDATE SET
+       created_at = EXCLUDED.created_at, action_type = EXCLUDED.action_type,
+       user_name = EXCLUDED.user_name, payload = EXCLUDED.payload`,
+    [entry.id, entry.timestamp, entry.actionType, entry.userName, toJson(entry)],
+  );
 }
 
 // --- Analysis Sources -----------------------------------------------------
 
-export function listAnalysisSources(): AnalysisSource[] {
-  const rows = db.prepare('SELECT payload FROM analysis_sources ORDER BY rowid').all() as Payload<AnalysisSource>[];
-  return parseAll(rows);
+export async function listAnalysisSources(): Promise<AnalysisSource[]> {
+  return parseAll<AnalysisSource>(await query<PayloadRow>('SELECT payload FROM analysis_sources ORDER BY seq'));
 }
 
-export function upsertAnalysisSource(s: AnalysisSource): void {
-  db.prepare(
-    'INSERT OR REPLACE INTO analysis_sources (id, title, origin, status, province, county, payload) VALUES (?, ?, ?, ?, ?, ?, ?)'
-  ).run(s.id, s.title, s.origin, s.status, s.province, s.county, JSON.stringify(s));
+export async function upsertAnalysisSource(s: AnalysisSource): Promise<void> {
+  await query(
+    `INSERT INTO analysis_sources (id, title, origin, status, province, county, payload)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     ON CONFLICT (id) DO UPDATE SET
+       title = EXCLUDED.title, origin = EXCLUDED.origin, status = EXCLUDED.status,
+       province = EXCLUDED.province, county = EXCLUDED.county, payload = EXCLUDED.payload`,
+    [s.id, s.title, s.origin, s.status, s.province, s.county, toJson(s)],
+  );
 }
 
-export function deleteAnalysisSource(id: string): boolean {
-  const info = db.prepare('DELETE FROM analysis_sources WHERE id = ?').run(id);
-  return info.changes > 0;
+export async function deleteAnalysisSource(id: string): Promise<boolean> {
+  const result = await pool.query('DELETE FROM analysis_sources WHERE id = $1', [id]);
+  return (result.rowCount ?? 0) > 0;
 }

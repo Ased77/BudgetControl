@@ -1,5 +1,5 @@
 /**
- * Typed fetch wrapper around the Express + SQLite backend.
+ * Typed fetch wrapper around the Express + PostgreSQL backend.
  * Every call resolves to parsed JSON or throws Error(message) on failure.
  */
 

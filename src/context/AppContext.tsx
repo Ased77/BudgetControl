@@ -252,7 +252,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // State boots from the bundled seed data (instant first paint), then is
-  // replaced by the SQLite-backed API payload once the server responds.
+  // replaced by the PostgreSQL-backed API payload once the server responds.
   const [locations, setLocations] = useState<LocationData[]>(INITIAL_LOCATIONS);
   // The initial workspace is شهرستان امیدیه (first fully detailed county); the
   // global location picker can switch to any other registered county.
@@ -342,7 +342,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // --- SQLite backend sync ---------------------------------------------------
+  // --- PostgreSQL backend sync -----------------------------------------------
   // Hydrate all entity state from the server on mount. The bundled INITIAL_*
   // constants only serve as optimistic seed / offline fallback.
   useEffect(() => {

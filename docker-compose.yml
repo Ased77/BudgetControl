@@ -1,0 +1,143 @@
+# =============================================================================
+#  CSR Budgeting — stack definition
+#
+#  Everyday use:
+#     cp .env.example .env        # then set POSTGRES_PASSWORD
+#     docker compose up -d --build
+#     docker compose exec app bun dist/cli/db-check.cjs     # health report
+#
+#  One-time migration of an existing SQLite installation:
+#     docker compose --profile tools run --rm migrate
+#
+#  No credential is written in this file: every value comes from .env through
+#  ${...} interpolation, and the app container receives only the variables it
+#  actually needs (no .env file is mounted into it).
+# =============================================================================
+name: csr-budgeting
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env (see .env.example)}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env (see .env.example)}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env (see .env.example)}
+      # PGDATA names the data directory inside the volume instead of filling the
+      # volume root, which is what makes a later pg_upgrade to Postgres 17 a
+      # mount-and-run instead of a manual dump/restore.
+      PGDATA: /var/lib/postgresql/data/pgdata
+    command:
+      - postgres
+      - -c
+      - max_connections=${POSTGRES_MAX_CONNECTIONS:-100}
+      - -c
+      - shared_buffers=${POSTGRES_SHARED_BUFFERS:-256MB}
+      - -c
+      - log_min_duration_statement=${POSTGRES_SLOW_QUERY_MS:-1000}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      # Published on loopback only: host tooling can reach it, the network cannot.
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"
+    healthcheck:
+      # $$ escapes the compose interpolation so the shell inside the container
+      # expands the variables (they are set by the postgres image itself).
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\" -h 127.0.0.1"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks: [backend]
+    stop_grace_period: 30s
+    logging: &logging
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  app:
+    build:
+      context: .
+      target: runtime
+      args:
+        BUN_VERSION: "1.4.2"
+    image: csr-budgeting-app:local
+    restart: unless-stopped
+    depends_on:
+      db:
+        # requires the healthcheck above to pass, not merely the container to
+        # have been started.
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      PGHOST: db
+      PGPORT: "5432"
+      PGUSER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      PGDATABASE: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      PG_POOL_MAX: ${PG_POOL_MAX:-10}
+      PG_CONNECTION_TIMEOUT_MS: ${PG_CONNECTION_TIMEOUT_MS:-5000}
+      PG_STATEMENT_TIMEOUT_MS: ${PG_STATEMENT_TIMEOUT_MS:-60000}
+      DB_WAIT_TIMEOUT_MS: ${DB_WAIT_TIMEOUT_MS:-60000}
+    ports:
+      # Loopback by default. Terminate TLS in front of it (nginx, Caddy,
+      # Traefik…) and only then widen the binding to 0.0.0.0.
+      - "127.0.0.1:${APP_HOST_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://127.0.0.1:3000/api/health >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      # Generous: the very first boot seeds ~22k rows before the port opens.
+      start_period: 120s
+    # Hardening: the app writes nothing to disk, so the root filesystem is
+    # immutable and a compromised process cannot drop a payload next to the code.
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    init: true
+    networks: [backend]
+    stop_grace_period: 30s
+    logging: *logging
+
+  # ---------------------------------------------------------------------------
+  # On-demand legacy import (profile "tools", never started by `up`):
+  #   docker compose --profile tools run --rm migrate
+  # Runs the SQLite -> PostgreSQL copy from inside the internal network. The
+  # `tools` build stage carries the production dependencies plus the TypeScript
+  # sources, so the shipped app image stays free of tooling.
+  # Remove `--truncate --yes` to merge instead of replacing.
+  # ---------------------------------------------------------------------------
+  migrate:
+    profiles: ["tools"]
+    build:
+      context: .
+      target: tools
+      args:
+        BUN_VERSION: "1.4.2"
+    image: csr-budgeting-tools:local
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PGHOST: db
+      PGPORT: "5432"
+      PGUSER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      PGDATABASE: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+    volumes:
+      - ./data:/legacy:ro
+    command: ["bun", "run", "db:import:sqlite", "--sqlite", "/legacy/csr-app.db", "--truncate", "--yes"]
+    networks: [backend]
+
+volumes:
+  pgdata:
+
+networks:
+  backend:
+    driver: bridge
