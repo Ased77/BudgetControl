@@ -124,7 +124,7 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/LoginRequest' }
             example:
-              email: admin@localhost
+              email: admin@example.com
               password: 'Str0ng-Passw0rd!'
       responses:
         '200':
@@ -222,7 +222,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/HealthReport' }
         '503':
-          description: Database unreachable (`status: degraded`).
+          description: 'Database unreachable (`status` becomes `degraded`).'
           content:
             application/json:
               schema: { $ref: '#/components/schemas/HealthReport' }
@@ -316,7 +316,7 @@ paths:
       tags: [Organization]
       operationId: getOrganization
       summary: Read the organization profile and total budget
-      description: Empty database returns a built-in default row (`id: org-national`).
+      description: 'Empty database returns a built-in default row (`id: org-national`).'
       responses:
         '200':
           description: Organization configuration.
@@ -332,7 +332,7 @@ paths:
     put:
       tags: [Organization]
       operationId: updateOrganization
-      summary: Save the organization profile (permission: canManageBudget)
+      summary: 'Save the organization profile (permission: canManageBudget)'
       description: >
         Insert-or-replace of the single organization row. `updatedAt` is
         taken from the payload (client display string). `updatedByUserId` is
@@ -420,7 +420,7 @@ paths:
     post:
       tags: [Priorities]
       operationId: createPriority
-      summary: Insert or replace a priority (permission: canManagePriorities)
+      summary: 'Insert or replace a priority (permission: canManagePriorities)'
       description: Upsert by `id`; responds 201 with the payload as received.
       requestBody:
         required: true
@@ -458,7 +458,7 @@ paths:
     put:
       tags: [Priorities]
       operationId: importPriorities
-      summary: Bulk replace all priorities (permission: canManagePriorities)
+      summary: 'Bulk replace all priorities (permission: canManagePriorities)'
       description: >
         CSV/Excel import flow: replaces the entire priority set with the
         posted array. Body MUST be a JSON array (else 400).
@@ -507,7 +507,7 @@ paths:
     put:
       tags: [Priorities]
       operationId: updatePriority
-      summary: Update one priority (permission: canManagePriorities)
+      summary: 'Update one priority (permission: canManagePriorities)'
       description: Upsert by path id; `body.id` must equal the URL id (else 400).
       parameters:
         - $ref: '#/components/parameters/ResourceId'
@@ -582,7 +582,7 @@ paths:
     post:
       tags: [Projects]
       operationId: createProject
-      summary: Insert or replace a project (permission: canCreateProject)
+      summary: 'Insert or replace a project (permission: canCreateProject)'
       requestBody:
         required: true
         content:
@@ -605,7 +605,7 @@ paths:
               county: سرباز
               district: مرکزی
               targetArea: 'روستای دره‌گی'
-              estimatedCostToman: 8_500_000_000
+              estimatedCostToman: 8500000000
               beneficiariesCount: 1200
               costPerBeneficiaryToman: 7083333
               antiOverlapStatus: CLEAR
@@ -635,7 +635,7 @@ paths:
     put:
       tags: [Projects]
       operationId: updateProject
-      summary: Update one project (permission: canCreateProject)
+      summary: 'Update one project (permission: canCreateProject)'
       description: >
         `body.id` must equal the URL id (else 400). `createdByUserId` is
         ALWAYS overwritten server-side with the verified session user — a
@@ -738,7 +738,7 @@ paths:
     post:
       tags: [Departments]
       operationId: createDepartment
-      summary: Insert or replace a department (permission: canEditDepartments)
+      summary: 'Insert or replace a department (permission: canEditDepartments)'
       requestBody:
         required: true
         content:
@@ -779,7 +779,7 @@ paths:
     put:
       tags: [Departments]
       operationId: updateDepartment
-      summary: Update one department (permission: canEditDepartments)
+      summary: 'Update one department (permission: canEditDepartments)'
       description: '`body.id` must equal the URL id (else 400).'
       parameters:
         - $ref: '#/components/parameters/ResourceId'
@@ -854,7 +854,7 @@ paths:
     post:
       tags: [Budget Sources]
       operationId: createBudgetSource
-      summary: Insert or replace a budget source (permission: canManageBudget)
+      summary: 'Insert or replace a budget source (permission: canManageBudget)'
       requestBody:
         required: true
         content:
@@ -895,7 +895,7 @@ paths:
     put:
       tags: [Budget Sources]
       operationId: updateBudgetSource
-      summary: Update one budget source (permission: canManageBudget)
+      summary: 'Update one budget source (permission: canManageBudget)'
       description: '`body.id` must equal the URL id (else 400).'
       parameters:
         - $ref: '#/components/parameters/ResourceId'
@@ -967,7 +967,7 @@ paths:
     post:
       tags: [Crises & Harms]
       operationId: createCrisisHarm
-      summary: Insert or replace a crisis/harm item (permission: canManageCrises)
+      summary: 'Insert or replace a crisis/harm item (permission: canManageCrises)'
       requestBody:
         required: true
         content:
@@ -1010,7 +1010,7 @@ paths:
     put:
       tags: [Crises & Harms]
       operationId: updateCrisisHarm
-      summary: Update one crisis/harm item (permission: canManageCrises)
+      summary: 'Update one crisis/harm item (permission: canManageCrises)'
       description: '`body.id` must equal the URL id (else 400).'
       parameters:
         - $ref: '#/components/parameters/ResourceId'
@@ -1082,7 +1082,7 @@ paths:
     post:
       tags: [Executors]
       operationId: createExecutor
-      summary: Insert or replace an executor (permission: canManageExecutors)
+      summary: 'Insert or replace an executor (permission: canManageExecutors)'
       requestBody:
         required: true
         content:
@@ -1123,7 +1123,7 @@ paths:
     put:
       tags: [Executors]
       operationId: updateExecutor
-      summary: Update one executor (permission: canManageExecutors)
+      summary: 'Update one executor (permission: canManageExecutors)'
       description: '`body.id` must equal the URL id (else 400).'
       parameters:
         - $ref: '#/components/parameters/ResourceId'
@@ -1195,7 +1195,7 @@ paths:
     post:
       tags: [Contractors]
       operationId: createContractor
-      summary: Insert or replace a contractor (permission: canManageContractors)
+      summary: 'Insert or replace a contractor (permission: canManageContractors)'
       requestBody:
         required: true
         content:
@@ -1238,7 +1238,7 @@ paths:
     put:
       tags: [Contractors]
       operationId: updateContractor
-      summary: Update one contractor (permission: canManageContractors)
+      summary: 'Update one contractor (permission: canManageContractors)'
       description: '`body.id` must equal the URL id (else 400).'
       parameters:
         - $ref: '#/components/parameters/ResourceId'
@@ -1332,7 +1332,7 @@ paths:
     get:
       tags: [Audit Logs]
       operationId: listAuditLogs
-      summary: Newest-first audit page (permission: canAuditLogs)
+      summary: 'Newest-first audit page (permission: canAuditLogs)'
       description: >
         `limit` clamped server-side: default 200, minimum 1, maximum 1000.
         No pagination beyond a single newest-first slice is exposed.
@@ -1362,7 +1362,7 @@ paths:
     post:
       tags: [Audit Logs]
       operationId: addAuditLogEntry
-      summary: Append an audit entry (permission: canAuditLogs)
+      summary: 'Append an audit entry (permission: canAuditLogs)'
       description: >
         `actorUserId` is stamped server-side from the verified session — the
         caller contributes narrative/display fields only, never the identity
@@ -2287,3 +2287,4 @@ components:
           type: array
           items: { type: string }
         strategicAdvice: { type: string }
+

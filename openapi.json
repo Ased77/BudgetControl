@@ -1,0 +1,4539 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "CSR Budgeting API",
+    "version": "0.0.0",
+    "summary": "National CSR budget allocation, project monitoring and analysis API.",
+    "description": "Backend for \"سامانه جامع و ملی مدیریت هوشمند توسعه روستایی و شهری\" — a Persian-language budget-allocation and executive-project monitoring platform. All money is Toman/Rial (1 Toman = 10 Rial). Sessions use an httpOnly access-token cookie (`csr_at`, HS256 JWT, default 15 min) plus a rotating httpOnly refresh cookie (`csr_rt`, path=/api/auth, default 30 d); machine clients may send the access JWT as `Authorization: Bearer`. Errors are always `{ \"error\": <message>, \"code\"?: <machine-code> }`.\n"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:{PORT}",
+      "description": "Local dev (bun) / Docker deployment",
+      "variables": {
+        "PORT": {
+          "default": "3000"
+        }
+      }
+    },
+    {
+      "url": "https://YOUR-PRODUCTION-HOST",
+      "description": "Vercel deployment (canonical production URL not set in repo — open question)"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "Session creation, renewal, revocation and identity"
+    },
+    {
+      "name": "System",
+      "description": "Health and liveness probes"
+    },
+    {
+      "name": "Calculation",
+      "description": "Budget allocation math and smart recommendations"
+    },
+    {
+      "name": "Organization",
+      "description": "Organization profile and total budget"
+    },
+    {
+      "name": "Locations",
+      "description": "Provinces / counties / districts with deprivation indicators"
+    },
+    {
+      "name": "Priorities",
+      "description": "Development-priority matrix and allocation percentages"
+    },
+    {
+      "name": "Projects",
+      "description": "Executive projects and anti-overlap monitoring"
+    },
+    {
+      "name": "Departments",
+      "description": "Agencies / trustee departments"
+    },
+    {
+      "name": "Budget Sources",
+      "description": "Multi-source funding pools"
+    },
+    {
+      "name": "Crises & Harms",
+      "description": "Local crises, harms and needs assessment"
+    },
+    {
+      "name": "Executors",
+      "description": "Project-executor organizations"
+    },
+    {
+      "name": "Contractors",
+      "description": "Contractor registry"
+    },
+    {
+      "name": "Users & Roles",
+      "description": "Read-only user registry and role/permission matrix"
+    },
+    {
+      "name": "Audit Logs",
+      "description": "Append-mostly audit trail"
+    },
+    {
+      "name": "Analysis Sources",
+      "description": "AI/human inputs feeding the analytical engine"
+    },
+    {
+      "name": "AI Analysis",
+      "description": "Rule-based executive narrative reports"
+    }
+  ],
+  "security": [
+    {
+      "cookieAuth": []
+    },
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/auth/register": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "registerUser",
+        "summary": "Self-service registration (gated by AUTH_ALLOW_REGISTRATION)",
+        "description": "Creates a new identity (`user_id` minted server-side), assigns the default role `DEHYAR_COUNCIL`, and issues a session (both cookies set). Disabled in most deployments: 403 `REGISTRATION_DISABLED`. Rate limited to 8 attempts / 60 s / IP (shared limiter with login).\n",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              },
+              "example": {
+                "email": "user@county.gov.ir",
+                "password": "Str0ng-Passw0rd!",
+                "displayName": "علی رضایی"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Registered; session cookies set. Returns the public profile.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid email, password < 8 chars, or displayName < 2 chars.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Registration disabled in this deployment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "ثبت‌نام آزاد در این استقرار غیرفعال است — با مدیر سامانه تماس بگیرید",
+                  "code": "REGISTRATION_DISABLED"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Email already registered.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "این ایمیل از قبل ثبت شده است",
+                  "code": "EMAIL_TAKEN"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "loginUser",
+        "summary": "Log in with email + password",
+        "description": "Verifies credentials and issues a session (sets `csr_at` + `csr_rt` cookies). Wrong email and wrong password are indistinguishable (401 `AUTH_REQUIRED`). Rate limited to 8 attempts / 60 s / IP.\n",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              },
+              "example": {
+                "email": "admin@example.com",
+                "password": "Str0ng-Passw0rd!"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Logged in; session cookies set.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Bad credentials (code `AUTH_REQUIRED`) or disabled account (code `ACCOUNT_DISABLED`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "badCredentials": {
+                    "value": {
+                      "error": "ایمیل یا رمز عبور نادرست است",
+                      "code": "AUTH_REQUIRED"
+                    }
+                  },
+                  "disabledAccount": {
+                    "value": {
+                      "error": "این حساب کاربری غیرفعال شده است",
+                      "code": "ACCOUNT_DISABLED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "refreshSession",
+        "summary": "Exchange the refresh cookie for a fresh session",
+        "description": "Requires the `csr_rt` httpOnly cookie (path /api/auth). The presented token is consumed (\"rotation\") and a successor token in the same rotation family is issued together with a new access token. Presenting an already-consumed or revoked token revokes the entire family (theft containment). A fresh `csr_rt` cookie is NOT obtained here — the new refresh token is only available via the `Set-Cookie` header of this response.\n",
+        "security": [
+          {
+            "refreshCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session refreshed; both cookies re-issued.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing/expired/replayed refresh token (`AUTH_REQUIRED` or `SESSION_REVOKED`) or disabled account (`ACCOUNT_DISABLED`). Cookies are cleared on these responses.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "logoutUser",
+        "summary": "Revoke the current refresh-token family and clear cookies",
+        "description": "Idempotent: always 200, even with no cookie present. Revokes the whole rotation family belonging to the presented `csr_rt`, then clears both cookies.\n",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Logged out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResult"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "getCurrentUser",
+        "summary": "Verified identity of the current session",
+        "responses": {
+          "200": {
+            "description": "The authenticated user's public profile.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "operationId": "getHealth",
+        "summary": "Liveness + real database health (pings PostgreSQL)",
+        "description": "Answers 503 while the database is unreachable, so orchestrators restart/hold traffic.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Database reachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthReport"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unreachable (`status` becomes `degraded`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthReport"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/health/live": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "operationId": "getLiveness",
+        "summary": "Process-only liveness (legacy compatibility)",
+        "description": "Does not check the database; kept for older clients that only check the process.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Process is up.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthLive"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/calculate": {
+      "post": {
+        "tags": [
+          "Calculation"
+        ],
+        "operationId": "calculateBudget",
+        "summary": "Allocate the budget across priorities (Toman + Rial)",
+        "description": "Reads the stored priorities; per priority uses an explicit allocation from the request when provided, otherwise the stored `defaultPercentage`. `totalBudgetToman` may be omitted to use the organization's stored `totalBudget`.\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalculateRequest"
+              },
+              "example": {
+                "totalBudgetToman": 100000000000,
+                "allocations": {
+                  "priority-water": 25,
+                  "priority-health": 15
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Allocation result over all active priorities.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalculationResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/recommend": {
+      "post": {
+        "tags": [
+          "Calculation"
+        ],
+        "operationId": "getSmartRecommendation",
+        "summary": "Rule-based smart percentage recommendation per priority",
+        "description": "Runs the local recommendation engine on the given deprivation `indicators` (defaults to the first stored location's indicators) and returns scores + explainability per priority target.\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecommendRequest"
+              },
+              "example": {
+                "locationName": "شهرستان سرباز",
+                "indicators": {
+                  "povertyRate": 42,
+                  "marginalizationRate": 18,
+                  "unemploymentRate": 25,
+                  "socialHarmsIndex": 55,
+                  "vulnerableGroupsPopulation": 12000,
+                  "infrastructureDeficit": 60,
+                  "crisisVulnerabilityScore": 48,
+                  "healthAccessDeficit": 52,
+                  "educationDropOutRate": 30,
+                  "culturalDeficitScore": 35,
+                  "environmentalRiskScore": 44
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Recommendation with explainability.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/organization": {
+      "get": {
+        "tags": [
+          "Organization"
+        ],
+        "operationId": "getOrganization",
+        "summary": "Read the organization profile and total budget",
+        "description": "Empty database returns a built-in default row (`id: org-national`).",
+        "responses": {
+          "200": {
+            "description": "Organization configuration.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationConfig"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Organization"
+        ],
+        "operationId": "updateOrganization",
+        "summary": "Save the organization profile (permission: canManageBudget)",
+        "description": "Insert-or-replace of the single organization row. `updatedAt` is taken from the payload (client display string). `updatedByUserId` is stamped server-side from the verified session — any client value is discarded.\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationConfig"
+              },
+              "example": {
+                "id": "org-national",
+                "name": "نظام ملی",
+                "orgType": "GOVERNMENT",
+                "activitySector": "توسعه روستایی و شهری",
+                "province": "سیستان و بلوچستان",
+                "city": "ایرانشهر",
+                "county": "سرباز",
+                "district": "مرکزی",
+                "totalBudget": 100000000000,
+                "currencyUnit": "TOMAN",
+                "budgetPeriod": "1_YEAR",
+                "fiscalYear": "۱۴۰۴",
+                "updatedAt": "۱۴۰۴/۰۵/۱۲"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved; returns the fresh organization record.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationConfig"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/locations": {
+      "get": {
+        "tags": [
+          "Locations"
+        ],
+        "operationId": "listLocations",
+        "summary": "List provinces / counties / districts with deprivation indicators",
+        "description": "Ordered by id. `indicators` is omitted when a location has no indicator row (legal state). Each location also carries optional `coordinates { lat, lng }`.\n",
+        "responses": {
+          "200": {
+            "description": "Locations.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LocationData"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/priorities": {
+      "get": {
+        "tags": [
+          "Priorities"
+        ],
+        "operationId": "listPriorities",
+        "summary": "List the development-priority matrix",
+        "responses": {
+          "200": {
+            "description": "Priorities.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CsrPriority"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Priorities"
+        ],
+        "operationId": "createPriority",
+        "summary": "Insert or replace a priority (permission: canManagePriorities)",
+        "description": "Upsert by `id`; responds 201 with the payload as received.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CsrPriority"
+              },
+              "example": {
+                "id": "priority-water",
+                "code": 1,
+                "title": "آب شرب پایدار",
+                "description": "تأمین آب شرب سالم مناطق محروم",
+                "category": "زیرساخت",
+                "defaultPercentage": 25,
+                "currentPercentage": 25,
+                "isActive": true,
+                "relatedIndicators": [
+                  "infra"
+                ],
+                "iconName": "droplets"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Stored (echo of request payload).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CsrPriority"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/priorities/import": {
+      "put": {
+        "tags": [
+          "Priorities"
+        ],
+        "operationId": "importPriorities",
+        "summary": "Bulk replace all priorities (permission: canManagePriorities)",
+        "description": "CSV/Excel import flow: replaces the entire priority set with the posted array. Body MUST be a JSON array (else 400).\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CsrPriority"
+                }
+              },
+              "example": [
+                {
+                  "id": "priority-water",
+                  "code": 1,
+                  "title": "آب شرب پایدار",
+                  "description": "تأمین آب شرب سالم",
+                  "category": "زیرساخت",
+                  "defaultPercentage": 25,
+                  "currentPercentage": 25,
+                  "isActive": true,
+                  "relatedIndicators": [
+                    "infra"
+                  ],
+                  "iconName": "droplets"
+                }
+              ]
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Replaced; returns the submitted count.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CountResult"
+                },
+                "example": {
+                  "count": 1
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Body was not an array.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Expected an array of priorities"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/priorities/{id}": {
+      "put": {
+        "tags": [
+          "Priorities"
+        ],
+        "operationId": "updatePriority",
+        "summary": "Update one priority (permission: canManagePriorities)",
+        "description": "Upsert by path id; `body.id` must equal the URL id (else 400).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CsrPriority"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved (echo of request payload).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CsrPriority"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestIdMismatch"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Priorities"
+        ],
+        "operationId": "deletePriority",
+        "summary": "Delete one priority",
+        "description": "Authenticated but NOT permission-gated (as-implemented — flagged gap). Unknown id → 404.\n",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/ReferentialConflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/projects": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "listProjects",
+        "summary": "List executive projects",
+        "description": "Names of priority/department/source/executor/contractor are derived via joins at read time.",
+        "responses": {
+          "200": {
+            "description": "Projects.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExecutiveProject"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "createProject",
+        "summary": "Insert or replace a project (permission: canCreateProject)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecutiveProject"
+              },
+              "example": {
+                "id": "8f1c2c5e-2a4b-4a3f-9c1d-5e6f7089a0b1",
+                "code": "PRJ-1404-001",
+                "title": "آبرسانی روستای دُرَه‌گی",
+                "priorityId": "priority-water",
+                "priorityTitle": "آب شرب پایدار",
+                "departmentId": "dept-water",
+                "departmentName": "اداره آب و فاضلاب",
+                "budgetSourceId": "src-csr-01",
+                "budgetSourceName": "CSR صنایع آورد",
+                "executorId": "exe-01",
+                "executorName": "قرارگاه خاتم",
+                "administrativeLevel": "RURAL_DISTRICT",
+                "province": "سیستان و بلوچستان",
+                "county": "سرباز",
+                "district": "مرکزی",
+                "targetArea": "روستای دره‌گی",
+                "estimatedCostToman": 8500000000,
+                "beneficiariesCount": 1200,
+                "costPerBeneficiaryToman": 7083333,
+                "antiOverlapStatus": "CLEAR",
+                "status": "PROPOSED",
+                "startYear": 1404,
+                "endYear": 1404,
+                "durationMonths": 12,
+                "progressPercentage": 0,
+                "description": "شبکه آبرسانی روستایی"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Stored (echo of request payload).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutiveProject"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/projects/{id}": {
+      "put": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "updateProject",
+        "summary": "Update one project (permission: canCreateProject)",
+        "description": "`body.id` must equal the URL id (else 400). `createdByUserId` is ALWAYS overwritten server-side with the verified session user — a client claiming another user's identity is silently overridden.\n",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecutiveProject"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved (echo of request payload with server-stamped owner).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutiveProject"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestIdMismatch"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "deleteProject",
+        "summary": "Delete one project",
+        "description": "Authenticated but NOT permission-gated (as-implemented — flagged gap).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/ReferentialConflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/status": {
+      "patch": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "updateProjectStatus",
+        "summary": "Change a project's status only",
+        "description": "Authenticated but NOT permission-gated (as-implemented — flagged gap).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StatusUpdateRequest"
+              },
+              "example": {
+                "status": "IN_PROGRESS"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated project.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutiveProject"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/departments": {
+      "get": {
+        "tags": [
+          "Departments"
+        ],
+        "operationId": "listDepartments",
+        "summary": "List trustee departments / agencies",
+        "responses": {
+          "200": {
+            "description": "Departments.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Department"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Departments"
+        ],
+        "operationId": "createDepartment",
+        "summary": "Insert or replace a department (permission: canEditDepartments)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Department"
+              },
+              "example": {
+                "id": "dept-water",
+                "name": "اداره آب و فاضلاب روستایی",
+                "code": "WTR-01",
+                "category": "INFRASTRUCTURE",
+                "categoryFa": "زیرساخت",
+                "headPersonName": "مهدی نورایی",
+                "contactNumber": "۰۲۱-۱۲۳۴۵۶۷۸",
+                "allocatedBudgetToman": 50000000000,
+                "absorbedBudgetToman": 20000000000,
+                "activeProjectsCount": 14,
+                "performanceScore": 72,
+                "administrativeLevel": "PROVINCIAL",
+                "province": "سیستان و بلوچستان",
+                "description": "گونه زیرساخت آب"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Stored (echo of request payload).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Department"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/departments/{id}": {
+      "put": {
+        "tags": [
+          "Departments"
+        ],
+        "operationId": "updateDepartment",
+        "summary": "Update one department (permission: canEditDepartments)",
+        "description": "`body.id` must equal the URL id (else 400).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Department"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved (echo of request payload).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Department"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestIdMismatch"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Departments"
+        ],
+        "operationId": "deleteDepartment",
+        "summary": "Delete one department",
+        "description": "Authenticated but NOT permission-gated (as-implemented). A department still owning projects is rejected by the FK restraint → 409 (ReferentialViolation).\n",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/ReferentialConflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/budget-sources": {
+      "get": {
+        "tags": [
+          "Budget Sources"
+        ],
+        "operationId": "listBudgetSources",
+        "summary": "List multi-source funding pools",
+        "responses": {
+          "200": {
+            "description": "Budget sources.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BudgetSource"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Budget Sources"
+        ],
+        "operationId": "createBudgetSource",
+        "summary": "Insert or replace a budget source (permission: canManageBudget)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BudgetSource"
+              },
+              "example": {
+                "id": "src-csr-01",
+                "title": "CSR صنایع آورد",
+                "code": "CSR-04",
+                "sourceType": "CSR",
+                "sourceTypeFa": "مسئولیت اجتماعی شرکتی",
+                "totalAmountToman": 30000000000,
+                "allocatedAmountToman": 12000000000,
+                "remainingAmountToman": 18000000000,
+                "fiscalYear": "۱۴۰۴",
+                "sponsorOrganization": "کارخانه آورد",
+                "targetScope": "کل شهرستان",
+                "status": "ACTIVE",
+                "province": "سیستان و بلوچستان",
+                "county": "سرباز"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Stored (echo of request payload).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetSource"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/budget-sources/{id}": {
+      "put": {
+        "tags": [
+          "Budget Sources"
+        ],
+        "operationId": "updateBudgetSource",
+        "summary": "Update one budget source (permission: canManageBudget)",
+        "description": "`body.id` must equal the URL id (else 400).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BudgetSource"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved (echo of request payload).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetSource"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestIdMismatch"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Budget Sources"
+        ],
+        "operationId": "deleteBudgetSource",
+        "summary": "Delete one budget source",
+        "description": "Authenticated but NOT permission-gated (as-implemented — flagged gap).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/ReferentialConflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/crises-harms": {
+      "get": {
+        "tags": [
+          "Crises & Harms"
+        ],
+        "operationId": "listCrisesHarms",
+        "summary": "List recorded crises, harms and local needs",
+        "responses": {
+          "200": {
+            "description": "Crisis/harm items.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CrisisHarmItem"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Crises & Harms"
+        ],
+        "operationId": "createCrisisHarm",
+        "summary": "Insert or replace a crisis/harm item (permission: canManageCrises)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrisisHarmItem"
+              },
+              "example": {
+                "id": "ch-water-dorhg",
+                "title": "بحران حاد تنش آبی",
+                "code": "CH-01",
+                "category": "آب",
+                "level": "RURAL_DISTRICT",
+                "province": "سیستان و بلوچستان",
+                "county": "سرباز",
+                "districtOrVillage": "روستای دره‌گی",
+                "severityScore": 85,
+                "urgency": "CRITICAL",
+                "affectedPopulation": 1200,
+                "primaryCause": "خشکسالی چندساله",
+                "recommendedIntervention": "شبکه آبرسانی و مخزن ذخیره",
+                "status": "UNRESOLVED",
+                "activeProjectsCount": 1,
+                "deficitIndexFa": "بحران حاد تنش آبی"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Stored (echo of request payload).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrisisHarmItem"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/crises-harms/{id}": {
+      "put": {
+        "tags": [
+          "Crises & Harms"
+        ],
+        "operationId": "updateCrisisHarm",
+        "summary": "Update one crisis/harm item (permission: canManageCrises)",
+        "description": "`body.id` must equal the URL id (else 400).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrisisHarmItem"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved (echo of request payload).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrisisHarmItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestIdMismatch"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Crises & Harms"
+        ],
+        "operationId": "deleteCrisisHarm",
+        "summary": "Delete one crisis/harm item",
+        "description": "Authenticated but NOT permission-gated (as-implemented — flagged gap).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/ReferentialConflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/executors": {
+      "get": {
+        "tags": [
+          "Executors"
+        ],
+        "operationId": "listExecutors",
+        "summary": "List project-executor organizations",
+        "responses": {
+          "200": {
+            "description": "Executors.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectExecutor"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Executors"
+        ],
+        "operationId": "createExecutor",
+        "summary": "Insert or replace an executor (permission: canManageExecutors)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectExecutor"
+              },
+              "example": {
+                "id": "exe-01",
+                "name": "قرارگاه محرومیت‌زدازی خاتم",
+                "code": "EQ-01",
+                "type": "JIHADI_FOUNDATION",
+                "typeFa": "قرارگاه جهادی",
+                "managingDirector": "رضا کاظمی",
+                "contactPhone": "۰۲۱-۸۸۷۷۶۶۵۵",
+                "activeProjectsCount": 9,
+                "completedProjectsCount": 31,
+                "successRate": 88,
+                "capacityStatus": "AVAILABLE",
+                "coverageRegion": "جنوب استان",
+                "province": "سیستان و بلوچستان",
+                "county": "سرباز"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Stored (echo of request payload).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectExecutor"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/executors/{id}": {
+      "put": {
+        "tags": [
+          "Executors"
+        ],
+        "operationId": "updateExecutor",
+        "summary": "Update one executor (permission: canManageExecutors)",
+        "description": "`body.id` must equal the URL id (else 400).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectExecutor"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved (echo of request payload).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectExecutor"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestIdMismatch"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Executors"
+        ],
+        "operationId": "deleteExecutor",
+        "summary": "Delete one executor",
+        "description": "Authenticated but NOT permission-gated (as-implemented — flagged gap).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/ReferentialConflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/contractors": {
+      "get": {
+        "tags": [
+          "Contractors"
+        ],
+        "operationId": "listContractors",
+        "summary": "List contractors",
+        "responses": {
+          "200": {
+            "description": "Contractors.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Contractor"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Contractors"
+        ],
+        "operationId": "createContractor",
+        "summary": "Insert or replace a contractor (permission: canManageContractors)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Contractor"
+              },
+              "example": {
+                "id": "con-road-02",
+                "companyName": "شرکت عمران سرباز",
+                "ceoName": "حسین دری",
+                "nationalId": "1048765432",
+                "grade": "GRADE_3",
+                "gradeFa": "درجه سه",
+                "specialtyField": "راه و ابنیه",
+                "activeContractsCount": 4,
+                "totalContractValueToman": 48000000000,
+                "performanceScore": 79,
+                "satisfactionRating": 4.2,
+                "freeCapacitySlots": 2,
+                "phone": "۰۹۱۲۳۴۵۶۷۸۹",
+                "status": "VERIFIED",
+                "province": "سیستان و بلوچستان",
+                "county": "سرباز"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Stored (echo of request payload).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Contractor"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/contractors/{id}": {
+      "put": {
+        "tags": [
+          "Contractors"
+        ],
+        "operationId": "updateContractor",
+        "summary": "Update one contractor (permission: canManageContractors)",
+        "description": "`body.id` must equal the URL id (else 400).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Contractor"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved (echo of request payload).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Contractor"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestIdMismatch"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Contractors"
+        ],
+        "operationId": "deleteContractor",
+        "summary": "Delete one contractor",
+        "description": "Authenticated but NOT permission-gated (as-implemented — flagged gap).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/ReferentialConflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/users": {
+      "get": {
+        "tags": [
+          "Users & Roles"
+        ],
+        "operationId": "listUsers",
+        "summary": "Read-only user registry",
+        "description": "Business `users` table (NOT auth accounts). No passwords ever exposed.",
+        "responses": {
+          "200": {
+            "description": "Users.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserProfile"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/roles-permissions": {
+      "get": {
+        "tags": [
+          "Users & Roles"
+        ],
+        "operationId": "listRolesPermissions",
+        "summary": "Role/permission access matrix",
+        "description": "The matrix used by `requirePermission`; an unknown role gets nothing (fail-closed).",
+        "responses": {
+          "200": {
+            "description": "Role matrix.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SystemRolePermission"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/audit-logs": {
+      "get": {
+        "tags": [
+          "Audit Logs"
+        ],
+        "operationId": "listAuditLogs",
+        "summary": "Newest-first audit page (permission: canAuditLogs)",
+        "description": "`limit` clamped server-side: default 200, minimum 1, maximum 1000. No pagination beyond a single newest-first slice is exposed.\n",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Max entries to return (1–1000, default 200).",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 200
+            },
+            "example": 50
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Audit entries (newest first).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuditLogItem"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Audit Logs"
+        ],
+        "operationId": "addAuditLogEntry",
+        "summary": "Append an audit entry (permission: canAuditLogs)",
+        "description": "`actorUserId` is stamped server-side from the verified session — the caller contributes narrative/display fields only, never the identity column. Insert-or-replace on `id`. Responds `{ ok: true }`.\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuditLogItem"
+              },
+              "example": {
+                "id": "al-0001",
+                "timestamp": "۱۴۰۴/۰۵/۱۲",
+                "userName": "علی رضایی",
+                "userRole": "DEHYAR_COUNCIL",
+                "actionType": "PRIORITY_EDIT",
+                "targetPriorityTitle": "آب شرب پایدار",
+                "oldValue": "۲۵٪",
+                "newValue": "۳۰٪",
+                "rationale": "افزایش اولویت بحران آب",
+                "province": "سیستان و بلوچستان",
+                "county": "سرباز"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Stored.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/analysis-sources": {
+      "get": {
+        "tags": [
+          "Analysis Sources"
+        ],
+        "operationId": "listAnalysisSources",
+        "summary": "List analytical inputs (AI/human evidence)",
+        "responses": {
+          "200": {
+            "description": "Analysis sources (newest first).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AnalysisSource"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Analysis Sources"
+        ],
+        "operationId": "createAnalysisSource",
+        "summary": "Insert or replace an analysis source",
+        "description": "Authenticated but NOT permission-gated (as-implemented — flagged gap).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisSource"
+              },
+              "example": {
+                "id": "ans-0042",
+                "title": "گزارش میدانی کمبود تخت درمانی",
+                "summary": "کمبود ۲۴ تخت درمانی در شهرستان سرباز",
+                "origin": "HUMAN",
+                "kind": "FIELD_REPORT",
+                "provider": "کارشناس بهداشت",
+                "publishedAt": "۱۴۰۴/۰۵/۱۲",
+                "linkedAreas": [
+                  "health",
+                  "prioritization"
+                ],
+                "reliabilityScore": 80,
+                "status": "PENDING",
+                "province": "سیستان و بلوچستان",
+                "county": "سرباز",
+                "createdAt": "۱۴۰۴/۰۵/۱۲"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Stored (echo of request payload).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisSource"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/analysis-sources/{id}": {
+      "put": {
+        "tags": [
+          "Analysis Sources"
+        ],
+        "operationId": "updateAnalysisSource",
+        "summary": "Update one analysis source (approve/edit workflow)",
+        "description": "`body.id` must equal the URL id (else 400). No permission gate (as-implemented).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisSource"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved (echo of request payload).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisSource"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestIdMismatch"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Analysis Sources"
+        ],
+        "operationId": "deleteAnalysisSource",
+        "summary": "Delete one analysis source",
+        "description": "Authenticated but NOT permission-gated (as-implemented — flagged gap).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/ReferentialConflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/ai-analysis": {
+      "post": {
+        "tags": [
+          "AI Analysis"
+        ],
+        "operationId": "getAiNarrative",
+        "summary": "Rule-based executive narrative report",
+        "description": "Not an LLM call (`isAiGenerated: false`). Location matched by explicit `locationId` first, then by the longest county name contained in the sent `locationName`, then by city match, then the first stored location. Narrative assembles local crises and projects for that county.\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiAnalysisRequest"
+              },
+              "example": {
+                "locationId": "loc-sarbaz",
+                "locationName": "شهرستان سرباز",
+                "totalBudgetToman": 100000000000
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Executive narrative (Persian).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiAnalysisResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "csr_at",
+        "description": "httpOnly session cookie carrying the HS256 access JWT (default 15 min)."
+      },
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Same HS256 access JWT, accepted from machine clients."
+      },
+      "refreshCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "csr_rt",
+        "description": "httpOnly rotating refresh token (opaque 48-byte base64url), path-scoped to /api/auth."
+      }
+    },
+    "parameters": {
+      "ResourceId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "Business identifier (as assigned by the client on create).",
+        "schema": {
+          "type": "string"
+        },
+        "example": "priority-water"
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Not authenticated — no token, forged/expired token, deleted or disabled account, or token predates the account's revocation gate.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "احراز هویت لازم است — توکنی فرستاده نشد",
+              "code": "AUTH_REQUIRED"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Authenticated but the role lacks the required permission flag in the roles_permissions matrix (fail-closed for unknown roles).\n",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "سطح دسترسی این عملیات را ندارید",
+              "code": "FORBIDDEN",
+              "role": "DEHYAR_COUNCIL"
+            }
+          }
+        }
+      },
+      "BadRequest": {
+        "description": "Invalid request payload.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "BadRequestIdMismatch": {
+        "description": "`body.id` does not match the URL id.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Body id must match URL id"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Requested resource does not exist.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Priority not found"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Uniqueness conflict (409) mapped from PostgreSQL 23505.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "ReferentialConflict": {
+        "description": "Delete blocked — record still referenced (409) mapped from PostgreSQL 23503.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "RateLimited": {
+        "description": "More than 8 failed login/register attempts from one IP within 60 s.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "تلاش‌های ناموفق بیش از حد مجاز — کمی بعد دوباره تلاش کنید",
+              "code": "RATE_LIMITED"
+            }
+          }
+        }
+      },
+      "InternalError": {
+        "description": "Unexpected server error.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Internal server error"
+            }
+          }
+        }
+      },
+      "ServiceUnavailable": {
+        "description": "Database problem — serialization failure, deadlock, statement timeout or connectivity (retryable/operational).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "title": "ErrorEnvelope",
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Human-readable message; Persian (fa) for user-facing failures."
+          },
+          "code": {
+            "type": "string",
+            "description": "Stable machine code where present (AUTH_REQUIRED, ACCOUNT_DISABLED, SESSION_REVOKED, REGISTRATION_DISABLED, EMAIL_TAKEN, RATE_LIMITED, FORBIDDEN)."
+          },
+          "role": {
+            "type": "string",
+            "description": "Caller role echoed by 403 FORBIDDEN responses."
+          }
+        },
+        "example": {
+          "error": "سطح دسترسی این عملیات را ندارید",
+          "code": "FORBIDDEN",
+          "role": "DEHYAR_COUNCIL"
+        }
+      },
+      "OkResult": {
+        "title": "OkResult",
+        "type": "object",
+        "required": [
+          "ok"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "const": true
+          }
+        },
+        "example": {
+          "ok": true
+        }
+      },
+      "CountResult": {
+        "title": "CountResult",
+        "type": "object",
+        "required": [
+          "count"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "description": "Number of items processed in a bulk operation."
+          }
+        },
+        "example": {
+          "count": 3
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "password",
+          "displayName"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "description": "Minimum length guarded by MIN_PASSWORD_LENGTH (= 8)."
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 2
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "PublicProfile": {
+        "title": "PublicUserProfile",
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "name",
+          "role",
+          "roleFa",
+          "roleTitleFa",
+          "avatar",
+          "organization"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "auth_users.id (uuid) — the canonical user_id."
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole"
+          },
+          "roleFa": {
+            "type": "string",
+            "description": "Short Persian role name (badge/pill)."
+          },
+          "roleTitleFa": {
+            "type": "string",
+            "description": "Full formal Persian job title."
+          },
+          "avatar": {
+            "type": "string",
+            "description": "Always empty string — browsers fall back to initials."
+          },
+          "organization": {
+            "type": "string"
+          },
+          "departmentId": {
+            "type": "string"
+          },
+          "allowedLocationId": {
+            "type": "string"
+          },
+          "province": {
+            "type": "string"
+          },
+          "county": {
+            "type": "string"
+          }
+        }
+      },
+      "AuthSessionResponse": {
+        "type": "object",
+        "required": [
+          "user"
+        ],
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/PublicProfile"
+          }
+        }
+      },
+      "UserRole": {
+        "type": "string",
+        "enum": [
+          "ADMIN",
+          "PROVINCIAL_GOVERNOR",
+          "DEPARTMENT_HEAD",
+          "OFFICE_HEAD",
+          "REGIONAL_MANAGER",
+          "PLANNING_SPECIALIST",
+          "AUDITOR",
+          "DEHYAR_COUNCIL"
+        ]
+      },
+      "HealthReport": {
+        "type": "object",
+        "required": [
+          "status",
+          "timestamp",
+          "service",
+          "persistence",
+          "database"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "degraded"
+            ]
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "service": {
+            "type": "string",
+            "example": "CSR Budgeting API"
+          },
+          "persistence": {
+            "type": "string",
+            "enum": [
+              "postgresql"
+            ]
+          },
+          "database": {
+            "type": "object",
+            "required": [
+              "ok",
+              "latencyMs",
+              "schemaVersion",
+              "pool"
+            ],
+            "properties": {
+              "ok": {
+                "type": "boolean"
+              },
+              "latencyMs": {
+                "type": "number",
+                "description": "Round-trip probe time in ms."
+              },
+              "schemaVersion": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Count of applied drizzle migrations."
+              },
+              "error": {
+                "type": "string"
+              },
+              "pool": {
+                "type": "object",
+                "required": [
+                  "total",
+                  "idle",
+                  "waiting"
+                ],
+                "properties": {
+                  "total": {
+                    "type": "integer"
+                  },
+                  "idle": {
+                    "type": "integer"
+                  },
+                  "waiting": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "HealthLive": {
+        "type": "object",
+        "required": [
+          "status",
+          "timestamp",
+          "service",
+          "persistence"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok"
+            ]
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "service": {
+            "type": "string",
+            "example": "CSR Budgeting API"
+          },
+          "persistence": {
+            "type": "string",
+            "enum": [
+              "postgresql"
+            ]
+          }
+        }
+      },
+      "OrganizationConfig": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "orgType",
+          "activitySector",
+          "province",
+          "city",
+          "county",
+          "district",
+          "totalBudget",
+          "currencyUnit",
+          "budgetPeriod",
+          "fiscalYear",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "orgType": {
+            "$ref": "#/components/schemas/OrgType"
+          },
+          "activitySector": {
+            "type": "string"
+          },
+          "nationalCode": {
+            "type": "string"
+          },
+          "province": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "county": {
+            "type": "string"
+          },
+          "district": {
+            "type": "string"
+          },
+          "totalBudget": {
+            "type": "number",
+            "description": "Total budget in Toman ( PUT rounds to integer)."
+          },
+          "currencyUnit": {
+            "$ref": "#/components/schemas/CurrencyUnit"
+          },
+          "budgetPeriod": {
+            "$ref": "#/components/schemas/BudgetPeriod"
+          },
+          "fiscalYear": {
+            "type": "string",
+            "description": "Display string, usually Persian digits (e.g. ۱۴۰۴)."
+          },
+          "description": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Display string produced by the UI (Persian date), not an ISO instant."
+          },
+          "updatedByUserId": {
+            "type": "string",
+            "description": "Server-stamped on PUT from the verified session; display only."
+          }
+        }
+      },
+      "OrgType": {
+        "type": "string",
+        "enum": [
+          "GOVERNMENT",
+          "PUBLIC",
+          "PRIVATE",
+          "SEMI_PRIVATE",
+          "COOPERATIVE"
+        ]
+      },
+      "BudgetPeriod": {
+        "type": "string",
+        "enum": [
+          "1_YEAR",
+          "3_YEARS",
+          "5_YEARS"
+        ]
+      },
+      "CurrencyUnit": {
+        "type": "string",
+        "enum": [
+          "TOMAN",
+          "RIAL"
+        ]
+      },
+      "AdministrativeLevel": {
+        "type": "string",
+        "enum": [
+          "NATIONAL",
+          "PROVINCIAL",
+          "COUNTY",
+          "RURAL_DISTRICT"
+        ]
+      },
+      "Coordinates": {
+        "type": "object",
+        "required": [
+          "lat",
+          "lng"
+        ],
+        "properties": {
+          "lat": {
+            "type": "number"
+          },
+          "lng": {
+            "type": "number"
+          }
+        }
+      },
+      "LocalIndicators": {
+        "title": "LocalIndicators",
+        "type": "object",
+        "description": "Deprivation indices per location (one row per location).",
+        "required": [
+          "povertyRate",
+          "marginalizationRate",
+          "unemploymentRate",
+          "socialHarmsIndex",
+          "vulnerableGroupsPopulation",
+          "infrastructureDeficit",
+          "crisisVulnerabilityScore",
+          "healthAccessDeficit",
+          "educationDropOutRate",
+          "culturalDeficitScore",
+          "environmentalRiskScore"
+        ],
+        "properties": {
+          "povertyRate": {
+            "type": "number",
+            "description": "%"
+          },
+          "marginalizationRate": {
+            "type": "number",
+            "description": "Informal-settlement percentage."
+          },
+          "unemploymentRate": {
+            "type": "number",
+            "description": "%"
+          },
+          "socialHarmsIndex": {
+            "type": "number",
+            "description": "0–100"
+          },
+          "vulnerableGroupsPopulation": {
+            "type": "number",
+            "description": "Headcount."
+          },
+          "infrastructureDeficit": {
+            "type": "number",
+            "description": "0–100"
+          },
+          "crisisVulnerabilityScore": {
+            "type": "number",
+            "description": "0–100"
+          },
+          "healthAccessDeficit": {
+            "type": "number",
+            "description": "0–100"
+          },
+          "educationDropOutRate": {
+            "type": "number",
+            "description": "0–100"
+          },
+          "culturalDeficitScore": {
+            "type": "number",
+            "description": "0–100"
+          },
+          "environmentalRiskScore": {
+            "type": "number",
+            "description": "0–100"
+          }
+        }
+      },
+      "LocationData": {
+        "type": "object",
+        "required": [
+          "id",
+          "level",
+          "province",
+          "county",
+          "city",
+          "district",
+          "population"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "level": {
+            "$ref": "#/components/schemas/AdministrativeLevel"
+          },
+          "province": {
+            "type": "string"
+          },
+          "county": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "district": {
+            "type": "string"
+          },
+          "population": {
+            "type": "number",
+            "description": "Total population (may be national-scale on level=NATIONAL rows)."
+          },
+          "indicators": {
+            "$ref": "#/components/schemas/LocalIndicators"
+          },
+          "coordinates": {
+            "$ref": "#/components/schemas/Coordinates"
+          }
+        }
+      },
+      "CsrPriority": {
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "title",
+          "description",
+          "category",
+          "defaultPercentage",
+          "currentPercentage",
+          "isActive",
+          "relatedIndicators",
+          "iconName"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "code": {
+            "type": "number"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "defaultPercentage": {
+            "type": "number"
+          },
+          "currentPercentage": {
+            "type": "number"
+          },
+          "recommendedPercentage": {
+            "type": "number"
+          },
+          "isLocked": {
+            "type": "boolean"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "relatedIndicators": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "iconName": {
+            "type": "string",
+            "description": "Frontend icon key (e.g. droplets)."
+          },
+          "weightFactor": {
+            "type": "number"
+          },
+          "minPercent": {
+            "type": "number"
+          },
+          "maxPercent": {
+            "type": "number"
+          },
+          "subItems": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdByUserId": {
+            "type": "string"
+          }
+        }
+      },
+      "ContributingDepartment": {
+        "type": "object",
+        "required": [
+          "departmentId",
+          "departmentName",
+          "sharePercentage",
+          "shareAmountToman"
+        ],
+        "properties": {
+          "departmentId": {
+            "type": "string"
+          },
+          "departmentName": {
+            "type": "string"
+          },
+          "sharePercentage": {
+            "type": "number"
+          },
+          "shareAmountToman": {
+            "type": "number"
+          },
+          "roleDescription": {
+            "type": "string"
+          }
+        }
+      },
+      "ProjectStatus": {
+        "type": "string",
+        "enum": [
+          "PROPOSED",
+          "APPROVED",
+          "IN_PROGRESS",
+          "COMPLETED",
+          "SUSPENDED"
+        ]
+      },
+      "AntiOverlapStatus": {
+        "type": "string",
+        "enum": [
+          "CLEAR",
+          "POTENTIAL_DUPLICATE",
+          "INEFFICIENT_PER_CAPITA",
+          "UNPRIORITIZED"
+        ]
+      },
+      "UrgencyLevel": {
+        "type": "string",
+        "enum": [
+          "CRITICAL",
+          "HIGH",
+          "MEDIUM",
+          "LOW"
+        ]
+      },
+      "ExecutiveProject": {
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "title",
+          "priorityId",
+          "priorityTitle",
+          "departmentId",
+          "departmentName",
+          "budgetSourceId",
+          "budgetSourceName",
+          "executorId",
+          "executorName",
+          "administrativeLevel",
+          "province",
+          "county",
+          "district",
+          "targetArea",
+          "estimatedCostToman",
+          "beneficiariesCount",
+          "costPerBeneficiaryToman",
+          "antiOverlapStatus",
+          "status",
+          "startYear",
+          "endYear",
+          "durationMonths",
+          "progressPercentage",
+          "description"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "priorityId": {
+            "type": "string"
+          },
+          "priorityTitle": {
+            "type": "string"
+          },
+          "departmentId": {
+            "type": "string",
+            "description": "Main trustee agency."
+          },
+          "departmentName": {
+            "type": "string"
+          },
+          "requestingDepartmentId": {
+            "type": "string"
+          },
+          "requestingDepartmentName": {
+            "type": "string"
+          },
+          "isMultiDepartment": {
+            "type": "boolean"
+          },
+          "contributingDepartments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContributingDepartment"
+            }
+          },
+          "budgetSourceId": {
+            "type": "string"
+          },
+          "budgetSourceName": {
+            "type": "string"
+          },
+          "executorId": {
+            "type": "string"
+          },
+          "executorName": {
+            "type": "string"
+          },
+          "contractorId": {
+            "type": "string"
+          },
+          "contractorName": {
+            "type": "string"
+          },
+          "createdByUserId": {
+            "type": "string"
+          },
+          "createdByName": {
+            "type": "string"
+          },
+          "crisisHarmId": {
+            "type": "string"
+          },
+          "crisisHarmTitle": {
+            "type": "string"
+          },
+          "urgencyLevel": {
+            "$ref": "#/components/schemas/UrgencyLevel"
+          },
+          "administrativeLevel": {
+            "$ref": "#/components/schemas/AdministrativeLevel"
+          },
+          "province": {
+            "type": "string"
+          },
+          "county": {
+            "type": "string"
+          },
+          "district": {
+            "type": "string"
+          },
+          "targetArea": {
+            "type": "string"
+          },
+          "estimatedCostToman": {
+            "type": "number"
+          },
+          "currentYearAllocatedToman": {
+            "type": "number"
+          },
+          "futureYearsAllocatedToman": {
+            "type": "number"
+          },
+          "csrSharePercentage": {
+            "type": "number"
+          },
+          "governmentSharePercentage": {
+            "type": "number"
+          },
+          "charitySharePercentage": {
+            "type": "number"
+          },
+          "dehyariSharePercentage": {
+            "type": "number"
+          },
+          "bankFacilitySharePercentage": {
+            "type": "number"
+          },
+          "beneficiariesCount": {
+            "type": "number"
+          },
+          "costPerBeneficiaryToman": {
+            "type": "number"
+          },
+          "targetBeneficiaryGroups": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "antiOverlapStatus": {
+            "$ref": "#/components/schemas/AntiOverlapStatus"
+          },
+          "overlapWarningDetails": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProjectStatus"
+          },
+          "startYear": {
+            "type": "number"
+          },
+          "endYear": {
+            "type": "number"
+          },
+          "durationMonths": {
+            "type": "number"
+          },
+          "progressPercentage": {
+            "type": "number",
+            "description": "0–100."
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "StatusUpdateRequest": {
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/ProjectStatus"
+          }
+        }
+      },
+      "DepartmentCategory": {
+        "type": "string",
+        "enum": [
+          "INFRASTRUCTURE",
+          "HEALTH",
+          "EDUCATION",
+          "SOCIAL_WELFARE",
+          "AGRICULTURE",
+          "ENVIRONMENT",
+          "MUNICIPAL_RURAL"
+        ]
+      },
+      "Department": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "code",
+          "category",
+          "categoryFa",
+          "headPersonName",
+          "contactNumber",
+          "allocatedBudgetToman",
+          "absorbedBudgetToman",
+          "activeProjectsCount",
+          "performanceScore",
+          "administrativeLevel",
+          "province",
+          "description"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "category": {
+            "$ref": "#/components/schemas/DepartmentCategory"
+          },
+          "categoryFa": {
+            "type": "string"
+          },
+          "headPersonName": {
+            "type": "string"
+          },
+          "contactNumber": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "logoDataUrl": {
+            "type": "string",
+            "description": "Downscaled data URL; carried in the payload (no upload endpoint)."
+          },
+          "allocatedBudgetToman": {
+            "type": "number"
+          },
+          "absorbedBudgetToman": {
+            "type": "number"
+          },
+          "activeProjectsCount": {
+            "type": "number"
+          },
+          "performanceScore": {
+            "type": "number",
+            "description": "0–100."
+          },
+          "administrativeLevel": {
+            "$ref": "#/components/schemas/AdministrativeLevel"
+          },
+          "province": {
+            "type": "string"
+          },
+          "county": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "createdByUserId": {
+            "type": "string"
+          }
+        }
+      },
+      "BudgetSourceType": {
+        "type": "string",
+        "enum": [
+          "CSR",
+          "GOVERNMENT",
+          "DEHYARI_MUNICIPALITY",
+          "CHARITY_FOUNDATION",
+          "BANK_FACILITY",
+          "PUBLIC_PARTICIPATION"
+        ]
+      },
+      "BudgetSource": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "code",
+          "sourceType",
+          "sourceTypeFa",
+          "totalAmountToman",
+          "allocatedAmountToman",
+          "remainingAmountToman",
+          "fiscalYear",
+          "sponsorOrganization",
+          "targetScope",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "sourceType": {
+            "$ref": "#/components/schemas/BudgetSourceType"
+          },
+          "sourceTypeFa": {
+            "type": "string"
+          },
+          "totalAmountToman": {
+            "type": "number"
+          },
+          "allocatedAmountToman": {
+            "type": "number"
+          },
+          "remainingAmountToman": {
+            "type": "number"
+          },
+          "fiscalYear": {
+            "type": "string"
+          },
+          "sponsorOrganization": {
+            "type": "string"
+          },
+          "targetScope": {
+            "type": "string"
+          },
+          "restrictionNote": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "DEPLETED",
+              "RESERVED"
+            ]
+          },
+          "province": {
+            "type": "string"
+          },
+          "county": {
+            "type": "string"
+          },
+          "createdByUserId": {
+            "type": "string"
+          }
+        }
+      },
+      "CrisisHarmItem": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "code",
+          "category",
+          "level",
+          "province",
+          "county",
+          "districtOrVillage",
+          "severityScore",
+          "urgency",
+          "affectedPopulation",
+          "primaryCause",
+          "recommendedIntervention",
+          "status",
+          "activeProjectsCount",
+          "deficitIndexFa"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "level": {
+            "$ref": "#/components/schemas/AdministrativeLevel"
+          },
+          "province": {
+            "type": "string"
+          },
+          "county": {
+            "type": "string"
+          },
+          "districtOrVillage": {
+            "type": "string"
+          },
+          "severityScore": {
+            "type": "number",
+            "description": "0–100."
+          },
+          "urgency": {
+            "$ref": "#/components/schemas/UrgencyLevel"
+          },
+          "affectedPopulation": {
+            "type": "number"
+          },
+          "primaryCause": {
+            "type": "string"
+          },
+          "recommendedIntervention": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "UNRESOLVED",
+              "UNDER_INTERVENTION",
+              "CONTROLLED"
+            ]
+          },
+          "activeProjectsCount": {
+            "type": "number"
+          },
+          "deficitIndexFa": {
+            "type": "string",
+            "description": "Persian deficiency label (e.g. بحران حاد تنش آبی)."
+          },
+          "createdByUserId": {
+            "type": "string"
+          }
+        }
+      },
+      "ExecutorType": {
+        "type": "string",
+        "enum": [
+          "GOVERNMENTAL",
+          "JIHADI_FOUNDATION",
+          "PUBLIC_COMMUNITY",
+          "NGO",
+          "COOPERATIVE",
+          "PRIVATE"
+        ]
+      },
+      "CapacityStatus": {
+        "type": "string",
+        "enum": [
+          "AVAILABLE",
+          "OPTIMAL",
+          "OVERLOADED"
+        ]
+      },
+      "ProjectExecutor": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "code",
+          "type",
+          "typeFa",
+          "managingDirector",
+          "contactPhone",
+          "activeProjectsCount",
+          "completedProjectsCount",
+          "successRate",
+          "capacityStatus",
+          "coverageRegion"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/ExecutorType"
+          },
+          "typeFa": {
+            "type": "string"
+          },
+          "managingDirector": {
+            "type": "string"
+          },
+          "contactPhone": {
+            "type": "string"
+          },
+          "activeProjectsCount": {
+            "type": "number"
+          },
+          "completedProjectsCount": {
+            "type": "number"
+          },
+          "successRate": {
+            "type": "number",
+            "description": "0–100."
+          },
+          "capacityStatus": {
+            "$ref": "#/components/schemas/CapacityStatus"
+          },
+          "coverageRegion": {
+            "type": "string"
+          },
+          "province": {
+            "type": "string"
+          },
+          "county": {
+            "type": "string"
+          },
+          "createdByUserId": {
+            "type": "string"
+          }
+        }
+      },
+      "ContractorGrade": {
+        "type": "string",
+        "enum": [
+          "GRADE_1",
+          "GRADE_2",
+          "GRADE_3",
+          "GRADE_4",
+          "GRADE_5",
+          "LOCAL_AUTHORIZED"
+        ]
+      },
+      "Contractor": {
+        "type": "object",
+        "required": [
+          "id",
+          "companyName",
+          "ceoName",
+          "nationalId",
+          "grade",
+          "gradeFa",
+          "specialtyField",
+          "activeContractsCount",
+          "totalContractValueToman",
+          "performanceScore",
+          "satisfactionRating",
+          "freeCapacitySlots",
+          "phone",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "companyName": {
+            "type": "string"
+          },
+          "ceoName": {
+            "type": "string"
+          },
+          "nationalId": {
+            "type": "string"
+          },
+          "grade": {
+            "$ref": "#/components/schemas/ContractorGrade"
+          },
+          "gradeFa": {
+            "type": "string"
+          },
+          "specialtyField": {
+            "type": "string"
+          },
+          "activeContractsCount": {
+            "type": "number"
+          },
+          "totalContractValueToman": {
+            "type": "number"
+          },
+          "performanceScore": {
+            "type": "number",
+            "description": "0–100."
+          },
+          "satisfactionRating": {
+            "type": "number",
+            "description": "1–5 stars."
+          },
+          "freeCapacitySlots": {
+            "type": "number"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "VERIFIED",
+              "UNDER_EVALUATION",
+              "SUSPENDED"
+            ]
+          },
+          "province": {
+            "type": "string"
+          },
+          "county": {
+            "type": "string"
+          },
+          "createdByUserId": {
+            "type": "string"
+          }
+        }
+      },
+      "SystemRolePermission": {
+        "type": "object",
+        "required": [
+          "role",
+          "roleTitleFa",
+          "description",
+          "canViewDashboard",
+          "canEditDepartments",
+          "canManageBudget",
+          "canManageCrises",
+          "canManagePriorities",
+          "canCreateProject",
+          "canApproveProjects",
+          "canManageExecutors",
+          "canManageContractors",
+          "canExportReports",
+          "canAuditLogs",
+          "scopeLevel"
+        ],
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/UserRole"
+          },
+          "roleTitleFa": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "canViewDashboard": {
+            "type": "boolean"
+          },
+          "canEditDepartments": {
+            "type": "boolean"
+          },
+          "canManageBudget": {
+            "type": "boolean"
+          },
+          "canManageCrises": {
+            "type": "boolean"
+          },
+          "canManagePriorities": {
+            "type": "boolean"
+          },
+          "canCreateProject": {
+            "type": "boolean",
+            "description": "Workflow entry permission (distinct from canApproveProjects)."
+          },
+          "canApproveProjects": {
+            "type": "boolean"
+          },
+          "canManageExecutors": {
+            "type": "boolean"
+          },
+          "canManageContractors": {
+            "type": "boolean"
+          },
+          "canExportReports": {
+            "type": "boolean"
+          },
+          "canAuditLogs": {
+            "type": "boolean"
+          },
+          "scopeLevel": {
+            "$ref": "#/components/schemas/AdministrativeLevel"
+          }
+        }
+      },
+      "UserProfile": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "role",
+          "roleFa",
+          "roleTitleFa",
+          "avatar",
+          "organization"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole"
+          },
+          "roleFa": {
+            "type": "string"
+          },
+          "roleTitleFa": {
+            "type": "string"
+          },
+          "avatar": {
+            "type": "string"
+          },
+          "organization": {
+            "type": "string"
+          },
+          "departmentId": {
+            "type": "string"
+          },
+          "allowedLocationId": {
+            "type": "string"
+          },
+          "province": {
+            "type": "string"
+          },
+          "county": {
+            "type": "string"
+          }
+        }
+      },
+      "AuditActionType": {
+        "type": "string",
+        "enum": [
+          "PERCENTAGE_CHANGE",
+          "BUDGET_UPDATE",
+          "PRIORITY_ADD",
+          "PRIORITY_EDIT",
+          "PRIORITY_DELETE",
+          "PROJECT_ADD",
+          "PROJECT_EDIT",
+          "PROJECT_DELETE",
+          "PROJECT_STATUS_CHANGE",
+          "DEPARTMENT_ADD",
+          "DEPARTMENT_EDIT",
+          "DEPARTMENT_DELETE",
+          "BUDGET_SOURCE_ADD",
+          "BUDGET_SOURCE_EDIT",
+          "BUDGET_SOURCE_DELETE",
+          "CRISIS_ADD",
+          "CRISIS_EDIT",
+          "CRISIS_DELETE",
+          "EXECUTOR_ADD",
+          "EXECUTOR_EDIT",
+          "EXECUTOR_DELETE",
+          "CONTRACTOR_ADD",
+          "CONTRACTOR_EDIT",
+          "CONTRACTOR_DELETE",
+          "SCENARIO_APPLIED",
+          "EXPORT_REPORT",
+          "LOCATION_CHANGE",
+          "DUPLICATE_FLAGGED",
+          "ANALYSIS_SOURCE_ADD",
+          "ANALYSIS_SOURCE_EDIT",
+          "ANALYSIS_SOURCE_DELETE",
+          "ANALYSIS_SOURCE_REVIEW",
+          "LOGIN",
+          "LOGOUT"
+        ]
+      },
+      "AuditLogItem": {
+        "type": "object",
+        "required": [
+          "id",
+          "timestamp",
+          "userName",
+          "userRole",
+          "actionType"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Display string produced by the UI (Persian date), not an ISO instant."
+          },
+          "userName": {
+            "type": "string",
+            "description": "Display value carried by the entry (identity column is server-stamped)."
+          },
+          "userRole": {
+            "$ref": "#/components/schemas/UserRole"
+          },
+          "actionType": {
+            "$ref": "#/components/schemas/AuditActionType"
+          },
+          "targetPriorityTitle": {
+            "type": "string"
+          },
+          "oldValue": {
+            "type": "string"
+          },
+          "newValue": {
+            "type": "string"
+          },
+          "rationale": {
+            "type": "string"
+          },
+          "province": {
+            "type": "string"
+          },
+          "county": {
+            "type": "string"
+          }
+        }
+      },
+      "AnalysisSourceOrigin": {
+        "type": "string",
+        "enum": [
+          "AI",
+          "HUMAN"
+        ]
+      },
+      "AnalysisSourceKind": {
+        "type": "string",
+        "enum": [
+          "NEWS",
+          "OFFICIAL_STAT",
+          "FIELD_REPORT",
+          "SATELLITE",
+          "INTERVIEW",
+          "SOCIAL_MEDIA"
+        ]
+      },
+      "AnalysisSourceStatus": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "APPROVED",
+          "REJECTED"
+        ]
+      },
+      "AnalysisSource": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "summary",
+          "origin",
+          "kind",
+          "provider",
+          "publishedAt",
+          "linkedAreas",
+          "reliabilityScore",
+          "status",
+          "province",
+          "county",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/AnalysisSourceOrigin"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/AnalysisSourceKind"
+          },
+          "provider": {
+            "type": "string",
+            "description": "Producing model (AI) or person/organisation (HUMAN)."
+          },
+          "sourceUrl": {
+            "type": "string"
+          },
+          "publishedAt": {
+            "type": "string",
+            "description": "Display string (e.g. ۱۴۰۴/۰۵/۱۲)."
+          },
+          "linkedAreas": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Analytical modules that consume this input."
+          },
+          "reliabilityScore": {
+            "type": "number",
+            "description": "0–100 confidence/credibility."
+          },
+          "status": {
+            "$ref": "#/components/schemas/AnalysisSourceStatus"
+          },
+          "reviewedBy": {
+            "type": "string"
+          },
+          "reviewNote": {
+            "type": "string"
+          },
+          "province": {
+            "type": "string"
+          },
+          "county": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Display string (Persian date)."
+          },
+          "createdByUserId": {
+            "type": "string"
+          }
+        }
+      },
+      "CalculateRequest": {
+        "type": "object",
+        "properties": {
+          "totalBudgetToman": {
+            "type": "number",
+            "description": "Omit to fall back to the organization's stored totalBudget."
+          },
+          "allocations": {
+            "type": "object",
+            "description": "Map of priorityId → percentage. Missing ids use defaultPercentage.",
+            "additionalProperties": {
+              "type": "number"
+            }
+          }
+        },
+        "example": {
+          "totalBudgetToman": 100000000000,
+          "allocations": {
+            "priority-water": 25,
+            "priority-health": 15
+          }
+        }
+      },
+      "CalculationItem": {
+        "type": "object",
+        "required": [
+          "priorityId",
+          "code",
+          "title",
+          "category",
+          "percentage",
+          "amountToman",
+          "amountRial"
+        ],
+        "properties": {
+          "priorityId": {
+            "type": "string"
+          },
+          "code": {
+            "type": "number"
+          },
+          "title": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "percentage": {
+            "type": "number"
+          },
+          "amountToman": {
+            "type": "number"
+          },
+          "amountRial": {
+            "type": "number"
+          }
+        }
+      },
+      "CalculationResult": {
+        "type": "object",
+        "required": [
+          "totalBudgetToman",
+          "totalBudgetRial",
+          "sumPercentage",
+          "totalAllocatedToman",
+          "totalAllocatedRial",
+          "unallocatedToman",
+          "isValid100Pct",
+          "items"
+        ],
+        "properties": {
+          "totalBudgetToman": {
+            "type": "number"
+          },
+          "totalBudgetRial": {
+            "type": "number"
+          },
+          "sumPercentage": {
+            "type": "number"
+          },
+          "totalAllocatedToman": {
+            "type": "number"
+          },
+          "totalAllocatedRial": {
+            "type": "number"
+          },
+          "unallocatedToman": {
+            "type": "number"
+          },
+          "isValid100Pct": {
+            "type": "boolean",
+            "description": "True when |100 − sumPercentage| < 0.1."
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalculationItem"
+            }
+          }
+        }
+      },
+      "RecommendRequest": {
+        "type": "object",
+        "properties": {
+          "indicators": {
+            "$ref": "#/components/schemas/LocalIndicators"
+          },
+          "locationName": {
+            "type": "string"
+          }
+        },
+        "description": "Both fields optional: a missing indicators object falls back to the first stored location's indicators; a missing locationName falls back to that location's city.\n"
+      },
+      "RecommendMetric": {
+        "type": "object",
+        "required": [
+          "label",
+          "value"
+        ],
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "type": [
+              "string",
+              "number"
+            ]
+          }
+        }
+      },
+      "PrevalenceDimension": {
+        "type": "object",
+        "required": [
+          "metricName",
+          "national",
+          "provincial",
+          "county",
+          "local",
+          "unit",
+          "benchmarkSource",
+          "locationQuotient",
+          "prevalenceTier",
+          "tierLabelFa",
+          "divergenceDescription"
+        ],
+        "properties": {
+          "metricName": {
+            "type": "string"
+          },
+          "national": {
+            "type": "number"
+          },
+          "provincial": {
+            "type": "number"
+          },
+          "county": {
+            "type": "number"
+          },
+          "local": {
+            "type": "number"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "benchmarkSource": {
+            "type": "string"
+          },
+          "locationQuotient": {
+            "type": "number"
+          },
+          "prevalenceTier": {
+            "type": "string",
+            "enum": [
+              "UNIVERSAL_CRITICAL",
+              "LOCAL_HOTSPOT",
+              "PROVINCIAL_HIGH",
+              "NORMAL"
+            ]
+          },
+          "tierLabelFa": {
+            "type": "string"
+          },
+          "divergenceDescription": {
+            "type": "string"
+          }
+        }
+      },
+      "RecommendationDetail": {
+        "type": "object",
+        "required": [
+          "score",
+          "primaryDriver",
+          "rationale",
+          "keyMetrics"
+        ],
+        "properties": {
+          "score": {
+            "type": "number"
+          },
+          "primaryDriver": {
+            "type": "string"
+          },
+          "rationale": {
+            "type": "string"
+          },
+          "keyMetrics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecommendMetric"
+            }
+          },
+          "prevalence": {
+            "$ref": "#/components/schemas/PrevalenceDimension"
+          },
+          "isLocalHotspot": {
+            "type": "boolean"
+          },
+          "isUniversalSevere": {
+            "type": "boolean"
+          }
+        }
+      },
+      "RecommendationResult": {
+        "type": "object",
+        "required": [
+          "scores",
+          "explainability",
+          "summaryRationale",
+          "overallVulnerabilityIndex"
+        ],
+        "properties": {
+          "scores": {
+            "type": "object",
+            "description": "Map of priority id → recommended score.",
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
+          "explainability": {
+            "type": "object",
+            "description": "Map of priority id → score explanation.",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/RecommendationDetail"
+            }
+          },
+          "summaryRationale": {
+            "type": "string"
+          },
+          "overallVulnerabilityIndex": {
+            "type": "number"
+          },
+          "universalCriticalCount": {
+            "type": "number"
+          },
+          "localHotspotCount": {
+            "type": "number"
+          }
+        }
+      },
+      "AiAnalysisRequest": {
+        "type": "object",
+        "properties": {
+          "locationName": {
+            "type": "string",
+            "description": "Display label; matched by county-name containment if locationId is absent."
+          },
+          "locationId": {
+            "type": "string",
+            "description": "Preferred match key."
+          },
+          "totalBudgetToman": {
+            "type": "number",
+            "description": "Only used for narrative formatting."
+          }
+        }
+      },
+      "AiAnalysisResult": {
+        "type": "object",
+        "required": [
+          "isAiGenerated",
+          "executiveSummary",
+          "keyTakeaways",
+          "strategicAdvice"
+        ],
+        "properties": {
+          "isAiGenerated": {
+            "type": "boolean",
+            "const": false,
+            "description": "Always false — rule-based, local analysis (no LLM)."
+          },
+          "executiveSummary": {
+            "type": "string"
+          },
+          "keyTakeaways": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "strategicAdvice": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

@@ -20,6 +20,7 @@ import { CreateProjectView } from './components/CreateProjectView';
 import { RolesAndAccessView } from './components/RolesAndAccessView';
 import { AnalysisSourcesView } from './components/AnalysisSourcesView';
 import { SettingsView } from './components/SettingsView';
+import { QuotaView } from './components/QuotaView';
 import BranchedMenu, { type BranchedMenuItem } from './components/BranchedMenu';
 import { AiAnalysisModal } from './components/AiAnalysisModal';
 import { GlobalLocationSelector } from './components/GlobalLocationSelector';
@@ -64,6 +65,7 @@ import {
   Menu,
   ChevronDown,
   ChevronLeft,
+  Percent,
 } from 'lucide-react';/**
  * Row icons keep the hue they wore before the branched menu took over the rail.
  * The hue is handed to the menu as a token rather than baked onto the glyph, so
@@ -107,6 +109,7 @@ const NAV_MENU_ITEMS: BranchedMenuItem[] = [
     hue: 'var(--color-emerald-700)',
     children: [
       { value: 'BUDGET_SOURCES', label: 'منابع بودجه', icon: Wallet, hue: 'var(--color-emerald-600)' },
+      { value: 'QUOTA', label: 'سهمیه', icon: Percent, hue: 'var(--color-emerald-700)' },
       { value: 'PRIORITIES', label: 'اولویت‌ها', icon: Scale, hue: 'var(--color-purple-600)' },
       { value: 'CRISES_HARMS', label: 'بحران‌ها', icon: Flame, hue: 'var(--color-rose-600)' },
     ],
@@ -633,6 +636,7 @@ function AppContent() {
           {activeTab === 'DEPARTMENTS' && <DepartmentsView />}
 
           {activeTab === 'BUDGET_SOURCES' && <BudgetSourcesView />}
+          {activeTab === 'QUOTA' && <QuotaView />}
 
           {activeTab === 'PRIORITIES' && <PrioritiesView />}
 
