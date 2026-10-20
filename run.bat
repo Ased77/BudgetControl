@@ -1,294 +1,151 @@
 @echo off
-chcp 65001 >nul
-REM ===========================================================================
-REM  CSR Budgeting (سامانه بودجه‌ریزی مسئولیت اجتماعی) - Windows launcher
+REM ============================================================================
+REM  run.bat - Dev Seed Users mode (development only)
 REM
-REM  Double-click this file to run the app on Docker (docker-compose.yml):
-REM      run.bat            -> build & start the whole stack, then open the app
-REM      run.bat status     -> container health + DB/app reachability, one shot
-REM      run.bat stop       -> stop the stack
-REM      run.bat logs       -> follow app container logs
-REM      run.bat migrate    -> one-time SQLite -> PostgreSQL import (profile tools)
-REM  Native (non-Docker) modes are still available:
-REM      run.bat dev        -> Bun dev server
-REM      run.bat prod       -> Bun production build + start
+REM  One-click dev startup for the seeded test-account workflow:
+REM
+REM    1. Sanity checks (bun in PATH, .env present, port :3000 free)
+REM    2. Start the database container        (docker compose up -d db)
+REM    3. Wait for PostgreSQL connections     (call bun run db:wait)
+REM    4. Apply migrations incl. 0003/0004    (call bun run db:init)
+REM    5. Seed the 8 per-role test accounts   (call bun run db:seed:dev)
+REM       ADMIN 09991000001 / DevAdmin1405!  ... 8 roles in total
+REM    6. Dev server on http://localhost:3000 (call bun run dev, foreground;
+REM       Ctrl+C stops it). On the login page use the amber "Dev seed users"
+REM       panel - it appears only when APP_ENV / VITE_APP_ENV are not
+REM       "production". Clicking a role pre-fills the form; the real login
+REM       button is still yours to press.
+REM
+REM  Usage:
+REM    run.bat            normal flow
+REM    run.bat /noseed    skip step 5 - existing seed users stay as-is
+REM    run.bat /nodb      skip steps 2-4 in one go (only start the server)
+REM
+REM  NOTES FOR MAINTAINERS:
+REM    - Every bun invocation is prefixed with `call`: on Windows `bun`
+REM      resolves to a batch shim (bun.cmd), and without `call` control
+REM      never returns here - the script silently dies after the step.
+REM    - No bare parentheses inside cmd if- or for-block echo lines: the
+REM      block parser would close the block and report things like
+REM      ". was unexpected at this time.".
+REM    - Every error path ends with `pause` so a double-clicked window
+REM      STAYS OPEN and the failure reason stays readable.
+REM    - Only the "db" compose service is started; the "app" service ships
+REM      a prebuilt image WITHOUT the dev routes.
+REM    - Persian output can look garbled in the console - codepage artifact
+REM      only, the data is fine. chcp 65001 reduces the mess.
+REM ============================================================================
 
-REM  Dependencies are checked automatically: missing Docker Desktop is
-REM  installed via winget (UAC prompt may appear) and the daemon is started;
-REM  missing Bun is installed per-user via the official installer script.
-REM
-REM  Override the host port by setting PORT first, e.g.:  set PORT=4000 && run.bat
-REM ===========================================================================
-setlocal
+setlocal EnableExtensions EnableDelayedExpansion
+chcp 65001 >nul
 cd /d "%~dp0"
 
-REM Some shells export PORT=0; treat that the same as unset so the URLs below
-REM always match the port the app actually listens on.
-if "%PORT%"=="" set "PORT=3000"
-if "%PORT%"=="0" set "PORT=3000"
+echo.
+echo === BudgetControl :: Dev Seed Users mode ==============================
 
-set "MODE=%~1"
-if /i "%MODE%"=="" goto :docker
-if /i "%MODE%"=="docker" goto :docker
-if /i "%MODE%"=="stop" goto :stop
-if /i "%MODE%"=="down" goto :stop
-if /i "%MODE%"=="logs" goto :logs
-if /i "%MODE%"=="status" goto :status
-if /i "%MODE%"=="migrate" goto :migrate
-if /i "%MODE%"=="dev" goto :dev
-if /i "%MODE%"=="development" goto :dev
-if /i "%MODE%"=="prod" goto :prod
-if /i "%MODE%"=="production" goto :prod
+REM -- 1. sanity checks ---------------------------------------------------------
+where bun >nul 2>nul
+if errorlevel 1 (
+    echo [run] bun was not found in PATH. Install Bun first: https://bun.sh
+    goto :fail
+)
 
-echo [ERROR] Unknown mode: %MODE%
-echo         Valid modes: (none)=docker, status, stop, logs, migrate, dev, prod
-pause
-exit /b 1
-
-REM ----------------------------- Docker mode --------------------------------
-:docker
-call :ensure_docker
-
-REM Compose refuses to start without .env values (POSTGRES_*, AUTH_JWT_SECRET).
 if not exist ".env" (
-  if exist ".env.example" (
-    echo .env is missing - copying .env.example to .env...
-    copy /y ".env.example" ".env" >nul
-    echo.
-    echo   [ATTENTION] Edit .env now and set POSTGRES_PASSWORD ^(and optionally
-    echo   AUTH_JWT_SECRET - generate one with:  openssl rand -hex 32^).
-    echo   Re-run run.bat afterwards.
-    echo.
-  ) else (
-    echo [ERROR] Neither .env nor .env.example exists - cannot configure the stack.
-    pause
-    exit /b 1
-  )
+    echo [run] .env was not found in "%CD%".
+    echo [run] Copy .env.example to .env first - needs POSTGRES_*, AUTH_*,
+    echo [run] APP_ENV=development and VITE_APP_ENV=development.
+    goto :fail
 )
 
-echo Building and starting the Docker stack...
-call docker compose up -d --build
-if errorlevel 1 (
-  echo [ERROR] "docker compose up" failed.
-  pause
-  exit /b 1
-)
-echo.
-echo   CSR Budgeting - running on Docker
-echo   Waiting for the app to become healthy^(the first boot seeds the DB^)...
-call docker compose up -d --wait --wait-timeout 180
-if errorlevel 1 (
-  echo [WARN ] App is not healthy yet - check logs with:  run.bat logs
-)
+set SEED=yes
+if /i "%~1"=="/noseed" set SEED=no
+if /i "%~1"=="/nodb"   set SEED=no
 
-REM Open the app at the compose-reported host port, not a hardcoded one.
-set "APPURL=http://localhost:%PORT%"
-set "APPADDR="
-for /f "tokens=*" %%p in ('docker compose port app 3000') do set "APPADDR=%%p"
-set "APPPORT="
-if defined APPADDR for /f "tokens=2 delims=:" %%q in ("%APPADDR%") do set "APPPORT=%%q"
-if defined APPPORT set "APPURL=http://localhost:%APPPORT%"
+set SKIPDB=no
+if /i "%~1"=="/nodb" set SKIPDB=yes
 
-start "" /min powershell -NoProfile -Command "Start-Sleep -Seconds 3; Start-Process '%APPURL%'"
-echo   URL: %APPURL%   (stop with:  run.bat stop)
-echo   Logs: run.bat logs
-goto :done
-
-REM ------------------------------- stop -------------------------------------
-:stop
-call :ensure_docker
-call docker compose down
-goto :done
-
-REM ------------------------------- logs -------------------------------------
-:logs
-call :ensure_docker
-call docker compose logs -f app
-set "EXITCODE=%ERRORLEVEL%"
-goto :done
-
-REM ------------------------------ status -----------------------------------
-REM One shot: container state, database reachability (pg_isready inside the
-REM db container) and app health (host curl against /api/health on the real
-REM published host port, which may differ from the default 3000).
-:status
-call :ensure_docker
-
-echo.
-echo   === Containers ===
-call docker compose ps --format "table {{.Name}}\t{{.Status}}"
-
-echo.
-echo   === Database ===
-docker compose exec -T db sh -c "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\" -h 127.0.0.1"
-if errorlevel 1 (
-  echo   [WARN ] PostgreSQL is not accepting connections yet.
-) else (
-  echo   [ OK  ] PostgreSQL reached through the internal network.
-)
-
-echo.
-echo   === App ===
-REM Ask compose for the actual host port bound to the container's 3000
-REM (e.g. 127.0.0.1:3210) instead of assuming the default.
-set "APPADDR="
-for /f "tokens=*" %%p in ('docker compose port app 3000') do set "APPADDR=%%p"
-set "APPPORT="
-if defined APPADDR for /f "tokens=2 delims=:" %%q in ("%APPADDR%") do set "APPPORT=%%q"
-if not defined APPPORT (
-  echo   [WARN ] App container has no published port - is it running?
-  set "EXITCODE=1"
-  goto :done
-)
-set "HEALTHCODE="
-for /f "tokens=*" %%i in ('curl -s -o NUL -m 5 -w "%%{http_code}" "http://localhost:%APPPORT%/api/health"') do set "HEALTHCODE=%%i"
-if "%HEALTHCODE%"=="200" (
-  echo   [ OK  ] /api/health answered HTTP 200 on http://localhost:%APPPORT%
-) else if "%HEALTHCODE%"=="" (
-  echo   [WARN ] No answer from http://localhost:%APPPORT%/api/health - is the app running? ^(curl missing/timeout counts as this too^)
-) else (
-  echo   [WARN ] /api/health answered HTTP %HEALTHCODE% on http://localhost:%APPPORT%
-)
-
-set "EXITCODE=0"
-if not "%HEALTHCODE%"=="200" set "EXITCODE=1"
-goto :done
-
-REM ----------------------------- migrate ------------------------------------
-:migrate
-call :ensure_docker
-call docker compose --profile tools run --rm migrate
-set "EXITCODE=%ERRORLEVEL%"
-goto :done
-
-REM ------------------------------ dev ---------------------------------------
-:dev
-call :ensure_bun
-
-if not exist "node_modules" (
-  echo Dependencies are missing - running "bun install"...
-  call bun install
-  if errorlevel 1 (
-    echo [ERROR] "bun install" failed.
-    pause
-    exit /b 1
-  )
-)
-
-echo.
-echo   CSR Budgeting - development server
-echo   URL: http://localhost:%PORT%   (Ctrl+C to stop)
-echo.
-
-REM Open the app once the dev server has had a few seconds to boot.
-start "" /min powershell -NoProfile -Command "Start-Sleep -Seconds 6; Start-Process 'http://localhost:%PORT%'"
-
-call bun run dev
-set "EXITCODE=%ERRORLEVEL%"
-goto :done
-
-REM ------------------------------ prod --------------------------------------
-:prod
-call :ensure_bun
-echo.
-echo   CSR Budgeting - production build
-echo   URL: http://localhost:%PORT%   (Ctrl+C to stop)
-echo.
-call bun run build
-if errorlevel 1 (
-  echo [ERROR] Build failed.
-  pause
-  exit /b 1
-)
-set "NODE_ENV=production"
-call bun run start
-set "EXITCODE=%ERRORLEVEL%"
-
-REM ==========================================================================
-REM  Dependency auto-install
-REM
-REM    call :ensure_docker  -> Docker CLI present; winget-install if missing;
-REM                            daemon running; Docker Desktop started if not.
-REM    call :ensure_bun     -> Bun present; per-user install if missing.
-REM  Any unrecoverable state prints guidance, pauses, and exits the script.
-REM ==========================================================================
-
-:ensure_docker
-where docker >nul 2>nul
-if not errorlevel 1 goto :ensure_docker_daemon
-echo [INFO ] Docker not found - installing Docker Desktop via winget ^(a UAC prompt may appear^)...
-where winget >nul 2>nul
-if errorlevel 1 (
-  echo [ERROR] winget is not available, so Docker cannot be auto-installed here.
-  echo         Install Docker Desktop manually:
-  echo         https://docs.docker.com/desktop/setup/install/windows-install/
-  pause
-  REM exit (not exit /b): a fatal dependency failure must abort the whole
-  REM script, not merely return to a caller that never checks the errorlevel.
-  exit 1
-)
-call winget install -e --id Docker.DockerDesktop --accept-source-agreements --accept-package-agreements
-if errorlevel 1 (
-  echo [ERROR] "winget install Docker.DockerDesktop" failed.
-  echo         Install Docker Desktop manually, then run this file again.
-  echo         https://docs.docker.com/desktop/setup/install/windows-install/
-  pause
-  exit 1
-)
-REM Fresh installs are invisible to this session's PATH until a new shell -
-REM probe the well-known install location for the remainder of the run.
-set "PATH=%PATH%;%ProgramFiles%\Docker\Docker\resources\bin"
-where docker >nul 2>nul
-if not errorlevel 1 goto :ensure_docker_daemon
-echo [ERROR] Docker is still not callable after install; a new shell or logoff may be needed.
-pause
-exit 1
-
-:ensure_docker_daemon
-docker info >nul 2>&1
-if not errorlevel 1 exit /b 0
-if not exist "%ProgramFiles%\Docker\Docker\Docker Desktop.exe" (
-  echo [ERROR] Docker is installed but is not running, and Docker Desktop.exe was not found.
-  echo         Start Docker Desktop yourself, then run this file again.
-  pause
-  exit 1
-)
-echo [INFO ] Docker daemon is not running - starting Docker Desktop ^(can take a minute on first boot^)...
-start "" /min "%ProgramFiles%\Docker\Docker\Docker Desktop.exe"
-set /a DOCKERWAIT=0
-:ensure_docker_wait
-ping -n 6 127.0.0.1 >nul
-set /a DOCKERWAIT+=5
-docker info >nul 2>&1
+netstat -ano | findstr /c:":3000 " | findstr "LISTENING" >nul 2>nul
 if not errorlevel 1 (
-  echo [ OK  ] Docker daemon ready ^(after %DOCKERWAIT% seconds^).
-  exit /b 0
+    echo [run] Port 3000 is already in use - probably an older dev server.
+    choice /c YN /n /m "[run] Kill running bun.exe processes now? [Y/N] "
+    if errorlevel 2 goto :fail_busy
+    taskkill /f /im bun.exe
+    REM taskkill is asynchronous - the socket lingers briefly. Retry ~10 s.
+    set PORT_FREED=no
+    for /l %%i in (1,1,6) do (
+        ping -n 3 127.0.0.1 >nul
+        netstat -ano | findstr /c:":3000 " | findstr "LISTENING" >nul 2>nul
+        if errorlevel 1 set PORT_FREED=yes
+    )
+    if "!PORT_FREED!"=="no" (
+        echo [run] Port 3000 is still busy after the kill attempt:
+        netstat -ano | findstr /c:":3000 " | findstr "LISTENING"
+        echo [run] Stop the holder yourself ^(see PID above - taskkill /f /pid NNN^)
+        goto :fail
+    )
 )
-if %DOCKERWAIT% LSS 150 goto :ensure_docker_wait
-echo [ERROR] Docker did not come up within %DOCKERWAIT% seconds; start Docker Desktop manually and retry.
-pause
-exit 1
 
-:ensure_bun
-where bun >nul 2>nul
-if not errorlevel 1 exit /b 0
-echo [INFO ] Bun not found - installing per-user via the official script...
-call powershell -NoProfile -ExecutionPolicy Bypass -Command "irm bun.sh/install.ps1 | iex"
+REM -- 2. database container ------------------------------------------------------
+if "%SKIPDB%"=="yes" goto :server
+echo [run] 2/5 ensuring the database container is up ...
+docker compose up -d db
 if errorlevel 1 (
-  echo [ERROR] The Bun installer script failed to run.
-  echo         Install Bun manually, or use Docker mode instead:
-  echo         run this file without arguments.
-  pause
-  exit 1
+    echo [run] docker compose failed - is Docker Desktop running?
+    goto :fail
 )
-REM The installer writes the user PATH registry value, which an already-running
-REM shell never reloads; probe the known install location for this session.
-set "PATH=%PATH%;%USERPROFILE%\.bun\bin"
-where bun >nul 2>nul
-if not errorlevel 1 exit /b 0
-echo [ERROR] Bun is still not callable after installing; open a fresh window and retry.
-pause
-exit 1
 
-:done
-endlocal & exit /b %EXITCODE%
+REM -- 3. wait for PostgreSQL -----------------------------------------------------
+echo [run] 3/5 waiting for PostgreSQL ...
+call bun run db:wait
+if errorlevel 1 (
+    echo [run] PostgreSQL did not become ready in time. Inspect the container:
+    echo [run]   docker logs csr-budgeting-db-1
+    goto :fail
+)
+
+REM -- 4. migrations ---------------------------------------------------------------
+echo [run] 4/5 applying migrations ...
+call bun run db:init
+if errorlevel 1 (
+    echo [run] migrations failed - see the bun output above.
+    goto :fail
+)
+
+REM -- 5. seed test users ----------------------------------------------------------
+if "%SEED%"=="no" (
+    echo [run] 5/5 seeding skipped - flag set, existing test accounts kept.
+    goto :server
+)
+echo [run] 5/5 seeding dev test users ...
+call bun run db:seed:dev
+if errorlevel 1 (
+    echo [run] dev seed failed - see the bun output above.
+    goto :fail
+)
+
+REM -- 6. dev server ----------------------------------------------------------------
+:server
+echo.
+echo [run] All set - starting dev server on http://localhost:3000
+echo [run] Use the amber "Dev seed users" panel on the login page to pre-fill
+echo [run] the form, then press the real login button. Ctrl+C stops the server.
+echo.
+call bun run dev
+echo.
+echo [run] The dev server stopped. If this was unexpected, scroll up and read
+echo [run] the bun error output above.
+goto :fail
+
+REM ---------------------------------------------------------------------------
+REM  error terminators - pause keeps a double-clicked window open
+REM ---------------------------------------------------------------------------
+:fail_busy
+echo [run] OK - existing server left running. Close this window or press a key.
+pause >nul
+exit /b 0
+
+:fail
+echo.
+echo [run] Press any key to close ...
+pause >nul
+exit /b 1
