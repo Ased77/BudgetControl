@@ -10,8 +10,12 @@ REM      run.bat stop       -> stop the stack
 REM      run.bat logs       -> follow app container logs
 REM      run.bat migrate    -> one-time SQLite -> PostgreSQL import (profile tools)
 REM  Native (non-Docker) modes are still available:
-REM      run.bat dev        -> Bun dev server (requires Bun on PATH)
+REM      run.bat dev        -> Bun dev server
 REM      run.bat prod       -> Bun production build + start
+
+REM  Dependencies are checked automatically: missing Docker Desktop is
+REM  installed via winget (UAC prompt may appear) and the daemon is started;
+REM  missing Bun is installed per-user via the official installer script.
 REM
 REM  Override the host port by setting PORT first, e.g.:  set PORT=4000 && run.bat
 REM ===========================================================================
@@ -43,14 +47,7 @@ exit /b 1
 
 REM ----------------------------- Docker mode --------------------------------
 :docker
-where docker >nul 2>nul
-if errorlevel 1 (
-  echo [ERROR] Docker was not found on PATH.
-  echo         Install Docker Desktop:  https://docs.docker.com/desktop/setup/install/windows-install/
-  echo         Then reopen this window and run run.bat again.
-  pause
-  exit /b 1
-)
+call :ensure_docker
 
 REM Compose refuses to start without .env values (POSTGRES_*, AUTH_JWT_SECRET).
 if not exist ".env" (
@@ -99,21 +96,13 @@ goto :done
 
 REM ------------------------------- stop -------------------------------------
 :stop
-where docker >nul 2>nul || (
-  echo [ERROR] Docker was not found on PATH.
-  pause
-  exit /b 1
-)
+call :ensure_docker
 call docker compose down
 goto :done
 
 REM ------------------------------- logs -------------------------------------
 :logs
-where docker >nul 2>nul || (
-  echo [ERROR] Docker was not found on PATH.
-  pause
-  exit /b 1
-)
+call :ensure_docker
 call docker compose logs -f app
 set "EXITCODE=%ERRORLEVEL%"
 goto :done
@@ -123,11 +112,7 @@ REM One shot: container state, database reachability (pg_isready inside the
 REM db container) and app health (host curl against /api/health on the real
 REM published host port, which may differ from the default 3000).
 :status
-where docker >nul 2>nul || (
-  echo [ERROR] Docker was not found on PATH.
-  pause
-  exit /b 1
-)
+call :ensure_docker
 
 echo.
 echo   === Containers ===
@@ -171,25 +156,14 @@ goto :done
 
 REM ----------------------------- migrate ------------------------------------
 :migrate
-where docker >nul 2>nul || (
-  echo [ERROR] Docker was not found on PATH.
-  pause
-  exit /b 1
-)
+call :ensure_docker
 call docker compose --profile tools run --rm migrate
 set "EXITCODE=%ERRORLEVEL%"
 goto :done
 
 REM ------------------------------ dev ---------------------------------------
 :dev
-where bun >nul 2>nul
-if errorlevel 1 (
-  echo [ERROR] Bun was not found on PATH.
-  echo         Install it with:  powershell -c "irm bun.sh/install.ps1 ^| iex"
-  echo         Or use Docker instead: run this file without arguments.
-  pause
-  exit /b 1
-)
+call :ensure_bun
 
 if not exist "node_modules" (
   echo Dependencies are missing - running "bun install"...
@@ -215,14 +189,7 @@ goto :done
 
 REM ------------------------------ prod --------------------------------------
 :prod
-where bun >nul 2>nul
-if errorlevel 1 (
-  echo [ERROR] Bun was not found on PATH.
-  echo         Install it with:  powershell -c "irm bun.sh/install.ps1 ^| iex"
-  echo         Or use Docker instead: run this file without arguments.
-  pause
-  exit /b 1
-)
+call :ensure_bun
 echo.
 echo   CSR Budgeting - production build
 echo   URL: http://localhost:%PORT%   (Ctrl+C to stop)
@@ -236,6 +203,92 @@ if errorlevel 1 (
 set "NODE_ENV=production"
 call bun run start
 set "EXITCODE=%ERRORLEVEL%"
+
+REM ==========================================================================
+REM  Dependency auto-install
+REM
+REM    call :ensure_docker  -> Docker CLI present; winget-install if missing;
+REM                            daemon running; Docker Desktop started if not.
+REM    call :ensure_bun     -> Bun present; per-user install if missing.
+REM  Any unrecoverable state prints guidance, pauses, and exits the script.
+REM ==========================================================================
+
+:ensure_docker
+where docker >nul 2>nul
+if not errorlevel 1 goto :ensure_docker_daemon
+echo [INFO ] Docker not found - installing Docker Desktop via winget ^(a UAC prompt may appear^)...
+where winget >nul 2>nul
+if errorlevel 1 (
+  echo [ERROR] winget is not available, so Docker cannot be auto-installed here.
+  echo         Install Docker Desktop manually:
+  echo         https://docs.docker.com/desktop/setup/install/windows-install/
+  pause
+  REM exit (not exit /b): a fatal dependency failure must abort the whole
+  REM script, not merely return to a caller that never checks the errorlevel.
+  exit 1
+)
+call winget install -e --id Docker.DockerDesktop --accept-source-agreements --accept-package-agreements
+if errorlevel 1 (
+  echo [ERROR] "winget install Docker.DockerDesktop" failed.
+  echo         Install Docker Desktop manually, then run this file again.
+  echo         https://docs.docker.com/desktop/setup/install/windows-install/
+  pause
+  exit 1
+)
+REM Fresh installs are invisible to this session's PATH until a new shell -
+REM probe the well-known install location for the remainder of the run.
+set "PATH=%PATH%;%ProgramFiles%\Docker\Docker\resources\bin"
+where docker >nul 2>nul
+if not errorlevel 1 goto :ensure_docker_daemon
+echo [ERROR] Docker is still not callable after install; a new shell or logoff may be needed.
+pause
+exit 1
+
+:ensure_docker_daemon
+docker info >nul 2>&1
+if not errorlevel 1 exit /b 0
+if not exist "%ProgramFiles%\Docker\Docker\Docker Desktop.exe" (
+  echo [ERROR] Docker is installed but is not running, and Docker Desktop.exe was not found.
+  echo         Start Docker Desktop yourself, then run this file again.
+  pause
+  exit 1
+)
+echo [INFO ] Docker daemon is not running - starting Docker Desktop ^(can take a minute on first boot^)...
+start "" /min "%ProgramFiles%\Docker\Docker\Docker Desktop.exe"
+set /a DOCKERWAIT=0
+:ensure_docker_wait
+ping -n 6 127.0.0.1 >nul
+set /a DOCKERWAIT+=5
+docker info >nul 2>&1
+if not errorlevel 1 (
+  echo [ OK  ] Docker daemon ready ^(after %DOCKERWAIT% seconds^).
+  exit /b 0
+)
+if %DOCKERWAIT% LSS 150 goto :ensure_docker_wait
+echo [ERROR] Docker did not come up within %DOCKERWAIT% seconds; start Docker Desktop manually and retry.
+pause
+exit 1
+
+:ensure_bun
+where bun >nul 2>nul
+if not errorlevel 1 exit /b 0
+echo [INFO ] Bun not found - installing per-user via the official script...
+call powershell -NoProfile -ExecutionPolicy Bypass -Command "irm bun.sh/install.ps1 | iex"
+if errorlevel 1 (
+  echo [ERROR] The Bun installer script failed to run.
+  echo         Install Bun manually, or use Docker mode instead:
+  echo         run this file without arguments.
+  pause
+  exit 1
+)
+REM The installer writes the user PATH registry value, which an already-running
+REM shell never reloads; probe the known install location for this session.
+set "PATH=%PATH%;%USERPROFILE%\.bun\bin"
+where bun >nul 2>nul
+if not errorlevel 1 exit /b 0
+echo [ERROR] Bun is still not callable after installing; open a fresh window and retry.
+pause
+exit 1
 
 :done
 endlocal & exit /b %EXITCODE%
