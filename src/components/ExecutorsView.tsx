@@ -88,7 +88,7 @@ export const ExecutorsView: React.FC = () => {
   const [formCapacity, setFormCapacity] = useState<ProjectExecutor['capacityStatus']>('AVAILABLE');
 
   const userPerm = getUserPermissions(currentUser);
-  const canManage = userPerm ? userPerm.canManageExecutors : currentUser.role === 'ADMIN';
+  const canManage = userPerm ? userPerm.canManageExecutors : currentUser.role === 'SYSTEM_ADMIN';
 
   const typeLabels: Record<ExecutorType, string> = {
     GOVERNMENTAL: 'دستگاه اجرایی دولتی',

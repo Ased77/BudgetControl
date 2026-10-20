@@ -1713,7 +1713,7 @@ components:
         user: { $ref: '#/components/schemas/PublicProfile' }
     UserRole:
       type: string
-      enum: [ADMIN, PROVINCIAL_GOVERNOR, DEPARTMENT_HEAD, OFFICE_HEAD, REGIONAL_MANAGER, PLANNING_SPECIALIST, AUDITOR, DEHYAR_COUNCIL]
+      enum: [BUDGET_CHAIRMAN, SYSTEM_ADMIN, CULTURE_BUDGET_HEAD, TREASURY_FINANCE_HEAD, GOVERNOR, DISTRICT_GOVERNOR, MAYOR, OFFICE_HEAD, PROJECT_MANAGER, PLAN_OFFICER, CONTRACTOR, TECH_SUPPORT, INTERNAL_AUDITOR]
     HealthReport:
       type: object
       required: [status, timestamp, service, persistence, database]

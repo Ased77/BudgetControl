@@ -148,7 +148,7 @@ export const RolesAndAccessView: React.FC = () => {
   // Account creation — admins only. There is no self-registration: this
   // modal is the only place in the UI where a new account can be born.
   // ---------------------------------------------------------------------------
-  const isAdmin = currentUser?.role === 'ADMIN';
+  const isAdmin = currentUser?.role === 'SYSTEM_ADMIN';
   const [createOpen, setCreateOpen] = useState(false);
   const [createForm, setCreateForm] = useState({ displayName: '', mobile: '', role: '', province: '', county: '' });
   const [createBusy, setCreateBusy] = useState(false);

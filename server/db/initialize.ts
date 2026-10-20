@@ -11,7 +11,7 @@
         database (registry tables empty) with the built-in dataset; a
         migrated legacy database skips it entirely via the app_meta gate
         that the legacy-import migration sets.
-     3. idempotent repairs (priority title refresh, OFFICE_HEAD role),
+     3. idempotent repairs (priority title refresh),
         each a no-op when already applied.
 
    Called explicitly from server startup, not as an import side effect,
@@ -25,7 +25,7 @@ import { sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { db, closePool, pool } from './client.js';
 import { seedDatabase } from './seed.js';
-import { refreshPriorityTitlesIfNeeded, ensureOfficeHeadRoleIfNeeded } from './repairs.js';
+import { refreshPriorityTitlesIfNeeded } from './repairs.js';
 import { ensureBootstrapAdminIfNeeded } from '../auth/bootstrap.js';
 
 /** Arbitrary but stable key so concurrent replicas cannot race the DDL. */
@@ -119,7 +119,6 @@ export async function initializeDatabase(): Promise<void> {
   await runMigrations();
   await seedIfEmpty();
   await refreshPriorityTitlesIfNeeded();
-  await ensureOfficeHeadRoleIfNeeded();
   // Last boot step: guarantees ≥ 1 real login exists so the very first
   // session is a verified identity (the SYSTEM actor is never loggable).
   await ensureBootstrapAdminIfNeeded();

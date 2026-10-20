@@ -120,7 +120,7 @@ export const PriorityAllocationTable: React.FC<PriorityAllocationTableProps> = (
     setExpandedSubItems((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const canEdit = userRole === 'ADMIN' || userRole === 'PLANNING_SPECIALIST';
+  const canEdit = ['BUDGET_CHAIRMAN', 'SYSTEM_ADMIN', 'TREASURY_FINANCE_HEAD', 'GOVERNOR', 'DISTRICT_GOVERNOR'].includes(userRole);
 
   // Calculate sum
   const totalPercentageSum = priorities.reduce((sum, p) => sum + (currentPercentages[p.id] || 0), 0);

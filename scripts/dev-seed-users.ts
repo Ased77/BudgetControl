@@ -52,14 +52,22 @@ const SEED_USERS: Array<{
   province?: string;
   county?: string;
 }> = [
-  { id: 'bd8457af-eb7a-45e5-b2f9-c91a838c07d3', mobile: '09991000001', displayName: 'حساب آزمایشی — مدیر کل',      role: 'ADMIN',              devPassword: 'DevAdmin1405!' },
-  { id: 'a83f2f35-3847-42c1-96bf-6dc30d1b40a3', mobile: '09991000002', displayName: 'حساب آزمایشی — استاندار',     role: 'PROVINCIAL_GOVERNOR', devPassword: 'DevGovernor1405!', province: 'کرمان', county: 'رفسنجان' },
-  { id: '4bfb4cf9-7702-4a8d-a7b7-5708cdbf46bc', mobile: '09991000003', displayName: 'حساب آزمایشی — رئیس اداره',   role: 'DEPARTMENT_HEAD',    devPassword: 'DevDept1405!', province: 'کرمان', county: 'رفسنجان' },
-  { id: 'dc97842e-d634-41d6-923d-934ab0ce511e', mobile: '09991000004', displayName: 'حساب آزمایشی — رئیس دفتر',    role: 'OFFICE_HEAD',        devPassword: 'DevOffice1405!', province: 'کرمان', county: 'رفسنجان' },
-  { id: '5addfd1f-3180-43ae-8e97-ab4982eae30c', mobile: '09991000005', displayName: 'حساب آزمایشی — مدیر منطقه',   role: 'REGIONAL_MANAGER',   devPassword: 'DevRegional1405!', province: 'کرمان', county: 'رفسنجان' },
-  { id: '4a9c1c3b-4dff-43de-ab5b-6e96b5f6a929', mobile: '09991000006', displayName: 'حساب آزمایشی — کارشناس برنامه', role: 'PLANNING_SPECIALIST', devPassword: 'DevPlanning1405!', province: 'کرمان', county: 'رفسنجان' },
-  { id: 'baef3d2d-ca31-4fba-bb2d-d03695c77c2a', mobile: '09991000007', displayName: 'حساب آزمایشی — ناظر',        role: 'AUDITOR',            devPassword: 'DevAudit1405!', province: 'کرمان', county: 'رفسنجان' },
-  { id: 'a2c67742-01ab-446e-8c1e-df17ae8337ab', mobile: '09991000008', displayName: 'حساب آزمایشی — شورای دهیار',  role: 'DEHYAR_COUNCIL',     devPassword: 'DevDehyar1405!', province: 'کرمان', county: 'رفسنجان' },
+  // Mobiles 09991000001–13 give one test account per matrix role; the first
+  // eight reuse the stable UUIDs of the original seed batch so re-provisioning
+  // on an existing dev base re-labels those accounts in place.
+  { id: 'bd8457af-eb7a-45e5-b2f9-c91a838c07d3', mobile: '09991000001', displayName: 'حساب آزمایشی — مدیر سامانه',      role: 'SYSTEM_ADMIN',          devPassword: 'DevSysAdmin1405!' },
+  { id: 'a83f2f35-3847-42c1-96bf-6dc30d1b40a3', mobile: '09991000002', displayName: 'حساب آزمایشی — استاندار',       role: 'GOVERNOR',              devPassword: 'DevGovernor1405!', province: 'کرمان', county: 'رفسنجان' },
+  { id: '4bfb4cf9-7702-4a8d-a7b7-5708cdbf46bc', mobile: '09991000003', displayName: 'حساب آزمایشی — مدیرکل بودجه فرهنگی', role: 'CULTURE_BUDGET_HEAD', devPassword: 'DevCulture1405!', province: 'کرمان', county: 'رفسنجان' },
+  { id: 'dc97842e-d634-41d6-923d-934ab0ce511e', mobile: '09991000004', displayName: 'حساب آزمایشی — رئیس اداره',     role: 'OFFICE_HEAD',           devPassword: 'DevOffice1405!', province: 'کرمان', county: 'رفسنجان' },
+  { id: '5addfd1f-3180-43ae-8e97-ab4982eae30c', mobile: '09991000005', displayName: 'حساب آزمایشی — مدیر پروژه',     role: 'PROJECT_MANAGER',       devPassword: 'DevProject1405!', province: 'کرمان', county: 'رفسنجان' },
+  { id: '4a9c1c3b-4dff-43de-ab5b-6e96b5f6a929', mobile: '09991000006', displayName: 'حساب آزمایشی — مدیر مالی خزانه', role: 'TREASURY_FINANCE_HEAD', devPassword: 'DevTreasury1405!' },
+  { id: 'baef3d2d-ca31-4fba-bb2d-d03695c77c2a', mobile: '09991000007', displayName: 'حساب آزمایشی — حسابرس داخلی',   role: 'INTERNAL_AUDITOR',      devPassword: 'DevAudit1405!' },
+  { id: 'a2c67742-01ab-446e-8c1e-df17ae8337ab', mobile: '09991000008', displayName: 'حساب آزمایشی — مسئول طرح',      role: 'PLAN_OFFICER',          devPassword: 'DevPlan1405!', province: 'کرمان', county: 'رفسنجان' },
+  { id: '0e1d5a64-2c77-49a0-9f01-4fe6f1d2a201', mobile: '09991000009', displayName: 'حساب آزمایشی — رئیس سازمان برنامه و بودجه', role: 'BUDGET_CHAIRMAN', devPassword: 'DevChairman1405!' },
+  { id: '1f2e6b75-3d88-40b1-8012-5ff7f2e3b312', mobile: '09991000010', displayName: 'حساب آزمایشی — بخش‌دار',        role: 'DISTRICT_GOVERNOR',     devPassword: 'DevDistrict1405!', province: 'کرمان', county: 'رفسنجان' },
+  { id: '2a3f7c86-4e99-41c2-9123-60a8c3f4c423', mobile: '09991000011', displayName: 'حساب آزمایشی — شهردار',         role: 'MAYOR',                 devPassword: 'DevMayor1405!', province: 'کرمان', county: 'رفسنجان' },
+  { id: '3b4a8d97-5faa-42d3-a234-71b9c4a5d534', mobile: '09991000012', displayName: 'حساب آزمایشی — پیمانکار',       role: 'CONTRACTOR',            devPassword: 'DevContractor1405!', province: 'کرمان', county: 'رفسنجان' },
+  { id: '4c5b9ea8-60bb-43e4-b345-82cac5b6e645', mobile: '09991000013', displayName: 'حساب آزمایشی — پشتیبان فنی',    role: 'TECH_SUPPORT',          devPassword: 'DevTech1405!' },
 ];
 
 async function main(): Promise<void> {

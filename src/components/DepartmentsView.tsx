@@ -242,7 +242,7 @@ export const DepartmentsView: React.FC = () => {
 
   // Check user permission
   const userPerm = getUserPermissions(currentUser);
-  const canEdit = userPerm ? userPerm.canEditDepartments : currentUser.role === 'ADMIN';
+  const canEdit = userPerm ? userPerm.canEditDepartments : currentUser.role === 'SYSTEM_ADMIN';
 
   // Category mapping
   const categoryLabels: Record<Department['category'], string> = {

@@ -135,7 +135,7 @@ export const AnalysisSourcesView: React.FC = () => {
   const [formReliability, setFormReliability] = useState(75);
 
   const userPerm = getUserPermissions(currentUser);
-  const canManage = userPerm ? userPerm.canApproveProjects : currentUser.role === 'ADMIN';
+  const canManage = userPerm ? userPerm.canApproveProjects : currentUser.role === 'SYSTEM_ADMIN';
 
   const openAdd = () => {
     setEditingSource(null);

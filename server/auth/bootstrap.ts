@@ -43,7 +43,7 @@ export async function ensureBootstrapAdminIfNeeded(): Promise<void> {
     mobile,
     passwordHash: await hashPassword(password),
     displayName: 'مدیر ارشد سامانه',
-    role: 'ADMIN',
+    role: 'SYSTEM_ADMIN',
   });
 
   if (provided) {

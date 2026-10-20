@@ -80,7 +80,7 @@ export const PrioritiesView: React.FC = () => {
   const [formDefaultPct, setFormDefaultPct] = useState<number>(10);
 
   const userPerm = getUserPermissions(currentUser);
-  const canEdit = userPerm ? userPerm.canManagePriorities : currentUser.role === 'ADMIN';
+  const canEdit = userPerm ? userPerm.canManagePriorities : currentUser.role === 'SYSTEM_ADMIN';
 
   // Sum of percentages
   const currentSum = useMemo(() => {

@@ -1488,7 +1488,7 @@ export const OMIDIYEH_USERS: UserProfile[] = [
   {
     id: 'user-omi-01',
     name: 'دکتر سمیرا کیانی',
-    role: 'PROVINCIAL_GOVERNOR',
+    role: 'GOVERNOR',
     roleFa: 'فرماندار',
     roleTitleFa: 'فرماندار شهرستان امیدیه',
     avatar: 'س',
@@ -1500,7 +1500,7 @@ export const OMIDIYEH_USERS: UserProfile[] = [
   {
     id: 'user-omi-02',
     name: 'مهندس فرید خدری',
-    role: 'DEPARTMENT_HEAD',
+    role: 'CULTURE_BUDGET_HEAD',
     roleFa: 'مدیر دستگاه اجرایی',
     roleTitleFa: 'مدیر مسئولیت اجتماعی شرکت بهره‌برداری نفت و گاز آغاجاری (منطقه امیدیه)',
     avatar: 'ف',
@@ -1513,7 +1513,7 @@ export const OMIDIYEH_USERS: UserProfile[] = [
   {
     id: 'user-omi-03',
     name: 'مهندس حمید دشتی',
-    role: 'REGIONAL_MANAGER',
+    role: 'PROJECT_MANAGER',
     roleFa: 'مدیر منطقه‌ای',
     roleTitleFa: 'رئیس اداره بهزیستی شهرستان امیدیه',
     avatar: 'ح',
@@ -1526,7 +1526,7 @@ export const OMIDIYEH_USERS: UserProfile[] = [
   {
     id: 'user-omi-04',
     name: 'مهندس اکرم زبیدی',
-    role: 'DEHYAR_COUNCIL',
+    role: 'PLAN_OFFICER',
     roleFa: 'شورای دهیاری',
     roleTitleFa: 'نماینده شورای اسلامی بخش جایزان',
     avatar: 'ا',

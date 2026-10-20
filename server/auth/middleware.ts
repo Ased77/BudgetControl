@@ -130,7 +130,7 @@ export function requirePermission(permission: keyof SystemRolePermission): Reque
 
 /** Narrow guard for the admin-only account-management routes. */
 export const requireAdmin: RequestHandler = (req, res, next) => {
-  if (req.auth?.role !== 'ADMIN') {
+  if (req.auth?.role !== 'SYSTEM_ADMIN') {
     return res.status(403).json({ error: 'این عملیات فقط برای مدیر ارشد مجاز است', code: 'FORBIDDEN' });
   }
   return next();

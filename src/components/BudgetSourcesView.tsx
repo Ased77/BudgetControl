@@ -103,7 +103,7 @@ export const BudgetSourcesView: React.FC = () => {
   const [formStatus, setFormStatus] = useState<BudgetSource['status']>('ACTIVE');
 
   const userPerm = getUserPermissions(currentUser);
-  const canManage = userPerm ? userPerm.canManageBudget : currentUser.role === 'ADMIN';
+  const canManage = userPerm ? userPerm.canManageBudget : currentUser.role === 'SYSTEM_ADMIN';
 
   const typeLabels: Record<BudgetSourceType, string> = {
     CSR: 'مسئولیت اجتماعی شرکتی (CSR)',

@@ -10,7 +10,7 @@ import { Contractor, ExecutiveProject, UserProfile, UserRole } from '../types';
  * rule here — instead of in each view — means the projects list and the
  * contractors list can never disagree about whose records are in scope.
  */
-const SELF_SCOPED_PROJECT_ROLES: readonly UserRole[] = ['OFFICE_HEAD'];
+const SELF_SCOPED_PROJECT_ROLES: readonly UserRole[] = ['OFFICE_HEAD', 'PROJECT_MANAGER'];
 
 /** Whether this role only sees the project records it created itself. */
 export function hasOwnProjectScope(role: UserRole): boolean {

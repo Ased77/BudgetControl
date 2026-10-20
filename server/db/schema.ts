@@ -363,7 +363,7 @@ export const users = pgTable('users', {
   province: text(),
   county: text(),
 }, (t) => [
-  check('users_role_check', sql`${t.role} IN ('ADMIN', 'PROVINCIAL_GOVERNOR', 'DEPARTMENT_HEAD', 'OFFICE_HEAD', 'REGIONAL_MANAGER', 'PLANNING_SPECIALIST', 'AUDITOR', 'DEHYAR_COUNCIL')`),
+  check('users_role_check', sql`${t.role} IN ('BUDGET_CHAIRMAN', 'SYSTEM_ADMIN', 'CULTURE_BUDGET_HEAD', 'TREASURY_FINANCE_HEAD', 'GOVERNOR', 'DISTRICT_GOVERNOR', 'MAYOR', 'OFFICE_HEAD', 'PROJECT_MANAGER', 'PLAN_OFFICER', 'CONTRACTOR', 'TECH_SUPPORT', 'INTERNAL_AUDITOR')`),
   index('idx_users_role').on(t.role),
 ]);
 
@@ -388,7 +388,7 @@ export const rolesPermissions = pgTable('roles_permissions', {
   canAuditLogs: boolean().notNull().default(false),
   scopeLevel: text().notNull(),
 }, (t) => [
-  check('roles_permissions_role_check', sql`${t.role} IN ('ADMIN', 'PROVINCIAL_GOVERNOR', 'DEPARTMENT_HEAD', 'OFFICE_HEAD', 'REGIONAL_MANAGER', 'PLANNING_SPECIALIST', 'AUDITOR', 'DEHYAR_COUNCIL')`),
+  check('roles_permissions_role_check', sql`${t.role} IN ('BUDGET_CHAIRMAN', 'SYSTEM_ADMIN', 'CULTURE_BUDGET_HEAD', 'TREASURY_FINANCE_HEAD', 'GOVERNOR', 'DISTRICT_GOVERNOR', 'MAYOR', 'OFFICE_HEAD', 'PROJECT_MANAGER', 'PLAN_OFFICER', 'CONTRACTOR', 'TECH_SUPPORT', 'INTERNAL_AUDITOR')`),
   check('roles_permissions_scope_check', sql`${t.scopeLevel} IN ('NATIONAL', 'PROVINCIAL', 'COUNTY', 'RURAL_DISTRICT')`),
 ]);
 
@@ -624,7 +624,7 @@ export const authUsers = pgTable('auth_users', {
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   uniqueIndex('auth_users_mobile_unique').on(t.mobile),
-  check('auth_users_role_check', sql`${t.role} IN ('ADMIN', 'PROVINCIAL_GOVERNOR', 'DEPARTMENT_HEAD', 'OFFICE_HEAD', 'REGIONAL_MANAGER', 'PLANNING_SPECIALIST', 'AUDITOR', 'DEHYAR_COUNCIL')`),
+  check('auth_users_role_check', sql`${t.role} IN ('BUDGET_CHAIRMAN', 'SYSTEM_ADMIN', 'CULTURE_BUDGET_HEAD', 'TREASURY_FINANCE_HEAD', 'GOVERNOR', 'DISTRICT_GOVERNOR', 'MAYOR', 'OFFICE_HEAD', 'PROJECT_MANAGER', 'PLAN_OFFICER', 'CONTRACTOR', 'TECH_SUPPORT', 'INTERNAL_AUDITOR')`),
   index('idx_auth_users_role').on(t.role),
 ]);
 
