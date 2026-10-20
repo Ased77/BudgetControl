@@ -10,6 +10,9 @@ import {
   Mail,
   Lock,
 } from 'lucide-react';
+// === Dev Seed Login (disposable dev helper): import + render below live together —
+// delete both halves of this comment block to remove the feature. ===
+import { DevSeedLoginPanel } from './DevSeedLoginPanel';
 
 /**
  * Access gate for the national development system.
@@ -185,6 +188,14 @@ export const LoginView: React.FC = () => {
               </span>
             </div>
           </form>
+
+          {/* === Dev Seed Login (disposable) — dev-only panel; the component itself
+              renders nothing in production (VITE_APP_ENV === 'production') === */}
+          <DevSeedLoginPanel onFill={(username, password) => {
+            // Pre-fill only — the developer still presses the real login button.
+            setEmail(username);
+            setPassword(password);
+          }} />
         </section>
       </div>
     </div>

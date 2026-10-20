@@ -593,6 +593,21 @@ export const authUsers = pgTable('auth_users', {
   /** Disabled accounts fail authentication immediately (soft revocation). */
   isActive: boolean().notNull().default(true),
   /**
+   * Dev Seed Login (DISPOSABLE dev helper, never used in production).
+   * true only for accounts the seed script (scripts/dev-seed-users.ts)
+   * created so the /dev endpoints can list them — and nothing else.
+   * The real auth layer never reads this flag.
+   */
+  isTestUser: boolean().notNull().default(false),
+  /**
+   * Dev-only plaintext credential for the seed accounts above. It is stored
+   * here ONLY because dev/seed-routes.ts must be able to hand it back to the
+   * developer without touching the scrypt password_hash. It lives in the
+   * database, never in any bundle, and is never read by the real auth flow
+   * (login verifies password_hash, as always).
+   */
+  devPassword: text(),
+  /**
    * Global revocation gate: access tokens carry their `iat`; any token
    * issued earlier than this instant is stale and rejected. A password
    * change (or an admin lockout) bumps it, invalidating every token at

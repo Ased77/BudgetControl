@@ -42,6 +42,9 @@ import {
 } from './database.js';
 import type { RequestHandler } from 'express';
 import { authRouter } from './auth/routes.js';
+// === Dev Seed Login (disposable dev helper): import + mount live together —
+// delete both halves of this comment block to remove the feature. ===
+import { devSeedRouter, isDevEnvironment } from './dev/seed-routes.js';
 import { requireAuth, requirePermission } from './auth/middleware.js';
 import { calculateSmartRecommendations } from '../src/utils/recommendationEngine.js';
 import { toPersianDigits } from '../src/utils/numberUtils.js';
@@ -129,6 +132,15 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
   // Identity endpoints are public by definition: they create, exchange or
   // revoke session credentials. Everything else is behind requireAuth below.
   app.use('/api/auth', authRouter);
+
+  // === Dev Seed Login (disposable dev helper) ===
+  // Mounted ONLY outside production: with APP_ENV=production these routes are
+  // never registered, so /dev/* answers the normal 404 (not a 403) and the
+  // jump table contains no /dev entry at all. No session, no login, no real
+  // users ever pass through here. Removal guide: server/dev/seed-routes.ts.
+  if (isDevEnvironment()) {
+    app.use('/dev', devSeedRouter);
+  }
   // Health reflects real persistence state: it pings PostgreSQL on every call
   // and answers 503 while the database is unreachable, so an orchestrator
   // restarts or holds traffic instead of silently serving errors.

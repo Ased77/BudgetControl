@@ -22,6 +22,13 @@
       "when": 1792315288156,
       "tag": "0002_mixed_rictor",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792470000000,
+      "tag": "0003_dev_seed_test_users",
+      "breakpoints": true
     }
   ]
 }
