@@ -3,23 +3,130 @@ chcp 65001 >nul
 REM ===========================================================================
 REM  CSR Budgeting (سامانه بودجه‌ریزی مسئولیت اجتماعی) - Windows launcher
 REM
-REM  Double-click this file to start the app in development mode.
-REM  Override the port by setting PORT first, e.g.:  set PORT=4000 && run.bat
-REM  Production build instead of dev server:  run.bat prod
+REM  Double-click this file to run the app on Docker (docker-compose.yml):
+REM      run.bat            -> build & start the whole stack, then open the app
+REM      run.bat stop       -> stop the stack
+REM      run.bat logs       -> follow app container logs
+REM      run.bat migrate    -> one-time SQLite -> PostgreSQL import (profile tools)
+REM  Native (non-Docker) modes are still available:
+REM      run.bat dev        -> Bun dev server (requires Bun on PATH)
+REM      run.bat prod       -> Bun production build + start
+REM
+REM  Override the host port by setting PORT first, e.g.:  set PORT=4000 && run.bat
 REM ===========================================================================
 setlocal
 cd /d "%~dp0"
 
 REM Some shells export PORT=0; treat that the same as unset so the URLs below
-REM always match the port the server actually listens on.
+REM always match the port the app actually listens on.
 if "%PORT%"=="" set "PORT=3000"
-if "%PORT%"=="0" set "PORT=3000"
+if "%PORT%"=="" set "APP_HOST_PORT="
+if not defined APP_HOST_PORT set "APP_HOST_PORT=%PORT%"
 
+set "MODE=%~1"
+if /i "%MODE%"=="" goto :docker
+if /i "%MODE%"=="docker" goto :docker
+if /i "%MODE%"=="stop" goto :stop
+if /i "%MODE%"=="down" goto :stop
+if /i "%MODE%"=="logs" goto :logs
+if /i "%MODE%"=="migrate" goto :migrate
+if /i "%MODE%"=="dev" goto :dev
+if /i "%MODE%"=="development" goto :dev
+if /i "%MODE%"=="prod" goto :prod
+if /i "%MODE%"=="production" goto :prod
+
+echo [ERROR] Unknown mode: %MODE%
+echo         Valid modes: (none)=docker, stop, logs, migrate, dev, prod
+pause
+exit /b 1
+
+REM ----------------------------- Docker mode --------------------------------
+:docker
+where docker >nul 2>nul
+if errorlevel 1 (
+  echo [ERROR] Docker was not found on PATH.
+  echo         Install Docker Desktop:  https://docs.docker.com/desktop/setup/install/windows-install/
+  echo         Then reopen this window and run run.bat again.
+  pause
+  exit /b 1
+)
+
+REM Compose refuses to start without .env values (POSTGRES_*, AUTH_JWT_SECRET).
+if not exist ".env" (
+  if exist ".env.example" (
+    echo .env is missing - copying .env.example to .env...
+    copy /y ".env.example" ".env" >nul
+    echo.
+    echo   [ATTENTION] Edit .env now and set POSTGRES_PASSWORD ^(and optionally
+    echo   AUTH_JWT_SECRET - generate one with:  openssl rand -hex 32^).
+    echo   Re-run run.bat afterwards.
+    echo.
+  ) else (
+    echo [ERROR] Neither .env nor .env.example exists - cannot configure the stack.
+    pause
+    exit /b 1
+  )
+)
+
+echo Building and starting the Docker stack...
+call docker compose up -d --build
+if errorlevel 1 (
+  echo [ERROR] "docker compose up" failed.
+  pause
+  exit /b 1
+)
+echo.
+echo   CSR Budgeting - running on Docker
+echo   Waiting for the app to become healthy^(the first boot seeds the DB^)...
+call docker compose up -d --wait --wait-timeout 180
+if errorlevel 1 (
+  echo [WARN ] App is not healthy yet - check logs with:  run.bat logs
+)
+
+start "" /min powershell -NoProfile -Command "Start-Sleep -Seconds 3; Start-Process 'http://localhost:%PORT%'"
+echo   URL: http://localhost:%PORT%   (stop with:  run.bat stop)
+echo   Logs: run.bat logs
+goto :done
+
+REM ------------------------------- stop -------------------------------------
+:stop
+where docker >nul 2>nul || (
+  echo [ERROR] Docker was not found on PATH.
+  pause
+  exit /b 1
+)
+call docker compose down
+goto :done
+
+REM ------------------------------- logs -------------------------------------
+:logs
+where docker >nul 2>nul || (
+  echo [ERROR] Docker was not found on PATH.
+  pause
+  exit /b 1
+)
+call docker compose logs -f app
+set "EXITCODE=%ERRORLEVEL%"
+goto :done
+
+REM ----------------------------- migrate ------------------------------------
+:migrate
+where docker >nul 2>nul || (
+  echo [ERROR] Docker was not found on PATH.
+  pause
+  exit /b 1
+)
+call docker compose --profile tools run --rm migrate
+set "EXITCODE=%ERRORLEVEL%"
+goto :done
+
+REM ------------------------------ dev ---------------------------------------
+:dev
 where bun >nul 2>nul
 if errorlevel 1 (
   echo [ERROR] Bun was not found on PATH.
   echo         Install it with:  powershell -c "irm bun.sh/install.ps1 ^| iex"
-  echo         Then reopen this window and run run.bat again.
+  echo         Or use Docker instead: run this file without arguments.
   pause
   exit /b 1
 )
@@ -34,10 +141,6 @@ if not exist "node_modules" (
   )
 )
 
-set "MODE=%~1"
-if /i "%MODE%"=="prod" goto :prod
-if /i "%MODE%"=="production" goto :prod
-
 echo.
 echo   CSR Budgeting - development server
 echo   URL: http://localhost:%PORT%   (Ctrl+C to stop)
@@ -50,7 +153,16 @@ call bun run dev
 set "EXITCODE=%ERRORLEVEL%"
 goto :done
 
+REM ------------------------------ prod --------------------------------------
 :prod
+where bun >nul 2>nul
+if errorlevel 1 (
+  echo [ERROR] Bun was not found on PATH.
+  echo         Install it with:  powershell -c "irm bun.sh/install.ps1 ^| iex"
+  echo         Or use Docker instead: run this file without arguments.
+  pause
+  exit /b 1
+)
 echo.
 echo   CSR Budgeting - production build
 echo   URL: http://localhost:%PORT%   (Ctrl+C to stop)
@@ -66,7 +178,4 @@ call bun run start
 set "EXITCODE=%ERRORLEVEL%"
 
 :done
-echo.
-echo Server stopped (exit code %EXITCODE%).
-pause
 endlocal & exit /b %EXITCODE%
