@@ -3,8 +3,10 @@
 
    Flow map (matches the architecture doc in docs/AUTH.md):
 
-     POST /register  → hash → insert auth_users → issue session    (⇐ real id)
      POST /login     → verify credentials → issue session          (⇐ real id)
+     POST /users     → admin-only account issuance (role & permission
+                        manager). This is the ONLY way a new account is
+                        born — self-registration was removed by policy:
      POST /refresh   → validate+rotate refresh → new access token
      POST /logout    → revoke the rotation family → clear cookies
      GET  /me        → the verified identity of the current cookie
@@ -19,7 +21,7 @@
    ========================================================================= */
 
 import express, { type Request, type RequestHandler, type Response } from 'express';
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { loadAuthConfig, ACCESS_COOKIE, REFRESH_COOKIE, type AuthSettings } from './config.js';
 import { MIN_PASSWORD_LENGTH, hashPassword, verifyPassword } from './password.js';
 import {
@@ -37,15 +39,12 @@ import {
   insertRefreshToken,
   revokeRefreshFamily,
 } from './repo.js';
-import { requireAuth } from './middleware.js';
-import { listRolesPermissions } from '../db/repositories/user.repository.js';
+import { requireAuth, requireAdmin } from './middleware.js';
+import { listRolesPermissions, upsertUser } from '../db/repositories/user.repository.js';
 import type { UserRole } from '../../src/types.js';
 import type { AuthUserRow } from '../db/schema.js';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-/** Role assigned at self-registration (promotions are admin actions). */
-const DEFAULT_REGISTRATION_ROLE: UserRole = 'DEHYAR_COUNCIL';
 
 /* --------------------------------------------------------------------------
    Brute-force damper: per-instance in-memory limiter. A single replica
@@ -181,52 +180,107 @@ async function getPersistedSession(userId: string) {
 export const authRouter = express.Router();
 
 // ---------------------------------------------------------------------------
-// POST /register — first credential issuance for a brand-new identity.
-// Self-service gated by AUTH_ALLOW_REGISTRATION (internal deployments keep it
-// off and use admin provisioning/bootstrap). The user_id is minted HERE —
-// server-side, before any business data can exist. No client-supplied id is
-// ever honored.
+// POST /register — REMOVED BY POLICY. There is no self-service signup: an
+// identity exists either from first-boot bootstrap or because the role &
+// permission manager (POST /users) created it. Stale clients that still call
+// this endpoint get an explicit refusal instead of a naked 404.
 // ---------------------------------------------------------------------------
-authRouter.post('/register', loginLimiter, async (req, res, next) => {
+authRouter.post('/register', loginLimiter, (_req, res) => {
+  return res.status(403).json({
+    error: 'ثبت‌نام آزاد وجود ندارد — حساب کاربری فقط توسط مدیر سامانه در بخش نقش‌ها و دسترسی‌ها ساخته می‌شود',
+    code: 'REGISTRATION_DISABLED',
+  });
+});
+
+// ---------------------------------------------------------------------------
+// POST /users — admin-only account issuance from the role & permission
+// manager. The admin picks a KNOWN role from the RBAC matrix; nobody can
+// mint a role name the matrix does not recognize. The user_id is minted
+// HERE — server-side before any business data exists; no client-supplied
+// id is ever honored. When the admin supplies no password, a one-time
+// strong password is generated and returned exactly once (never stored in
+// plaintext, never visible again after this response).
+// ---------------------------------------------------------------------------
+authRouter.post('/users', requireAuth, requireAdmin, async (req, res, next) => {
   try {
-    const config = loadAuthConfig();
-    if (!config.allowRegistration) {
-      return res.status(403).json({
-        error: 'ثبت‌نام آزاد در این استقرار غیرفعال است — با مدیر سامانه تماس بگیرید',
-        code: 'REGISTRATION_DISABLED',
-      });
-    }
-    const { email, password, displayName } = (req.body ?? {}) as { email?: string; password?: string; displayName?: string };
+    const {
+      email,
+      password,
+      displayName,
+      role,
+      province,
+      county,
+      departmentId,
+      allowedLocationId,
+    } = (req.body ?? {}) as Record<string, string | undefined>;
+
     if (!email || !EMAIL_PATTERN.test(String(email))) {
       return res.status(400).json({ error: 'ایمیل معتبر وارد کنید' });
     }
-    if (!password || String(password).length < MIN_PASSWORD_LENGTH) {
+    if (!displayName || String(displayName).trim().length < 2) {
+      return res.status(400).json({ error: 'نام نمایشی را وارد کنید' });
+    }
+    if (!role || !String(role).trim()) {
+      return res.status(400).json({ error: 'نقش کاربر را انتخاب کنید' });
+    }
+    if (password && String(password).length < MIN_PASSWORD_LENGTH) {
       return res.status(400).json({ error: `رمز عبور حداقل ${MIN_PASSWORD_LENGTH} نویسه باشد` });
     }
-    if (!displayName || String(displayName).trim().length < 2) {
-      return res.status(400).json({ error: 'نام نمایشی خود را وارد کنید' });
+
+    // Only roles the live RBAC matrix knows are acceptable — a typo (or an
+    // injected value) must fail loudly here rather than mint a dead account.
+    const matrix = await listRolesPermissions();
+    const matrixRole = matrix.find((r) => r.role === String(role).trim());
+    if (!matrixRole) {
+      return res.status(400).json({ error: 'نقش انتخابی در ماتریس دسترسی وجود ندارد', code: 'UNKNOWN_ROLE' });
     }
 
-    const existing = await getAuthUserByEmail(String(email));
+    const cleanEmail = String(email).trim().toLowerCase();
+    const existing = await getAuthUserByEmail(cleanEmail);
     if (existing) {
-      // Deliberately non-commital: registration probing must not enumerate
-      // account existence... final answer stays 409 with generic text.
+      // Same non-committal answer /register used: probing must not enumerate.
       return res.status(409).json({ error: 'این ایمیل از قبل ثبت شده است', code: 'EMAIL_TAKEN' });
     }
 
-    const id = randomUUID(); // THE user_id — minted once, owned by auth layer
+    let generatedPassword: string | undefined;
+    const plainPassword = password ? String(password) : (generatedPassword = randomBytes(12).toString('base64url'));
+
+    const id = randomUUID(); // THE user_id — minted once, owned by the auth layer
     await insertAuthUser({
       id,
-      email: String(email).trim().toLowerCase(),
-      passwordHash: await hashPassword(String(password)),
+      email: cleanEmail,
+      passwordHash: await hashPassword(plainPassword),
       displayName: String(displayName).trim(),
-      role: DEFAULT_REGISTRATION_ROLE,
+      role: matrixRole.role as UserRole,
+      // Optional scoping straight from the manager's form.
+      departmentId: departmentId ?? null,
+      allowedLocationId: allowedLocationId ?? null,
+      province: province ?? null,
+      county: county ?? null,
     });
 
-    await issueSession(res, req, id);
+    // Give the new account its roster entry so it is visible and editable in
+    // the same view, with the same id the auth layer owns.
+    await upsertUser({
+      id,
+      name: String(displayName).trim(),
+      role: matrixRole.role as UserRole,
+      roleFa: matrixRole.roleTitleFa,
+      roleTitleFa: matrixRole.roleTitleFa,
+      avatar: '',            // browsers fall back to initials — no remote host
+      organization: province ? `${province}${county ? ' — ' + county : ''}` : 'سطح ملی',
+      ...(departmentId ? { departmentId } : {}),
+      ...(allowedLocationId ? { allowedLocationId } : {}),
+      ...(province ? { province } : {}),
+      ...(county ? { county } : {}),
+    });
+
     const row = await getAuthUserById(id);
-    if (!row) throw new Error('[auth] vanished immediately after registration');
-    return res.status(201).json({ user: await toPublicProfile(row) });
+    if (!row) throw new Error('[auth] vanished immediately after account creation');
+    return res.status(201).json({
+      user: await toPublicProfile(row),
+      ...(generatedPassword ? { generatedPassword } : {}),
+    });
   } catch (error) {
     return next(error);
   }

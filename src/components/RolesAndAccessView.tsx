@@ -27,10 +27,13 @@ import {
   CheckCircle2,
   Calendar,
   UserCheck,
+  UserPlus,
   ArrowUp,
   ArrowDown,
   ChevronsUpDown,
 } from 'lucide-react';
+import { api } from '../services/api';
+import { authApi, CreateAccountResult } from '../services/authApi';
 
 /** Columns of the audit trail, in render order. The header, the <colgroup> widths
  *  and the sort keys all read from this one list, so a column can never be
@@ -140,10 +143,64 @@ export const RolesAndAccessView: React.FC = () => {
   // Roster pagination — 20 users per page.
   const [userPage, setUserPage] = useState(0);
   const userPageSize = 20;
-  const userTotalPages = Math.max(1, Math.ceil(users.length / userPageSize));
-  const pagedUsers = users.slice(userPage * userPageSize, userPage * userPageSize + userPageSize);
+
+  // ---------------------------------------------------------------------------
+  // Account creation — admins only. There is no self-registration: this
+  // modal is the only place in the UI where a new account can be born.
+  // ---------------------------------------------------------------------------
+  const isAdmin = currentUser?.role === 'ADMIN';
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({ displayName: '', email: '', role: '', province: '', county: '' });
+  const [createBusy, setCreateBusy] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [createdAccount, setCreatedAccount] = useState<CreateAccountResult | null>(null);
+  const createModalRef = useRef<HTMLDivElement>(null);
+  useOutsideClick(createModalRef, () => setCreateOpen(false));
+
+  // Roster kept in a local mirror so a freshly created account shows up the
+  // moment the server confirms, without reloading the whole application.
+  const [rosterUsers, setRosterUsers] = useState<UserProfile[]>(users);
+  const userTotalPages = Math.max(1, Math.ceil(rosterUsers.length / userPageSize));
+  const pagedUsers = rosterUsers.slice(userPage * userPageSize, userPage * userPageSize + userPageSize);
   const userPageStart = userPage * userPageSize + 1;
-  const userPageEnd = Math.min(users.length, (userPage + 1) * userPageSize);
+  const userPageEnd = Math.min(rosterUsers.length, (userPage + 1) * userPageSize);
+
+  const refreshRoster = async () => {
+    try {
+      setRosterUsers(await api.users.list());
+    } catch {
+      /* the mirror stays at its previous value; the next full load catches up */
+    }
+  };
+
+  const handleCreateUser = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (createBusy) return;
+    setCreateError(null);
+    setCreateBusy(true);
+    try {
+      const result = await authApi.createAccount({
+        email: createForm.email.trim(),
+        displayName: createForm.displayName.trim(),
+        role: createForm.role,
+        ...(createForm.province.trim() && { province: createForm.province.trim() }),
+        ...(createForm.county.trim() && { county: createForm.county.trim() }),
+      });
+      setCreatedAccount(result);
+      setCreateForm({ displayName: '', email: '', role: '', province: '', county: '' });
+      await refreshRoster();
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : 'خطای نامشخص در ایجاد کاربر');
+    } finally {
+      setCreateBusy(false);
+    }
+  };
+
+  const closeCreateModal = () => {
+    setCreateOpen(false);
+    setCreatedAccount(null);
+    setCreateError(null);
+  };
 
   // Escape closes the permissions modal, matching the location filter dialog.
   useEffect(() => {
@@ -339,6 +396,21 @@ export const RolesAndAccessView: React.FC = () => {
                 کاربر فعال جاری: {currentUser.name} — {currentUser.roleFa}
               </span>
             </div>
+            {isAdmin && (
+              <button
+                id="roles-and-access-view-active-user-switcher-create-user"
+                onClick={() => {
+                  setCreateError(null);
+                  setCreatedAccount(null);
+                  setCreateOpen(true);
+                }}
+                title="ایجاد حساب کاربری جدید — تنها مسیر ایجاد حساب"
+                className="ms-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-700 shadow-sm transition-colors shrink-0"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>افزودن کاربر</span>
+              </button>
+            )}
           </div>
 
           <div id="roles-and-access-view-active-user-switcher-4" className="border border-slate-200 rounded-lg divide-y divide-slate-100">
@@ -384,7 +456,7 @@ export const RolesAndAccessView: React.FC = () => {
 
           <div id="roles-and-access-view-active-user-switcher-8" className="flex items-center justify-between gap-2 border-t border-slate-100 pt-2.5">
             <span id="roles-and-access-view-active-user-switcher-9" className="text-[10px] text-slate-500">
-              نمایش {userPageStart.toLocaleString('fa-IR')} تا {userPageEnd.toLocaleString('fa-IR')} از {users.length.toLocaleString('fa-IR')} کاربر
+              نمایش {userPageStart.toLocaleString('fa-IR')} تا {userPageEnd.toLocaleString('fa-IR')} از {rosterUsers.length.toLocaleString('fa-IR')} کاربر
             </span>
             <div className="flex items-center gap-1.5">
               <button
@@ -600,6 +672,165 @@ export const RolesAndAccessView: React.FC = () => {
 
             {filteredLogs.length === 0 && (
               <div id="roles-and-access-view-sub-tab-2-audit-trail-logs-9" className="p-8 text-center text-slate-400 text-xs">هیچ رویدادی با این مشخصات ثبت نشده است.</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Account creation modal — the ONLY UI path to a new account. Visible
+          to admins only; the server re-checks the role (403 otherwise). The
+          system generates a one-time password when the admin supplies none,
+          and that password is displayed exactly once, here. */}
+      {createOpen && (
+        <div id="roles-and-access-view-create-user-modal" className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 dir-rtl">
+          <div
+            id="roles-and-access-view-create-user-modal-2"
+            ref={createModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="roles-and-access-view-create-user-modal-title"
+            className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden w-full max-w-xl"
+          >
+            <div id="roles-and-access-view-create-user-modal-header" className="p-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-start justify-between gap-4">
+              <div id="roles-and-access-view-create-user-modal-header-2">
+                <h3 id="roles-and-access-view-create-user-modal-title" className="font-black text-sm flex items-center gap-2">
+                  <UserPlus className="w-4 h-4 text-indigo-300" />
+                  ایجاد حساب کاربری جدید
+                </h3>
+                <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">
+                  تنها مسیر ایجاد حساب در سامانه همین پنجره است؛ ثبت‌نام آزاد وجود ندارد.
+                </p>
+              </div>
+              <button
+                id="roles-and-access-view-create-user-modal-close-button"
+                onClick={closeCreateModal}
+                title="بستن پنجره ایجاد حساب"
+                aria-label="بستن"
+                className="p-1.5 hover:bg-white/10 rounded-lg text-slate-300 hover:text-white transition-colors shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {createdAccount ? (
+              /* Success state: the identity is on the server; if the system
+                 generated the password it is shown here — and never again. */
+              <div id="roles-and-access-view-create-user-modal-success" className="p-5 space-y-4">
+                <div className="flex items-start gap-2 text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2.5 leading-relaxed">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span>
+                    حساب برای «{createdAccount.user.name}» ساخته شد و در فهرست کاربران همین صفحه ظاهر می‌شود.
+                  </span>
+                </div>
+                {createdAccount.generatedPassword && (
+                  <div id="roles-and-access-view-create-user-modal-password" className="rounded-xl border border-amber-300 bg-amber-50 p-3">
+                    <p className="text-[11px] font-bold text-amber-900 mb-1">
+                      رمز عبور یک‌بار مصرف — همین حالا کپی کنید:
+                    </p>
+                    <code dir="ltr" className="block text-sm font-mono font-bold text-amber-900 bg-white/70 rounded-lg px-3 py-2 select-all text-left break-all">
+                      {createdAccount.generatedPassword}
+                    </code>
+                    <p className="text-[10px] text-amber-800 mt-2">
+                      به «{createdAccount.user.email}» اعلام شود. این رمز پس از بستن این پنجره دیگر قابل مشاهده نیست؛
+                      کاربر در اولین ورود می‌تواند آن را تغییر دهد.
+                    </p>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={closeCreateModal}
+                  className="w-full py-2.5 rounded-xl font-bold text-xs bg-slate-800 hover:bg-slate-700 text-white transition-colors"
+                >
+                  بستن پنجره
+                </button>
+              </div>
+            ) : (
+              <form id="roles-and-access-view-create-user-modal-form" onSubmit={handleCreateUser} className="p-4 pt-3 flex flex-col gap-3">
+                {createError && (
+                  <div className="flex items-start gap-2 text-[11px] text-rose-800 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2 leading-relaxed">
+                    <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0 mt-0.5" />
+                    <span>{createError}</span>
+                  </div>
+                )}
+                <label className="block">
+                  <span className="block text-[11px] font-bold text-slate-700 mb-1.5">نام نمایشی</span>
+                  <input
+                    type="text"
+                    required
+                    minLength={2}
+                    dir="rtl"
+                    value={createForm.displayName}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, displayName: e.target.value }))}
+                    placeholder="نام و نام خانوادگی"
+                    className="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </label>
+                <label className="block">
+                  <span className="block text-[11px] font-bold text-slate-700 mb-1.5">ایمیل سازمانی</span>
+                  <input
+                    type="email"
+                    required
+                    dir="ltr"
+                    value={createForm.email}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
+                    placeholder="name@agency.gov"
+                    className="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none text-left focus:ring-2 focus:ring-indigo-500"
+                  />
+                </label>
+                <label className="block">
+                  <span className="block text-[11px] font-bold text-slate-700 mb-1.5">نقش (بر اساس ماتریس دسترسی)</span>
+                  <select
+                    required
+                    value={createForm.role}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, role: e.target.value }))}
+                    className="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="" disabled>انتخاب نقش…</option>
+                    {rolesPermissions.map((r) => (
+                      <option key={r.role} value={r.role}>
+                        {r.roleTitleFa || r.role}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="block">
+                    <span className="block text-[11px] font-bold text-slate-700 mb-1.5">استان (اختیاری)</span>
+                    <input
+                      type="text"
+                      dir="rtl"
+                      value={createForm.province}
+                      onChange={(e) => setCreateForm((f) => ({ ...f, province: e.target.value }))}
+                      className="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="block text-[11px] font-bold text-slate-700 mb-1.5">شهرستان (اختیاری)</span>
+                    <input
+                      type="text"
+                      dir="rtl"
+                      value={createForm.county}
+                      onChange={(e) => setCreateForm((f) => ({ ...f, county: e.target.value }))}
+                      className="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </label>
+                </div>
+                <p className="text-[10px] text-slate-500 leading-relaxed">
+                  رمز عبور به‌صورت خودکار و یک‌بارمصرف ساخته و فقط یک‌بار نمایش داده می‌شود؛ ارسال آن به کاربر بر عهده مدیر است.
+                </p>
+                <button
+                  type="submit"
+                  disabled={createBusy}
+                  className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-black text-xs transition-all ${
+                    createBusy
+                      ? 'bg-indigo-400 text-white cursor-wait'
+                      : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm'
+                  }`}
+                >
+                  <UserPlus className="w-4 h-4" />
+                  ایجاد حساب
+                </button>
+              </form>
             )}
           </div>
         </div>

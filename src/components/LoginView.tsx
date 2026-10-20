@@ -4,13 +4,11 @@ import {
   ShieldCheck,
   KeyRound,
   LogIn,
-  UserPlus,
   AlertTriangle,
   Sparkles,
   Loader2,
   Mail,
   Lock,
-  User,
 } from 'lucide-react';
 
 /**
@@ -24,13 +22,14 @@ import {
  * identity-picker ("signing in" by choosing a persona) is gone: without
  * credentials there is no session, and without a session the API answers
  * 401 to every user-data call.
+ *
+ * There is NO self-registration: accounts are provisioned exclusively by
+ * an admin in the role & permission manager. This gate is login-only.
  */
 export const LoginView: React.FC = () => {
-  const { login, register } = useAuth();
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [displayName, setDisplayName] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,11 +39,7 @@ export const LoginView: React.FC = () => {
     setError(null);
     setBusy(true);
     try {
-      if (mode === 'login') {
-        await login(email.trim(), password);
-      } else {
-        await register(email.trim(), password, displayName.trim());
-      }
+      await login(email.trim(), password);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطای نامشخص در ورود');
     } finally {
@@ -116,25 +111,6 @@ export const LoginView: React.FC = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {mode === 'register' && (
-              <label className="block">
-                <span className="block text-[11px] font-bold text-slate-700 mb-1.5">نام نمایشی</span>
-                <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
-                  <User className="w-4 h-4 text-slate-400 shrink-0" />
-                  <input
-                    type="text"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    required
-                    minLength={2}
-                    dir="rtl"
-                    placeholder="نام و نام خانوادگی"
-                    className="w-full py-2.5 bg-transparent text-sm outline-none"
-                  />
-                </div>
-              </label>
-            )}
-
             <label className="block">
               <span className="block text-[11px] font-bold text-slate-700 mb-1.5">ایمیل سازمانی</span>
               <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
@@ -161,16 +137,12 @@ export const LoginView: React.FC = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={mode === 'register' ? 8 : 1}
-                  autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
+                  autoComplete="current-password"
                   dir="ltr"
                   placeholder="••••••••"
                   className="w-full py-2.5 bg-transparent text-sm outline-none text-left"
                 />
               </div>
-              {mode === 'register' && (
-                <span className="mt-1 block text-[10px] text-slate-500">رمز عبور باید حداقل ۸ نویسه باشد.</span>
-              )}
             </label>
 
             {error && (
@@ -191,23 +163,10 @@ export const LoginView: React.FC = () => {
             >
               {busy ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
-              ) : mode === 'login' ? (
-                <LogIn className="w-4 h-4" />
               ) : (
-                <UserPlus className="w-4 h-4" />
+                <LogIn className="w-4 h-4" />
               )}
-              {mode === 'login' ? 'ورود به سامانه' : 'ثبت‌نام و ورود'}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setMode((m) => (m === 'login' ? 'register' : 'login'));
-                setError(null);
-              }}
-              className="w-full text-[11px] text-slate-500 hover:text-blue-600 transition-colors py-1"
-            >
-              {mode === 'login' ? 'حساب ندارید؟ ثبت‌نام' : 'حساب دارید؟ بازگشت به ورود'}
+              ورود به سامانه
             </button>
 
             <div id="login-view-note" className="flex items-start gap-2 text-[10px] text-slate-600 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 leading-relaxed">
@@ -216,6 +175,13 @@ export const LoginView: React.FC = () => {
                 نشست پس از ورود با توکن کوتاه‌عمر (۱۵ دقیقه) و توکن تمدید (۳۰ روز) در کوکی‌های
                 httponly نگه داشته می‌شود؛ کد سمت مرورگر هرگز به آن‌ها دسترسی ندارد و سالخوردگی
                 نشست به‌صورت خودکار و بدون وقفهٔ کاربر تمدید می‌گردد.
+              </span>
+            </div>
+            <div id="login-view-no-register-note" className="flex items-start gap-2 text-[10px] text-slate-500 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 leading-relaxed">
+              <KeyRound className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+              <span>
+                ثبت‌نام آزاد وجود ندارد. حساب کاربری فقط توسط مدیر سامانه در بخش
+                «مدیریت نقش‌ها و دسترسی‌ها» ایجاد می‌شود؛ برای دریافت حساب با مدیر تماس بگیرید.
               </span>
             </div>
           </form>

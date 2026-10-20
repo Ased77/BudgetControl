@@ -12,8 +12,6 @@
      AUTH_REFRESH_TTL_DAYS      refresh-token lifetime (default 30)
      AUTH_COOKIE_SECURE         Secure flag on cookies (default: in production)
      AUTH_COOKIE_SAMESITE       SameSite lax|strict    (default lax)
-     AUTH_ALLOW_REGISTRATION    open self-registration (default false — this
-                                is an internal tool; admins create accounts)
      AUTH_BOOTSTRAP_EMAIL / AUTH_BOOTSTRAP_PASSWORD
                                 credentials for the first-admin repair; unset
                                 makes the repair generate and print a one-time
@@ -34,7 +32,6 @@ export interface AuthSettings {
   refreshTtlDays: number;
   cookieSecure: boolean;
   cookieSameSite: 'lax' | 'strict';
-  allowRegistration: boolean;
   bootstrapEmail: string | null;
   bootstrapPassword: string | null;
 }
@@ -84,7 +81,6 @@ export function loadAuthConfig(env: Env = process.env): AuthSettings {
     // the flag is about the client connection, so production defaults to on.
     cookieSecure: boolean(env, 'AUTH_COOKIE_SECURE', process.env.NODE_ENV === 'production'),
     cookieSameSite: sameSiteRaw,
-    allowRegistration: boolean(env, 'AUTH_ALLOW_REGISTRATION', false),
     bootstrapEmail: env.AUTH_BOOTSTRAP_EMAIL?.trim() || null,
     bootstrapPassword: env.AUTH_BOOTSTRAP_PASSWORD || null,
   };

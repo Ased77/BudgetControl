@@ -86,9 +86,10 @@ services:
       AUTH_ACCESS_TTL_SECONDS: ${AUTH_ACCESS_TTL_SECONDS:-900}
       AUTH_REFRESH_TTL_DAYS: ${AUTH_REFRESH_TTL_DAYS:-30}
       AUTH_COOKIE_SAMESITE: ${AUTH_COOKIE_SAMESITE:-lax}
-      AUTH_ALLOW_REGISTRATION: ${AUTH_ALLOW_REGISTRATION:-0}
-      # Optional first-admin bootstrap; unset AUTH_BOOTSTRAP_EMAIL makes the
-      # server generate and print a one-time password on first boot.
+      # There is no self-registration: accounts are created by admins from the
+      # role & permission manager (POST /api/auth/users). Optional first-admin
+      # bootstrap; unset AUTH_BOOTSTRAP_EMAIL makes the server generate and
+      # print a one-time password on first boot.
       AUTH_BOOTSTRAP_EMAIL: ${AUTH_BOOTSTRAP_EMAIL:-}
       AUTH_BOOTSTRAP_PASSWORD: ${AUTH_BOOTSTRAP_PASSWORD:-}
     ports:

@@ -23,7 +23,6 @@ interface AuthContextType {
   /** The verified user — every consumer treats this as server-issued truth. */
   user: SessionProfile | null;
   login: (email: string, password: string) => Promise<SessionProfile>;
-  register: (email: string, password: string, displayName: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -73,14 +72,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return res.user;
   }, []);
 
-  const register = useCallback(
-    async (email: string, password: string, displayName: string): Promise<void> => {
-      await authApi.register({ email, password, displayName });
-      await login(email, password);
-    },
-    [login],
-  );
-
   const logout = useCallback(async (): Promise<void> => {
     try {
       await authApi.logout();
@@ -93,8 +84,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const value = useMemo(
-    () => ({ status, user, login, register, logout }),
-    [status, user, login, register, logout],
+    () => ({ status, user, login, logout }),
+    [status, user, login, logout],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

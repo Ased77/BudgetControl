@@ -2,19 +2,35 @@
  * Identity endpoints of /api/auth, typed. The tokens NEVER ride through
  * this layer — they live in httpOnly cookies set by the server. These
  * calls only exchange credentials for a session and read the profile.
+ *
+ * NOTE: there is deliberately no client self-registration. Accounts are
+ * created exclusively through POST /api/auth/users by an admin, from the
+ * role & permission manager (RolesAndAccessView).
  */
 
 import { UserProfile } from '../types';
 import { api } from './api';
 
-export interface RegisterInput {
+export interface CreateAccountInput {
   email: string;
-  password: string;
   displayName: string;
+  role: string;
+  password?: string;       // when empty the server generates a one-time password
+  province?: string;
+  county?: string;
+  departmentId?: string;
+  allowedLocationId?: string;
+}
+
+export interface CreateAccountResult {
+  user: SessionProfile;
+  /** Present exactly when the server generated the password. Shown once. */
+  generatedPassword?: string;
 }
 
 export const authApi = {
-  register: (input: RegisterInput) => post<{ user: SessionProfile }>(`/api/auth/register`, input),
+  createAccount: (input: CreateAccountInput) =>
+    post<CreateAccountResult>(`/api/auth/users`, input),
   login: (email: string, password: string) => post<{ user: SessionProfile }>(`/api/auth/login`, { email, password }),
   logout: () => post<{ ok: boolean }>(`/api/auth/logout`, {}),
   me: () => get<{ user: SessionProfile }>(`/api/auth/me`),
@@ -28,7 +44,7 @@ function get<T>(path: string): Promise<T> {
   });
 }
 
-/** POST with a JSON body, tolerating error payloads. */
+/** POST with a JSON body and a friendly error message. */
 function post<T>(path: string, body: unknown): Promise<T> {
   return fetch(path, {
     method: 'POST',
