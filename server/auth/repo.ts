@@ -18,13 +18,15 @@ import { withDbErrorMapping } from '../db/errors.js';
 import { db, type DrizzleDb, type Tx } from '../db/client.js';
 import { authUsers, refreshTokens, type AuthUserRow, type RefreshTokenRow } from '../db/schema.js';
 import { SYSTEM_ACTOR_ID } from '../db/system-actor.js';
+import { normalizeMobile } from './mobile.js';
 import type { UserRole } from '../../src/types.js';
 
 type Executor = DrizzleDb | Tx;
 
 export interface NewAuthUser {
   id: string;
-  email: string;
+  /** Already-normalized mobile (server/auth/mobile.ts) — entry points validate. */
+  mobile: string;
   passwordHash: string;
   displayName: string;
   role: string;
@@ -44,14 +46,11 @@ export function authUserToSession(row: AuthUserRow) {
   };
 }
 
-export async function getAuthUserByEmail(email: string, executor: Executor = db): Promise<AuthUserRow | undefined> {
+export async function getAuthUserByMobile(mobile: string, executor: Executor = db): Promise<AuthUserRow | undefined> {
   return withDbErrorMapping(async () => {
-    // Case-insensitive match through the functional unique index.
-    const rows = await executor
-      .select()
-      .from(authUsers)
-      .where(sql`lower(${authUsers.email}) = lower(${email.trim()})`)
-      .limit(1);
+    // Entry points normalize first, so an exact match on the canonical form
+    // is the same case-insensitive-by-construction lookup the old lookup did.
+    const rows = await executor.select().from(authUsers).where(eq(authUsers.mobile, mobile)).limit(1);
     return rows[0];
   });
 }
@@ -67,7 +66,7 @@ export async function insertAuthUser(input: NewAuthUser, executor: Executor = db
   return withDbErrorMapping(async () => {
     await executor.insert(authUsers).values({
       id: input.id,
-      email: input.email.trim().toLowerCase(),
+      mobile: input.mobile,
       passwordHash: input.passwordHash,
       displayName: input.displayName,
       role: input.role,

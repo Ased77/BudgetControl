@@ -145,7 +145,9 @@ function joined(executor: Executor) {
     .leftJoin(executors, eq(projects.executorId, executors.id))
     .leftJoin(contractors, eq(projects.contractorId, contractors.id))
     .leftJoin(crisesHarms, eq(projects.crisisHarmId, crisesHarms.id))
-    .leftJoin(creatorUsers, eq(projects.createdByUserId, creatorUsers.id));
+    // legacy `users` roster is text-keyed while `projects.created_by_user_id`
+    // is a uuid (auth actor) — cross-type join needs one explicit cast.
+    .leftJoin(creatorUsers, sql`${projects.createdByUserId}::text = ${creatorUsers.id}`);
 }
 
 /**

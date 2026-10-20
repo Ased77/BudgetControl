@@ -12,7 +12,7 @@ column. There is no guest id, no impersonation, no client-assigned id.
 
 ```
                  ┌───────────────────────────── the SPA ─────────────────────────────┐
- email+password  │  LoginView → AuthContext.login()                                  │
+mobile+password  │  LoginView → AuthContext.login()                                  │
  ───────────────►│      fetch POST /api/auth/login  (credentials:'include')          │
                  └──────────────────────── correlator ───────────────────────────────┘
                               │
@@ -86,7 +86,7 @@ column. There is no guest id, no impersonation, no client-assigned id.
 | `AUTH_ACCESS_TTL_SECONDS` / `AUTH_REFRESH_TTL_DAYS` | lifetimes |
 | `AUTH_COOKIE_SECURE` / `AUTH_COOKIE_SAMESITE` | cookie flags (Secure auto in prod) |
 | `AUTH_ALLOW_REGISTRATION` | self-service signup gate (default OFF) |
-| `AUTH_BOOTSTRAP_EMAIL` / `AUTH_BOOTSTRAP_PASSWORD` | the first operator account (falls back to a generated one-time password printed once) |
+| `AUTH_BOOTSTRAP_MOBILE` / `AUTH_BOOTSTRAP_PASSWORD` | the first operator account (falls back to a generated one-time password printed once) |
 
 DB access is standard `PG*`/`DATABASE_URL` (unchanged, see server/config.ts).
 

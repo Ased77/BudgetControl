@@ -12,7 +12,8 @@ import { UserProfile } from '../types';
 import { api } from './api';
 
 export interface CreateAccountInput {
-  email: string;
+  /** Normalized on the server (server/auth/mobile.ts): 09123456789 etc. */
+  mobile: string;
   displayName: string;
   role: string;
   password?: string;       // when empty the server generates a one-time password
@@ -31,7 +32,7 @@ export interface CreateAccountResult {
 export const authApi = {
   createAccount: (input: CreateAccountInput) =>
     post<CreateAccountResult>(`/api/auth/users`, input),
-  login: (email: string, password: string) => post<{ user: SessionProfile }>(`/api/auth/login`, { email, password }),
+  login: (mobile: string, password: string) => post<{ user: SessionProfile }>(`/api/auth/login`, { mobile, password }),
   logout: () => post<{ ok: boolean }>(`/api/auth/logout`, {}),
   me: () => get<{ user: SessionProfile }>(`/api/auth/me`),
 };
@@ -67,7 +68,7 @@ function post<T>(path: string, body: unknown): Promise<T> {
 }
 
 /** The verified identity payload (/api/auth/me returns it). */
-export type SessionProfile = UserProfile & { email: string };
+export type SessionProfile = UserProfile & { mobile: string };
 
 // Re-export so consumers import a single symbol for the current user type.
 export type { UserProfile };

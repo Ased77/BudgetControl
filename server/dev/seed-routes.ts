@@ -10,7 +10,8 @@
    "production" (the conditional registration in server/app.ts means the
    routes do not even exist in a production deployment):
 
-     GET /dev/seed-users                 → [{ id, username }] of test users
+     GET /dev/seed-users                 → [{ id, username, name, role,
+                                           roleFa }] of test users
      GET /dev/seed-users/:id/credentials → { username, password } (404 if
                                            not found / not a test user)
 
@@ -40,6 +41,7 @@ import { and, asc, eq } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { authUsers } from '../db/schema.js';
 import { withDbErrorMapping } from '../db/errors.js';
+import { listRolesPermissions } from '../db/repositories/user.repository.js';
 
 /** Shaped like login identities that are accepted case-insensitively. */
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -56,19 +58,34 @@ export function isDevEnvironment(env: NodeJS.ProcessEnv = process.env): boolean 
 export const devSeedRouter = express.Router();
 
 // ---------------------------------------------------------------------------
-// GET /seed-users — only active test accounts, only { id, username }.
-// username === the login email (the credential the login form consumes).
+// GET /seed-users — only active test accounts, only { id, username, name, role, roleFa }.
+// username === the login identity (the mobile number the login form consumes);
+// name/roleFa are display-only so the panel can show a human label instead
+// of the raw mobile number.
 // ---------------------------------------------------------------------------
 const listSeedUsers: RequestHandler = async (_req, res, next) => {
   try {
     const rows = await withDbErrorMapping(async () =>
       db
-        .select({ id: authUsers.id, email: authUsers.email })
+        .select({ id: authUsers.id, mobile: authUsers.mobile, displayName: authUsers.displayName, role: authUsers.role })
         .from(authUsers)
         .where(and(eq(authUsers.isTestUser, true), eq(authUsers.isActive, true)))
-        .orderBy(asc(authUsers.email)),
+        .orderBy(asc(authUsers.mobile)),
     );
-    return res.json({ users: rows.map((row) => ({ id: row.id, username: row.email })) });
+    // Persian role labels come from the live RBAC matrix, same source the
+    // auth layer uses for /me (roleFa = matrix roleTitleFa) — the dev panel
+    // never invents its own labels.
+    const matrix = await listRolesPermissions();
+    const roleFaById = new Map<string, string>(matrix.map((entry) => [entry.role as string, entry.roleTitleFa]));
+    return res.json({
+      users: rows.map((row) => ({
+        id: row.id,
+        username: row.mobile,
+        name: row.displayName,
+        role: row.role,
+        roleFa: roleFaById.get(row.role) ?? row.role,
+      })),
+    });
   } catch (error) {
     return next(error);
   }
@@ -87,7 +104,7 @@ const getSeedCredentials: RequestHandler = async (req, res, next) => {
     }
     const rows = await withDbErrorMapping(async () =>
       db
-        .select({ email: authUsers.email, devPassword: authUsers.devPassword })
+        .select({ mobile: authUsers.mobile, devPassword: authUsers.devPassword })
         .from(authUsers)
         .where(and(eq(authUsers.id, id), eq(authUsers.isTestUser, true), eq(authUsers.isActive, true)))
         .limit(1),
@@ -96,7 +113,7 @@ const getSeedCredentials: RequestHandler = async (req, res, next) => {
     if (!row || !row.devPassword) {
       return res.status(404).json({ error: 'کاربر آزمایشی یافت نشد', code: 'SEED_USER_NOT_FOUND' });
     }
-    return res.json({ username: row.email, password: row.devPassword });
+    return res.json({ username: row.mobile, password: row.devPassword });
   } catch (error) {
     return next(error);
   }

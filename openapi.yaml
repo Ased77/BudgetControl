@@ -78,7 +78,7 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/RegisterRequest' }
             example:
-              email: user@county.gov.ir
+              mobile: '09123456789'
               password: 'Str0ng-Passw0rd!'
               displayName: 'علی رضایی'
       responses:
@@ -88,7 +88,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/AuthSessionResponse' }
         '400':
-          description: Invalid email, password < 8 chars, or displayName < 2 chars.
+          description: Invalid mobile, password < 8 chars, or displayName < 2 chars.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
@@ -99,11 +99,11 @@ paths:
               schema: { $ref: '#/components/schemas/Error' }
               example: { error: 'ثبت‌نام آزاد در این استقرار غیرفعال است — با مدیر سامانه تماس بگیرید', code: REGISTRATION_DISABLED }
         '409':
-          description: Email already registered.
+          description: Mobile number already registered.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
-              example: { error: 'این ایمیل از قبل ثبت شده است', code: EMAIL_TAKEN }
+              example: { error: 'این شماره موبایل از قبل ثبت شده است', code: MOBILE_TAKEN }
         '429':
           $ref: '#/components/responses/RateLimited'
         '500':
@@ -112,10 +112,12 @@ paths:
     post:
       tags: [Authentication]
       operationId: loginUser
-      summary: Log in with email + password
+      summary: Log in with mobile number + password
       description: >
         Verifies credentials and issues a session (sets `csr_at` + `csr_rt`
-        cookies). Wrong email and wrong password are indistinguishable (401
+        cookies). The mobile is normalized server-side (Persian/Arabic digits,
+        `+98`/`0098`/`98 9…`/`9…` → canonical `09xxxxxxxxx`). Wrong mobile and
+        wrong password are indistinguishable (401
         `AUTH_REQUIRED`). Rate limited to 8 attempts / 60 s / IP.
       security: []
       requestBody:
@@ -124,7 +126,7 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/LoginRequest' }
             example:
-              email: admin@example.com
+              mobile: '09991000001'
               password: 'Str0ng-Passw0rd!'
       responses:
         '200':
@@ -1636,7 +1638,7 @@ components:
           description: Human-readable message; Persian (fa) for user-facing failures.
         code:
           type: string
-          description: Stable machine code where present (AUTH_REQUIRED, ACCOUNT_DISABLED, SESSION_REVOKED, REGISTRATION_DISABLED, EMAIL_TAKEN, RATE_LIMITED, FORBIDDEN).
+          description: Stable machine code where present (AUTH_REQUIRED, ACCOUNT_DISABLED, SESSION_REVOKED, REGISTRATION_DISABLED, MOBILE_TAKEN, RATE_LIMITED, FORBIDDEN).
         role:
           type: string
           description: Caller role echoed by 403 FORBIDDEN responses.
@@ -1660,11 +1662,12 @@ components:
       example: { count: 3 }
     RegisterRequest:
       type: object
-      required: [email, password, displayName]
+      required: [mobile, password, displayName]
       properties:
-        email:
+        mobile:
           type: string
-          format: email
+          pattern: '^09\d{9}$'
+          description: Unused today — the body is ignored; /register always replies 403.
         password:
           type: string
           minLength: 8
@@ -1674,21 +1677,23 @@ components:
           minLength: 2
     LoginRequest:
       type: object
-      required: [email, password]
+      required: [mobile, password]
       properties:
-        email: { type: string, format: email }
+        mobile:
+          type: string
+          description: Normalized server-side to `09xxxxxxxxx` before lookup.
         password: { type: string }
     PublicProfile:
       title: PublicUserProfile
       type: object
-      required: [id, email, name, role, roleFa, roleTitleFa, avatar, organization]
+      required: [id, mobile, name, role, roleFa, roleTitleFa, avatar, organization]
       properties:
         id:
           type: string
           description: auth_users.id (uuid) — the canonical user_id.
-        email:
+        mobile:
           type: string
-          format: email
+          pattern: '^09\d{9}$'
         name: { type: string }
         role: { $ref: '#/components/schemas/UserRole' }
         roleFa: { type: string, description: Short Persian role name (badge/pill). }

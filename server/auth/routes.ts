@@ -32,19 +32,20 @@ import {
 import {
   authUserToSession,
   consumeRefreshToken,
-  getAuthUserByEmail,
+  getAuthUserByMobile,
   getAuthUserById,
   getRefreshTokenState,
   insertAuthUser,
   insertRefreshToken,
   revokeRefreshFamily,
 } from './repo.js';
+import { normalizeMobile } from './mobile.js';
 import { requireAuth, requireAdmin } from './middleware.js';
 import { listRolesPermissions, upsertUser } from '../db/repositories/user.repository.js';
 import type { UserRole } from '../../src/types.js';
 import type { AuthUserRow } from '../db/schema.js';
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/* The login identity is the mobile number — see server/auth/mobile.ts. */
 
 /* --------------------------------------------------------------------------
    Brute-force damper: per-instance in-memory limiter. A single replica
@@ -88,7 +89,7 @@ async function roleLabels(role: string): Promise<{ roleFa: string; roleTitleFa: 
 
 async function toPublicProfile(row: {
   id: string;
-  email: string;
+  mobile: string;
   displayName: string;
   role: string;
   departmentId: string | null;
@@ -99,7 +100,7 @@ async function toPublicProfile(row: {
   const { roleFa, roleTitleFa } = await roleLabels(row.role);
   return {
     id: row.id,
-    email: row.email,
+    mobile: row.mobile,
     name: row.displayName,
     role: row.role,
     roleFa,
@@ -204,7 +205,7 @@ authRouter.post('/register', loginLimiter, (_req, res) => {
 authRouter.post('/users', requireAuth, requireAdmin, async (req, res, next) => {
   try {
     const {
-      email,
+      mobile,
       password,
       displayName,
       role,
@@ -214,8 +215,9 @@ authRouter.post('/users', requireAuth, requireAdmin, async (req, res, next) => {
       allowedLocationId,
     } = (req.body ?? {}) as Record<string, string | undefined>;
 
-    if (!email || !EMAIL_PATTERN.test(String(email))) {
-      return res.status(400).json({ error: 'ایمیل معتبر وارد کنید' });
+    const normalizedMobile = normalizeMobile(mobile);
+    if (!normalizedMobile) {
+      return res.status(400).json({ error: 'شماره موبایل معتبر وارد کنید (نمونه: 09123456789)' });
     }
     if (!displayName || String(displayName).trim().length < 2) {
       return res.status(400).json({ error: 'نام نمایشی را وارد کنید' });
@@ -235,11 +237,10 @@ authRouter.post('/users', requireAuth, requireAdmin, async (req, res, next) => {
       return res.status(400).json({ error: 'نقش انتخابی در ماتریس دسترسی وجود ندارد', code: 'UNKNOWN_ROLE' });
     }
 
-    const cleanEmail = String(email).trim().toLowerCase();
-    const existing = await getAuthUserByEmail(cleanEmail);
+    const existing = await getAuthUserByMobile(normalizedMobile);
     if (existing) {
       // Same non-committal answer /register used: probing must not enumerate.
-      return res.status(409).json({ error: 'این ایمیل از قبل ثبت شده است', code: 'EMAIL_TAKEN' });
+      return res.status(409).json({ error: 'این شماره موبایل از قبل ثبت شده است', code: 'MOBILE_TAKEN' });
     }
 
     let generatedPassword: string | undefined;
@@ -248,7 +249,7 @@ authRouter.post('/users', requireAuth, requireAdmin, async (req, res, next) => {
     const id = randomUUID(); // THE user_id — minted once, owned by the auth layer
     await insertAuthUser({
       id,
-      email: cleanEmail,
+      mobile: normalizedMobile,
       passwordHash: await hashPassword(plainPassword),
       displayName: String(displayName).trim(),
       role: matrixRole.role as UserRole,
@@ -291,18 +292,19 @@ authRouter.post('/users', requireAuth, requireAdmin, async (req, res, next) => {
 // ---------------------------------------------------------------------------
 authRouter.post('/login', loginLimiter, async (req, res, next) => {
   try {
-    const { email, password } = (req.body ?? {}) as { email?: string; password?: string };
-    const row = email ? await getAuthUserByEmail(String(email)) : undefined;
+    const { mobile, password } = (req.body ?? {}) as { mobile?: string; password?: string };
+    const normalized = normalizeMobile(mobile);
+    const row = normalized ? await getAuthUserByMobile(normalized) : undefined;
 
     if (!row) {
       // Same answer for "no such user" and "wrong password"; verifyPassword
       // still runs on a decoy path in scalar cost terms below.
-      return res.status(401).json({ error: 'ایمیل یا رمز عبور نادرست است', code: 'AUTH_REQUIRED' });
+      return res.status(401).json({ error: 'شماره موبایل یا رمز عبور نادرست است', code: 'AUTH_REQUIRED' });
     }
 
     const valid = await verifyPassword(String(password ?? ''), row.passwordHash);
     if (!valid) {
-      return res.status(401).json({ error: 'ایمیل یا رمز عبور نادرست است', code: 'AUTH_REQUIRED' });
+      return res.status(401).json({ error: 'شماره موبایل یا رمز عبور نادرست است', code: 'AUTH_REQUIRED' });
     }
     if (!row.isActive) {
       return res.status(401).json({ error: 'این حساب کاربری غیرفعال شده است', code: 'ACCOUNT_DISABLED' });

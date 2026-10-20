@@ -12,11 +12,13 @@
      AUTH_REFRESH_TTL_DAYS      refresh-token lifetime (default 30)
      AUTH_COOKIE_SECURE         Secure flag on cookies (default: in production)
      AUTH_COOKIE_SAMESITE       SameSite lax|strict    (default lax)
-     AUTH_BOOTSTRAP_EMAIL / AUTH_BOOTSTRAP_PASSWORD
+     AUTH_BOOTSTRAP_MOBILE / AUTH_BOOTSTRAP_PASSWORD
                                 credentials for the first-admin repair; unset
                                 makes the repair generate and print a one-time
                                 password instead.
    ========================================================================= */
+
+import { normalizeMobile } from './mobile.js';
 
 /** httpOnly cookie names. Access and refresh are distinct cookies on purpose:
  *  logout and cookie-clearing logic can then never confuse the layers. */
@@ -32,7 +34,7 @@ export interface AuthSettings {
   refreshTtlDays: number;
   cookieSecure: boolean;
   cookieSameSite: 'lax' | 'strict';
-  bootstrapEmail: string | null;
+  bootstrapMobile: string | null;
   bootstrapPassword: string | null;
 }
 
@@ -81,7 +83,7 @@ export function loadAuthConfig(env: Env = process.env): AuthSettings {
     // the flag is about the client connection, so production defaults to on.
     cookieSecure: boolean(env, 'AUTH_COOKIE_SECURE', process.env.NODE_ENV === 'production'),
     cookieSameSite: sameSiteRaw,
-    bootstrapEmail: env.AUTH_BOOTSTRAP_EMAIL?.trim() || null,
+    bootstrapMobile: normalizeMobile(env.AUTH_BOOTSTRAP_MOBILE),
     bootstrapPassword: env.AUTH_BOOTSTRAP_PASSWORD || null,
   };
 }

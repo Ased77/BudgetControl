@@ -42,7 +42,7 @@ Both cookies are `httpOnly` (+ `Secure` in production). The SPA never sees a tok
 ### 2.2 Obtaining credentials
 
 ```text
-POST /api/auth/login    { "email": "...", "password": "..." }   → Set-Cookie: csr_at=…; csr_rt=…
+POST /api/auth/login    { "mobile": "09xxxxxxxxx", "password": "..." }   → Set-Cookie: csr_at=…; csr_rt=…
 POST /api/auth/refresh  { } (cookie only)                        → rotated csr_rt + fresh csr_at
 ```
 
@@ -93,7 +93,7 @@ Permission flags used by routes: `canManageBudget`, `canManagePriorities`, `canC
 # 1) Log in — session cookies are stored in cookies.txt
 curl -c cookies.txt -X POST http://localhost:3000/api/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"email":"admin@localhost","password":"<your-password>"}'
+  -d '{"mobile":"09991000001","password":"<your-password>"}'
 
 # 2) Check identity
 curl -b cookies.txt http://localhost:3000/api/auth/me
@@ -119,20 +119,20 @@ Create identity + first session. Rate limited (8/min/IP). Assigns role `DEHYAR_C
 | Code | Meaning |
 |---|---|
 | 201 | `{ "user": PublicProfile }` + both cookies set |
-| 400 | invalid email / short password / short displayName |
+| 400 | invalid mobile / short password / short displayName |
 | 403 | `REGISTRATION_DISABLED` |
-| 409 | `EMAIL_TAKEN` |
+| 409 | `MOBILE_TAKEN` |
 | 429 | `RATE_LIMITED` |
 
 ```json
 // request
-{ "email": "user@county.gov.ir", "password": "Str0ng-Passw0rd!", "displayName": "علی رضایی" }
+{ "mobile": "09991000001", "password": "Str0ng-Passw0rd!", "displayName": "علی رضایی" }
 // 201
-{ "user": { "id":"…uuid", "email":"user@county.gov.ir", "name":"علی رضایی", "role":"DEHYAR_COUNCIL", "roleFa":"دهیار", "roleTitleFa":"دهیار / نماینده شورای اسلامی", "avatar":"", "organization":"سطح ملی" } }
+{ "user": { "id":"…uuid", "mobile":"09991000001", "name":"علی رضایی", "role":"DEHYAR_COUNCIL", "roleFa":"دهیار", "roleTitleFa":"دهیار / نماینده شورای اسلامی", "avatar":"", "organization":"سطح ملی" } }
 ```
 
 #### `POST /api/auth/login` 🔓
-Rate limited (8/min/IP). Wrong email/wrong password are indistinguishable.
+Rate limited (8/min/IP). The mobile is normalized server-side (Persian digits, `+98`/`0098`/`98 9…` → `09xxxxxxxxx`). Wrong mobile/wrong password are indistinguishable.
 | Code | Meaning |
 |---|---|
 | 200 | `{ "user": PublicProfile }` + cookies |
@@ -326,7 +326,7 @@ Full JSON Schemas live in `openapi.yaml#components/schemas`. Summary:
 
 | Schema | Key fields (R = required) |
 |---|---|
-| `PublicProfile` | R: id, email, name, role, roleFa, roleTitleFa, avatar, organization · opt: departmentId, allowedLocationId, province, county |
+| `PublicProfile` | R: id, mobile, name, role, roleFa, roleTitleFa, avatar, organization · opt: departmentId, allowedLocationId, province, county |
 | `OrganizationConfig` | R: id, name, orgType, activitySector, province, city, county, district, totalBudget, currencyUnit, budgetPeriod, fiscalYear, updatedAt · opt: nationalCode, description, updatedByUserId |
 | `LocationData` | R: id, level, province, county, city, district, population · opt: indicators, coordinates |
 | `LocalIndicators` | R (all 11): povertyRate, marginalizationRate, unemploymentRate, socialHarmsIndex, vulnerableGroupsPopulation, infrastructureDeficit, crisisVulnerabilityScore, healthAccessDeficit, educationDropOutRate, culturalDeficitScore, environmentalRiskScore |

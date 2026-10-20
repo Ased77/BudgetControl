@@ -159,9 +159,9 @@ interface AppContextType {
 
   // Actions
   setActiveTab: (tab: string) => void;
-  /** Email+password login against /api/auth; resolves after the server-side
+  /** Mobile+password login against /api/auth; resolves after the server-side
    *  session (httpOnly cookies) is established. */
-  login: (email: string, password: string) => Promise<void>;
+  login: (mobile: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   setAdministrativeScope: (scope: AdministrativeLevel) => void;
   handleSelectLocation: (newLoc: LocationData) => void;
@@ -418,8 +418,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // httpOnly session; a LOGIN/LOGOUT entry is stamped with the verified
   // identity — the audit-log route overwrites the actor FK server-side, so
   // even this narrative cannot claim an identity by name.
-  const login = async (email: string, password: string) => {
-    const verified = await auth.login(email, password);
+  const login = async (mobile: string, password: string) => {
+    const verified = await auth.login(mobile, password);
     setActiveTab('DASHBOARD');
     addAuditLog('LOGIN', 'ورود به سامانه', '-', verified.roleFa, `ورود ${verified.name} به سامانه مدیریت توسعه`, verified);
   };

@@ -113,7 +113,7 @@
                 "$ref": "#/components/schemas/RegisterRequest"
               },
               "example": {
-                "email": "user@county.gov.ir",
+                "mobile": "09123456789",
                 "password": "Str0ng-Passw0rd!",
                 "displayName": "علی رضایی"
               }
@@ -132,7 +132,7 @@
             }
           },
           "400": {
-            "description": "Invalid email, password < 8 chars, or displayName < 2 chars.",
+            "description": "Invalid mobile, password < 8 chars, or displayName < 2 chars.",
             "content": {
               "application/json": {
                 "schema": {
@@ -156,15 +156,15 @@
             }
           },
           "409": {
-            "description": "Email already registered.",
+            "description": "Mobile number already registered.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
                 "example": {
-                  "error": "این ایمیل از قبل ثبت شده است",
-                  "code": "EMAIL_TAKEN"
+                  "error": "این شماره موبایل از قبل ثبت شده است",
+                  "code": "MOBILE_TAKEN"
                 }
               }
             }
@@ -184,8 +184,8 @@
           "Authentication"
         ],
         "operationId": "loginUser",
-        "summary": "Log in with email + password",
-        "description": "Verifies credentials and issues a session (sets `csr_at` + `csr_rt` cookies). Wrong email and wrong password are indistinguishable (401 `AUTH_REQUIRED`). Rate limited to 8 attempts / 60 s / IP.\n",
+        "summary": "Log in with mobile number + password",
+        "description": "Verifies credentials and issues a session (sets `csr_at` + `csr_rt` cookies). The mobile is normalized server-side (Persian/Arabic digits, `+98`/`0098`/`98 9…`/`9…` → canonical `09xxxxxxxxx`). Wrong mobile and wrong password are indistinguishable (401 `AUTH_REQUIRED`). Rate limited to 8 attempts / 60 s / IP.\n",
         "security": [],
         "requestBody": {
           "required": true,
@@ -195,7 +195,7 @@
                 "$ref": "#/components/schemas/LoginRequest"
               },
               "example": {
-                "email": "admin@example.com",
+                "mobile": "09991000001",
                 "password": "Str0ng-Passw0rd!"
               }
             }
@@ -2674,7 +2674,7 @@
           },
           "code": {
             "type": "string",
-            "description": "Stable machine code where present (AUTH_REQUIRED, ACCOUNT_DISABLED, SESSION_REVOKED, REGISTRATION_DISABLED, EMAIL_TAKEN, RATE_LIMITED, FORBIDDEN)."
+            "description": "Stable machine code where present (AUTH_REQUIRED, ACCOUNT_DISABLED, SESSION_REVOKED, REGISTRATION_DISABLED, MOBILE_TAKEN, RATE_LIMITED, FORBIDDEN)."
           },
           "role": {
             "type": "string",
@@ -2722,14 +2722,15 @@
       "RegisterRequest": {
         "type": "object",
         "required": [
-          "email",
+          "mobile",
           "password",
           "displayName"
         ],
         "properties": {
-          "email": {
+          "mobile": {
             "type": "string",
-            "format": "email"
+            "pattern": "^09\\d{9}$",
+            "description": "Unused today — the body is ignored; /register always replies 403."
           },
           "password": {
             "type": "string",
@@ -2745,13 +2746,13 @@
       "LoginRequest": {
         "type": "object",
         "required": [
-          "email",
+          "mobile",
           "password"
         ],
         "properties": {
-          "email": {
+          "mobile": {
             "type": "string",
-            "format": "email"
+            "description": "Normalized server-side to `09xxxxxxxxx` before lookup."
           },
           "password": {
             "type": "string"
@@ -2763,7 +2764,7 @@
         "type": "object",
         "required": [
           "id",
-          "email",
+          "mobile",
           "name",
           "role",
           "roleFa",
@@ -2776,9 +2777,9 @@
             "type": "string",
             "description": "auth_users.id (uuid) — the canonical user_id."
           },
-          "email": {
+          "mobile": {
             "type": "string",
-            "format": "email"
+            "pattern": "^09\\d{9}$"
           },
           "name": {
             "type": "string"

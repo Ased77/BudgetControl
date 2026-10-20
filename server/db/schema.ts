@@ -580,8 +580,15 @@ export const analysisSources = pgTable('analysis_sources', {
    ========================================================================= */
 export const authUsers = pgTable('auth_users', {
   id: uuid().primaryKey(),
-  /** Login identity, case-insensitively unique (functional unique index). */
-  email: text().notNull(),
+  /**
+   * Login identity — the MOBILE NUMBER, normalized at rest by
+   * server/auth/mobile.ts (11 ASCII digits starting with 09). Pre-launch this
+   * column was the email identity; migration 0004 converted the column and
+   * gave placeholder mobiles to rows that never carried a real one.
+   * Case/format is irrelevant at lookup time because entry points normalize
+   * before querying.
+   */
+  mobile: text().notNull(),
   /** scrypt credential — see server/auth/password.ts for the exact format. */
   passwordHash: text().notNull(),
   displayName: text().notNull(),
@@ -616,7 +623,7 @@ export const authUsers = pgTable('auth_users', {
   tokensValidFrom: timestamp({ withTimezone: true }).notNull().defaultNow(),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
-  uniqueIndex('auth_users_email_lower_unique').on(sql`lower(${t.email})`),
+  uniqueIndex('auth_users_mobile_unique').on(t.mobile),
   check('auth_users_role_check', sql`${t.role} IN ('ADMIN', 'PROVINCIAL_GOVERNOR', 'DEPARTMENT_HEAD', 'OFFICE_HEAD', 'REGIONAL_MANAGER', 'PLANNING_SPECIALIST', 'AUDITOR', 'DEHYAR_COUNCIL')`),
   index('idx_auth_users_role').on(t.role),
 ]);

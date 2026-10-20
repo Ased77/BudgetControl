@@ -150,7 +150,7 @@ export const RolesAndAccessView: React.FC = () => {
   // ---------------------------------------------------------------------------
   const isAdmin = currentUser?.role === 'ADMIN';
   const [createOpen, setCreateOpen] = useState(false);
-  const [createForm, setCreateForm] = useState({ displayName: '', email: '', role: '', province: '', county: '' });
+  const [createForm, setCreateForm] = useState({ displayName: '', mobile: '', role: '', province: '', county: '' });
   const [createBusy, setCreateBusy] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [createdAccount, setCreatedAccount] = useState<CreateAccountResult | null>(null);
@@ -180,14 +180,14 @@ export const RolesAndAccessView: React.FC = () => {
     setCreateBusy(true);
     try {
       const result = await authApi.createAccount({
-        email: createForm.email.trim(),
+        mobile: createForm.mobile.trim(),
         displayName: createForm.displayName.trim(),
         role: createForm.role,
         ...(createForm.province.trim() && { province: createForm.province.trim() }),
         ...(createForm.county.trim() && { county: createForm.county.trim() }),
       });
       setCreatedAccount(result);
-      setCreateForm({ displayName: '', email: '', role: '', province: '', county: '' });
+      setCreateForm({ displayName: '', mobile: '', role: '', province: '', county: '' });
       await refreshRoster();
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : 'خطای نامشخص در ایجاد کاربر');
@@ -731,7 +731,7 @@ export const RolesAndAccessView: React.FC = () => {
                       {createdAccount.generatedPassword}
                     </code>
                     <p className="text-[10px] text-amber-800 mt-2">
-                      به «{createdAccount.user.email}» اعلام شود. این رمز پس از بستن این پنجره دیگر قابل مشاهده نیست؛
+                      به «{createdAccount.user.mobile}» اعلام شود. این رمز پس از بستن این پنجره دیگر قابل مشاهده نیست؛
                       کاربر در اولین ورود می‌تواند آن را تغییر دهد.
                     </p>
                   </div>
@@ -766,14 +766,16 @@ export const RolesAndAccessView: React.FC = () => {
                   />
                 </label>
                 <label className="block">
-                  <span className="block text-[11px] font-bold text-slate-700 mb-1.5">ایمیل سازمانی</span>
+                  <span className="block text-[11px] font-bold text-slate-700 mb-1.5">شماره موبایل سازمانی</span>
                   <input
-                    type="email"
+                    type="tel"
+                    inputMode="numeric"
                     required
                     dir="ltr"
-                    value={createForm.email}
-                    onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
-                    placeholder="name@agency.gov"
+                    minLength={10}
+                    value={createForm.mobile}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, mobile: e.target.value }))}
+                    placeholder="09xxxxxxxxx"
                     className="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none text-left focus:ring-2 focus:ring-indigo-500"
                   />
                 </label>

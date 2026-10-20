@@ -22,7 +22,7 @@ interface AuthContextType {
   status: AuthStatus;
   /** The verified user — every consumer treats this as server-issued truth. */
   user: SessionProfile | null;
-  login: (email: string, password: string) => Promise<SessionProfile>;
+  login: (mobile: string, password: string) => Promise<SessionProfile>;
   logout: () => Promise<void>;
 }
 
@@ -64,8 +64,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => setUnauthorizedHandler(null);
   }, []);
 
-  const login = useCallback(async (email: string, password: string): Promise<SessionProfile> => {
-    const res = await authApi.login(email, password);
+  const login = useCallback(async (mobile: string, password: string): Promise<SessionProfile> => {
+    const res = await authApi.login(mobile, password);
     if (!mounted.current) return res.user;
     setUser(res.user);
     setStatus('authenticated');

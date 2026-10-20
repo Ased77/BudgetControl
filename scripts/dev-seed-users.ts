@@ -44,21 +44,22 @@ import type { UserRole } from '../src/types.js';
    -------------------------------------------------------------------------- */
 const SEED_USERS: Array<{
   id: string;
-  email: string;
+  /** Normalized login identity (11 digits, 09 prefix) of the test account. */
+  mobile: string;
   displayName: string;
   role: UserRole;
   devPassword: string;
   province?: string;
   county?: string;
 }> = [
-  { id: 'bd8457af-eb7a-45e5-b2f9-c91a838c07d3', email: 'dev-admin@csr.test',          displayName: 'حساب آزمایشی — مدیر کل',      role: 'ADMIN',              devPassword: 'DevAdmin1405!' },
-  { id: 'a83f2f35-3847-42c1-96bf-6dc30d1b40a3', email: 'dev-governor@csr.test',      displayName: 'حساب آزمایشی — استاندار',     role: 'PROVINCIAL_GOVERNOR', devPassword: 'DevGovernor1405!', province: 'کرمان', county: 'رفسنجان' },
-  { id: '4bfb4cf9-7702-4a8d-a7b7-5708cdbf46bc', email: 'dev-depthead@csr.test',      displayName: 'حساب آزمایشی — رئیس اداره',   role: 'DEPARTMENT_HEAD',    devPassword: 'DevDept1405!', province: 'کرمان', county: 'رفسنجان' },
-  { id: 'dc97842e-d634-41d6-923d-934ab0ce511e', email: 'dev-officehead@csr.test',    displayName: 'حساب آزمایشی — رئیس دفتر',    role: 'OFFICE_HEAD',        devPassword: 'DevOffice1405!', province: 'کرمان', county: 'رفسنجان' },
-  { id: '5addfd1f-3180-43ae-8e97-ab4982eae30c', email: 'dev-regional@csr.test',      displayName: 'حساب آزمایشی — مدیر منطقه',   role: 'REGIONAL_MANAGER',   devPassword: 'DevRegional1405!', province: 'کرمان', county: 'رفسنجان' },
-  { id: '4a9c1c3b-4dff-43de-ab5b-6e96b5f6a929', email: 'dev-planning@csr.test',      displayName: 'حساب آزمایشی — کارشناس برنامه', role: 'PLANNING_SPECIALIST', devPassword: 'DevPlanning1405!', province: 'کرمان', county: 'رفسنجان' },
-  { id: 'baef3d2d-ca31-4fba-bb2d-d03695c77c2a', email: 'dev-auditor@csr.test',        displayName: 'حساب آزمایشی — ناظر',        role: 'AUDITOR',            devPassword: 'DevAudit1405!', province: 'کرمان', county: 'رفسنجان' },
-  { id: 'a2c67742-01ab-446e-8c1e-df17ae8337ab', email: 'dev-dehyar@csr.test',        displayName: 'حساب آزمایشی — شورای دهیار',  role: 'DEHYAR_COUNCIL',     devPassword: 'DevDehyar1405!', province: 'کرمان', county: 'رفسنجان' },
+  { id: 'bd8457af-eb7a-45e5-b2f9-c91a838c07d3', mobile: '09991000001', displayName: 'حساب آزمایشی — مدیر کل',      role: 'ADMIN',              devPassword: 'DevAdmin1405!' },
+  { id: 'a83f2f35-3847-42c1-96bf-6dc30d1b40a3', mobile: '09991000002', displayName: 'حساب آزمایشی — استاندار',     role: 'PROVINCIAL_GOVERNOR', devPassword: 'DevGovernor1405!', province: 'کرمان', county: 'رفسنجان' },
+  { id: '4bfb4cf9-7702-4a8d-a7b7-5708cdbf46bc', mobile: '09991000003', displayName: 'حساب آزمایشی — رئیس اداره',   role: 'DEPARTMENT_HEAD',    devPassword: 'DevDept1405!', province: 'کرمان', county: 'رفسنجان' },
+  { id: 'dc97842e-d634-41d6-923d-934ab0ce511e', mobile: '09991000004', displayName: 'حساب آزمایشی — رئیس دفتر',    role: 'OFFICE_HEAD',        devPassword: 'DevOffice1405!', province: 'کرمان', county: 'رفسنجان' },
+  { id: '5addfd1f-3180-43ae-8e97-ab4982eae30c', mobile: '09991000005', displayName: 'حساب آزمایشی — مدیر منطقه',   role: 'REGIONAL_MANAGER',   devPassword: 'DevRegional1405!', province: 'کرمان', county: 'رفسنجان' },
+  { id: '4a9c1c3b-4dff-43de-ab5b-6e96b5f6a929', mobile: '09991000006', displayName: 'حساب آزمایشی — کارشناس برنامه', role: 'PLANNING_SPECIALIST', devPassword: 'DevPlanning1405!', province: 'کرمان', county: 'رفسنجان' },
+  { id: 'baef3d2d-ca31-4fba-bb2d-d03695c77c2a', mobile: '09991000007', displayName: 'حساب آزمایشی — ناظر',        role: 'AUDITOR',            devPassword: 'DevAudit1405!', province: 'کرمان', county: 'رفسنجان' },
+  { id: 'a2c67742-01ab-446e-8c1e-df17ae8337ab', mobile: '09991000008', displayName: 'حساب آزمایشی — شورای دهیار',  role: 'DEHYAR_COUNCIL',     devPassword: 'DevDehyar1405!', province: 'کرمان', county: 'رفسنجان' },
 ];
 
 async function main(): Promise<void> {
@@ -83,7 +84,7 @@ async function main(): Promise<void> {
       .insert(authUsers)
       .values({
         id: seed.id,
-        email: seed.email,
+        mobile: seed.mobile,
         passwordHash: await hashPassword(seed.devPassword),
         displayName: seed.displayName,
         role: seed.role,
@@ -97,6 +98,7 @@ async function main(): Promise<void> {
         target: authUsers.id,
         set: {
           passwordHash: await hashPassword(seed.devPassword),
+          mobile: seed.mobile,
           displayName: seed.displayName,
           role: seed.role,
           isActive: true,
@@ -122,7 +124,7 @@ async function main(): Promise<void> {
       ...(seed.county ? { county: seed.county } : {}),
     });
 
-    console.log(`[dev-seed] ${seed.role.padEnd(20)} ${seed.email}  (dev password: ${seed.devPassword})`);
+    console.log(`[dev-seed] ${seed.role.padEnd(20)} ${seed.mobile}  (dev password: ${seed.devPassword})`);
   }
 
   console.log(`\n[dev-seed] done — ${SEED_USERS.length} test accounts ready. Log in via the Dev seed users panel on the login page`);

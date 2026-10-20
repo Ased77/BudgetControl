@@ -7,7 +7,7 @@ import {
   AlertTriangle,
   Sparkles,
   Loader2,
-  Mail,
+  Smartphone,
   Lock,
 } from 'lucide-react';
 // === Dev Seed Login (disposable dev helper): import + render below live together —
@@ -17,7 +17,7 @@ import { DevSeedLoginPanel } from './DevSeedLoginPanel';
 /**
  * Access gate for the national development system.
  *
- * This is real authentication: the email/password pair is verified
+ * This is real authentication: the mobile-number/password pair is verified
  * server-side, and the session lives in httpOnly cookies the browser can
  * neither read nor forge. Success means one thing only — an auth_users.id
  * (the verified user_id) that every API call on the way forward exposes
@@ -31,7 +31,7 @@ import { DevSeedLoginPanel } from './DevSeedLoginPanel';
  */
 export const LoginView: React.FC = () => {
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
+  const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +42,7 @@ export const LoginView: React.FC = () => {
     setError(null);
     setBusy(true);
     try {
-      await login(email.trim(), password);
+      await login(mobile.trim(), password);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطای نامشخص در ورود');
     } finally {
@@ -115,17 +115,18 @@ export const LoginView: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <label className="block">
-              <span className="block text-[11px] font-bold text-slate-700 mb-1.5">ایمیل سازمانی</span>
+              <span className="block text-[11px] font-bold text-slate-700 mb-1.5">شماره موبایل سازمانی</span>
               <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
-                <Mail className="w-4 h-4 text-slate-400 shrink-0" />
+                <Smartphone className="w-4 h-4 text-slate-400 shrink-0" />
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  type="tel"
+                  inputMode="numeric"
+                  value={mobile}
+                  onChange={(e) => setMobile(e.target.value)}
                   required
                   autoComplete="username"
                   dir="ltr"
-                  placeholder="name@agency.gov"
+                  placeholder="09xxxxxxxxx"
                   className="w-full py-2.5 bg-transparent text-sm outline-none text-left"
                 />
               </div>
@@ -193,7 +194,7 @@ export const LoginView: React.FC = () => {
               renders nothing in production (VITE_APP_ENV === 'production') === */}
           <DevSeedLoginPanel onFill={(username, password) => {
             // Pre-fill only — the developer still presses the real login button.
-            setEmail(username);
+            setMobile(username);
             setPassword(password);
           }} />
         </section>

@@ -6,10 +6,11 @@
  * production bundle renders nothing (the import tree-shakes away).
  *
  * What it does:
- *   1. On mount, GET /dev/seed-users (list of { id, username } of seeded
- *      test accounts — the server mounts these routes only outside
- *      production, see server/dev/seed-routes.ts).
- *   2. Clicking a username GETs /dev/seed-users/:id/credentials and calls
+ *   1. On mount, GET /dev/seed-users (list of { id, username, name, role,
+ *      roleFa } of seeded test accounts — the server mounts these routes
+ *      only outside production, see server/dev/seed-routes.ts).
+ *   2. Buttons show the human label (roleFa / name), never the raw mobile
+ *      number; clicking one GETs /dev/seed-users/:id/credentials and calls
  *      `onFill(username, password)` so the login form fields are pre-filled.
  * It NEVER auto-submits: the developer still presses the real login button,
  * so the normal authentication flow (POST /api/auth/login, cookies, refresh
@@ -29,8 +30,14 @@ import { FlaskConical } from 'lucide-react';
 interface SeedUser {
   /** auth_users.id (uuid) — handed back to /seed-users/:id/credentials. */
   id: string;
-  /** The login email of the test account. */
+  /** The login identity (mobile number) of the test account — display only in the tooltip. */
   username: string;
+  /** Friendly label of the account (displayName on auth_users). */
+  name: string;
+  /** Machine role code (UserRole). */
+  role: string;
+  /** Persian role label from the RBAC matrix — shown on the button. */
+  roleFa: string;
 }
 
 interface DevSeedLoginPanelProps {
@@ -105,14 +112,15 @@ export const DevSeedLoginPanel: React.FC<DevSeedLoginPanelProps> = ({ onFill }) 
               type="button"
               onClick={() => handleSelect(seedUser)}
               disabled={busyId !== null}
-              title={`${seedUser.username} — پرکردن فرم ورود`}
+              title={`${seedUser.name} (${seedUser.roleFa}) — ورود با ${seedUser.username}`}
               className={`rounded-lg border border-amber-300 bg-white px-2 py-1 text-[10px] font-bold text-slate-700 transition-colors ${
                 busyId === seedUser.id
                   ? 'cursor-wait text-rose-400'
                   : 'hover:bg-amber-100 hover:border-amber-400'
               } disabled:opacity-60`}
             >
-              {seedUser.username}
+              <span className="block leading-tight">{seedUser.name}</span>
+              <span className="block leading-tight font-medium text-amber-700/80">{seedUser.roleFa}</span>
             </button>
           ))}
         </div>
