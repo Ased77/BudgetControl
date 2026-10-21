@@ -29,8 +29,11 @@ server.ts            default-exports the Express app  -> the Vercel function
                      (same file is the Docker/local bootstrap: it only calls
                      listen() when VERCEL is unset)
 server/app.ts        createApp(): every /api route, no port, no lifecycle
-vercel.json          buildCommand `vite build && node scripts/vercel-static.mjs`,
-                     plus the SPA fallback rewrite
+vercel.json          `framework: "express"` (pins the preset from the repo, so a
+                     dashboard preset cannot silently drop the function) +
+                     buildCommand `vite build && node scripts/vercel-static.mjs`,
+                     plus the SPA fallback rewrite (which must keep excluding
+                     `api/` and `dev/` — anything else becomes index.html)
 public/              copy of dist/ made by that script — the Express preset
                      serves static files from here (the directory is fixed)
 static/              font sources copied into the build (Vite publicDir)
@@ -56,11 +59,15 @@ dist/                the one build output; Docker, local server and the copy ste
   then keeps serving the previous deployment, which looks exactly like the
   change "not taking effect". Function duration is a project setting (default
   300s on Fluid compute).
-- **Check which preset Vercel resolved.** Express is detected from `server.ts`
-  (static from `public/`, `/api/*` from the function). If the dashboard pins
-  another preset, the build also produces `dist/`, so the SPA still loads — but
-  `/api/*` will 404 because no function was created. `curl /api/health` is the
-  fastest way to tell.
+- **Check that a function actually exists.** `vercel.json` pins
+  `framework: "express"`, so the preset no longer has to be guessed — but a
+  wrong **Root Directory** (anything but the repo root, where `server.ts`
+  lives) still yields a deployment with no function. The tell is the shape of
+  the 404: Vercel's own `text/plain` 404 with `X-Vercel-Error: NOT_FOUND` means
+  the request never reached Express (no function, or the SPA rewrite caught
+  it); a JSON `{"error":"Not found"}` means Express answered and the route
+  simply is not mounted (dev routes with `APP_ENV=production`). `curl /api/health`
+  is the fastest way to tell.
 
 ## One-time setup
 
@@ -72,6 +79,7 @@ dist/                the one build output; Docker, local server and the copy ste
    | `DATABASE_URL` | `postgres://user:password@host:5432/dbname?sslmode=require` |
    | `PG_POOL_MAX` | `3` — each function instance opens its own pool |
    | `PG_CONNECTION_TIMEOUT_MS` | `5000` (optional, default) |
+   | `APP_ENV` | `production` — the only value that unmounts the dev-only `/dev/*` routes (leave it unset on a throwaway preview where you want the seed panel) |
 
    Do **not** set `PORT` or `NODE_ENV`; Vercel provides them.
 
