@@ -131,11 +131,6 @@ export const QuotaView: React.FC = () => {
     return provinceRows.filter((p) => p.province.includes(normalizedSearch));
   }, [provinceRows, normalizedSearch]);
 
-  const provinceNames = useMemo(
-    () => Array.from(new Set(countyRows.map((r) => r.province))).sort(),
-    [countyRows]
-  );
-
   // Bars are normalized to the current filtered list so a 0.05٪ county is
   // still a visible sliver; the printed number stays the true share.
   const maxCountyShare = filteredCounties[0]?.sharePercent ?? 0;
@@ -257,7 +252,7 @@ export const QuotaView: React.FC = () => {
         </div>
       </div>
 
-      {/* Controls: search + view switch + province filter */}
+      {/* Controls: search */}
       <div id="quota-view-controls" className="flex flex-wrap items-center gap-3">
         <div id="quota-view-controls-search" className="relative flex-1 min-w-56">
           <Search className="w-4 h-4 text-slate-400 absolute top-1/2 -translate-y-1/2 right-3 pointer-events-none" />
@@ -271,43 +266,6 @@ export const QuotaView: React.FC = () => {
           />
         </div>
 
-        <div id="quota-view-controls-view-switch" className="flex rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden shrink-0" role="group" aria-label="نحوه نمایش سهمیه">
-          <button
-            id="quota-view-controls-view-switch-provinces"
-            type="button"
-            onClick={() => setViewMode('PROVINCES')}
-            aria-pressed={viewMode === 'PROVINCES'}
-            className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold transition-colors ${viewMode === 'PROVINCES' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
-          >
-            <MapPin className="w-4 h-4" />
-            نمای استان‌ها
-          </button>
-          <button
-            id="quota-view-controls-view-switch-counties"
-            type="button"
-            onClick={() => setViewMode('COUNTIES')}
-            aria-pressed={viewMode === 'COUNTIES'}
-            className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold transition-colors ${viewMode === 'COUNTIES' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
-          >
-            <Building2 className="w-4 h-4" />
-            نمای شهرستان‌ها
-          </button>
-        </div>
-
-        <select
-          id="quota-view-controls-province-filter"
-          value={provinceFilter}
-          onChange={(e) => setProvinceFilter(e.target.value)}
-          disabled={viewMode !== 'COUNTIES'}
-          className={`bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold shrink-0 transition-colors focus:outline-none focus:border-emerald-400 ${
-            viewMode !== 'COUNTIES' ? 'opacity-40 cursor-not-allowed text-slate-400' : 'text-slate-800'
-          }`}
-        >
-          <option value="ALL">همه استان‌ها</option>
-          {provinceNames.map((p) => (
-            <option key={p} value={p}>{p}</option>
-          ))}
-        </select>
       </div>
 
       {/* Data panel */}
