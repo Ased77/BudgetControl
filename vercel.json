@@ -3,7 +3,7 @@
   "buildCommand": "vite build && node scripts/vercel-static.mjs",
   "rewrites": [
     {
-      "source": "/:path((?!api/|assets/|fonts/|index\\.html).*)",
+      "source": "/:path((?!api/|dev/|assets/|fonts/|index\\.html).*)",
       "destination": "/index.html"
     }
   ]
