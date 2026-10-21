@@ -59,12 +59,23 @@ export const DevSeedLoginPanel: React.FC<DevSeedLoginPanelProps> = ({ onFill }) 
     [],
   );
 
+  /**
+   * The status alone ("failed: 500") hides the cause: a hosting/rewrite problem
+   * answers with HTML, while the API explains its own failures in JSON. Read the
+   * body when there is one so the panel shows the reason instead of a number.
+   */
+  const describeFailure = useCallback(async (res: Response, what: string): Promise<Error> => {
+    const body = (await res.json().catch(() => null)) as { error?: unknown } | null;
+    const detail = typeof body?.error === 'string' && body.error ? body.error : null;
+    return new Error(detail ? `${what}: ${res.status} — ${detail}` : `${what}: ${res.status}`);
+  }, []);
+
   useEffect(() => {
     if (!isDevBuild) return;
     let alive = true;
     isDevEndpointReachable('/dev/seed-users')
       .then(async (res) => {
-        if (!res.ok) throw new Error(`GET /dev/seed-users failed: ${res.status}`);
+        if (!res.ok) throw await describeFailure(res, 'GET /dev/seed-users failed');
         const data = (await res.json()) as { users: SeedUser[] };
         if (alive) setSeedUsers(data.users ?? []);
       })
@@ -74,14 +85,14 @@ export const DevSeedLoginPanel: React.FC<DevSeedLoginPanelProps> = ({ onFill }) 
     return () => {
       alive = false;
     };
-  }, [isDevBuild, isDevEndpointReachable]);
+  }, [isDevBuild, describeFailure, isDevEndpointReachable]);
 
   const handleSelect = async (seedUser: SeedUser): Promise<void> => {
     setError(null);
     setBusyId(seedUser.id);
     try {
       const res = await isDevEndpointReachable(`/dev/seed-users/${seedUser.id}/credentials`);
-      if (!res.ok) throw new Error(`درخواست رمز آزمایشی ناموفق بود: ${res.status}`);
+      if (!res.ok) throw await describeFailure(res, 'درخواست رمز آزمایشی ناموفق بود');
       const data = (await res.json()) as { username: string; password: string };
       onFill(data.username, data.password);
     } catch (err) {

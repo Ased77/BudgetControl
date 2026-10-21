@@ -91,6 +91,13 @@ dist/                the one build output; Docker, local server and the copy ste
 
    Do **not** set `PORT` or `NODE_ENV`; Vercel provides them.
 
+   `DATABASE_URL` is not optional: `server/db/client.ts` builds the pool from
+   the environment **at module load**, so a deployment without it fails every
+   request with Vercel's opaque `FUNCTION_INVOCATION_FAILED` 500. `api/handler`
+   now catches that boot failure and answers `500 {"code":"FUNCTION_BOOT_FAILED",
+   "error":"…"}` with the reason (the dev seed panel shows it too), but the fix
+   is setting the variable for both Production and Preview and redeploying.
+
 2. **Build settings** (Project → Settings → Build & Development Settings):
    Root Directory = repository root (the folder containing `api/` and
    `server.ts`), and no **Output Directory** override. Either preset works:
