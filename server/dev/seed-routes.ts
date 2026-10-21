@@ -3,7 +3,7 @@
 
    WHY: there is no public registration in this system (accounts are
    provisioned by an admin), and the project is still pre-launch. To test
-   what each of the 8 roles experiences, a developer needs the credentials
+   what each of the 13 roles experiences, a developer needs the credentials
    of a handful of seeded test accounts at hand.
 
    WHAT: two read-only endpoints, mounted ONLY when APP_ENV is not

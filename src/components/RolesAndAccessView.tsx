@@ -158,8 +158,14 @@ export const RolesAndAccessView: React.FC = () => {
   useOutsideClick(createModalRef, () => setCreateOpen(false));
 
   // Roster kept in a local mirror so a freshly created account shows up the
-  // moment the server confirms, without reloading the whole application.
+  // moment the server confirms, without reloading the whole application. The
+  // context hydrates asynchronously (bundled demo data first, server list
+  // after), so the mirror follows the context instead of pinning its first
+  // value only.
   const [rosterUsers, setRosterUsers] = useState<UserProfile[]>(users);
+  useEffect(() => {
+    setRosterUsers(users);
+  }, [users]);
   const userTotalPages = Math.max(1, Math.ceil(rosterUsers.length / userPageSize));
   const pagedUsers = rosterUsers.slice(userPage * userPageSize, userPage * userPageSize + userPageSize);
   const userPageStart = userPage * userPageSize + 1;

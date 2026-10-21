@@ -64,7 +64,7 @@ Authorization: Bearer <jwt>
 
 ### 2.4 Roles & permissions
 
-Authorization is a role matrix (`roles_permissions` table, served at `GET /api/roles-permissions`). Roles: `ADMIN`, `PROVINCIAL_GOVERNOR`, `DEPARTMENT_HEAD`, `OFFICE_HEAD`, `REGIONAL_MANAGER`, `PLANNING_SPECIALIST`, `AUDITOR`, `DEHYAR_COUNCIL`. Self-registration always assigns `DEHYAR_COUNCIL`.
+Authorization is a role matrix (`roles_permissions` table, served at `GET /api/roles-permissions`). Roles: `BUDGET_CHAIRMAN` (رئیس سازمان برنامه و بودجه), `SYSTEM_ADMIN` (مدیر سامانه), `CULTURE_BUDGET_HEAD` (مدیرکل بودجه فرهنگی), `TREASURY_FINANCE_HEAD` (مدیر مالی خزانه), `GOVERNOR` (استاندار), `DISTRICT_GOVERNOR` (بخش‌دار), `MAYOR` (شهردار), `OFFICE_HEAD` (رئیس اداره), `PROJECT_MANAGER` (مدیر پروژه), `PLAN_OFFICER` (مسئول طرح), `CONTRACTOR` (پیمانکار), `TECH_SUPPORT` (پشتیبان فنی), `INTERNAL_AUDITOR` (حسابرس داخلی). There is no self-registration; accounts exist only via first-boot bootstrap or admin issuance, and the issuance route (`POST /api/auth/users`) is further restricted to `SYSTEM_ADMIN` (`requireAdmin`).
 
 Permission flags used by routes: `canManageBudget`, `canManagePriorities`, `canCreateProject`, `canEditDepartments`, `canManageCrises`, `canManageExecutors`, `canManageContractors`, `canAuditLogs`. The matrix is read with a 30 s cache and is **fail-closed** (unknown role → nothing).
 
@@ -115,21 +115,11 @@ Legend: 🔓 public · 🔒 authenticated · 🔑 permission-gated (flag). Respo
 ### 5.1 Authentication
 
 #### `POST /api/auth/register` 🔓
-Create identity + first session. Rate limited (8/min/IP). Assigns role `DEHYAR_COUNCIL`.
+Removed by policy — there is no self-service signup; an identity exists either from first-boot bootstrap or because the role & permission manager (admin issuance) created it. Stale clients get an explicit refusal.
 | Code | Meaning |
 |---|---|
-| 201 | `{ "user": PublicProfile }` + both cookies set |
-| 400 | invalid mobile / short password / short displayName |
-| 403 | `REGISTRATION_DISABLED` |
-| 409 | `MOBILE_TAKEN` |
-| 429 | `RATE_LIMITED` |
-
-```json
-// request
-{ "mobile": "09991000001", "password": "Str0ng-Passw0rd!", "displayName": "علی رضایی" }
-// 201
-{ "user": { "id":"…uuid", "mobile":"09991000001", "name":"علی رضایی", "role":"DEHYAR_COUNCIL", "roleFa":"دهیار", "roleTitleFa":"دهیار / نماینده شورای اسلامی", "avatar":"", "organization":"سطح ملی" } }
-```
+| 403 | `REGISTRATION_DISABLED` — «حساب کاربری فقط توسط مدیر سامانه … ساخته می‌شود» |
+| 429 | `RATE_LIMITED` (8/min/IP limiter still applies) |
 
 #### `POST /api/auth/login` 🔓
 Rate limited (8/min/IP). The mobile is normalized server-side (Persian digits, `+98`/`0098`/`98 9…` → `09xxxxxxxxx`). Wrong mobile/wrong password are indistinguishable.
@@ -294,7 +284,7 @@ Append entry. **`actorUserId` is derived from the session** — the payload supp
 
 ```json
 // request
-{ "id":"al-0001", "timestamp":"۱۴۰۴/۰۵/۱۲", "userName":"علی رضایی", "userRole":"DEHYAR_COUNCIL",
+{ "id":"al-0001", "timestamp":"۱۴۰۴/۰۵/۱۲", "userName":"علی رضایی", "userRole":"PLAN_OFFICER",
   "actionType":"PRIORITY_EDIT", "targetPriorityTitle":"آب شرب پایدار",
   "oldValue":"۲۵٪", "newValue":"۳۰٪", "rationale":"افزایش اولویت بحران آب",
   "province":"سیستان و بلوچستان", "county":"سرباز" }

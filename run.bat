@@ -8,8 +8,8 @@ REM    1. Sanity checks (bun in PATH, .env present, port :3000 free)
 REM    2. Start the database container        (docker compose up -d db)
 REM    3. Wait for PostgreSQL connections     (call bun run db:wait)
 REM    4. Apply migrations incl. 0003/0004    (call bun run db:init)
-REM    5. Seed the 8 per-role test accounts   (call bun run db:seed:dev)
-REM       ADMIN 09991000001 / DevAdmin1405!  ... 8 roles in total
+REM    5. Seed the 13 per-role test accounts (call bun run db:seed:dev)
+REM       SYSTEM_ADMIN 09991000001 / DevSysAdmin1405!  ... 13 roles in total
 REM    6. Dev server on http://localhost:3000 (call bun run dev, foreground;
 REM       Ctrl+C stops it). On the login page use the amber "Dev seed users"
 REM       panel - it appears only when APP_ENV / VITE_APP_ENV are not
