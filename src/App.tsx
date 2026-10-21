@@ -130,12 +130,18 @@ const NAV_MENU_ITEMS: BranchedMenuItem[] = [
     children: [
       { value: 'ANALYSIS_SOURCES', label: 'منابع تحلیل', icon: FileSearch, hue: 'var(--color-violet-600)' },
       { value: 'CHARTS', label: 'نمودارها', icon: BarChart3, hue: 'var(--color-indigo-500)' },
-      { value: 'ROLES_PERMISSIONS', label: 'نقش‌ها و دسترسی', icon: ShieldCheck, hue: 'var(--color-slate-500)' },
     ],
   },
-  // Settings is a destination rather than a group of tools, so it sits at the
-  // end of the tree as a leaf, like the dashboard at the top.
-  { value: 'SETTINGS', label: 'تنظیمات', icon: Settings, hue: 'var(--color-slate-600)' },
+  {
+    label: 'تنظیمات',
+    icon: Settings,
+    hue: 'var(--color-slate-600)',
+    children: [
+      /* «عمومی» is the settings page proper; the governance view lives here too. */
+      { value: 'SETTINGS', label: 'عمومی', icon: Settings, hue: 'var(--color-slate-600)' },
+      { value: 'ROLES_PERMISSIONS', label: 'نقش‌ها و دسترسی‌ها', icon: ShieldCheck, hue: 'var(--color-slate-500)' },
+    ],
+  },
 ];
 
 function AppContent() {
