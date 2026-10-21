@@ -45,6 +45,7 @@ import { authRouter } from './auth/routes.js';
 // === Dev Seed Login (disposable dev helper): import + mount live together —
 // delete both halves of this comment block to remove the feature. ===
 import { devSeedRouter, isDevEnvironment } from './dev/seed-routes.js';
+import { restoreOriginalUrl } from './rewrite-path.js';
 import { requireAuth, requirePermission } from './auth/middleware.js';
 import { calculateSmartRecommendations } from '../src/utils/recommendationEngine.js';
 import { toPersianDigits } from '../src/utils/numberUtils.js';
@@ -100,6 +101,15 @@ export interface CreateAppOptions {
 export function createApp(options: CreateAppOptions = {}): express.Express {
   const { serveStatic = true, clientDevMiddleware, ready } = options;
   const app = express();
+
+  // Vercel rewrites every `/api/*` and `/dev/*` request to the api/handler
+  // function with the original path in `__original` (a rewrite replaces the
+  // path the runtime sees). Put it back before any routing happens — see
+  // server/rewrite-path.ts. Outside that rewrite this is a no-op.
+  app.use((req, _res, next) => {
+    req.url = restoreOriginalUrl(req.url ?? '/');
+    next();
+  });
 
   if (ready) {
     app.use((_req, _res, next) => {

@@ -15,36 +15,42 @@ problems:
    serves static files from `public/`, while Vite wrote the client to `dist/`,
    so even a successful build left nothing at the web root.
 
-Both are fixed: `server.ts` now exports the app, and the Vite build targets
-`public/` when `VERCEL` is set.
+Static output is fixed by the build command copying the Vite build into
+`public/`, and the backend by `api/handler.ts`, which Vercel builds as a Node
+Function whatever the framework preset says. See the wiring section below.
 
 ## How the deployment is wired
 
-Vercel detects the **Express** framework from `package.json` + `server.ts`
-(imports `express`) and applies two default rules: serve files from the build
-output first, then send everything else to one Express function.
+**The API ships as a Node Function in `api/`, not via the Express framework
+preset.** The preset was tried first (`framework: "express"` pinned in
+`vercel.json`, root `server.ts` default-exporting the app), but deployments
+built from it served the SPA only: `/api/health` answered Vercel's plain-text
+`NOT_FOUND`, i.e. no function was created at all. A file under `api/` is built
+as a function for **every** preset, so that is now the entry point.
 
 ```
-server.ts            default-exports the Express app  -> the Vercel function
-                     (same file is the Docker/local bootstrap: it only calls
-                     listen() when VERCEL is unset)
+api/handler.ts       the Vercel Function: delegates to the Express app, nothing
+                     else (no routes, middleware or auth duplicated)
+server/serverless.ts the app + the one-shot initializeDatabase() promise,
+                     importable without the local bootstrap side effects
+server/rewrite-path.ts  restores the original path from the `__original` query
+server.ts            Docker/local bootstrap; also default-exports the same app
 server/app.ts        createApp(): every /api route, no port, no lifecycle
-vercel.json          `framework: "express"` (pins the preset from the repo, so a
-                     dashboard preset cannot silently drop the function) +
-                     buildCommand `vite build && node scripts/vercel-static.mjs`,
-                     plus the SPA fallback rewrite (which must keep excluding
-                     `api/` and `dev/` — anything else becomes index.html)
-public/              copy of dist/ made by that script — the Express preset
-                     serves static files from here (the directory is fixed)
+vercel.json          rewrites `/api/:path*` and `/dev/:path*` to
+                     `/api/handler?__original=…` (a rewrite replaces the path a
+                     function sees, so the original is carried in the query),
+                     plus buildCommand `vite build && node scripts/vercel-static.mjs`
+                     and the SPA fallback rewrite
+public/              copy of dist/ made by that script — the CDN serves it
 static/              font sources copied into the build (Vite publicDir)
 dist/                the one build output; Docker, local server and the copy step
 ```
 
-- `/api/*` has no matching static file, so it reaches the Express function with
-  the original path intact — no rewrites or path juggling.
+- `/api/*` and `/dev/*` are rewritten to the function; `server/app.ts` restores
+  the path before routing, so Express sees exactly what the client requested.
 - `/` and `/assets/*`, `/fonts/*` are served straight from `public/`.
 - Any other path is rewritten to `/index.html` so a refresh or a shared link
-  still boots the SPA.
+  still boots the SPA. The SPA pattern must keep excluding `api/` and `dev/`.
 - `initializeDatabase()` runs once per function instance on the first request
   (schema, seed, version-gated repairs), serialized by a transaction-scoped
   PostgreSQL advisory lock so two cold starts cannot seed the same rows at the
@@ -59,15 +65,17 @@ dist/                the one build output; Docker, local server and the copy ste
   then keeps serving the previous deployment, which looks exactly like the
   change "not taking effect". Function duration is a project setting (default
   300s on Fluid compute).
-- **Check that a function actually exists.** `vercel.json` pins
-  `framework: "express"`, so the preset no longer has to be guessed — but a
-  wrong **Root Directory** (anything but the repo root, where `server.ts`
-  lives) still yields a deployment with no function. The tell is the shape of
-  the 404: Vercel's own `text/plain` 404 with `X-Vercel-Error: NOT_FOUND` means
-  the request never reached Express (no function, or the SPA rewrite caught
-  it); a JSON `{"error":"Not found"}` means Express answered and the route
-  simply is not mounted (dev routes with `APP_ENV=production`). `curl /api/health`
+- **Check that a function actually exists.** Read the shape of the 404:
+  Vercel's own `text/plain` 404 with `X-Vercel-Error: NOT_FOUND` means the
+  request never reached Express (no function was built, or a rewrite sent it
+  elsewhere); a JSON `{"error":…}` means Express answered and the route itself
+  said no (`{"error":"Not found"}` for dev routes under `APP_ENV=production`,
+  a 401 from the `/api` guard for an unknown API path). `curl -i /api/health`
   is the fastest way to tell.
+- **A failed build leaves the previous deployment live.** The alias keeps
+  serving the last successful build, so a change can look "not applied" when it
+  simply never shipped. Compare the bundle hash in `dist/index.html` with the
+  one the site serves before debugging anything else.
 
 ## One-time setup
 
@@ -84,10 +92,12 @@ dist/                the one build output; Docker, local server and the copy ste
    Do **not** set `PORT` or `NODE_ENV`; Vercel provides them.
 
 2. **Build settings** (Project → Settings → Build & Development Settings):
-   Framework Preset **Express** (leave it on auto-detect), Root Directory =
-   repository root. Clear any leftover **Output Directory** (`dist`) or build
-   command from an earlier attempt — `vercel.json` supplies the build command,
-   and the output directory is not configurable for Express.
+   Root Directory = repository root (the folder containing `api/` and
+   `server.ts`), and no **Output Directory** override. Either preset works:
+   **Vite** serves the build from `dist/`, **Express** from `public/` — both
+   directories exist after the build, and `api/handler.ts` is built regardless.
+   The preset no longer decides whether the API exists, so there is nothing
+   left to pin in `vercel.json`.
 
 3. **Seed the database once** from a machine that can reach it (optional, but it
    keeps the first request fast):
@@ -100,8 +110,9 @@ dist/                the one build output; Docker, local server and the copy ste
    default function duration (300s on Fluid compute) is plenty of room; if a
    project overrides it lower, seeds should be run first.
 
-4. Deploy. The build runs `vite build` into `public/`, and `server.ts` is
-   compiled into a single Node function with `express` and `pg`.
+4. Deploy. The build runs `vite build` into `public/`, and `api/handler.ts` is
+   compiled into a Node function with `express` and `pg`; `vercel.json` sends
+   `/api/*` and `/dev/*` to it.
 
 ## Verify after deploying
 

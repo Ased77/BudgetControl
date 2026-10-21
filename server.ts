@@ -1,6 +1,7 @@
 import type { RequestHandler } from 'express';
 import { createApp } from './server/app.js';
-import { closePool, getDatabaseTarget, initializeDatabase } from './server/database.js';
+import { closePool, getDatabaseTarget } from './server/database.js';
+import { ready, serverlessApp } from './server/serverless.js';
 
 /**
  * Entry point, in two shapes.
@@ -14,22 +15,10 @@ import { closePool, getDatabaseTarget, initializeDatabase } from './server/datab
 const isVercel = process.env.VERCEL === '1' || process.env.VERCEL === 'true';
 
 /**
- * One initialization per process/isolate. A failed attempt is not cached, so a
- * transient database outage fails the current request and is retried by the
- * next one instead of pinning the instance to a broken state.
+ * The app Vercel serves, plus the shared database-readiness promise. Both live
+ * in `server/serverless.ts` so the `api/` entry point can import them without
+ * pulling in this file's local bootstrap.
  */
-let readyPromise: Promise<void> | null = null;
-const ready = (): Promise<void> =>
-  (readyPromise ??= initializeDatabase().catch((error) => {
-    readyPromise = null;
-    throw error;
-  }));
-
-/**
- * The app Vercel serves. Static assets are the host's job (its routing checks
- * the built files first), so only the API routes are mounted here.
- */
-const serverlessApp = createApp({ serveStatic: false, ready });
 export default serverlessApp;
 
 async function buildLocalApp(): Promise<ReturnType<typeof createApp>> {
