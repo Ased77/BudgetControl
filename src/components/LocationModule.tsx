@@ -5,7 +5,6 @@ import { MapPin, Sliders, CheckCircle2, Search, Filter, Globe, Pencil, X, Chevro
 import { useOutsideClick } from '../hooks/useOutsideClick';
 import { ComparativeHarmsTable } from './ComparativeHarmsTable';
 import { PageHeader } from './PageHeader';
-import FilterBadges from './FilterBadges/FilterBadges';
 import { Num } from './Num';
 
 /**
@@ -189,27 +188,36 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
           {/* Filter and Search Bar — rides the title's row from `xl` up. */}
           <div id="location-module-filter-and-search-bar" className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 min-w-0">
 
-            {/* Province Filter Pills */}
-            <div id="location-module-province-filter-pills" className="flex items-center gap-1.5 min-w-0">
-              <span className="text-xs font-bold text-slate-500 flex items-center gap-1 shrink-0">
+            {/* Province filter — a dropdown rather than a pill row. The registry
+                holds far more provinces than fit on one header line, so laid out
+                end to end the pills overflowed the panel. A native select keeps
+                every province one step away and stays keyboard accessible. */}
+            <div id="location-module-province-filter-dropdown" className="flex items-center gap-2 min-w-0">
+              <label
+                htmlFor="location-module-province-select"
+                className="text-xs font-bold text-slate-500 flex items-center gap-1 shrink-0"
+              >
                 <Filter className="w-3.5 h-3.5 text-slate-400" />
                 فیلتر استان:
-              </span>
+              </label>
 
-              <FilterBadges
-                className="min-w-0"
-                size="sm"
-                defaultFilter={selectedLocation.province}
+              <select
+                id="location-module-province-select"
                 value={selectedProvinceFilter}
-                onChange={(prov) => setSelectedProvinceFilter(prov)}
-                filters={[
-                  { value: selectedLocation.province, label: `استان ${selectedLocation.province} (فعال)` },
-                  { value: 'ALL', label: `همه استان‌ها (${toPersianDigits(locations.length)})` },
-                  ...provinces
-                    .filter((p) => p !== selectedLocation.province)
-                    .map((prov) => ({ value: prov, label: prov })),
-                ]}
-              />
+                onChange={(e) => setSelectedProvinceFilter(e.target.value)}
+                title="فیلتر لوکیشن‌ها بر اساس استان"
+                className="min-w-0 w-full sm:w-52 text-xs border border-slate-200 rounded-xl bg-slate-50 text-slate-700 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value={selectedLocation.province}>{`استان ${selectedLocation.province} (فعال)`}</option>
+                <option value="ALL">{`همه استان‌ها (${toPersianDigits(locations.length)})`}</option>
+                {provinces
+                  .filter((p) => p !== selectedLocation.province)
+                  .map((prov) => (
+                    <option key={prov} value={prov}>
+                      {prov}
+                    </option>
+                  ))}
+              </select>
             </div>
 
             {/* Search Box */}
@@ -232,7 +240,7 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
             same line and the strip's height stays constant however many a page
             holds. The cards are `shrink-0` so the row scrolls rather than
             squashing them; `scrollbar-none` hides the track, matching the
-            province pill row above and the sidebar nav. The `py-3` keeps the
+            province filter above and the sidebar nav. The `py-3` keeps the
             selected card's ring and the hover shadow from being clipped. */}
         <div id="location-module-location-cards-grid" className="flex gap-4 py-3 overflow-x-auto scrollbar-none">
           {filteredLocations.length === 0 ? (
