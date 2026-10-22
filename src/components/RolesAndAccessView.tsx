@@ -149,6 +149,15 @@ export const RolesAndAccessView: React.FC = () => {
   // modal is the only place in the UI where a new account can be born.
   // ---------------------------------------------------------------------------
   const isAdmin = currentUser?.role === 'SYSTEM_ADMIN';
+  // The roster and the permission matrix belong to the system administrator.
+  // The page also opens for auditors (`canAuditLogs`), who are confined to the
+  // audit trail: the visible sub-tab never resolves to the matrix for them, and
+  // a hash or last-visit value that names it is rewritten below.
+  const visibleSubTab: RolesViewSubTab = isAdmin ? activeSubTab : 'AUDIT_LOGS';
+  useEffect(() => {
+    if (isAdmin || activeSubTab === 'AUDIT_LOGS') return;
+    selectSubTab('AUDIT_LOGS');
+  }, [isAdmin, activeSubTab]);
   const [createOpen, setCreateOpen] = useState(false);
   const [createForm, setCreateForm] = useState({ displayName: '', mobile: '', role: '', province: '', county: '' });
   const [createBusy, setCreateBusy] = useState(false);
@@ -363,17 +372,19 @@ export const RolesAndAccessView: React.FC = () => {
 
         {/* Sub-tab switcher */}
         <div id="roles-and-access-view-sub-tab-switcher" className="flex items-center gap-2 mt-6 pt-4 border-t border-indigo-200/60">
-          <button
-            onClick={() => selectSubTab('ROLES_MATRIX')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-              activeSubTab === 'ROLES_MATRIX'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'bg-slate-800/60 text-slate-300 hover:bg-slate-800'
-            }`}
-          >
-            <KeyRound className="w-4 h-4" />
-            <span>ماتریس نقش‌ها و مجوزهای دسترسی</span>
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => selectSubTab('ROLES_MATRIX')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                activeSubTab === 'ROLES_MATRIX'
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'bg-slate-800/60 text-slate-300 hover:bg-slate-800'
+              }`}
+            >
+              <KeyRound className="w-4 h-4" />
+              <span>ماتریس نقش‌ها و مجوزهای دسترسی</span>
+            </button>
+          )}
 
           <button
             onClick={() => selectSubTab('AUDIT_LOGS')}
@@ -390,7 +401,7 @@ export const RolesAndAccessView: React.FC = () => {
       </div>
 
       {/* Sub-tab 1: Users Roster — full-width section with paginated users */}
-      {activeSubTab === 'ROLES_MATRIX' && (
+      {visibleSubTab === 'ROLES_MATRIX' && (
         <div id="roles-and-access-view-active-user-switcher" className="bg-white rounded-xl p-4 border border-slate-300 shadow-2xs flex flex-col gap-3 w-full">
           <div id="roles-and-access-view-active-user-switcher-2" className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-sm shrink-0">
@@ -490,7 +501,7 @@ export const RolesAndAccessView: React.FC = () => {
       )}
 
       {/* Sub-tab 2: Audit Trail Logs */}
-      {activeSubTab === 'AUDIT_LOGS' && (
+      {visibleSubTab === 'AUDIT_LOGS' && (
         <div id="roles-and-access-view-sub-tab-2-audit-trail-logs" className="space-y-4">
           <div id="roles-and-access-view-sub-tab-2-audit-trail-logs-2" className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
             <div id="roles-and-access-view-sub-tab-2-audit-trail-logs-3" className="relative w-full md:w-80">

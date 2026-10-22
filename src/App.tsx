@@ -162,25 +162,27 @@ function AppContent() {
     handleUpdateLocation,
     optimizationMetrics,
     addAuditLog,
-    getUserPermissions,
+    canAccessTab,
   } = useAppContext();
 
-  // The nav tree is the app's access map: «ثبت پروژه» is listed only for a user
-  // whose effective permissions still include project creation (a per-user
-  // override can revoke it). Roles seeded before this flag existed leave it
-  // undefined, so they keep the old behaviour and still see the entry.
-  const canCreateProject = getUserPermissions(currentUser)?.canCreateProject ?? true;
+  // The nav tree is the app's access map: only the sections this role's
+  // effective permissions open are listed, and a category left without rows
+  // disappears entirely. Per-user overrides are already folded into
+  // `canAccessTab`, so a revoked flag removes its entry here too.
   const navMenuItems = useMemo(
     () =>
-      canCreateProject
-        ? NAV_MENU_ITEMS
-        : NAV_MENU_ITEMS.map((item) =>
-            item.children
-              ? { ...item, children: item.children.filter((child) => child.value !== 'CREATE_PROJECT') }
-              : item
-          ),
-    [canCreateProject]
+      NAV_MENU_ITEMS.filter((item) => !item.value || canAccessTab(item.value))
+        .map((item) =>
+          item.children
+            ? { ...item, children: item.children.filter((child) => child.value && canAccessTab(child.value)) }
+            : item
+        )
+        .filter((item) => !item.children || item.children.length > 0),
+    [canAccessTab]
   );
+  // The identity chip only navigates into governance for roles that may open it.
+  const canCreateProject = canAccessTab('CREATE_PROJECT');
+  const canOpenRolesPage = canAccessTab('ROLES_PERMISSIONS');
 
   const [showAiModal, setShowAiModal] = useState(false);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
@@ -195,7 +197,7 @@ function AppContent() {
   // Nav state is owned here rather than inside BranchedMenu, so a selection made
   // anywhere else in the app — a dashboard link, the sidebar footer — keeps the
   // menu in step. Sections are addressed by index, which is the menu's own unit.
-  const activeMenuSection = NAV_MENU_ITEMS.findIndex((item) =>
+  const activeMenuSection = navMenuItems.findIndex((item) =>
     item.children?.some((kid) => kid.value === activeTab)
   );
   const [openMenuSections, setOpenMenuSections] = useState<number[]>(() =>
@@ -521,10 +523,16 @@ function AppContent() {
             <button
               id="app-workspace-identity-bar-user"
               onClick={() => {
+                if (!canOpenRolesPage) return;
                 setActiveTab('ROLES_PERMISSIONS');
                 setSidebarOpen(false);
               }}
-              title={`${currentUser.roleTitleFa} — مشاهده نقش‌ها و سطوح دسترسی`}
+              aria-disabled={!canOpenRolesPage}
+              title={
+                canOpenRolesPage
+                  ? `${currentUser.roleTitleFa} — مشاهده نقش‌ها و سطوح دسترسی`
+                  : currentUser.roleTitleFa
+              }
               className="group inline-flex min-w-0 max-w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white py-1.5 ps-1.5 pe-2.5 shadow-2xs transition-colors hover:border-blue-200 hover:bg-blue-50 focus:outline-none focus-visible:border-blue-400 text-right"
             >
               <span id="app-workspace-identity-bar-avatar" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-sm font-black text-white shadow-sm shadow-blue-500/20">

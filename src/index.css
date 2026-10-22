@@ -97,11 +97,18 @@ body {
 /* -------------------------------------------------------------------------
    Visible keyboard focus, app-wide. Drawn with `:where()` so any component
    that declares its own focus-visible ring keeps full specificity to win.
+
+   It lives in Tailwind's `base` layer on purpose: unlayered rules outrank
+   every `@layer utilities` class, so an unlayered ring would ignore a
+   component's own `outline-none`/`focus:ring-*`. Inside `base`, utilities
+   win as intended and the fallback ring still covers elements with none.
    ------------------------------------------------------------------------- */
-:where(button, a, [role='button'], input, select, textarea, [tabindex]):focus-visible {
-  outline: 2px solid #2563eb;
-  outline-offset: 2px;
-  border-radius: 0.5rem;
+@layer base {
+  :where(button, a, [role='button'], input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+    border-radius: 0.5rem;
+  }
 }
 
 /* -------------------------------------------------------------------------

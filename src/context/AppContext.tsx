@@ -42,6 +42,7 @@ import { formatMoney, formatNumber, roundPercentage, toPersianDigits } from '../
 import { analyzeProjectDuplicatesAndEfficiency, OptimizationMetrics } from '../utils/antiDuplicationEngine';
 import { api } from '../services/api';
 import { useAuth } from './AuthContext';
+import { canAccessSection, firstAccessibleSection } from '../utils/sectionAccess';
 
 const TAB_STORAGE_KEY = 'csr.activeTab';
 // Every navigable workspace tab. Used to validate the persisted tab so a
@@ -220,6 +221,8 @@ interface AppContextType {
 
   // Permissions
   getUserPermissions: (user: UserProfile) => SystemRolePermission | undefined;
+  /** True when the signed-in role's effective permissions open this section. */
+  canAccessTab: (tab: string) => boolean;
   handleToggleUserPermission: (userId: string, field: UserPermissionField) => void;
 
   handleSaveOrgConfig: (updated: OrganizationConfig) => void;
@@ -269,13 +272,45 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const auth = useAuth();
   const currentUser = useMemo<UserProfile>(() => auth.user ?? INITIAL_USERS[0], [auth.user]);
   const isAuthenticated = auth.status === 'authenticated';
+
+  // --- Section access -------------------------------------------------------
+  // The permissions matrix is enforced on the workspace itself: a role only
+  // sees and opens the sections its effective permissions allow (the mapping
+  // lives in utils/sectionAccess). Navigation, the rendered tab, deep links and
+  // history entries all read this one gate, so none of them can drift.
+  const getUserPermissions = useCallback(
+    (user: UserProfile): SystemRolePermission | undefined => {
+      const base = rolesPermissions.find((r) => r.role === user.role);
+      if (!base) return undefined;
+      const overrides = userPermissionOverrides[user.id];
+      return overrides ? { ...base, ...overrides } : base;
+    },
+    [rolesPermissions, userPermissionOverrides]
+  );
+  const currentPermissions = useMemo(
+    () => getUserPermissions(currentUser),
+    [getUserPermissions, currentUser]
+  );
+  const canAccessTab = useCallback(
+    (tab: string) => canAccessSection(tab, currentPermissions, currentUser.role),
+    [currentPermissions, currentUser.role]
+  );
+  const fallbackTab = useMemo(
+    () => firstAccessibleSection(currentPermissions, currentUser.role),
+    [currentPermissions, currentUser.role]
+  );
+
   // The active tab is mirrored into the URL, so the browser's back and forward
   // buttons walk the pages the user actually visited and every page is
   // addressable. Precedence on first load: deep link → last session → home.
-  const [activeTab, setActiveTabState] = useState<string>(() => {
+  const [requestedTab, setRequestedTab] = useState<string>(() => {
     const fromUrl = tabFromPath(window.location.pathname);
     return fromUrl ?? readPersistedTab() ?? 'DASHBOARD';
   });
+  // What is actually on screen: a request for a section this role may not open
+  // resolves to the first page it can, so no view outside the matrix is ever
+  // rendered. The redirect effect below then corrects the address bar.
+  const activeTab = canAccessTab(requestedTab) ? requestedTab : fallbackTab;
   // Mirrors `activeTab` for the history helpers below: they are called from
   // handlers and listeners that must not re-push the page already on screen,
   // and they must agree with each other before React re-renders.
@@ -286,9 +321,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // records nothing, so a view that re-asserts its own tab on mount cannot leave a
   // duplicate entry behind.
   const setActiveTab = (tab: string) => {
+    // A section this role may not open is not a destination: ignore the request
+    // rather than render a page the permissions matrix forbids.
+    if (!canAccessTab(tab)) return;
     const changed = tab !== activeTabRef.current;
     activeTabRef.current = tab;
-    setActiveTabState(tab);
+    setRequestedTab(tab);
     persistTab(tab);
     // A tab with no page of its own has no URL to record; the state change is
     // still allowed, exactly as it was before the URL tracked the tab.
@@ -318,13 +356,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           ? fromState
           : tabFromPath(window.location.pathname);
       if (!tab) return;
-      activeTabRef.current = tab;
-      setActiveTabState(tab);
-      persistTab(tab);
+      // A history entry can predate a role or permission change: an entry for a
+      // section this session may not open is replaced, not shown.
+      const nextTab = canAccessTab(tab) ? tab : fallbackTab;
+      activeTabRef.current = nextTab;
+      setRequestedTab(nextTab);
+      persistTab(nextTab);
+      if (nextTab !== tab) {
+        window.history.replaceState(
+          { tab: nextTab },
+          '',
+          `${pathForTab(nextTab)}${window.location.search}`
+        );
+      }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [canAccessTab, fallbackTab]);
+
+  // A deep link, a bookmark or the last session's tab may name a section this
+  // role may not open. `activeTab` already shows the first allowed page; this
+  // corrects the address bar in place — replace, not push, because the denied
+  // URL was never a page the operator visited.
+  useEffect(() => {
+    if (!isAuthenticated || canAccessTab(requestedTab)) return;
+    activeTabRef.current = fallbackTab;
+    setRequestedTab(fallbackTab);
+    persistTab(fallbackTab);
+    window.history.replaceState(
+      { tab: fallbackTab },
+      '',
+      `${pathForTab(fallbackTab)}${window.location.search}`
+    );
+  }, [isAuthenticated, requestedTab, canAccessTab, fallbackTab]);
 
   // --- PostgreSQL backend sync -----------------------------------------------
   // Hydrate all entity state from the server on mount. The bundled INITIAL_*
@@ -334,7 +398,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const run = async () => {
       try {
-        const [locs, org, prios, projs, depts, sources, crises, execs, cnts, users, roles, logs, analysisSrcs] = await Promise.all([
+        const [locs, org, prios, projs, depts, sources, crises, execs, cnts, users, roles, analysisSrcs] = await Promise.all([
           api.locations.list(),
           api.organization.get(),
           api.priorities.list(),
@@ -346,7 +410,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           api.contractors.list(),
           api.users.list(),
           api.rolesPermissions.list(),
-          api.auditLogs.list(),
           api.analysisSources.list(),
         ]);
         if (cancelled) return;
@@ -362,9 +425,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setExecutors(execs);
         setContractors(cnts);
         setRolesPermissions(roles);
-        setAuditLogs(logs);
         setAnalysisSources(analysisSrcs);
         setUserDatabase(users);
+
+        // The audit trail is permission-gated (canAuditLogs), so a role without
+        // the flag gets 403 here. It is loaded on its own precisely so that one
+        // refusal cannot reject the whole batch and leave the session running on
+        // the bundled seed permissions instead of the server's matrix.
+        api.auditLogs
+          .list()
+          .then((logs) => {
+            if (!cancelled) setAuditLogs(logs);
+          })
+          .catch(() => {
+            /* no audit-trail permission — its page is closed to this role */
+          });
       } catch {
         // Server unreachable — keep the bundled seed data so the app stays usable offline.
       }
@@ -947,15 +1022,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addAuditLog('ANALYSIS_SOURCE_DELETE', target?.title, 'موجود', 'حذف شده', 'حذف منبع تحلیل از سامانه');
   };
 
-  // Effective permissions of an individual user: the role default with that
-  // user's stored per-user overrides layered on top.
-  const getUserPermissions = (user: UserProfile): SystemRolePermission | undefined => {
-    const base = rolesPermissions.find((r) => r.role === user.role);
-    if (!base) return undefined;
-    const overrides = userPermissionOverrides[user.id];
-    return overrides ? { ...base, ...overrides } : base;
-  };
-
   // Toggle one permission flag for a single user only. Other users — even
   // those sharing the same role — are never affected.
   const handleToggleUserPermission = (userId: string, field: UserPermissionField) => {
@@ -1013,6 +1079,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     antiDuplicationAlerts,
     optimizationMetrics,
     setActiveTab,
+    canAccessTab,
     login,
     logout,
     setAdministrativeScope,
