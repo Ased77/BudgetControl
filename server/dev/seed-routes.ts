@@ -6,9 +6,10 @@
    what each of the 13 roles experiences, a developer needs the credentials
    of a handful of seeded test accounts at hand.
 
-   WHAT: two read-only endpoints, mounted ONLY when APP_ENV is not
-   "production" (the conditional registration in server/app.ts means the
-   routes do not even exist in a production deployment):
+   WHAT: two read-only endpoints, mounted only on a developer's machine
+   (local Docker / bare dev / `vercel dev`). They are never registered on a
+   deployed Vercel function — production or preview — nor with
+   APP_ENV=production (see isDevEnvironment), so /dev/* is a plain 404 there:
 
      GET /dev/seed-users                 → [{ id, username, name, role,
                                            roleFa }] of test users
@@ -47,12 +48,24 @@ import { listRolesPermissions } from '../db/repositories/user.repository.js';
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
- * The single production gate, shared with server/app.ts. Explicitly set
- * APP_ENV=production for real deployments (see .env.example); anything else
- * — unset, "development", "staging" — mounts the dev routes.
+ * The single gate, shared with server/app.ts and scripts/dev-seed-users.ts.
+ *
+ * These endpoints exist for a developer's own machine (local Docker / bare
+ * `bun run dev` / `vercel dev`) and are deliberately unavailable on any
+ * deployed Vercel function:
+ *
+ *  - `APP_ENV=production` disables them on any host (explicit opt-out).
+ *  - A Vercel deployment disables them even when APP_ENV was forgotten:
+ *    production and preview both run with a public URL, and these routes would
+ *    hand out test-account passwords to anyone who asks. Missing configuration
+ *    must fail closed, not open.
+ *  - `vercel dev` is the one Vercel context that keeps them: it sets
+ *    VERCEL_ENV=development while serving from the developer's machine.
  */
 export function isDevEnvironment(env: NodeJS.ProcessEnv = process.env): boolean {
-  return env.APP_ENV !== 'production';
+  if (env.APP_ENV === 'production') return false;
+  if (env.VERCEL_ENV !== undefined) return env.VERCEL_ENV === 'development';
+  return env.VERCEL !== '1' && env.VERCEL !== 'true';
 }
 
 export const devSeedRouter = express.Router();

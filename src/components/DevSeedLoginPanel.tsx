@@ -3,12 +3,16 @@
  *
  * Shown ONLY in non-production frontend builds: it self-gates on
  * `import.meta.env.VITE_APP_ENV !== 'production'` inside this file, so the
- * production bundle renders nothing (the import tree-shakes away).
+ * production bundle renders nothing (the import tree-shakes away). Vercel's
+ * build command (vercel.json) sets VITE_APP_ENV=production, so the panel never
+ * ships there even if the dashboard environment omits it; local Docker and
+ * `bun run dev` leave it unset and keep the panel.
  *
  * What it does:
  *   1. On mount, GET /dev/seed-users (list of { id, username, name, role,
- *      roleFa } of seeded test accounts — the server mounts these routes
- *      only outside production, see server/dev/seed-routes.ts).
+ *      roleFa } of seeded test accounts — the server mounts these routes only
+ *      on a developer's machine, never on a deployed Vercel function; see
+ *      server/dev/seed-routes.ts).
  *   2. Buttons show the human label (roleFa / name), never the raw mobile
  *      number; clicking one GETs /dev/seed-users/:id/credentials and calls
  *      `onFill(username, password)` so the login form fields are pre-filled.

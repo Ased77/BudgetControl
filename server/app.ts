@@ -144,10 +144,12 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
   app.use('/api/auth', authRouter);
 
   // === Dev Seed Login (disposable dev helper) ===
-  // Mounted ONLY outside production: with APP_ENV=production these routes are
-  // never registered, so /dev/* answers the normal 404 (not a 403) and the
-  // jump table contains no /dev entry at all. No session, no login, no real
-  // users ever pass through here. Removal guide: server/dev/seed-routes.ts.
+  // Mounted on a developer's machine only (local Docker/bare dev, plus
+  // `vercel dev`); never on a deployed Vercel function, and never with
+  // APP_ENV=production. When unmounted, /dev/* answers the normal 404 (not a
+  // 403) and the jump table contains no /dev entry at all. No session, no
+  // login, no real users ever pass through here. Gate and removal guide:
+  // server/dev/seed-routes.ts.
   if (isDevEnvironment()) {
     app.use('/dev', devSeedRouter);
   }

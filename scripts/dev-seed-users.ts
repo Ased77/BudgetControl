@@ -8,7 +8,8 @@
  * the dev-only /dev endpoints read (see server/dev/seed-routes.ts).
  *
  * Safety gates:
- *  - Refuses to run when APP_ENV=production (double gate with app.ts).
+ *  - Refuses to run when APP_ENV=production or on a deployed Vercel function
+ *    (the same isDevEnvironment gate server/app.ts uses).
  *  - Only rows with `is_test_user = true` are ever created/updated here.
  *  - Real accounts (bootstrap/admin-provisioned) are never touched.
  *

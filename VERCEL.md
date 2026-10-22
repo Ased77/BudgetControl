@@ -39,8 +39,8 @@ server/app.ts        createApp(): every /api route, no port, no lifecycle
 vercel.json          rewrites `/api/:path*` and `/dev/:path*` to
                      `/api/handler?__original=…` (a rewrite replaces the path a
                      function sees, so the original is carried in the query),
-                     plus buildCommand `vite build && node scripts/vercel-static.mjs`
-                     and the SPA fallback rewrite
+                     plus buildCommand `VITE_APP_ENV=production vite build &&
+                     node scripts/vercel-static.mjs` and the SPA fallback rewrite
 public/              copy of dist/ made by that script — the CDN serves it
 static/              font sources copied into the build (Vite publicDir)
 dist/                the one build output; Docker, local server and the copy step
@@ -69,9 +69,9 @@ dist/                the one build output; Docker, local server and the copy ste
   Vercel's own `text/plain` 404 with `X-Vercel-Error: NOT_FOUND` means the
   request never reached Express (no function was built, or a rewrite sent it
   elsewhere); a JSON `{"error":…}` means Express answered and the route itself
-  said no (`{"error":"Not found"}` for dev routes under `APP_ENV=production`,
-  a 401 from the `/api` guard for an unknown API path). `curl -i /api/health`
-  is the fastest way to tell.
+  said no (`{"error":"Not found"}` for the dev routes, which are never mounted
+  on Vercel, or a 401 from the `/api` guard for an unknown API path).
+  `curl -i /api/health` is the fastest way to tell.
 - **A failed build leaves the previous deployment live.** The alias keeps
   serving the last successful build, so a change can look "not applied" when it
   simply never shipped. Compare the bundle hash in `dist/index.html` with the
@@ -87,7 +87,7 @@ dist/                the one build output; Docker, local server and the copy ste
    | `DATABASE_URL` | `postgres://user:password@host:5432/dbname?sslmode=require` (a platform-injected `POSTGRES_URL` is accepted as a fallback, with a warning) |
    | `PG_POOL_MAX` | `3` — each function instance opens its own pool |
    | `PG_CONNECTION_TIMEOUT_MS` | `5000` (optional, default) |
-   | `APP_ENV` | `production` — the only value that unmounts the dev-only `/dev/*` routes (leave it unset on a throwaway preview where you want the seed panel) |
+   | `APP_ENV` | `production` (recommended) — the dev-only `/dev/*` routes are never mounted on a Vercel deployment anyway, so this is belt-and-braces rather than the primary gate |
 
    Do **not** set `PORT` or `NODE_ENV`; Vercel provides them.
 
@@ -118,9 +118,11 @@ dist/                the one build output; Docker, local server and the copy ste
    which distinguishes "the variable never reached this deployment" (empty
    list) from "the variable exists but is blank" (`state: "empty"`).
 
-   Also set `APP_ENV=production` unless you deliberately want the seed panel:
-   while `/dev/seed-users` is mounted, anyone who can reach the deployment can
-   read the test accounts and their plaintext dev passwords.
+   The dev seed feature is not available here by design: `isDevEnvironment()`
+   rejects every deployed Vercel context, so `/dev/seed-users` is a 404 and the
+   login page shows the real auth form only (the build also has
+   `VITE_APP_ENV=production`). To exercise the seed accounts, use the local
+   Docker stack or `vercel dev`.
 
 2. **Build settings** (Project → Settings → Build & Development Settings):
    Root Directory = repository root (the folder containing `api/` and

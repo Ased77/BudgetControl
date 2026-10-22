@@ -191,7 +191,8 @@ export const LoginView: React.FC = () => {
           </form>
 
           {/* === Dev Seed Login (disposable) — dev-only panel; the component itself
-              renders nothing in production (VITE_APP_ENV === 'production') === */}
+              renders nothing when VITE_APP_ENV === 'production', which Vercel's
+              build command sets (vercel.json). Local Docker keeps the panel. === */}
           <DevSeedLoginPanel onFill={(username, password) => {
             // Pre-fill only — the developer still presses the real login button.
             setMobile(username);
