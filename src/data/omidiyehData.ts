@@ -7,7 +7,7 @@ import {
   ExecutiveProject,
   ProjectExecutor,
   UserProfile,
-} from '../types';
+} from '../types.js';
 
 /**
  * ============================================================================

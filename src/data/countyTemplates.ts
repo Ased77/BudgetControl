@@ -8,8 +8,8 @@ import {
   LocationData,
   ProjectExecutor,
   UserProfile,
-} from '../types';
-import { PRIORITY_TITLE_BY_ID } from './omidiyehData';
+} from '../types.js';
+import { PRIORITY_TITLE_BY_ID } from './omidiyehData.js';
 
 /**
  * ============================================================================

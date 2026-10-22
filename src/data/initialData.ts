@@ -12,7 +12,7 @@ import {
   Contractor,
   SystemRolePermission,
   AnalysisSource,
-} from '../types';
+} from '../types.js';
 import {
   OMIDIYEH_BUDGET_SOURCES,
   OMIDIYEH_CONTRACTORS,
@@ -21,7 +21,7 @@ import {
   OMIDIYEH_EXECUTORS,
   OMIDIYEH_PROJECTS,
   OMIDIYEH_USERS,
-} from './omidiyehData';
+} from './omidiyehData.js';
 
 /* =========================================================================
    ۱. ادارات و نهادهای متولی (Departments & Agencies)

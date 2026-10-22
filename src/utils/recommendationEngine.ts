@@ -1,4 +1,4 @@
-import { CsrPriority, LocalIndicators, SmartRecommendationResult, PrevalenceDimension } from '../types';
+import { CsrPriority, LocalIndicators, SmartRecommendationResult, PrevalenceDimension } from '../types.js';
 
 /**
  * National statistical baselines (from Statistical Center of Iran, Civil Registration Organization,
