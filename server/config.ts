@@ -12,6 +12,9 @@ import type { PoolConfig } from 'pg';
    Supported variables (see .env.example):
 
      DATABASE_URL          full libpq URL — wins over the discrete PG* vars
+                           (POSTGRES_URL / POSTGRES_URL_NON_POOLING /
+                           POSTGRES_PRISMA_URL are accepted as fallbacks so the
+                           Vercel Postgres and Neon integrations work as-is)
      PGHOST PGPORT PGUSER PGPASSWORD PGDATABASE
      PGPASSWORD_FILE       read the password from a file (Docker/Compose secrets)
      PGSSLMODE             disable | require | verify-full | no-verify
@@ -64,8 +67,38 @@ function readPassword(env: Env): string {
   if (env.PGPASSWORD !== undefined) return env.PGPASSWORD;
   throw new Error(
     '[config] No PostgreSQL password configured. Set PGPASSWORD (or PGPASSWORD_FILE / DATABASE_URL). ' +
-      'An intentionally empty password must be set explicitly as PGPASSWORD="". See .env.example.',
+      'An intentionally empty password must be set explicitly as PGPASSWORD="". See .env.example.' +
+      configurationHints(env),
   );
+}
+
+/**
+ * Turn the "no password" failure into an actionable one. Two setups account
+ * for almost every occurrence: a Docker/Compose operator copying
+ * POSTGRES_PASSWORD (that variable configures the database *server*, not this
+ * client), and a serverless deployment where the platform's PostgreSQL
+ * integration injected its own variable name instead of DATABASE_URL.
+ */
+function configurationHints(env: Env): string {
+  const hints: string[] = [];
+  const composeVars = ['POSTGRES_USER', 'POSTGRES_PASSWORD', 'POSTGRES_DB'].filter(
+    (key) => env[key] !== undefined,
+  );
+  if (composeVars.length > 0) {
+    hints.push(
+      `${composeVars.join(', ')} ${composeVars.length === 1 ? 'configures' : 'configure'} the docker-compose ` +
+        `database service and ${composeVars.length === 1 ? 'is' : 'are'} never read by the application — ` +
+        'map it to PGPASSWORD or use DATABASE_URL.',
+    );
+  }
+  if (env.VERCEL === '1' || env.VERCEL === 'true' || env.VERCEL_ENV) {
+    hints.push(
+      'On Vercel, add DATABASE_URL in Project → Settings → Environment Variables for Production *and* Preview, ' +
+        'then redeploy (a new variable does not reach an existing deployment). A localhost/Compose database is ' +
+        'not reachable from a function — use a hosted PostgreSQL endpoint.',
+    );
+  }
+  return hints.length > 0 ? `\n  → ${hints.join('\n  → ')}` : '';
 }
 
 function readSsl(env: Env): { ssl: PoolConfig['ssl']; sslMode: string } {
@@ -89,6 +122,24 @@ function readSsl(env: Env): { ssl: PoolConfig['ssl']; sslMode: string } {
   }
 }
 
+/**
+ * Connection-URL variables seen in the wild. Vercel's PostgreSQL/Neon and
+ * Supabase integrations often inject POSTGRES_URL (or the Prisma variant) and
+ * the platform used to pre-create DATABASE_URL only sometimes; accepting the
+ * aliases keeps "I connected a database" from failing as "no password".
+ * DATABASE_URL always wins and is the only name the docs recommend.
+ */
+const DATABASE_URL_ALIASES = ['POSTGRES_URL', 'POSTGRES_URL_NON_POOLING', 'POSTGRES_PRISMA_URL'] as const;
+
+function readDatabaseUrl(env: Env): { url: string; key: string } | undefined {
+  if (env.DATABASE_URL) return { url: env.DATABASE_URL, key: 'DATABASE_URL' };
+  for (const key of DATABASE_URL_ALIASES) {
+    const value = env[key];
+    if (value) return { url: value, key };
+  }
+  return undefined;
+}
+
 export function loadDatabaseConfig(env: Env = process.env): DatabaseSettings {
   const { ssl, sslMode } = readSsl(env);
 
@@ -104,10 +155,17 @@ export function loadDatabaseConfig(env: Env = process.env): DatabaseSettings {
   // A URL carries host/port/user/password/database *and* its own SSL rules, so
   // when it is present we do not mix in discrete fields — that avoids the
   // classic "PGHOST default silently overrode DATABASE_URL" bug.
-  if (env.DATABASE_URL) {
+  const databaseUrl = readDatabaseUrl(env);
+  if (databaseUrl) {
+    if (databaseUrl.key !== 'DATABASE_URL') {
+      console.warn(
+        `[config] DATABASE_URL is not set — using ${databaseUrl.key} instead. ` +
+          'Set DATABASE_URL explicitly to make the configuration portable.',
+      );
+    }
     return {
-      pool: { connectionString: env.DATABASE_URL, ...poolTuning },
-      target: redactUrl(env.DATABASE_URL),
+      pool: { connectionString: databaseUrl.url, ...poolTuning },
+      target: redactUrl(databaseUrl.url),
       sslMode,
     };
   }

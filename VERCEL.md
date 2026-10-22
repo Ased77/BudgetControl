@@ -84,7 +84,7 @@ dist/                the one build output; Docker, local server and the copy ste
 
    | Name | Value |
    | --- | --- |
-   | `DATABASE_URL` | `postgres://user:password@host:5432/dbname?sslmode=require` |
+   | `DATABASE_URL` | `postgres://user:password@host:5432/dbname?sslmode=require` (a platform-injected `POSTGRES_URL` is accepted as a fallback, with a warning) |
    | `PG_POOL_MAX` | `3` — each function instance opens its own pool |
    | `PG_CONNECTION_TIMEOUT_MS` | `5000` (optional, default) |
    | `APP_ENV` | `production` — the only value that unmounts the dev-only `/dev/*` routes (leave it unset on a throwaway preview where you want the seed panel) |
@@ -97,6 +97,23 @@ dist/                the one build output; Docker, local server and the copy ste
    now catches that boot failure and answers `500 {"code":"FUNCTION_BOOT_FAILED",
    "error":"…"}` with the reason (the dev seed panel shows it too), but the fix
    is setting the variable for both Production and Preview and redeploying.
+
+   **`[config] No PostgreSQL password configured`** (the message the dev seed
+   panel shows as `GET /dev/seed-users failed: 500`) means the function's
+   environment has no connection URL and no `PGPASSWORD`. Check, in order:
+
+   1. The variable exists for the *environment you are viewing* — a preview URL
+      reads Preview variables, not Production ones.
+   2. `POSTGRES_PASSWORD` from the Compose section of `.env.example` is **not**
+      read by the app; the client wants `DATABASE_URL` or `PGPASSWORD`. The
+      error now names those misplaced variables when it sees them.
+   3. Redeploy after adding the variable; existing deployments keep their env.
+   4. The host is reachable from Vercel — `localhost`/a Compose database never
+      is, so point it at a hosted PostgreSQL endpoint (Neon, Supabase, RDS…).
+
+   Also set `APP_ENV=production` unless you deliberately want the seed panel:
+   while `/dev/seed-users` is mounted, anyone who can reach the deployment can
+   read the test accounts and their plaintext dev passwords.
 
 2. **Build settings** (Project → Settings → Build & Development Settings):
    Root Directory = repository root (the folder containing `api/` and
