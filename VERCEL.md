@@ -111,6 +111,13 @@ dist/                the one build output; Docker, local server and the copy ste
    4. The host is reachable from Vercel — `localhost`/a Compose database never
       is, so point it at a hosted PostgreSQL endpoint (Neon, Supabase, RDS…).
 
+   The message ends with a one-line audit — `Database variables this process
+   received: none found (vercel, production)` — listing the recognized names
+   that exist and whether each is empty. It never contains a value, so it is
+   safe to paste. The boot-failure JSON carries the same data under `database`,
+   which distinguishes "the variable never reached this deployment" (empty
+   list) from "the variable exists but is blank" (`state: "empty"`).
+
    Also set `APP_ENV=production` unless you deliberately want the seed panel:
    while `/dev/seed-users` is mounted, anyone who can reach the deployment can
    read the test accounts and their plaintext dev passwords.

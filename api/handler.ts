@@ -23,6 +23,9 @@
  */
 import type { Express } from 'express';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+// Safe to import statically: this module reads the environment but never opens
+// a connection, so it cannot fail the way server/db/client.ts does.
+import { describeDatabaseEnvironment } from '../server/config.js';
 
 let booted: Promise<Express> | null = null;
 
@@ -45,6 +48,15 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     if (res.headersSent) return;
     res.statusCode = 500;
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.end(JSON.stringify({ error: message, code: 'FUNCTION_BOOT_FAILED' }));
+    res.end(
+      JSON.stringify({
+        error: message,
+        code: 'FUNCTION_BOOT_FAILED',
+        // Names and emptiness only — lets a caller tell "variable never
+        // reached this deployment" apart from "variable is empty" without
+        // reading the dashboard.
+        database: describeDatabaseEnvironment(),
+      }),
+    );
   }
 }

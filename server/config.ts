@@ -68,8 +68,66 @@ function readPassword(env: Env): string {
   throw new Error(
     '[config] No PostgreSQL password configured. Set PGPASSWORD (or PGPASSWORD_FILE / DATABASE_URL). ' +
       'An intentionally empty password must be set explicitly as PGPASSWORD="". See .env.example.' +
-      configurationHints(env),
+      configurationHints(env) +
+      `\n  → Database variables this process received: ${formatAudit(describeDatabaseEnvironment(env))}`,
   );
+}
+
+/**
+ * Every name this module knows how to interpret, in the order an operator
+ * should think about them. Only names are ever reported — a value is what we
+ * are trying to keep out of logs and error payloads.
+ */
+const KNOWN_DATABASE_VARIABLES = [
+  'DATABASE_URL',
+  'POSTGRES_URL',
+  'POSTGRES_URL_NON_POOLING',
+  'POSTGRES_PRISMA_URL',
+  'PGHOST',
+  'PGPORT',
+  'PGUSER',
+  'PGPASSWORD',
+  'PGPASSWORD_FILE',
+  'PGDATABASE',
+  'PGSSLMODE',
+  'POSTGRES_USER',
+  'POSTGRES_PASSWORD',
+  'POSTGRES_DB',
+] as const;
+
+export interface DatabaseEnvironmentAudit {
+  /** Where the process thinks it runs — explains which platform hint applies. */
+  platform: 'vercel' | 'other';
+  vercelEnv: string | null;
+  /** Recognized names that exist, with whether the value is empty. No values. */
+  variables: { name: string; state: 'set' | 'empty' }[];
+}
+
+/**
+ * What database configuration did this process actually receive? Names and
+ * emptiness only — never a value, never a URL. A deployment that "added the
+ * variable" but still fails can be diagnosed from this audit alone, which is
+ * exactly the ambiguity a bare "no password configured" leaves behind.
+ */
+export function describeDatabaseEnvironment(env: Env = process.env): DatabaseEnvironmentAudit {
+  const isVercel = env.VERCEL === '1' || env.VERCEL === 'true' || env.VERCEL_ENV !== undefined;
+  return {
+    platform: isVercel ? 'vercel' : 'other',
+    vercelEnv: env.VERCEL_ENV ?? null,
+    variables: KNOWN_DATABASE_VARIABLES.filter((name) => env[name] !== undefined).map((name) => ({
+      name,
+      state: env[name] === '' ? 'empty' : 'set',
+    })),
+  };
+}
+
+/** One-line rendering of the audit for an error message. */
+function formatAudit(audit: DatabaseEnvironmentAudit): string {
+  if (audit.variables.length === 0) {
+    return `none found (${audit.platform}${audit.vercelEnv ? `, ${audit.vercelEnv}` : ''})`;
+  }
+  const names = audit.variables.map((v) => `${v.name}=${v.state}`).join(', ');
+  return `${names} (${audit.platform}${audit.vercelEnv ? `, ${audit.vercelEnv}` : ''})`;
 }
 
 /**
