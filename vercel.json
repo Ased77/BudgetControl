@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "VITE_APP_ENV=production vite build && node scripts/vercel-static.mjs",
+  "buildCommand": "vite build && node scripts/vercel-static.mjs",
   "rewrites": [
     {
       "source": "/api/:path*",

@@ -61,8 +61,18 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
  *    must fail closed, not open.
  *  - `vercel dev` is the one Vercel context that keeps them: it sets
  *    VERCEL_ENV=development while serving from the developer's machine.
+ *
+ *  - Exception: `DEV_SEED_LOGIN=1` is an explicit operator opt-in that turns
+ *    them ON even on a deployed Vercel function (and even with
+ *    APP_ENV=production). Setting it deliberately hands the deployment's test
+ *    accounts to any visitor — demo/staging deployments only. It is checked
+ *    first because two explicit signals must not cancel each other out: the
+ *    operator who sets 1 after setting production knows what they are asking
+ *    for, while the fail-closed rules below still protect every deployment that
+ *    never opted in.
  */
 export function isDevEnvironment(env: NodeJS.ProcessEnv = process.env): boolean {
+  if (env.DEV_SEED_LOGIN === '1') return true;
   if (env.APP_ENV === 'production') return false;
   if (env.VERCEL_ENV !== undefined) return env.VERCEL_ENV === 'development';
   return env.VERCEL !== '1' && env.VERCEL !== 'true';
