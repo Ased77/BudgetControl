@@ -11,6 +11,9 @@
         database (registry tables empty) with the built-in dataset; a
         migrated legacy database skips it entirely via the app_meta gate
         that the legacy-import migration sets.
+     2b. OPTIONAL `seedAuthAccounts()` — only when SEED_AUTH_ACCOUNTS=1.
+        Creates the 13 demo role accounts as real auth users; see
+        server/seed/auth-accounts.ts.
      3. idempotent repairs (priority title refresh),
         each a no-op when already applied.
 
@@ -27,6 +30,7 @@ import { db, closePool, pool } from './client.js';
 import { seedDatabase } from './seed.js';
 import { refreshPriorityTitlesIfNeeded } from './repairs.js';
 import { ensureBootstrapAdminIfNeeded } from '../auth/bootstrap.js';
+import { seedAuthAccounts } from '../seed/auth-accounts.js';
 
 /** Arbitrary but stable key so concurrent replicas cannot race the DDL. */
 const MIGRATION_LOCK_KEY = 4242001002;
@@ -118,6 +122,23 @@ export async function seedIfEmpty(): Promise<void> {
 export async function initializeDatabase(): Promise<void> {
   await runMigrations();
   await seedIfEmpty();
+
+  // Opt-in: create the 13 demo role accounts as REAL auth users
+  // (server/seed/auth-accounts.ts). Off by default — a deployment must not
+  // gain known-password accounts merely by booting. Runs before the bootstrap
+  // repair so the seeded SYSTEM_ADMIN is the operator's first login instead
+  // of a one-time random password printed to the logs.
+  if (process.env.SEED_AUTH_ACCOUNTS === '1') {
+    const seeded = await seedAuthAccounts();
+    const created = seeded.filter((row) => row.outcome === 'created').length;
+    const updated = seeded.filter((row) => row.outcome === 'updated').length;
+    const skipped = seeded.length - created - updated;
+    console.log(
+      `[db] SEED_AUTH_ACCOUNTS=1 — demo role accounts ensured ` +
+        `(${created} created, ${updated} refreshed${skipped ? `, ${skipped} skipped` : ''})`,
+    );
+  }
+
   await refreshPriorityTitlesIfNeeded();
   // Last boot step: guarantees ≥ 1 real login exists so the very first
   // session is a verified identity (the SYSTEM actor is never loggable).

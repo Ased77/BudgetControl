@@ -162,6 +162,51 @@ dist/                the one build output; Docker, local server and the copy ste
    compiled into a Node function with `express` and `pg`; `vercel.json` sends
    `/api/*` and `/dev/*` to it.
 
+## Demo role accounts (optional)
+
+The 13 RBAC roles can exist as **real login accounts** on the deployment, where
+the dev-only seed panel is not mounted. They are ordinary `auth_users` rows —
+scrypt `password_hash`, `is_test_user = false`, no plaintext `dev_password` —
+and are also mirrored into the `users` roster the role & permission manager
+reads. Login goes through the normal `/api/auth/login` form.
+
+| Mobile | Role | Password |
+| --- | --- | --- |
+| `09991000001` | `SYSTEM_ADMIN` | `DevSysAdmin1405!` |
+| `09991000002` | `GOVERNOR` | `DevGovernor1405!` |
+| `09991000003` | `CULTURE_BUDGET_HEAD` | `DevCulture1405!` |
+| `09991000004` | `OFFICE_HEAD` | `DevOffice1405!` |
+| `09991000005` | `PROJECT_MANAGER` | `DevProject1405!` |
+| `09991000006` | `TREASURY_FINANCE_HEAD` | `DevTreasury1405!` |
+| `09991000007` | `INTERNAL_AUDITOR` | `DevAudit1405!` |
+| `09991000008` | `PLAN_OFFICER` | `DevPlan1405!` |
+| `09991000009` | `BUDGET_CHAIRMAN` | `DevChairman1405!` |
+| `09991000010` | `DISTRICT_GOVERNOR` | `DevDistrict1405!` |
+| `09991000011` | `MAYOR` | `DevMayor1405!` |
+| `09991000012` | `CONTRACTOR` | `DevContractor1405!` |
+| `09991000013` | `TECH_SUPPORT` | `DevTech1405!` |
+
+Two ways to create them:
+
+* **From the Vercel dashboard** — add `SEED_AUTH_ACCOUNTS=1` (Production and
+  Preview) and redeploy. The first request creates/refreshes the 13 accounts
+  after migrations and before the bootstrap repair, so the seeded
+  `SYSTEM_ADMIN` is the first login instead of a random bootstrap password.
+* **From a machine with the connection string** — run the seeder directly:
+
+  ```bash
+  DATABASE_URL='postgres://…?sslmode=require' bun run db:seed:auth --init
+  ```
+
+Re-running is idempotent (stable UUIDs). A mobile already belonging to a
+different account is never overwritten — it is reported as skipped.
+
+These passwords are published in this repository: keep `SEED_AUTH_ACCOUNTS`
+unset for anything beyond a demo, and rotate or deactivate the accounts before
+real data. `bun run db:seed:dev` still provisions the same mobiles as
+disposable test users for the local dev panel (it flips those rows back to
+`is_test_user` and stores the plaintext), so do not run it against production.
+
 ## Verify after deploying
 
 ```bash
