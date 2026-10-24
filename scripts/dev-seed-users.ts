@@ -7,43 +7,30 @@
  * stores its plaintext dev credential in auth_users.dev_password, which only
  * the dev-only /dev endpoints read (see server/dev/seed-routes.ts).
  *
+ * The upsert logic lives in server/seed/auth-accounts.ts (seedDevTestAccounts)
+ * as the one implementation shared with boot-time dev seeding
+ * (initialize.ts, DEV_SEED_LOGIN=1) — this file only gates and reports.
+ *
  * Safety gates:
- *  - Refuses to run when APP_ENV=production or on a deployed Vercel function
- *    (the same isDevEnvironment gate server/app.ts uses).
- *  - Only rows with `is_test_user = true` are ever created/updated here.
- *  - Real accounts (bootstrap/admin-provisioned) are never touched.
+ *  - Refuses to run when APP_ENV=production or off a developer's machine
+ *    (the same isDevEnvironment gate server/app.ts uses). RE-run against a
+ *    demo deployment's database by adding DEV_SEED_LOGIN=1 to the env.
+ *  - Only rows with `is_test_user = true` are ever created here; the shared
+ *    seeder still refuses to hijack a mobile that belongs to another account.
  *
- * Idempotent: re-running refreshes the scrypt hash + devPassword of the same
- * stable UUIDs without creating duplicates.
- *
- * HOW TO REMOVE THE FEATURE: delete this file (plus server/dev/seed-routes.ts
- * and its mount in server/app.ts, the <DevSeedLoginPanel /> line in
- * LoginView.tsx, DevSeedLoginPanel.tsx, migration 0003 and its journal entry)
- * then run `bun run db:init` and
- *   ALTER TABLE auth_users DROP COLUMN is_test_user;
- *   ALTER TABLE auth_users DROP COLUMN dev_password;
+ * HOW TO REMOVE THE FEATURE: delete server/dev/seed-routes.ts and its mount in
+ * server/app.ts, the <DevSeedLoginPanel /> line in LoginView.tsx and the
+ * component, the DEV_SEED_LOGIN=1 block in server/db/initialize.ts, this file,
+ * and the `variant: dev-test` branch in server/seed/auth-accounts.ts.
  *
  * Usage:
- *   bun run db:seed:dev       (add the script to package.json or run directly)
- *   bun run scripts/dev-seed-users.ts
+ *   bun run db:seed:dev
+ *   DEV_SEED_LOGIN=1 DATABASE_URL='postgres://…?sslmode=require' bun run db:seed:dev
  */
 
 import { isDevEnvironment } from '../server/dev/seed-routes.js';
-import { hashPassword } from '../server/auth/password.js';
+import { seedDevTestAccounts } from '../server/seed/auth-accounts.js';
 import { shutdownDatabase } from '../server/db/initialize.js';
-import { db } from '../server/db/client.js';
-import { authUsers } from '../server/db/schema.js';
-import { listRolesPermissions, upsertUser } from '../server/db/repositories/user.repository.js';
-import { AUTH_SEED_ACCOUNTS } from '../server/seed/auth-accounts.js';
-
-/* --------------------------------------------------------------------------
-   The accounts themselves live in server/seed/auth-accounts.ts — the same
-   list `db:seed:auth` uses to create REAL accounts. Here they are provisioned
-   as disposable test users instead: is_test_user = true plus the plaintext
-   dev_password the panel hands back. Keeping one list means the two modes can
-   never drift on mobiles, roles or passwords.
-   -------------------------------------------------------------------------- */
-
 
 async function main(): Promise<void> {
   if (!isDevEnvironment()) {
@@ -52,66 +39,23 @@ async function main(): Promise<void> {
     return;
   }
 
-  // Persian labels come from the live RBAC matrix, the same source the real
-  // admin-provisioning flow (POST /api/auth/users) uses.
-  const matrix = await listRolesPermissions();
-
-  for (const seed of AUTH_SEED_ACCOUNTS) {
-    const matrixRole = matrix.find((r) => r.role === seed.role);
-    if (!matrixRole) {
-      console.warn(`[dev-seed] role ${seed.role} is not in the RBAC matrix — skipped`);
-      continue;
+  const results = await seedDevTestAccounts();
+  for (const result of results) {
+    if (result.outcome === 'skipped') {
+      console.warn(`[dev-seed] skipped ${result.mobile} (${result.role}) — ${result.note}`);
+    } else {
+      console.log(
+        `[dev-seed] ${result.outcome.padEnd(8)} ${result.role.padEnd(20)} ${result.mobile}  (dev password: ${result.password})`,
+      );
     }
-
-    await db
-      .insert(authUsers)
-      .values({
-        id: seed.id,
-        mobile: seed.mobile,
-        passwordHash: await hashPassword(seed.password),
-        displayName: seed.displayName,
-        role: seed.role,
-        isTestUser: true,
-        devPassword: seed.password,
-        province: seed.province ?? null,
-        county: seed.county ?? null,
-      })
-      // Idempotent by the stable UUID: re-running refreshes the credentials.
-      .onConflictDoUpdate({
-        target: authUsers.id,
-        set: {
-          passwordHash: await hashPassword(seed.password),
-          mobile: seed.mobile,
-          displayName: seed.displayName,
-          role: seed.role,
-          isActive: true,
-          isTestUser: true,
-          devPassword: seed.password,
-          province: seed.province ?? null,
-          county: seed.county ?? null,
-        },
-      });
-
-    // Mirror into the legacy `users` roster so the account is visible and
-    // editable in the role & permission manager — exactly what the admin
-    // issuance flow does for every account it creates.
-    await upsertUser({
-      id: seed.id,
-      name: seed.displayName,
-      role: seed.role,
-      roleFa: matrixRole.roleTitleFa,
-      roleTitleFa: matrixRole.roleTitleFa,
-      avatar: '',
-      organization: seed.province ? `${seed.province}${seed.county ? ' — ' + seed.county : ''}` : 'سطح ملی',
-      ...(seed.province ? { province: seed.province } : {}),
-      ...(seed.county ? { county: seed.county } : {}),
-    });
-
-    console.log(`[dev-seed] ${seed.role.padEnd(20)} ${seed.mobile}  (dev password: ${seed.password})`);
   }
 
+  const created = results.filter((result) => result.outcome === 'created').length;
+  const updated = results.filter((result) => result.outcome === 'updated').length;
+  const skipped = results.filter((result) => result.outcome === 'skipped').length;
+
   console.log(
-    `\n[dev-seed] done — ${AUTH_SEED_ACCOUNTS.length} test accounts ready. ` +
+    `\n[dev-seed] done — ${created} created, ${updated} refreshed, ${skipped} skipped. ` +
       'Log in via the Dev seed users panel on the login page',
   );
   console.log('[dev-seed] reminder: these are disposable accounts; delete the feature before going live.');

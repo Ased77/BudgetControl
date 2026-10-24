@@ -12,11 +12,13 @@
    every environment — including a deployed Vercel function, where the
    dev-only panel and its plaintext column do not exist.
 
-   Both entry points share this list, so roles, mobiles and passwords can
+   One list drives all provisioning paths, so roles, mobiles and passwords can
    never drift:
-     - scripts/seed-auth-accounts.ts   operator run, prints credentials
-     - server/db/initialize.ts         only when SEED_AUTH_ACCOUNTS=1
-     - scripts/dev-seed-users.ts       dev panel, derived from the same array
+     - scripts/seed-auth-accounts.ts   operator run, REAL accounts
+     - server/db/initialize.ts         REAL accounts only when SEED_AUTH_ACCOUNTS=1
+     - scripts/dev-seed-users.ts       dev panel, DISPOSABLE test users
+     - server/db/initialize.ts         DISPOSABLE test users when DEV_SEED_LOGIN=1
+                                       (boot-time dev seeding for demo deployments)
 
    SECURITY: the passwords below are published in this repository. Treat the
    accounts as demo/staging identities: keep SEED_AUTH_ACCOUNTS unset for a
@@ -75,6 +77,14 @@ export interface AuthSeedResult {
 export interface SeedAuthAccountsOptions {
   /** Validate and report, write nothing. */
   dryRun?: boolean;
+  /**
+   * Which identity the same list provisions:
+   *   'real'     (default) — is_test_user = false, no plaintext at rest.
+   *   'dev-test'           — is_test_user = true + dev_password, so the
+   *                          dev-only /dev endpoints can hand the credential
+   *                          back to the login panel. NEVER use for real data.
+   */
+  variant?: 'real' | 'dev-test';
 }
 
 interface Prepared {
@@ -96,7 +106,7 @@ interface Prepared {
 export async function seedAuthAccounts(
   options: SeedAuthAccountsOptions = {},
 ): Promise<AuthSeedResult[]> {
-  const { dryRun = false } = options;
+  const { dryRun = false, variant = 'real' } = options;
 
   const matrix = await listRolesPermissions();
   if (matrix.length === 0) {
@@ -173,9 +183,11 @@ export async function seedAuthAccounts(
           province: account.province ?? null,
           county: account.county ?? null,
           isActive: true,
-          // Real accounts: no test flag, no plaintext credential at rest.
-          isTestUser: false,
-          devPassword: null,
+          // The identity variant decides what sits at rest: 'real' keeps no
+          // test flag and no plaintext credential; 'dev-test' stores exactly
+          // the published demo password the dev panel hands back.
+          isTestUser: variant === 'dev-test',
+          devPassword: variant === 'dev-test' ? account.password : null,
         };
         await tx
           .insert(authUsers)
@@ -205,4 +217,18 @@ export async function seedAuthAccounts(
   }
 
   return results;
+}
+
+/**
+ * The same 13 identities as DISPOSABLE test users (variant 'dev-test').
+ *
+ * Provisioned by scripts/dev-seed-users.ts for a developer's machine and —
+ * since DEV_SEED_LOGIN=1 became an explicit operator opt-in — by boot-time
+ * dev seeding in server/db/initialize.ts for demo deployments, so the deployed
+ * Dev Seed Login panel has accounts to list without a remote script run.
+ */
+export function seedDevTestAccounts(
+  options: Omit<SeedAuthAccountsOptions, 'variant'> = {},
+): Promise<AuthSeedResult[]> {
+  return seedAuthAccounts({ ...options, variant: 'dev-test' });
 }

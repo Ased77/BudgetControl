@@ -33,7 +33,7 @@ import * as schema from './schema.js';
 import { seedDatabase } from './seed.js';
 import { refreshPriorityTitlesIfNeeded } from './repairs.js';
 import { ensureBootstrapAdminIfNeeded } from '../auth/bootstrap.js';
-import { seedAuthAccounts } from '../seed/auth-accounts.js';
+import { seedAuthAccounts, seedDevTestAccounts } from '../seed/auth-accounts.js';
 
 /** Arbitrary but stable key so concurrent replicas cannot race the DDL. */
 const MIGRATION_LOCK_KEY = 4242001002;
@@ -306,6 +306,25 @@ export async function initializeDatabase(): Promise<void> {
         'provisioned in this deployment. Log in with the bootstrap admin, or set the variable ' +
         'and redeploy, or run: bun run db:seed:auth',
     );
+  }
+
+  // Dev Seed Login on a demo deployment: DEV_SEED_LOGIN=1 is the same explicit
+  // opt-in that mounts the /dev endpoints (server/dev/seed-routes.ts). It also
+  // provisions the 13 disposable test accounts here, so the deployed Dev Seed
+  // Login panel has identities to hand out without a remote `bun run db:seed:dev`.
+  // Idempotent by stable UUIDs; a mobile owned by another account is skipped.
+  if (process.env.DEV_SEED_LOGIN === '1') {
+    const seeded = await seedDevTestAccounts();
+    const created = seeded.filter((row) => row.outcome === 'created').length;
+    const updated = seeded.filter((row) => row.outcome === 'updated').length;
+    const skipped = seeded.filter((row) => row.outcome === 'skipped');
+    console.log(
+      `[db] DEV_SEED_LOGIN=1 — disposable test accounts ensured ` +
+        `(${created} created, ${updated} refreshed${skipped.length ? `, ${skipped.length} skipped` : ''})`,
+    );
+    for (const row of skipped) {
+      console.warn(`[db] dev account NOT seeded: ${row.mobile} (${row.role}) — ${row.note ?? 'unknown reason'}`);
+    }
   }
 
   await refreshPriorityTitlesIfNeeded();
