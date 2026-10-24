@@ -91,6 +91,7 @@ export const LoginView: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [activeSlide, setActiveSlide] = useState(0);
+  const [slideDirection, setSlideDirection] = useState(1);
   const [showcasePaused, setShowcasePaused] = useState(false);
   const [showcaseRun, setShowcaseRun] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -115,6 +116,7 @@ export const LoginView: React.FC = () => {
   useEffect(() => {
     if (showcasePaused || reducedMotion) return;
     const timer = window.setTimeout(() => {
+      setSlideDirection(1);
       setActiveSlide((current) => (current + 1) % SHOWCASE_SLIDES.length);
     }, SHOWCASE_INTERVAL_MS);
     return () => window.clearTimeout(timer);
@@ -122,11 +124,16 @@ export const LoginView: React.FC = () => {
 
   const goToSlide = useCallback((index: number) => {
     const count = SHOWCASE_SLIDES.length;
-    setActiveSlide(((index % count) + count) % count);
-  }, []);
+    const nextIndex = ((index % count) + count) % count;
+    if (nextIndex === activeSlide) return;
+    const forwardDistance = (nextIndex - activeSlide + count) % count;
+    setSlideDirection(forwardDistance <= count / 2 ? 1 : -1);
+    setActiveSlide(nextIndex);
+  }, [activeSlide]);
 
   const stepSlide = useCallback((direction: number) => {
     const count = SHOWCASE_SLIDES.length;
+    setSlideDirection(direction);
     setActiveSlide((current) => (current + direction + count) % count);
   }, []);
 
@@ -275,46 +282,107 @@ export const LoginView: React.FC = () => {
           </div>
 
           <div className="showcase-dashboard" aria-label="پیش‌نمایش تصویری داشبورد مالی">
-            <div className="showcase-summary-card">
-              <div className="showcase-card-heading">
-                <span className="showcase-card-icon"><CircleDollarSign aria-hidden="true" /></span>
-                <span><small>نمای کلی بودجه</small><strong>تخصیص منابع</strong></span>
-                <span className="showcase-trend">+۱۲٪</span>
-              </div>
-              <div className="showcase-budget">
-                <strong>۷۶٪</strong>
-                <span>از بودجه مصوب</span>
-              </div>
-              <div className="showcase-progress"><span /></div>
-              <div className="showcase-card-foot"><span>مصوب</span><b>در حال اجرا</b><span>باقی‌مانده</span></div>
-            </div>
+            <div
+              key={activeShowcaseSlide.id}
+              className={`showcase-dashboard-slide ${slideDirection > 0 ? 'is-next' : 'is-previous'}`}
+              aria-hidden="true"
+            >
+              {activeSlide === 0 && (
+                <>
+                  <div className="showcase-summary-card">
+                    <div className="showcase-card-heading">
+                      <span className="showcase-card-icon"><CircleDollarSign aria-hidden="true" /></span>
+                      <span><small>نمای کلی بودجه</small><strong>تخصیص منابع</strong></span>
+                      <span className="showcase-trend">+۱۲٪</span>
+                    </div>
+                    <div className="showcase-budget">
+                      <strong>۷۶٪</strong>
+                      <span>از بودجه مصوب</span>
+                    </div>
+                    <div className="showcase-progress"><span /></div>
+                    <div className="showcase-card-foot"><span>مصوب</span><b>در حال اجرا</b><span>باقی‌مانده</span></div>
+                  </div>
 
-            <div className="showcase-chart-card">
-              <div className="showcase-chart-title">
-                <span><small>تحلیل عملکرد</small><strong>روند تخصیص بودجه</strong></span>
-                <ChartNoAxesCombined aria-hidden="true" />
-              </div>
-              <div className="showcase-chart">
-                <div className="showcase-chart-lines" aria-hidden="true" />
-                <svg viewBox="0 0 300 98" role="presentation" aria-hidden="true">
-                  <defs>
-                    <linearGradient id="budget-chart-fill" x1="0" x2="0" y1="0" y2="1">
-                      <stop offset="0%" stopColor="#40d5c5" stopOpacity=".34" />
-                      <stop offset="100%" stopColor="#40d5c5" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
-                  <path d="M0 78 C32 74 39 52 72 60 S112 52 142 43 S176 50 205 31 S251 36 300 8 V98 H0Z" fill="url(#budget-chart-fill)" />
-                  <path d="M0 78 C32 74 39 52 72 60 S112 52 142 43 S176 50 205 31 S251 36 300 8" fill="none" stroke="#58ded0" strokeWidth="3" />
-                  <circle cx="205" cy="31" r="4" fill="#fff" stroke="#58ded0" strokeWidth="3" />
-                </svg>
-              </div>
-              <div className="showcase-months"><span>فروردین</span><span>خرداد</span><span>شهریور</span><span>آذر</span></div>
-            </div>
+                  <div className="showcase-chart-card">
+                    <div className="showcase-chart-title">
+                      <span><small>تحلیل عملکرد</small><strong>روند تخصیص بودجه</strong></span>
+                      <ChartNoAxesCombined aria-hidden="true" />
+                    </div>
+                    <div className="showcase-chart">
+                      <div className="showcase-chart-lines" aria-hidden="true" />
+                      <svg viewBox="0 0 300 98" role="presentation" aria-hidden="true">
+                        <defs>
+                          <linearGradient id="budget-chart-fill" x1="0" x2="0" y1="0" y2="1">
+                            <stop offset="0%" stopColor="#40d5c5" stopOpacity=".34" />
+                            <stop offset="100%" stopColor="#40d5c5" stopOpacity="0" />
+                          </linearGradient>
+                        </defs>
+                        <path d="M0 78 C32 74 39 52 72 60 S112 52 142 43 S176 50 205 31 S251 36 300 8 V98 H0Z" fill="url(#budget-chart-fill)" />
+                        <path d="M0 78 C32 74 39 52 72 60 S112 52 142 43 S176 50 205 31 S251 36 300 8" fill="none" stroke="#58ded0" strokeWidth="3" />
+                        <circle cx="205" cy="31" r="4" fill="#fff" stroke="#58ded0" strokeWidth="3" />
+                      </svg>
+                    </div>
+                    <div className="showcase-months"><span>فروردین</span><span>خرداد</span><span>شهریور</span><span>آذر</span></div>
+                  </div>
 
-            <div className="showcase-mini-card">
-              <span className="showcase-mini-icon"><Landmark aria-hidden="true" /></span>
-              <span><small>پروژه‌های فعال</small><strong>۲۴۸ <em>پروژه</em></strong></span>
-              <span className="showcase-mini-badge">+۸.۴٪</span>
+                  <div className="showcase-mini-card">
+                    <span className="showcase-mini-icon"><Landmark aria-hidden="true" /></span>
+                    <span><small>پروژه‌های فعال</small><strong>۲۴۸ <em>پروژه</em></strong></span>
+                    <span className="showcase-mini-badge">+۸.۴٪</span>
+                  </div>
+                </>
+              )}
+
+              {activeSlide === 1 && (
+                <div className="showcase-detail-card showcase-security-card">
+                  <div className="showcase-detail-heading">
+                    <span className="showcase-card-icon"><ShieldCheck aria-hidden="true" /></span>
+                    <span><small>مرکز امنیت سامانه</small><strong>نشست محافظت‌شده</strong></span>
+                    <span className="showcase-security-status">فعال</span>
+                  </div>
+                  <div className="showcase-security-seal">
+                    <span><KeyRound aria-hidden="true" /></span>
+                    <strong>احراز هویت تأیید شد</strong>
+                    <small>ارتباط رمزگذاری‌شده و امن</small>
+                  </div>
+                  <div className="showcase-detail-rows">
+                    <div><span>نشست کاربری</span><b>کوکی امن · فقط سرور</b></div>
+                    <div><span>وضعیت اتصال</span><b>محافظت‌شده</b></div>
+                  </div>
+                </div>
+              )}
+
+              {activeSlide === 2 && (
+                <div className="showcase-detail-card showcase-roles-card">
+                  <div className="showcase-detail-heading">
+                    <span className="showcase-card-icon"><Network aria-hidden="true" /></span>
+                    <span><small>حاکمیت دسترسی</small><strong>مجوزهای سازمانی</strong></span>
+                  </div>
+                  <div className="showcase-role-table">
+                    <div className="showcase-role-row is-header"><span>نقش سازمانی</span><span>مشاهده</span><span>مدیریت</span></div>
+                    <div className="showcase-role-row"><span><i /> مدیر سامانه</span><b>کامل</b><b>کامل</b></div>
+                    <div className="showcase-role-row"><span><i /> مدیر پروژه</span><b>محدوده من</b><b>پروژه</b></div>
+                    <div className="showcase-role-row"><span><i /> حسابرس</span><b>گزارش‌ها</b><b>—</b></div>
+                  </div>
+                  <div className="showcase-role-foot"><ShieldCheck aria-hidden="true" /> کنترل دسترسی مبتنی بر نقش</div>
+                </div>
+              )}
+
+              {activeSlide === 3 && (
+                <div className="showcase-detail-card showcase-audit-card">
+                  <div className="showcase-detail-heading">
+                    <span className="showcase-card-icon"><History aria-hidden="true" /></span>
+                    <span><small>گزارش نظارتی</small><strong>تاریخچه تغییرات</strong></span>
+                    <span className="showcase-audit-count">امروز</span>
+                  </div>
+                  <div className="showcase-audit-list">
+                    <div><i /><span><b>به‌روزرسانی تخصیص بودجه</b><small>کارشناس برنامه‌ریزی · ۱۰:۳۲</small></span></div>
+                    <div><i /><span><b>تأیید مرحله اجرای پروژه</b><small>مدیر پروژه · ۰۹:۱۸</small></span></div>
+                    <div><i /><span><b>ثبت شاخص‌های منطقه</b><small>کارشناس داده · ۰۸:۴۵</small></span></div>
+                  </div>
+                  <div className="showcase-audit-foot"><span /> ثبت‌شده با شناسه اپراتور تأییدشده</div>
+                </div>
+              )}
             </div>
           </div>
 
