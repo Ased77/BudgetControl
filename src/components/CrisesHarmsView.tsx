@@ -185,7 +185,10 @@ export const CrisesHarmsView: React.FC = () => {
   const [formDeficitIndex, setFormDeficitIndex] = useState('');
 
   const userPerm = getUserPermissions(currentUser);
-  const canManage = userPerm ? userPerm.canManageCrises : true;
+  // SYSTEM_ADMIN bypass — same rule as the server's requirePermission; the
+  // seeded matrix deliberately excluded crises editing from this role, but the
+  // full-system-access directive supersedes the row.
+  const canManage = currentUser.role === 'SYSTEM_ADMIN' || (userPerm ? userPerm.canManageCrises : true);
 
   const handleOpenAdd = () => {
     setEditingCrisis(null);

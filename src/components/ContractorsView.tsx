@@ -93,7 +93,8 @@ export const ContractorsView: React.FC = () => {
   const [formStatus, setFormStatus] = useState<'VERIFIED' | 'UNDER_EVALUATION' | 'SUSPENDED'>('VERIFIED');
 
   const userPerm = getUserPermissions(currentUser);
-  const canManage = userPerm ? userPerm.canManageContractors : currentUser.role === 'SYSTEM_ADMIN';
+  // SYSTEM_ADMIN bypass — same rule as the server's requirePermission.
+  const canManage = currentUser.role === 'SYSTEM_ADMIN' || (userPerm?.canManageContractors ?? false);
   // «رئیس اداره» sees only the contractors assigned to projects it created;
   // the project links on each card are narrowed to the same portfolio so the
   // counts never mention a project outside the reader's scope.

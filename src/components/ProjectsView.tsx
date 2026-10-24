@@ -95,9 +95,11 @@ export const ProjectsView: React.FC = () => {
   const [formDescription, setFormDescription] = useState('');
 
   const userPerm = getUserPermissions(currentUser);
-  const canManage = userPerm ? userPerm.canApproveProjects : currentUser.role === 'SYSTEM_ADMIN';
+  // SYSTEM_ADMIN bypass — same rule as the server's requirePermission.
+  const canManage = currentUser.role === 'SYSTEM_ADMIN' || (userPerm?.canApproveProjects ?? false);
   // Missing on rows seeded before the flag existed: preserve the old open door.
-  const canCreateProject = userPerm ? userPerm.canCreateProject !== false : true;
+  const canCreateProject =
+    currentUser.role === 'SYSTEM_ADMIN' || (userPerm ? userPerm.canCreateProject !== false : true);
   // «رئیس اداره» works on its own portfolio only; every other role keeps the
   // location-scoped list the context handed it.
   const ownProjectScope = hasOwnProjectScope(currentUser.role);

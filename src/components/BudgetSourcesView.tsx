@@ -103,7 +103,10 @@ export const BudgetSourcesView: React.FC = () => {
   const [formStatus, setFormStatus] = useState<BudgetSource['status']>('ACTIVE');
 
   const userPerm = getUserPermissions(currentUser);
-  const canManage = userPerm ? userPerm.canManageBudget : currentUser.role === 'SYSTEM_ADMIN';
+  // SYSTEM_ADMIN owns the whole permission surface: buttons follow the page
+  // and API authority (canAccessSection / requirePermission bypass), not a
+  // matrix row that may have been edited away.
+  const canManage = currentUser.role === 'SYSTEM_ADMIN' || (userPerm?.canManageBudget ?? false);
 
   const typeLabels: Record<BudgetSourceType, string> = {
     CSR: 'مسئولیت اجتماعی شرکتی (CSR)',

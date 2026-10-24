@@ -242,7 +242,8 @@ export const DepartmentsView: React.FC = () => {
 
   // Check user permission
   const userPerm = getUserPermissions(currentUser);
-  const canEdit = userPerm ? userPerm.canEditDepartments : currentUser.role === 'SYSTEM_ADMIN';
+  // SYSTEM_ADMIN bypass — same rule as the server's requirePermission.
+  const canEdit = currentUser.role === 'SYSTEM_ADMIN' || (userPerm?.canEditDepartments ?? false);
 
   // Category mapping
   const categoryLabels: Record<Department['category'], string> = {

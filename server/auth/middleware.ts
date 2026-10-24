@@ -107,6 +107,11 @@ export function requirePermission(permission: keyof SystemRolePermission): Reque
     const auth = req.auth;
     if (!auth) return unauthorized(res, 'احراز هویت لازم است');
 
+    // The system administrator owns the permission surface itself: full access
+    // to every guarded operation whether the matrix row grants it or not, so a
+    // matrix edit can never lock the system steward out of a repair.
+    if (auth.role === 'SYSTEM_ADMIN') return next();
+
     if (!cache || Date.now() - cache.fetchedAt > TTL_MS) {
       try {
         const rows = await listRolesPermissions();

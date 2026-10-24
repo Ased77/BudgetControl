@@ -135,7 +135,8 @@ export const AnalysisSourcesView: React.FC = () => {
   const [formReliability, setFormReliability] = useState(75);
 
   const userPerm = getUserPermissions(currentUser);
-  const canManage = userPerm ? userPerm.canApproveProjects : currentUser.role === 'SYSTEM_ADMIN';
+  // SYSTEM_ADMIN bypass — same rule as the server's requirePermission.
+  const canManage = currentUser.role === 'SYSTEM_ADMIN' || (userPerm?.canApproveProjects ?? false);
 
   const openAdd = () => {
     setEditingSource(null);

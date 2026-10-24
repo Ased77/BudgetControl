@@ -72,14 +72,21 @@ const FALLBACK_ORDER = [
 ];
 
 /** True when the effective permissions open `tab`. Unknown tabs are not
- *  destinations, so they are refused rather than rendered as a blank page. */
+ *  destinations, so they are refused rather than rendered as a blank page.
+ *
+ *  SYSTEM_ADMIN is the one unconditional pass: full access to every page and
+ *  everything in the system, regardless of what the matrix row currently
+ *  says, so a matrix edit can never lock the system steward out. The server
+ *  enforces the mirror image in requirePermission (server/auth/middleware.ts). */
 export function canAccessSection(
   tab: string,
   permissions: SystemRolePermission | undefined,
   role: UserRole,
 ): boolean {
   const gate = SECTION_GATES[tab];
-  return gate ? gate(permissions, role) : false;
+  if (!gate) return false;
+  if (role === 'SYSTEM_ADMIN') return true;
+  return gate(permissions, role);
 }
 
 /** The first page this role may open, used when its current tab is denied. */
