@@ -85,6 +85,7 @@ dist/                the one build output; Docker, local server and the copy ste
    | Name | Value |
    | --- | --- |
    | `DATABASE_URL` | `postgres://user:password@host:5432/dbname?sslmode=require` (a platform-injected `POSTGRES_URL` is accepted as a fallback, with a warning) |
+   | `AUTH_JWT_SECRET` | `openssl rand -hex 32` (≥ 32 chars) — signs session tokens; without it the app **boots** but every `/api/auth/*` route and the login page fail with `[auth] AUTH_JWT_SECRET is missing or shorter than 32 characters` |
    | `PG_POOL_MAX` | `3` — each function instance opens its own pool |
    | `PG_CONNECTION_TIMEOUT_MS` | `5000` (optional, default) |
    | `APP_ENV` | `production` (recommended) — the dev-only `/dev/*` routes are never mounted on a Vercel deployment anyway, so this is belt-and-braces rather than the primary gate |
@@ -117,6 +118,20 @@ dist/                the one build output; Docker, local server and the copy ste
    safe to paste. The boot-failure JSON carries the same data under `database`,
    which distinguishes "the variable never reached this deployment" (empty
    list) from "the variable exists but is blank" (`state: "empty"`).
+
+   Read the audit before touching the code — it is the answer, not a symptom:
+
+   | Audit says | Meaning | Fix |
+   | --- | --- | --- |
+   | `none found` | This deployment's runtime env has **no** recognized name. The code never ran, so nothing in `server/config.ts` can be at fault. | The value is in another project, another environment (Development only), the name has a typo/trailing space, or it was added **after** this deployment was built. |
+   | `DATABASE_URL=empty` | The name exists with a zero-length value (dashboard row created but left blank, or a CI `--env` with no value). | Set the value, redeploy. |
+   | `POSTGRES_URL=set` | A platform integration injected its own name. | Works with a warning; add `DATABASE_URL` explicitly to make the config portable. |
+   | `PGPASSWORD=set` | Discrete variables only. | Fine, but `DATABASE_URL` (or `PGSSLMODE=require`) is preferred for a TLS-terminating host. |
+
+   `AUTH_JWT_SECRET` missing is **not** part of this audit: auth is validated
+   lazily, so the DB error masks it. After the database starts working the next
+   failure is `[auth] AUTH_JWT_SECRET is missing or shorter than 32 characters`.
+   Set both variables in the same visit.
 
    The dev seed feature is not available here by design: `isDevEnvironment()`
    rejects every deployed Vercel context, so `/dev/seed-users` is a 404 and the
