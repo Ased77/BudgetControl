@@ -10,7 +10,7 @@ import {
   Lock,
   Eye,
   EyeOff,
-  ArrowUpLeft,
+  ArrowLeft,
   ChartNoAxesCombined,
   CircleDollarSign,
   Landmark,
@@ -247,10 +247,21 @@ export const LoginView: React.FC = () => {
                 </div>
               )}
 
-              <button type="submit" disabled={busy} className="login-submit">
-                {busy ? <Loader2 className="login-spinner" aria-hidden="true" /> : <LogIn aria-hidden="true" />}
-                {busy ? 'در حال ورود...' : 'ورود به سامانه'}
-                {!busy && <ArrowUpLeft className="login-submit-arrow" aria-hidden="true" />}
+              <button
+                type="submit"
+                disabled={busy}
+                className={`login-submit${busy ? ' is-busy' : ''}`}
+                aria-busy={busy}
+              >
+                <span className="login-submit-icon" aria-hidden="true">
+                  {busy ? <Loader2 className="login-spinner" /> : <LogIn />}
+                </span>
+                <span className="login-submit-label">
+                  {busy ? 'در حال ورود...' : 'ورود به سامانه'}
+                </span>
+                <span className="login-submit-hint" aria-hidden="true">
+                  <ArrowLeft />
+                </span>
               </button>
 
               <p className="login-security-note">
@@ -313,13 +324,13 @@ export const LoginView: React.FC = () => {
                       <svg viewBox="0 0 300 98" role="presentation" aria-hidden="true">
                         <defs>
                           <linearGradient id="budget-chart-fill" x1="0" x2="0" y1="0" y2="1">
-                            <stop offset="0%" stopColor="#40d5c5" stopOpacity=".34" />
-                            <stop offset="100%" stopColor="#40d5c5" stopOpacity="0" />
+                            <stop offset="0%" stopColor="#60a5fa" stopOpacity=".34" />
+                            <stop offset="100%" stopColor="#60a5fa" stopOpacity="0" />
                           </linearGradient>
                         </defs>
                         <path d="M0 78 C32 74 39 52 72 60 S112 52 142 43 S176 50 205 31 S251 36 300 8 V98 H0Z" fill="url(#budget-chart-fill)" />
-                        <path d="M0 78 C32 74 39 52 72 60 S112 52 142 43 S176 50 205 31 S251 36 300 8" fill="none" stroke="#58ded0" strokeWidth="3" />
-                        <circle cx="205" cy="31" r="4" fill="#fff" stroke="#58ded0" strokeWidth="3" />
+                        <path d="M0 78 C32 74 39 52 72 60 S112 52 142 43 S176 50 205 31 S251 36 300 8" fill="none" stroke="#4f8ef7" strokeWidth="3" />
+                        <circle cx="205" cy="31" r="4" fill="#fff" stroke="#4f8ef7" strokeWidth="3" />
                       </svg>
                     </div>
                     <div className="showcase-months"><span>فروردین</span><span>خرداد</span><span>شهریور</span><span>آذر</span></div>

@@ -4,8 +4,8 @@
   place-items: center;
   padding: clamp(14px, 3.5vw, 42px);
   background:
-    radial-gradient(ellipse at 6% 8%, rgba(35, 133, 145, 0.09), transparent 34%),
-    #e9eff1;
+    radial-gradient(ellipse at 6% 8%, rgba(37, 99, 235, 0.10), transparent 34%),
+    #e8eefb;
 }
 
 .login-card {
@@ -19,7 +19,7 @@
   border: 1px solid rgba(255, 255, 255, 0.9);
   border-radius: 28px;
   background: #fff;
-  box-shadow: 0 28px 80px rgba(28, 56, 66, 0.13);
+  box-shadow: 0 28px 80px rgba(15, 34, 74, 0.14);
 }
 
 .login-form-panel {
@@ -27,7 +27,7 @@
   display: flex;
   flex-direction: column;
   padding: clamp(24px, 3.5vw, 46px);
-  border: 1px solid #edf1f2;
+  border: 1px solid #e7edf8;
   border-radius: 20px;
   background: #fff;
 }
@@ -46,8 +46,8 @@
   place-items: center;
   color: #fff;
   border-radius: 13px;
-  background: linear-gradient(145deg, #20979a, #08737d);
-  box-shadow: 0 7px 16px rgba(13, 128, 134, 0.2);
+  background: linear-gradient(145deg, #3b82f6, #1d4ed8);
+  box-shadow: 0 7px 16px rgba(37, 99, 235, 0.26);
 }
 
 .login-brand-mark svg {
@@ -62,7 +62,7 @@
 }
 
 .login-brand strong {
-  color: #153e42;
+  color: #122f5c;
   font-size: 14px;
   font-weight: 800;
   letter-spacing: -0.02em;
@@ -70,7 +70,7 @@
 
 .login-brand small {
   margin-top: 2px;
-  color: #859295;
+  color: #7d8aa3;
   font-size: 10px;
 }
 
@@ -89,7 +89,7 @@
   align-items: center;
   gap: 7px;
   margin-bottom: 10px;
-  color: #168487;
+  color: #2563eb;
   font-size: 10px;
   font-weight: 700;
 }
@@ -98,12 +98,12 @@
   width: 17px;
   height: 1px;
   content: '';
-  background: #45b9b5;
+  background: #93b4f7;
 }
 
 .login-heading h1 {
   margin: 0;
-  color: #143d40;
+  color: #102a56;
   font-size: clamp(22px, 2.3vw, 27px);
   font-weight: 800;
   letter-spacing: -0.045em;
@@ -112,7 +112,7 @@
 
 .login-heading p {
   margin: 7px 0 0;
-  color: #879294;
+  color: #7f8ca0;
   font-size: 12px;
   line-height: 1.9;
 }
@@ -127,7 +127,7 @@
   display: flex;
   flex-direction: column;
   gap: 7px;
-  color: #385457;
+  color: #33456b;
   font-size: 11px;
   font-weight: 700;
 }
@@ -138,22 +138,22 @@
   align-items: center;
   gap: 10px;
   padding: 0 13px;
-  border: 1px solid #e3e9e9;
+  border: 1px solid #dbe3f2;
   border-radius: 10px;
   background: #fff;
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .login-input-wrap:focus-within {
-  border-color: #36a6a5;
-  box-shadow: 0 0 0 3px rgba(43, 165, 163, 0.12);
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
 }
 
 .login-input-wrap > svg {
   width: 16px;
   height: 16px;
   flex: 0 0 auto;
-  color: #99a7a8;
+  color: #93a3bd;
   stroke-width: 1.7;
 }
 
@@ -165,7 +165,7 @@
   border: 0;
   outline: 0;
   background: transparent;
-  color: #25494b;
+  color: #17335f;
   font: inherit;
   font-size: 12px;
   font-weight: 400;
@@ -173,7 +173,7 @@
 }
 
 .login-input-wrap input::placeholder {
-  color: #a4adae;
+  color: #a3afc4;
   opacity: 1;
 }
 
@@ -192,12 +192,12 @@
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: #879596;
+  color: #8794ad;
   cursor: pointer;
 }
 
 .login-password-toggle:hover {
-  color: #168487;
+  color: #2563eb;
 }
 
 .login-password-toggle svg {
@@ -205,55 +205,204 @@
   height: 16px;
 }
 
+/* ---------------------------------------------------------------------------
+   Primary action — the one control that advances the whole gate.
+
+   Structure (see LoginView.tsx): a translucent icon chip on the reading-start
+   edge, the label centred on the remaining track, and a directional arrow hint
+   on the reading-end edge. Three paint layers make it read as a solid object
+   instead of a recoloured rectangle: a crisp top inner highlight, a deep shade
+   along the bottom edge, and a soft blue glow that swells on hover. The
+   gradient itself is oversized (190%) and pans on hover, so the surface feels
+   lit rather than flat.
+
+   While the request is in flight the same sheen sweeps the button continuously:
+   motion reports activity for sighted users, while the spinner + label swap
+   carry it for anyone who cannot perceive the sweep. Both stop under
+   `prefers-reduced-motion`.
+   --------------------------------------------------------------------------- */
 .login-submit {
-  min-height: 47px;
+  position: relative;
+  isolation: isolate;
+  min-height: 54px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 9px;
-  margin-top: 2px;
-  padding: 0 16px;
+  gap: 11px;
+  margin-top: 4px;
+  padding: 0 12px;
+  overflow: hidden;
   border: 0;
-  border-radius: 10px;
-  background: linear-gradient(105deg, #14848b, #1b9c98);
-  box-shadow: 0 8px 18px rgba(18, 140, 143, 0.2);
+  border-radius: 14px;
+  background-image: linear-gradient(112deg, #1e40af 0%, #2563eb 38%, #3b82f6 74%, #1e40af 100%);
+  background-size: 190% 100%;
+  background-position: 0% 50%;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    inset 0 -10px 20px -12px rgba(8, 25, 68, 0.9),
+    0 12px 26px -10px rgba(37, 99, 235, 0.62),
+    0 2px 5px rgba(15, 34, 74, 0.16);
   color: #fff;
   cursor: pointer;
   font: inherit;
-  font-size: 12px;
-  font-weight: 700;
-  transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  transition:
+    background-position 420ms ease,
+    transform 180ms cubic-bezier(0.22, 0.7, 0.2, 1),
+    box-shadow 200ms ease;
+}
+
+/* The travelling highlight. Painted between the gradient and the content, so
+   the icon, label and arrow stay crisp while the light passes underneath. */
+.login-submit::before {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  content: '';
+  background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.26) 48%, transparent 66%);
+  transform: translateX(-130%);
+  transition: transform 620ms cubic-bezier(0.22, 0.7, 0.2, 1);
+  pointer-events: none;
+}
+
+/* Top-edge gloss, capped at half height so the lower half keeps its weight. */
+.login-submit::after {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 0;
+  height: 52%;
+  border-radius: inherit;
+  content: '';
+  background: linear-gradient(rgba(255, 255, 255, 0.16), transparent);
+  pointer-events: none;
+}
+
+.login-submit > span {
+  position: relative;
+  z-index: 1;
 }
 
 .login-submit:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 11px 22px rgba(18, 140, 143, 0.27);
+  background-position: 100% 50%;
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -10px 20px -12px rgba(8, 25, 68, 0.9),
+    0 18px 32px -12px rgba(37, 99, 235, 0.7),
+    0 3px 8px rgba(15, 34, 74, 0.18);
 }
 
+.login-submit:hover:not(:disabled)::before {
+  transform: translateX(130%);
+}
+
+.login-submit:active:not(:disabled) {
+  transform: translateY(0);
+  transition-duration: 90ms;
+  box-shadow:
+    inset 0 2px 7px rgba(8, 25, 68, 0.38),
+    0 6px 14px -8px rgba(37, 99, 235, 0.55);
+}
+
+.login-submit:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 3px;
+}
+
+/* Busy: the box stays fully opaque (a ghosted button reads as "disabled for
+   another reason"), the sheen loops and the cursor reports the wait. */
 .login-submit:disabled {
-  cursor: wait;
-  opacity: 0.72;
+  cursor: progress;
 }
 
-.login-submit > svg {
-  width: 16px;
-  height: 16px;
+.login-submit.is-busy::before {
+  animation: login-sheen 1.5s cubic-bezier(0.65, 0, 0.35, 1) infinite;
 }
 
-.login-submit .login-submit-arrow {
+.login-submit-icon {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.34);
+  transition: background 200ms ease;
+}
+
+.login-submit-icon svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 2;
+}
+
+.login-submit:hover:not(:disabled) .login-submit-icon {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.login-submit-label {
+  flex: 1;
+  text-align: center;
+  text-shadow: 0 1px 1px rgba(9, 25, 64, 0.28);
+}
+
+.login-submit-hint {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  transition:
+    transform 240ms cubic-bezier(0.22, 0.7, 0.2, 1),
+    background 200ms ease,
+    opacity 180ms ease;
+}
+
+/* Busy keeps the hint's footprint but empties the slot, so the label does not
+   jump sideways the moment the arrow is pulled. */
+.login-submit.is-busy .login-submit-hint {
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+.login-submit-hint svg {
   width: 15px;
   height: 15px;
-  margin-right: auto;
-  opacity: 0.75;
+  stroke-width: 2.2;
 }
 
-.login-spinner {
-  animation: login-spin 1s linear infinite;
+/* The hint points along the RTL reading direction (left = forward); the hover
+   motion follows it, which reads as the button handing the flow over rather
+   than merely growing. */
+.login-submit:hover:not(:disabled) .login-submit-hint {
+  background: rgba(255, 255, 255, 0.26);
+  transform: translateX(-3px);
+}
+
+.login-submit .login-spinner {
+  animation: login-spin 0.9s linear infinite;
 }
 
 @keyframes login-spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes login-sheen {
+  from {
+    transform: translateX(-130%);
+  }
+
+  to {
+    transform: translateX(130%);
   }
 }
 
@@ -282,7 +431,7 @@
   align-items: center;
   gap: 7px;
   margin: 0;
-  color: #899596;
+  color: #8b98b0;
   font-size: 10px;
   line-height: 1.8;
 }
@@ -291,7 +440,7 @@
   width: 15px;
   height: 15px;
   flex: 0 0 auto;
-  color: #319895;
+  color: #3b82f6;
 }
 
 .login-content #dev-seed-login-panel {
@@ -304,12 +453,12 @@
   align-items: center;
   justify-content: space-between;
   gap: 5px 12px;
-  color: #9aa4a4;
+  color: #94a1b6;
   font-size: 9px;
 }
 
 .login-footer-version {
-  color: #768788;
+  color: #6f7f99;
 }
 
 .login-showcase {
@@ -322,8 +471,8 @@
   padding: clamp(24px, 4vw, 48px);
   border-radius: 19px;
   background:
-    radial-gradient(ellipse at 52% 35%, rgba(29, 133, 134, 0.39), transparent 44%),
-    linear-gradient(145deg, #176a74 0%, #064b51 45%, #073b3d 100%);
+    radial-gradient(ellipse at 52% 35%, rgba(37, 99, 235, 0.42), transparent 44%),
+    linear-gradient(145deg, #1e3a8a 0%, #152e63 45%, #0a1c3e 100%);
   color: #fff;
 }
 
@@ -332,8 +481,8 @@
   inset: 0;
   opacity: 0.14;
   background-image:
-    linear-gradient(rgba(211, 250, 245, 0.22) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(211, 250, 245, 0.22) 1px, transparent 1px);
+    linear-gradient(rgba(191, 219, 254, 0.24) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(191, 219, 254, 0.24) 1px, transparent 1px);
   background-size: 56px 56px;
   mask-image: linear-gradient(to bottom, #000, transparent 78%);
   pointer-events: none;
@@ -344,7 +493,7 @@
   width: 240px;
   height: 240px;
   border-radius: 50%;
-  background: rgba(32, 198, 180, 0.17);
+  background: rgba(59, 130, 246, 0.22);
   filter: blur(80px);
   pointer-events: none;
 }
@@ -357,7 +506,7 @@
 .showcase-glow-two {
   bottom: 1%;
   left: -9%;
-  background: rgba(52, 132, 176, 0.2);
+  background: rgba(56, 189, 248, 0.22);
 }
 
 .showcase-topline,
@@ -370,7 +519,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: rgba(232, 255, 252, 0.73);
+  color: rgba(219, 234, 254, 0.78);
   font-size: 10px;
 }
 
@@ -384,13 +533,13 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #6be1be;
-  box-shadow: 0 0 12px rgba(107, 225, 190, 0.7);
+  background: #7dd3fc;
+  box-shadow: 0 0 12px rgba(125, 211, 252, 0.75);
 }
 
 .showcase-period {
   padding: 5px 10px;
-  border: 1px solid rgba(220, 255, 250, 0.17);
+  border: 1px solid rgba(219, 234, 254, 0.2);
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.07);
 }
@@ -418,11 +567,11 @@
 .showcase-chart-card,
 .showcase-mini-card {
   position: absolute;
-  border: 1px solid rgba(234, 249, 247, 0.78);
+  border: 1px solid rgba(226, 236, 255, 0.85);
   border-radius: 15px;
   background: rgba(255, 255, 255, 0.97);
-  box-shadow: 0 18px 40px rgba(0, 25, 27, 0.2);
-  color: #204447;
+  box-shadow: 0 18px 40px rgba(10, 28, 62, 0.22);
+  color: #17335f;
 }
 
 .showcase-summary-card {
@@ -451,8 +600,8 @@
   flex: 0 0 auto;
   place-items: center;
   border-radius: 10px;
-  background: #e9f6f3;
-  color: #168b84;
+  background: #eaf1ff;
+  color: #2563eb;
 }
 
 .showcase-card-icon svg,
@@ -473,14 +622,14 @@
 .showcase-card-heading small,
 .showcase-chart-title small,
 .showcase-mini-card small {
-  color: #849495;
+  color: #8494ad;
   font-size: 9px;
 }
 
 .showcase-card-heading strong,
 .showcase-chart-title strong {
   margin-top: 2px;
-  color: #214346;
+  color: #1b3b6b;
   font-size: 11px;
   font-weight: 700;
 }
@@ -503,13 +652,13 @@
 }
 
 .showcase-budget strong {
-  color: #1c5557;
+  color: #17335f;
   font-size: 23px;
   font-weight: 800;
 }
 
 .showcase-budget span {
-  color: #8b999a;
+  color: #8b98b0;
   font-size: 9px;
 }
 
@@ -518,7 +667,7 @@
   overflow: hidden;
   margin-top: 7px;
   border-radius: 8px;
-  background: #eaf0ef;
+  background: #e8edf8;
 }
 
 .showcase-progress span {
@@ -526,19 +675,19 @@
   height: 100%;
   display: block;
   border-radius: inherit;
-  background: linear-gradient(90deg, #35b7a9, #75d8b4);
+  background: linear-gradient(90deg, #2563eb, #60a5fa);
 }
 
 .showcase-card-foot {
   display: flex;
   justify-content: space-between;
   margin-top: 9px;
-  color: #95a1a1;
+  color: #97a3b9;
   font-size: 8px;
 }
 
 .showcase-card-foot b {
-  color: #238f83;
+  color: #2563eb;
   font-weight: 600;
 }
 
@@ -557,7 +706,7 @@
 .showcase-chart-title > svg {
   width: 17px;
   height: 17px;
-  color: #28a49b;
+  color: #2f6fed;
 }
 
 .showcase-chart {
@@ -569,7 +718,7 @@
 .showcase-chart-lines {
   position: absolute;
   inset: 0;
-  background: repeating-linear-gradient(to bottom, #eaf0ef 0, #eaf0ef 1px, transparent 1px, transparent 24px);
+  background: repeating-linear-gradient(to bottom, #e8edf8 0, #e8edf8 1px, transparent 1px, transparent 24px);
 }
 
 .showcase-chart svg {
@@ -583,7 +732,7 @@
   display: flex;
   justify-content: space-between;
   margin-top: 4px;
-  color: #9ba7a7;
+  color: #9aa6bc;
   font-size: 8px;
 }
 
@@ -605,13 +754,13 @@
 
 .showcase-mini-card strong {
   margin-top: 2px;
-  color: #244a4b;
+  color: #1b3b6b;
   font-size: 14px;
   font-weight: 800;
 }
 
 .showcase-mini-card strong em {
-  color: #899797;
+  color: #8b98b0;
   font-size: 9px;
   font-style: normal;
   font-weight: 500;
@@ -631,11 +780,11 @@
   z-index: 2;
   width: 86%;
   padding: 17px;
-  border: 1px solid rgba(234, 249, 247, 0.78);
+  border: 1px solid rgba(226, 236, 255, 0.85);
   border-radius: 15px;
   background: rgba(255, 255, 255, 0.97);
-  box-shadow: 0 18px 40px rgba(0, 25, 27, 0.2);
-  color: #204447;
+  box-shadow: 0 18px 40px rgba(10, 28, 62, 0.22);
+  color: #17335f;
 }
 
 .showcase-detail-heading {
@@ -654,13 +803,13 @@
 }
 
 .showcase-detail-heading small {
-  color: #849495;
+  color: #8494ad;
   font-size: 9px;
 }
 
 .showcase-detail-heading strong {
   margin-top: 3px;
-  color: #214346;
+  color: #1b3b6b;
   font-size: 11px;
 }
 
@@ -682,9 +831,9 @@
   gap: 6px;
   margin: 19px 0 14px;
   padding: 14px;
-  border: 1px solid #e0f1ec;
+  border: 1px solid #e0e9f9;
   border-radius: 12px;
-  background: linear-gradient(145deg, #f4fbf8, #edf8f7);
+  background: linear-gradient(145deg, #f5f8ff, #eef3ff);
 }
 
 .showcase-security-seal > span {
@@ -693,8 +842,8 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: #dff5ed;
-  color: #168b74;
+  background: #e3ecff;
+  color: #2563eb;
 }
 
 .showcase-security-seal svg,
@@ -704,12 +853,12 @@
 }
 
 .showcase-security-seal strong {
-  color: #205d52;
+  color: #1d4a8f;
   font-size: 11px;
 }
 
 .showcase-security-seal small {
-  color: #849495;
+  color: #8494ad;
   font-size: 9px;
 }
 
@@ -723,16 +872,16 @@
   justify-content: space-between;
   gap: 10px;
   padding-top: 8px;
-  border-top: 1px solid #edf1f0;
+  border-top: 1px solid #edf1f9;
   font-size: 9px;
 }
 
 .showcase-detail-rows span {
-  color: #849495;
+  color: #8494ad;
 }
 
 .showcase-detail-rows b {
-  color: #446061;
+  color: #4a5f80;
   font-weight: 600;
 }
 
@@ -741,7 +890,7 @@
   gap: 0;
   margin-top: 18px;
   overflow: hidden;
-  border: 1px solid #e8efee;
+  border: 1px solid #e8edf8;
   border-radius: 10px;
 }
 
@@ -751,8 +900,8 @@
   align-items: center;
   gap: 8px;
   padding: 10px 9px;
-  border-top: 1px solid #edf1f0;
-  color: #718182;
+  border-top: 1px solid #edf1f9;
+  color: #76859e;
   font-size: 8px;
 }
 
@@ -761,8 +910,8 @@
 }
 
 .showcase-role-row.is-header {
-  background: #f4f8f7;
-  color: #708181;
+  background: #f4f7fd;
+  color: #76859e;
   font-weight: 700;
 }
 
@@ -770,7 +919,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #456061;
+  color: #45607f;
 }
 
 .showcase-role-row > span:not(:first-child),
@@ -779,7 +928,7 @@
 }
 
 .showcase-role-row > b {
-  color: #168b74;
+  color: #2563eb;
   font-size: 8px;
   font-weight: 600;
 }
@@ -789,7 +938,7 @@
   height: 6px;
   flex: 0 0 auto;
   border-radius: 50%;
-  background: #47b7a2;
+  background: #4f86f7;
 }
 
 .showcase-role-foot,
@@ -798,7 +947,7 @@
   align-items: center;
   gap: 7px;
   margin-top: 13px;
-  color: #63817d;
+  color: #5c7392;
   font-size: 8px;
 }
 
@@ -821,7 +970,7 @@
   right: 4px;
   bottom: 0;
   width: 1px;
-  background: #dcece8;
+  background: #dce6f6;
   content: '';
 }
 
@@ -831,7 +980,7 @@
   height: 9px;
   flex: 0 0 auto;
   margin-top: 2px;
-  border: 2px solid #44b59f;
+  border: 2px solid #3b82f6;
   border-radius: 50%;
   background: #fff;
 }
@@ -842,20 +991,20 @@
 }
 
 .showcase-audit-list b {
-  color: #456061;
+  color: #45607f;
   font-size: 9px;
   font-weight: 700;
 }
 
 .showcase-audit-list small {
   margin-top: 3px;
-  color: #9aa7a7;
+  color: #9aa7bd;
   font-size: 8px;
 }
 
 .showcase-audit-foot {
   padding-top: 10px;
-  border-top: 1px solid #edf1f0;
+  border-top: 1px solid #edf1f9;
 }
 
 .showcase-audit-foot > span {
@@ -863,7 +1012,7 @@
   height: 7px;
   margin: 0;
   border: 0;
-  background: #43b491;
+  background: #3b82f6;
 }
 
 .showcase-slider {
@@ -874,7 +1023,7 @@
 }
 
 .showcase-slider:focus-visible {
-  outline: 2px solid rgba(151, 240, 224, 0.72);
+  outline: 2px solid rgba(147, 197, 253, 0.8);
   outline-offset: 6px;
 }
 
@@ -902,11 +1051,11 @@
   display: grid;
   flex: 0 0 auto;
   place-items: center;
-  border: 1px solid rgba(180, 246, 232, 0.27);
+  border: 1px solid rgba(191, 219, 254, 0.3);
   border-radius: 13px;
-  background: rgba(126, 232, 213, 0.12);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 12px 26px rgba(0, 34, 32, 0.22);
-  color: #a9f0e2;
+  background: rgba(147, 197, 253, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 12px 26px rgba(6, 22, 55, 0.28);
+  color: #c7dcff;
 }
 
 .showcase-slide-icon svg {
@@ -916,21 +1065,21 @@
 }
 
 .showcase-slide-count {
-  color: rgba(214, 246, 240, 0.55);
+  color: rgba(199, 219, 250, 0.6);
   font-size: 11px;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
 }
 
 .showcase-slide-count b {
-  color: #eafffb;
+  color: #eef5ff;
   font-size: 13px;
   font-weight: 700;
 }
 
 .showcase-slide-text {
   margin: 14px 0 0;
-  color: rgba(240, 253, 250, 0.94);
+  color: rgba(240, 246, 255, 0.95);
   font-size: clamp(14.5px, 1.25vw, 17px);
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -964,7 +1113,7 @@
 }
 
 .showcase-dot:focus-visible {
-  outline: 2px solid rgba(151, 240, 224, 0.75);
+  outline: 2px solid rgba(147, 197, 253, 0.8);
   outline-offset: 2px;
 }
 
@@ -973,17 +1122,17 @@
   display: block;
   overflow: hidden;
   border-radius: 4px;
-  background: rgba(224, 250, 246, 0.24);
+  background: rgba(199, 220, 252, 0.26);
   transition: background 160ms ease;
 }
 
 .showcase-dot:hover .showcase-dot-track,
 .showcase-dot:focus-visible .showcase-dot-track {
-  background: rgba(224, 250, 246, 0.4);
+  background: rgba(199, 220, 252, 0.42);
 }
 
 .showcase-dot.is-active .showcase-dot-track {
-  background: rgba(224, 250, 246, 0.3);
+  background: rgba(199, 220, 252, 0.32);
 }
 
 .showcase-dot-fill {
@@ -991,7 +1140,7 @@
   height: 100%;
   display: block;
   border-radius: inherit;
-  background: linear-gradient(90deg, #7de9d2, #e4fcf6);
+  background: linear-gradient(90deg, #7cb2ff, #e8f2ff);
 }
 
 .showcase-dot.is-active .showcase-dot-fill {
@@ -1012,23 +1161,23 @@
   flex: 0 0 auto;
   place-items: center;
   padding: 0;
-  border: 1px solid rgba(220, 255, 250, 0.18);
+  border: 1px solid rgba(219, 234, 254, 0.2);
   border-radius: 50%;
   appearance: none;
   background: rgba(255, 255, 255, 0.06);
-  color: rgba(232, 255, 252, 0.78);
+  color: rgba(219, 234, 254, 0.8);
   cursor: pointer;
   transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
 }
 
 .showcase-playback:hover {
-  border-color: rgba(220, 255, 250, 0.34);
+  border-color: rgba(219, 234, 254, 0.36);
   background: rgba(255, 255, 255, 0.13);
   color: #fff;
 }
 
 .showcase-playback:focus-visible {
-  outline: 2px solid rgba(151, 240, 224, 0.75);
+  outline: 2px solid rgba(147, 197, 253, 0.8);
   outline-offset: 2px;
 }
 
@@ -1047,34 +1196,37 @@
   }
 }
 
+/* Keyframes are top-level at-rules; nesting them inside another @keyframes
+   (as an earlier revision did) makes the browser drop the inner ones, leaving
+   the showcase swaps to snap instead of slide. Kept as siblings on purpose. */
+@keyframes showcase-dashboard-next {
+  from {
+    opacity: 0;
+    transform: translateX(-32px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes showcase-dashboard-previous {
+  from {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 @keyframes showcase-slide-in {
   from {
     opacity: 0;
     transform: translateY(10px);
-  }
-
-  @keyframes showcase-dashboard-next {
-    from {
-      opacity: 0;
-      transform: translateX(-32px);
-    }
-
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  @keyframes showcase-dashboard-previous {
-    from {
-      opacity: 0;
-      transform: translateX(32px);
-    }
-
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
   }
 
   to {
@@ -1169,6 +1321,16 @@
   .login-submit,
   .login-input-wrap {
     transition: none;
+  }
+
+  /* The sweep is pure decoration; without it the spinner and label swap still
+     say "working". */
+  .login-submit::before {
+    display: none;
+  }
+
+  .login-submit.is-busy::before {
+    animation: none;
   }
 
   .login-spinner {
