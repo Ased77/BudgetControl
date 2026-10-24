@@ -37,34 +37,58 @@ export const authApi = {
   me: () => get<{ user: SessionProfile }>(`/api/auth/me`),
 };
 
+/**
+ * A hung function must not leave the login button spinning forever: every
+ * auth call is bounded. 60s is deliberately generous — the first request after
+ * a deploy may be running migrations and the one-time seed — but it is still
+ * finite, so the UI can show "no response" instead of loading indefinitely.
+ */
+const AUTH_REQUEST_TIMEOUT_MS = 60_000;
+
 /** A GET against the auth router (uses request() without the 401-refresh path). */
-function get<T>(path: string): Promise<T> {
-  return fetch(path, { credentials: 'include', headers: { 'Content-Type': 'application/json' } }).then((res) => {
-    if (!res.ok) return Promise.reject(new Error(`Auth probe failed: ${res.status}`));
-    return res.json() as Promise<T>;
+async function get<T>(path: string): Promise<T> {
+  const res = await fetchWithTimeout(path, {
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
   });
+  if (!res.ok) throw new Error(`Auth probe failed: ${res.status}`);
+  return res.json() as Promise<T>;
 }
 
 /** POST with a JSON body and a friendly error message. */
-function post<T>(path: string, body: unknown): Promise<T> {
-  return fetch(path, {
+async function post<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetchWithTimeout(path, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
-  }).then(async (res) => {
-    if (!res.ok) {
-      let message = `Login failed: ${res.status}`;
-      try {
-        const data = await res.json();
-        if (data?.error) message = data.error;
-      } catch {
-        /* non-JSON error body */
-      }
-      throw new Error(message);
-    }
-    return res.json() as Promise<T>;
   });
+  if (!res.ok) {
+    let message = `Login failed: ${res.status}`;
+    try {
+      const data = await res.json();
+      if (data?.error) message = data.error;
+    } catch {
+      /* non-JSON error body */
+    }
+    throw new Error(message);
+  }
+  return res.json() as Promise<T>;
+}
+
+async function fetchWithTimeout(path: string, init: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), AUTH_REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(path, { ...init, signal: controller.signal });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error('پاسخی از سرور دریافت نشد — اتصال را بررسی کنید و دوباره تلاش کنید');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /** The verified identity payload (/api/auth/me returns it). */

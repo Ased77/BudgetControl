@@ -24,9 +24,12 @@
 
 import fs from 'fs';
 import path from 'path';
+import { Client } from 'pg';
 import { sql } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
-import { db, closePool, pool } from './client.js';
+import { db, closePool, pool, type Tx } from './client.js';
+import * as schema from './schema.js';
 import { seedDatabase } from './seed.js';
 import { refreshPriorityTitlesIfNeeded } from './repairs.js';
 import { ensureBootstrapAdminIfNeeded } from '../auth/bootstrap.js';
@@ -34,6 +37,19 @@ import { seedAuthAccounts } from '../seed/auth-accounts.js';
 
 /** Arbitrary but stable key so concurrent replicas cannot race the DDL. */
 const MIGRATION_LOCK_KEY = 4242001002;
+
+/**
+ * How long a boot waits for another instance's migration before deciding the
+ * lock is stale. A lock held by a *live* migration is released in seconds; a
+ * lock held by a suspended serverless instance is held forever, so waiting
+ * without a bound is not an option (it hangs every request).
+ */
+const MIGRATION_LOCK_WAIT_MS = 20_000;
+const MIGRATION_LOCK_POLL_MS = 250;
+
+/** pg_advisory_lock(bigint) splits the key into classid/objid (objsubid = 1). */
+const MIGRATION_LOCK_CLASS_ID = Number(BigInt(MIGRATION_LOCK_KEY) >> 32n);
+const MIGRATION_LOCK_OBJ_ID = Number(BigInt(MIGRATION_LOCK_KEY) & 0xffffffffn);
 
 /** The seed gate, versioned like the legacy `schema_version` marker. */
 const SEED_KEY = 'seeded';
@@ -69,29 +85,168 @@ export function resolveMigrationsFolder(): string {
   return found;
 }
 
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+
+type MigrationLockTimeoutError = Error & { code: 'MIGRATION_LOCK_TIMEOUT' };
+
+function migrationLockTimeout(): MigrationLockTimeoutError {
+  const seconds = MIGRATION_LOCK_WAIT_MS / 1000;
+  const error = new Error(
+    `[migrate] the migration advisory lock is still held after ${seconds}s. ` +
+      'Another instance is migrating, or a suspended instance left a stale lock behind. ' +
+      `If this persists, release it from a SQL console with: ` +
+      `SELECT pg_terminate_backend(pid) FROM pg_locks ` +
+      `WHERE locktype = 'advisory' AND granted AND classid = ${MIGRATION_LOCK_CLASS_ID} AND objid = ${MIGRATION_LOCK_OBJ_ID};`,
+  ) as MigrationLockTimeoutError;
+  error.code = 'MIGRATION_LOCK_TIMEOUT';
+  return error;
+}
+
+const isMigrationLockTimeout = (error: unknown): boolean =>
+  (error as { code?: string } | null)?.code === 'MIGRATION_LOCK_TIMEOUT';
+
+async function tryMigrationLock(tx: Tx): Promise<boolean> {
+  const result = (await tx.execute(
+    sql`SELECT pg_try_advisory_xact_lock(${MIGRATION_LOCK_KEY}) AS locked`,
+  )) as { rows?: { locked: boolean }[] };
+  return result.rows?.[0]?.locked === true;
+}
+
+/**
+ * Wait for the transaction-scoped advisory lock, but never forever. The lock
+ * is released by PostgreSQL at COMMIT/ROLLBACK — including when the connection
+ * dies — so, unlike the former session-level `pg_advisory_lock`, it cannot be
+ * left behind by a frozen serverless instance or reassigned by a transaction-
+ * pooling endpoint (Neon/PgBouncer).
+ */
+async function acquireMigrationLock(tx: Tx): Promise<void> {
+  const deadline = Date.now() + MIGRATION_LOCK_WAIT_MS;
+  for (;;) {
+    if (await tryMigrationLock(tx)) return;
+    if (Date.now() >= deadline) throw migrationLockTimeout();
+    await sleep(MIGRATION_LOCK_POLL_MS);
+  }
+}
+
+/**
+ * Run the migrator on its OWN connection, not one borrowed from the pool: the
+ * migrator opens a transaction while the runner is doing work, so a pool of
+ * `PG_POOL_MAX=1` would deadlock forever waiting for a second client. A
+ * dedicated client also keeps the lock, the migration and the COMMIT on the
+ * same session.
+ */
+async function runMigrationsOnOwnConnection(folder: string, useLock: boolean): Promise<void> {
+  const client = new Client(pool.options);
+  await client.connect();
+  try {
+    const migrationDb = drizzle(client, { schema });
+    if (!useLock) {
+      await migrate(migrationDb, { migrationsFolder: folder });
+      return;
+    }
+    await migrationDb.transaction(async (tx) => {
+      await acquireMigrationLock(tx);
+      await migrate(tx, { migrationsFolder: folder });
+    });
+  } finally {
+    await client.end().catch(() => undefined);
+  }
+}
+
+interface MigrationLockHolder {
+  pid: number;
+  state: string | null;
+}
+
+/** Every session currently holding OUR migration key (other locks ignored). */
+async function migrationLockHolders(): Promise<MigrationLockHolder[]> {
+  const result = await pool.query<MigrationLockHolder>(
+    `SELECT l.pid, a.state
+       FROM pg_locks l
+       JOIN pg_stat_activity a ON a.pid = l.pid
+      WHERE l.locktype = 'advisory'
+        AND l.granted
+        AND l.classid = $1
+        AND l.objid = $2
+        AND l.objsubid = 1
+        AND a.pid <> pg_backend_pid()`,
+    [MIGRATION_LOCK_CLASS_ID, MIGRATION_LOCK_OBJ_ID],
+  );
+  return result.rows;
+}
+
+/**
+ * Drop idle sessions that hold the migration key. Only `state = 'idle'` is
+ * touched: an `active` (or idle-in-transaction) holder is a real migration in
+ * progress and must never be disturbed. Termination is best-effort — the
+ * provider may not grant `pg_signal_backend`, and the caller has a fallback.
+ */
+async function releaseIdleLockHolders(holders: MigrationLockHolder[]): Promise<number> {
+  const pids = holders.filter((holder) => holder.state === 'idle').map((holder) => holder.pid);
+  if (pids.length === 0) return 0;
+  try {
+    const result = await pool.query('SELECT pg_terminate_backend(pid) FROM unnest($1::int[]) AS pid', [
+      pids,
+    ]);
+    return result.rowCount ?? 0;
+  } catch (error) {
+    console.warn('[db] could not terminate idle migration-lock holder(s):', (error as Error).message);
+    return 0;
+  }
+}
+
 /**
  * Apply every pending migration under a PostgreSQL advisory lock. The
  * drizzle journal records progress transactionally in
  * `drizzle.__drizzle_migrations`, giving the schema a version history the
  * previous idempotent-DDL approach deliberately never had. Repeated boots
  * and concurrent replicas apply exactly the missing delta each.
+ *
+ * Failure modes are bounded on purpose — a boot must never hang:
+ *   1. normal: lock acquired in milliseconds, migrations commit, lock released;
+ *   2. stale lock: after MIGRATION_LOCK_WAIT_MS, idle holders are terminated and
+ *      the run is retried;
+ *   3. unrecoverable lock with no live migrator: migrations run unlocked rather
+ *      than blocking every request on a lock nobody will release (DDL still
+ *      serializes inside PostgreSQL; the lock only avoids duplicate work).
+ * If a *live* migrator holds the lock, the boot fails with an actionable error.
  */
 export async function runMigrations(): Promise<void> {
   if (process.env.DB_SKIP_MIGRATIONS === '1') {
     console.warn('[db] DB_SKIP_MIGRATIONS=1 — assuming a pre-migrated database');
     return;
   }
-  const client = await pool.connect();
+
+  // Resolve BEFORE connecting: a missing folder must fail fast, not hold a lock.
+  const folder = resolveMigrationsFolder();
   try {
-    await client.query('SELECT pg_advisory_lock($1)', [MIGRATION_LOCK_KEY]);
-    try {
-      await migrate(db, { migrationsFolder: resolveMigrationsFolder() });
-    } finally {
-      await client.query('SELECT pg_advisory_unlock($1)', [MIGRATION_LOCK_KEY]);
+    await runMigrationsOnOwnConnection(folder, true);
+  } catch (error) {
+    if (!isMigrationLockTimeout(error)) throw error;
+
+    console.warn('[db] migration lock still held — inspecting the holder(s)');
+    const holders = await migrationLockHolders().catch((inspectError: unknown) => {
+      console.warn('[db] could not inspect the migration lock:', (inspectError as Error).message);
+      return [] as MigrationLockHolder[];
+    });
+
+    const liveMigrator = holders.some((holder) => holder.state !== 'idle');
+    if (liveMigrator) throw error; // a real migration is running — do not interfere
+
+    if (holders.length > 0) {
+      const terminated = await releaseIdleLockHolders(holders);
+      console.warn(`[db] released ${terminated} idle migration-lock holder(s) — retrying`);
     }
-  } finally {
-    client.release();
+
+    try {
+      await runMigrationsOnOwnConnection(folder, true);
+    } catch (retryError) {
+      if (!isMigrationLockTimeout(retryError)) throw retryError;
+      console.warn('[db] migration lock unrecoverable with no live migrator — running migrations unlocked');
+      await runMigrationsOnOwnConnection(folder, false);
+    }
   }
+
   console.log('[db] Migrations applied');
 }
 
@@ -143,6 +298,7 @@ export async function initializeDatabase(): Promise<void> {
   // Last boot step: guarantees ≥ 1 real login exists so the very first
   // session is a verified identity (the SYSTEM actor is never loggable).
   await ensureBootstrapAdminIfNeeded();
+  console.log('[db] Database initialized');
 }
 
 /** Report which legacy document tables are still around (post-migration). */

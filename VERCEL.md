@@ -52,9 +52,13 @@ dist/                the one build output; Docker, local server and the copy ste
 - Any other path is rewritten to `/index.html` so a refresh or a shared link
   still boots the SPA. The SPA pattern must keep excluding `api/` and `dev/`.
 - `initializeDatabase()` runs once per function instance on the first request
-  (schema, seed, version-gated repairs), serialized by a transaction-scoped
-  PostgreSQL advisory lock so two cold starts cannot seed the same rows at the
-  same time.
+  (schema, seed, version-gated repairs). Migrations run on their own connection
+  under a **transaction-scoped** advisory lock (`pg_try_advisory_xact_lock`),
+  released by PostgreSQL at COMMIT/ROLLBACK, so a suspended instance cannot
+  strand it and a pool of `PG_POOL_MAX=1` cannot deadlock it. The wait is
+  bounded (20s): an idle holder left by an older deployment is terminated and
+  the boot retried; a live migrator makes the boot fail with a clear error
+  instead of hanging every request.
 
 ### Two traps that fail a deployment quietly
 
