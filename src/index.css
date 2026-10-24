@@ -144,6 +144,22 @@ body {
 }
 
 /* -------------------------------------------------------------------------
+   The access gate is a full-bleed surface.
+   The canvas cap above centres a 1600px `body` inside a wider window. That is
+   right for every authenticated page, whose app shell owns its own backgrounds,
+   but wrong for the login gate: its gradient lives on `.login-shell`, so the cap
+   left the page colour (`--color-app-page`) showing as a vertical gutter on both
+   sides — a white-looking band framing the card on large monitors.
+   Release the cap (and the auto margins that centre it) only while the gate is
+   mounted, so its background reaches the window edges. `:has()` keeps this
+   scoped to the gate itself; no other route is affected.
+   ------------------------------------------------------------------------- */
+html:has(.login-shell) body {
+  max-width: none;
+  margin-inline: 0;
+}
+
+/* -------------------------------------------------------------------------
    Scrollbar-free scrolling.
    Applied to the page scroll container and the sidebar nav so the workspace
    reads as one clean surface instead of a grey gutter on every page. The
