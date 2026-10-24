@@ -1,18 +1,28 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
   ShieldCheck,
   KeyRound,
   LogIn,
   AlertTriangle,
-  Sparkles,
   Loader2,
   Smartphone,
   Lock,
+  Eye,
+  EyeOff,
+  ArrowUpLeft,
+  ChartNoAxesCombined,
+  CircleDollarSign,
+  Landmark,
+  Network,
+  History,
+  Pause,
+  Play,
 } from 'lucide-react';
 // === Dev Seed Login (disposable dev helper): import + render below live together —
 // delete both halves of this comment block to remove the feature. ===
 import { DevSeedLoginPanel } from './DevSeedLoginPanel';
+import './LoginView.css';
 
 /**
  * Access gate for the national development system.
@@ -29,12 +39,120 @@ import { DevSeedLoginPanel } from './DevSeedLoginPanel';
  * There is NO self-registration: accounts are provisioned exclusively by
  * an admin in the role & permission manager. This gate is login-only.
  */
+
+/** How long each showcase slide stays on screen before the next one. */
+const SHOWCASE_INTERVAL_MS = 8000;
+
+/**
+ * The four statements the login showcase rotates through. The copy is the
+ * system's own promise in four beats: one integrated platform, a sealed
+ * session, role-shaped authority and an auditable trail of every change.
+ */
+const SHOWCASE_SLIDES = [
+  {
+    id: 'integrated-platform',
+    label: 'یکپارچگی ملی',
+    icon: Network,
+    text: 'سامانه یکپارچه اولویت‌سنجی پروژه‌ها، بهینه‌سازی منابع مالی و بودجه‌ای، مدیریت ادارات و پیمانکاران و پیشگیری هوشمند از موازی‌کاری در سطوح ملی، استانی، شهرستانی و روستایی.',
+  },
+  {
+    id: 'session-security',
+    label: 'احراز هویت رمزنامه‌ای',
+    icon: ShieldCheck,
+    text: 'احراز هویت رمزنامه‌ای؛ نشست شما در کوکی‌های امنِ غیرقابل‌خواندن برای اسکریپت‌ها ذخیره می‌شود',
+  },
+  {
+    id: 'role-based-access',
+    label: 'دسترسی مبتنی بر نقش',
+    icon: KeyRound,
+    text: 'دسترسی مبتنی بر نقش (RBAC) با سطوح اختیارات تفکیک‌شده و اعتبارسنجی سمت سرور',
+  },
+  {
+    id: 'audit-trail',
+    label: 'تاریخچه نظارتی',
+    icon: History,
+    text: 'تمام تغییرات با شناسه تأییدشده اپراتور در تاریخچه نظارتی ثبت می‌شود',
+  },
+] as const;
+
+const PERSIAN_DIGITS = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+
+const toPersianDigits = (value: string | number): string =>
+  String(value).replace(/[0-9]/g, (digit) => PERSIAN_DIGITS[Number(digit)]);
+
+const formatSlideNumber = (value: number): string => toPersianDigits(String(value).padStart(2, '0'));
+
 export const LoginView: React.FC = () => {
   const { login } = useAuth();
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [showcasePaused, setShowcasePaused] = useState(false);
+  const [showcaseRun, setShowcaseRun] = useState(0);
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const swipeStartX = useRef<number | null>(null);
+
+  // Autoplay is an enhancement, never a requirement: honouring the OS motion
+  // preference stops the rotation (and the progress animation with it).
+  useEffect(() => {
+    const query = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const syncPreference = () => setReducedMotion(query.matches);
+    syncPreference();
+    query.addEventListener('change', syncPreference);
+    return () => query.removeEventListener('change', syncPreference);
+  }, []);
+
+  // Every restart of playback gets a new run id so the progress bar and the
+  // timeout are re-armed from zero together instead of drifting apart.
+  useEffect(() => {
+    if (!showcasePaused) setShowcaseRun((run) => run + 1);
+  }, [showcasePaused]);
+
+  useEffect(() => {
+    if (showcasePaused || reducedMotion) return;
+    const timer = window.setTimeout(() => {
+      setActiveSlide((current) => (current + 1) % SHOWCASE_SLIDES.length);
+    }, SHOWCASE_INTERVAL_MS);
+    return () => window.clearTimeout(timer);
+  }, [activeSlide, showcasePaused, reducedMotion, showcaseRun]);
+
+  const goToSlide = useCallback((index: number) => {
+    const count = SHOWCASE_SLIDES.length;
+    setActiveSlide(((index % count) + count) % count);
+  }, []);
+
+  const stepSlide = useCallback((direction: number) => {
+    const count = SHOWCASE_SLIDES.length;
+    setActiveSlide((current) => (current + direction + count) % count);
+  }, []);
+
+  // RTL reading order: the left arrow advances, the right one goes back.
+  const handleShowcaseKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      stepSlide(1);
+    } else if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      stepSlide(-1);
+    }
+  };
+
+  const handleShowcaseTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    swipeStartX.current = event.touches[0]?.clientX ?? null;
+  };
+
+  const handleShowcaseTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
+    const startX = swipeStartX.current;
+    swipeStartX.current = null;
+    if (startX === null) return;
+    const delta = (event.changedTouches[0]?.clientX ?? startX) - startX;
+    if (Math.abs(delta) < 40) return;
+    stepSlide(delta < 0 ? 1 : -1);
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -50,156 +168,219 @@ export const LoginView: React.FC = () => {
     }
   };
 
-  return (
-    <div
-      id="login-view-root"
-      dir="rtl"
-      className="min-h-screen w-full bg-gradient-to-br from-slate-100 via-white to-indigo-50 flex items-stretch lg:items-center justify-center lg:p-8"
-    >
-      <div id="login-view-div-2" className="w-full max-w-4xl bg-white lg:rounded-3xl lg:shadow-2xl lg:border lg:border-slate-200 overflow-hidden grid grid-cols-1 lg:grid-cols-[1fr_1.3fr]">
-        {/* ---------------- Brand column ---------------- */}
-        <aside className="relative bg-gradient-to-br from-blue-700 via-indigo-700 to-slate-900 text-white p-8 lg:p-10 flex flex-col justify-between gap-10 overflow-hidden">
-          <div id="login-view-brand-column" className="absolute -top-24 -left-24 w-72 h-72 bg-blue-400/20 rounded-full blur-3xl pointer-events-none" />
-          <div id="login-view-brand-column-2" className="absolute -bottom-28 -right-16 w-80 h-80 bg-indigo-400/20 rounded-full blur-3xl pointer-events-none" />
+  const activeShowcaseSlide = SHOWCASE_SLIDES[activeSlide];
+  const ActiveShowcaseIcon = activeShowcaseSlide.icon;
 
-          <div id="login-view-brand-column-3" className="relative space-y-6">
-            <div id="login-view-brand-column-4" className="flex items-center gap-3">
-              <div id="login-view-brand-column-5" className="w-12 h-12 bg-white/15 border border-white/25 backdrop-blur-sm rounded-2xl text-white font-black text-lg flex items-center justify-center shadow-lg">
-                ملی
-              </div>
-              <div id="login-view-brand-column-6">
-                <h1 className="font-black text-lg tracking-tight">سامانه توسعه ملی</h1>
-                <p className="text-[11px] text-blue-100/80">مدیریت هوشمند توسعه روستایی و شهری</p>
-              </div>
+  return (
+    <main id="login-view-root" className="login-shell" dir="rtl">
+      <div className="login-card" dir="ltr">
+        <section className="login-form-panel" dir="rtl">
+          <header className="login-brand">
+            <span className="login-brand-mark" aria-hidden="true"><Landmark /></span>
+            <span>
+              <strong>سامانه توسعه ملی</strong>
+              <small>مدیریت هوشمند توسعه روستایی و شهری</small>
+            </span>
+          </header>
+
+          <div className="login-content">
+            <div className="login-heading">
+              <span className="login-eyebrow">پنل مدیریت و برنامه‌ریزی</span>
+              <h1>به سامانه خوش آمدید</h1>
+              <p>برای ادامه، با حساب کاربری سازمانی خود وارد شوید.</p>
             </div>
 
-            <p className="text-sm text-blue-50/90 leading-relaxed max-w-sm">
-              سامانه یکپارچه اولویت‌سنجی پروژه‌ها، بهینه‌سازی منابع مالی و بودجه‌ای، مدیریت ادارات و
-              پیمانکاران و پیشگیری هوشمند از موازی‌کاری در سطوح ملی، استانی، شهرستانی و روستایی.
-            </p>
+            <form id="login-view-credentials" onSubmit={handleSubmit} className="login-form">
+              <label className="login-field">
+                <span>شماره موبایل سازمانی</span>
+                <span className="login-input-wrap" dir="ltr">
+                  <Smartphone aria-hidden="true" />
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    value={mobile}
+                    onChange={(e) => setMobile(e.target.value)}
+                    required
+                    autoComplete="username"
+                    placeholder="09xxxxxxxxx"
+                    aria-label="شماره موبایل سازمانی"
+                  />
+                </span>
+              </label>
 
-            <ul className="space-y-3 pt-2">
-              <li className="flex items-start gap-3 text-xs text-blue-50/90">
-                <ShieldCheck className="w-4 h-4 text-emerald-300 shrink-0 mt-0.5" />
-                <span>احراز هویت رمزنامه‌ای؛ نشست شما در کوکی‌های امنِ غیرقابل‌خواندن برای اسکریپت‌ها ذخیره می‌شود</span>
-              </li>
-              <li className="flex items-start gap-3 text-xs text-blue-50/90">
-                <KeyRound className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
-                <span>دسترسی مبتنی بر نقش (RBAC) با سطوح اختیارات تفکیک‌شده و اعتبارسنجی سمت سرور</span>
-              </li>
-              <li className="flex items-start gap-3 text-xs text-blue-50/90">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>تمام تغییرات با شناسه تأییدشده اپراتور در تاریخچه نظارتی ثبت می‌شود</span>
-              </li>
-            </ul>
+              <label className="login-field">
+                <span>رمز عبور</span>
+                <span className="login-input-wrap" dir="ltr">
+                  <Lock aria-hidden="true" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete="current-password"
+                    placeholder="رمز عبور خود را وارد کنید"
+                    aria-label="رمز عبور"
+                  />
+                  <button
+                    className="login-password-toggle"
+                    type="button"
+                    onClick={() => setShowPassword((visible) => !visible)}
+                    aria-label={showPassword ? 'پنهان کردن رمز عبور' : 'نمایش رمز عبور'}
+                    title={showPassword ? 'پنهان کردن رمز عبور' : 'نمایش رمز عبور'}
+                  >
+                    {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+                  </button>
+                </span>
+              </label>
+
+              {error && (
+                <div id="login-view-error" className="login-error" role="alert">
+                  <AlertTriangle aria-hidden="true" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <button type="submit" disabled={busy} className="login-submit">
+                {busy ? <Loader2 className="login-spinner" aria-hidden="true" /> : <LogIn aria-hidden="true" />}
+                {busy ? 'در حال ورود...' : 'ورود به سامانه'}
+                {!busy && <ArrowUpLeft className="login-submit-arrow" aria-hidden="true" />}
+              </button>
+
+              <p className="login-security-note">
+                <ShieldCheck aria-hidden="true" />
+                نشست شما با اتصال امن و کوکی‌های محافظت‌شده نگهداری می‌شود.
+              </p>
+            </form>
+
+            <DevSeedLoginPanel onFill={(username, password) => {
+              setMobile(username);
+              setPassword(password);
+            }} />
           </div>
 
-          <div id="login-view-brand-column-7" className="relative flex items-center gap-2 text-[10px] text-blue-100/70 border-t border-white/15 pt-4">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>نسخه ۲.۰ — دوره مالی ۱۴۰۵ الی ۱۴۰۶</span>
+          <footer className="login-footer">
+            <span>ثبت‌نام فقط از طریق مدیر سامانه انجام می‌شود.</span>
+            <span className="login-footer-version">نسخه ۲.۰ · دوره مالی ۱۴۰۵–۱۴۰۶</span>
+          </footer>
+        </section>
+
+        <aside className="login-showcase" dir="rtl">
+          <div className="showcase-grid" aria-hidden="true" />
+          <div className="showcase-glow showcase-glow-one" aria-hidden="true" />
+          <div className="showcase-glow showcase-glow-two" aria-hidden="true" />
+
+          <div className="showcase-topline">
+            <span className="showcase-status"><i /> داشبورد یکپارچه</span>
+            <span className="showcase-period">۱۴۰۵–۱۴۰۶</span>
+          </div>
+
+          <div className="showcase-dashboard" aria-label="پیش‌نمایش تصویری داشبورد مالی">
+            <div className="showcase-summary-card">
+              <div className="showcase-card-heading">
+                <span className="showcase-card-icon"><CircleDollarSign aria-hidden="true" /></span>
+                <span><small>نمای کلی بودجه</small><strong>تخصیص منابع</strong></span>
+                <span className="showcase-trend">+۱۲٪</span>
+              </div>
+              <div className="showcase-budget">
+                <strong>۷۶٪</strong>
+                <span>از بودجه مصوب</span>
+              </div>
+              <div className="showcase-progress"><span /></div>
+              <div className="showcase-card-foot"><span>مصوب</span><b>در حال اجرا</b><span>باقی‌مانده</span></div>
+            </div>
+
+            <div className="showcase-chart-card">
+              <div className="showcase-chart-title">
+                <span><small>تحلیل عملکرد</small><strong>روند تخصیص بودجه</strong></span>
+                <ChartNoAxesCombined aria-hidden="true" />
+              </div>
+              <div className="showcase-chart">
+                <div className="showcase-chart-lines" aria-hidden="true" />
+                <svg viewBox="0 0 300 98" role="presentation" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="budget-chart-fill" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stopColor="#40d5c5" stopOpacity=".34" />
+                      <stop offset="100%" stopColor="#40d5c5" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M0 78 C32 74 39 52 72 60 S112 52 142 43 S176 50 205 31 S251 36 300 8 V98 H0Z" fill="url(#budget-chart-fill)" />
+                  <path d="M0 78 C32 74 39 52 72 60 S112 52 142 43 S176 50 205 31 S251 36 300 8" fill="none" stroke="#58ded0" strokeWidth="3" />
+                  <circle cx="205" cy="31" r="4" fill="#fff" stroke="#58ded0" strokeWidth="3" />
+                </svg>
+              </div>
+              <div className="showcase-months"><span>فروردین</span><span>خرداد</span><span>شهریور</span><span>آذر</span></div>
+            </div>
+
+            <div className="showcase-mini-card">
+              <span className="showcase-mini-icon"><Landmark aria-hidden="true" /></span>
+              <span><small>پروژه‌های فعال</small><strong>۲۴۸ <em>پروژه</em></strong></span>
+              <span className="showcase-mini-badge">+۸.۴٪</span>
+            </div>
+          </div>
+
+          <div
+            className="showcase-slider"
+            role="group"
+            aria-roledescription="اسلایدر"
+            aria-label="معرفی سامانه"
+            tabIndex={0}
+            onKeyDown={handleShowcaseKeyDown}
+            onTouchStart={handleShowcaseTouchStart}
+            onTouchEnd={handleShowcaseTouchEnd}
+          >
+            <div className="showcase-slides" aria-live={showcasePaused ? 'polite' : 'off'}>
+              <article
+                key={activeShowcaseSlide.id}
+                className="showcase-slide"
+                aria-roledescription="اسلاید"
+                aria-label={`اسلاید ${toPersianDigits(activeSlide + 1)} از ${toPersianDigits(SHOWCASE_SLIDES.length)}`}
+              >
+                <div className="showcase-slide-meta">
+                  <span className="showcase-slide-icon" aria-hidden="true"><ActiveShowcaseIcon /></span>
+                  <span className="showcase-slide-count" dir="ltr" aria-hidden="true">
+                    <b>{formatSlideNumber(activeSlide + 1)}</b> / {formatSlideNumber(SHOWCASE_SLIDES.length)}
+                  </span>
+                </div>
+                <p className="showcase-slide-text">{activeShowcaseSlide.text}</p>
+              </article>
+            </div>
+
+            <div className={`showcase-pagination${showcasePaused ? ' is-paused' : ''}`}>
+              <div className="showcase-dots">
+                {SHOWCASE_SLIDES.map((slide, index) => (
+                  <button
+                    key={slide.id}
+                    type="button"
+                    className={`showcase-dot${index === activeSlide ? ' is-active' : ''}`}
+                    aria-label={`${slide.label} — اسلاید ${toPersianDigits(index + 1)}`}
+                    aria-current={index === activeSlide ? 'true' : undefined}
+                    onClick={() => goToSlide(index)}
+                  >
+                    <span className="showcase-dot-track" aria-hidden="true">
+                      <span
+                        className="showcase-dot-fill"
+                        key={`${index}-${activeSlide}-${showcaseRun}`}
+                        style={{ animationDuration: `${SHOWCASE_INTERVAL_MS}ms` }}
+                      />
+                    </span>
+                  </button>
+                ))}
+              </div>
+              {!reducedMotion && (
+                <button
+                  type="button"
+                  className="showcase-playback"
+                  onClick={() => setShowcasePaused((paused) => !paused)}
+                  aria-label={showcasePaused ? 'پخش خودکار اسلایدها' : 'توقف پخش خودکار اسلایدها'}
+                  title={showcasePaused ? 'پخش خودکار' : 'توقف پخش خودکار'}
+                >
+                  {showcasePaused ? <Play aria-hidden="true" /> : <Pause aria-hidden="true" />}
+                </button>
+              )}
+            </div>
           </div>
         </aside>
-
-        {/* ---------------- Credentials ---------------- */}
-        <section className="p-6 lg:p-10 flex flex-col justify-center">
-          <div id="login-view-credentials" className="mb-6">
-            <h2 className="text-xl lg:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-              <LogIn className="w-6 h-6 text-blue-600" />
-              ورود به سامانه
-            </h2>
-            <p className="text-slate-600 text-xs mt-2 leading-relaxed">
-              ایمیل سازمانی و رمز عبور خود را وارد کنید. سطح دسترسی، اختیارات ویرایش و
-              گزارش‌های در دسترس بر اساس نقش تأییدشدهٔ حساب شما سمت سرور تعیین می‌شود.
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <label className="block">
-              <span className="block text-[11px] font-bold text-slate-700 mb-1.5">شماره موبایل سازمانی</span>
-              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
-                <Smartphone className="w-4 h-4 text-slate-400 shrink-0" />
-                <input
-                  type="tel"
-                  inputMode="numeric"
-                  value={mobile}
-                  onChange={(e) => setMobile(e.target.value)}
-                  required
-                  autoComplete="username"
-                  dir="ltr"
-                  placeholder="09xxxxxxxxx"
-                  className="w-full py-2.5 bg-transparent text-sm outline-none text-left"
-                />
-              </div>
-            </label>
-
-            <label className="block">
-              <span className="block text-[11px] font-bold text-slate-700 mb-1.5">رمز عبور</span>
-              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
-                <Lock className="w-4 h-4 text-slate-400 shrink-0" />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                  dir="ltr"
-                  placeholder="••••••••"
-                  className="w-full py-2.5 bg-transparent text-sm outline-none text-left"
-                />
-              </div>
-            </label>
-
-            {error && (
-              <div id="login-view-error" className="flex items-start gap-2 text-[11px] text-rose-800 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2 leading-relaxed">
-                <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0 mt-0.5" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={busy}
-              className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-black text-sm transition-all ${
-                busy
-                  ? 'bg-blue-400 text-white cursor-wait'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/25'
-              }`}
-            >
-              {busy ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <LogIn className="w-4 h-4" />
-              )}
-              ورود به سامانه
-            </button>
-
-            <div id="login-view-note" className="flex items-start gap-2 text-[10px] text-slate-600 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 leading-relaxed">
-              <ShieldCheck className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
-              <span>
-                نشست پس از ورود با توکن کوتاه‌عمر (۱۵ دقیقه) و توکن تمدید (۳۰ روز) در کوکی‌های
-                httponly نگه داشته می‌شود؛ کد سمت مرورگر هرگز به آن‌ها دسترسی ندارد و سالخوردگی
-                نشست به‌صورت خودکار و بدون وقفهٔ کاربر تمدید می‌گردد.
-              </span>
-            </div>
-            <div id="login-view-no-register-note" className="flex items-start gap-2 text-[10px] text-slate-500 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 leading-relaxed">
-              <KeyRound className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-              <span>
-                ثبت‌نام آزاد وجود ندارد. حساب کاربری فقط توسط مدیر سامانه در بخش
-                «مدیریت نقش‌ها و دسترسی‌ها» ایجاد می‌شود؛ برای دریافت حساب با مدیر تماس بگیرید.
-              </span>
-            </div>
-          </form>
-
-          {/* === Dev Seed Login (disposable) — dev-only panel; the component itself
-              renders nothing when VITE_APP_ENV === 'production', which Vercel's
-              build command sets (vercel.json). Local Docker keeps the panel. === */}
-          <DevSeedLoginPanel onFill={(username, password) => {
-            // Pre-fill only — the developer still presses the real login button.
-            setMobile(username);
-            setPassword(password);
-          }} />
-        </section>
       </div>
-    </div>
+    </main>
   );
 };

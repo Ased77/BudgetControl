@@ -13,8 +13,9 @@
  *      roleFa } of seeded test accounts — the server mounts these routes only
  *      on a developer's machine, never on a deployed Vercel function; see
  *      server/dev/seed-routes.ts).
- *   2. Buttons show the human label (roleFa / name), never the raw mobile
- *      number; clicking one GETs /dev/seed-users/:id/credentials and calls
+ *   2. Each button is a compact role icon + role title (roleFa); the account
+ *      name and mobile number stay in the tooltip, never on the button.
+ *      Clicking one GETs /dev/seed-users/:id/credentials and calls
  *      `onFill(username, password)` so the login form fields are pre-filled.
  * It NEVER auto-submits: the developer still presses the real login button,
  * so the normal authentication flow (POST /api/auth/login, cookies, refresh
@@ -29,7 +30,44 @@
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { FlaskConical } from 'lucide-react';
+import {
+  FlaskConical,
+  UserRound,
+  ShieldCheck,
+  Landmark,
+  BookOpen,
+  Wallet,
+  MapPin,
+  Building2,
+  Briefcase,
+  ClipboardList,
+  FileText,
+  HardHat,
+  LifeBuoy,
+  FileSearch,
+  BadgeCent,
+  type LucideIcon,
+} from 'lucide-react';
+
+/**
+ * One glyph per RBAC role, so a compact "icon + role title" button is still
+ * distinguishable at a glance. Unknown roles fall back to a generic person.
+ */
+const ROLE_ICONS: Record<string, LucideIcon> = {
+  SYSTEM_ADMIN: ShieldCheck,
+  BUDGET_CHAIRMAN: BadgeCent,
+  CULTURE_BUDGET_HEAD: BookOpen,
+  TREASURY_FINANCE_HEAD: Wallet,
+  GOVERNOR: Landmark,
+  DISTRICT_GOVERNOR: MapPin,
+  MAYOR: Building2,
+  OFFICE_HEAD: Briefcase,
+  PROJECT_MANAGER: ClipboardList,
+  PLAN_OFFICER: FileText,
+  CONTRACTOR: HardHat,
+  TECH_SUPPORT: LifeBuoy,
+  INTERNAL_AUDITOR: FileSearch,
+};
 
 interface SeedUser {
   /** auth_users.id (uuid) — handed back to /seed-users/:id/credentials. */
@@ -121,23 +159,26 @@ export const DevSeedLoginPanel: React.FC<DevSeedLoginPanelProps> = ({ onFill }) 
         <p className="mt-1.5 text-[10px] leading-relaxed text-rose-700">{error}</p>
       ) : seedUsers.length > 0 ? (
         <div className="mt-2 flex flex-wrap gap-1.5">
-          {seedUsers.map((seedUser) => (
-            <button
-              key={seedUser.id}
-              type="button"
-              onClick={() => handleSelect(seedUser)}
-              disabled={busyId !== null}
-              title={`${seedUser.name} (${seedUser.roleFa}) — ورود با ${seedUser.username}`}
-              className={`rounded-lg border border-amber-300 bg-white px-2 py-1 text-[10px] font-bold text-slate-700 transition-colors ${
-                busyId === seedUser.id
-                  ? 'cursor-wait text-rose-400'
-                  : 'hover:bg-amber-100 hover:border-amber-400'
-              } disabled:opacity-60`}
-            >
-              <span className="block leading-tight">{seedUser.name}</span>
-              <span className="block leading-tight font-medium text-amber-700/80">{seedUser.roleFa}</span>
-            </button>
-          ))}
+          {seedUsers.map((seedUser) => {
+            const RoleIcon = ROLE_ICONS[seedUser.role] ?? UserRound;
+            return (
+              <button
+                key={seedUser.id}
+                type="button"
+                onClick={() => handleSelect(seedUser)}
+                disabled={busyId !== null}
+                title={`${seedUser.name} (${seedUser.roleFa}) — ورود با ${seedUser.username}`}
+                className={`inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-[10px] font-bold text-slate-700 transition-colors ${
+                  busyId === seedUser.id
+                    ? 'cursor-wait text-rose-400'
+                    : 'hover:bg-amber-100 hover:border-amber-400'
+                } disabled:opacity-60`}
+              >
+                <RoleIcon className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                <span className="leading-tight">{seedUser.roleFa}</span>
+              </button>
+            );
+          })}
         </div>
       ) : (
         <p className="mt-1.5 text-[10px] text-amber-700/80">
