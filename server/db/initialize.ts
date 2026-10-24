@@ -287,10 +287,24 @@ export async function initializeDatabase(): Promise<void> {
     const seeded = await seedAuthAccounts();
     const created = seeded.filter((row) => row.outcome === 'created').length;
     const updated = seeded.filter((row) => row.outcome === 'updated').length;
-    const skipped = seeded.length - created - updated;
+    const skipped = seeded.filter((row) => row.outcome === 'skipped');
     console.log(
       `[db] SEED_AUTH_ACCOUNTS=1 — demo role accounts ensured ` +
-        `(${created} created, ${updated} refreshed${skipped ? `, ${skipped} skipped` : ''})`,
+        `(${created} created, ${updated} refreshed${skipped.length ? `, ${skipped.length} skipped` : ''})`,
+    );
+    // A skipped row will answer 401 at login while the boot line above still
+    // looks healthy, so name each one and why on the same boot.
+    for (const row of skipped) {
+      console.warn(`[db] demo account NOT seeded: ${row.mobile} (${row.role}) — ${row.note ?? 'unknown reason'}`);
+    }
+  } else {
+    // The loudest support question this project gets: a fresh deployment is
+    // bootstrapped with ONE random admin, so the published 09991000001…
+    // demo mobiles do not exist here and login says "wrong mobile or password".
+    console.log(
+      '[db] SEED_AUTH_ACCOUNTS is not "1" — the demo role accounts (09991000001…13) are NOT ' +
+        'provisioned in this deployment. Log in with the bootstrap admin, or set the variable ' +
+        'and redeploy, or run: bun run db:seed:auth',
     );
   }
 

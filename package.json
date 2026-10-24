@@ -15,6 +15,7 @@
     "db:init": "bun run scripts/db-init.ts",
     "db:seed:dev": "bun run scripts/dev-seed-users.ts",
     "db:seed:auth": "bun run scripts/seed-auth-accounts.ts",
+    "db:doctor:auth": "bun run scripts/auth-doctor.ts",
     "db:check": "bun run scripts/db-check.ts",
     "db:wait": "bun run scripts/wait-for-db.ts",
     "db:legacy:list": "bun run scripts/db-legacy-list.ts",

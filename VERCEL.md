@@ -223,6 +223,46 @@ curl -s https://<deployment>/api/locations | head -c 80   # JSON array
 
 Then open the site, hard-refresh a deep link and confirm the SPA still boots.
 
+## Login says "شماره موبایل یا رمز عبور نادرست است"
+
+That 401 is the only answer `/api/auth/login` gives for a missing account, a
+disabled account and a wrong password (deliberate — it must not enumerate
+accounts). On a deployment it almost always means the demo rows were never
+created there, not that the password is wrong:
+
+1. **Check whether the accounts exist** in the database the deployment uses.
+   Copy `DATABASE_URL` from Vercel (Settings → Environment Variables, the
+   production value) and run the read-only doctor against it:
+
+   ```bash
+   DATABASE_URL='postgres://…?sslmode=require' bun run db:doctor:auth
+   ```
+
+   `MISSING` for all 13 = the seed never ran here. `BAD_PASSWORD` = the row was
+   created with another password. `OK` = the credential is fine and the problem
+   is elsewhere (client, cookies, or a different database than you think).
+
+2. **Create them** against that same connection string:
+
+   ```bash
+   DATABASE_URL='postgres://…?sslmode=require' bun run db:seed:auth --init
+   ```
+
+3. **Or let the deployment do it.** `SEED_AUTH_ACCOUNTS=1` must be enabled for
+   the *Production* environment **and followed by a new deployment** — Vercel
+   applies environment-variable changes only to deployments built afterwards.
+   The boot log then prints
+   `[db] SEED_AUTH_ACCOUNTS=1 — demo role accounts ensured (13 created, 0 refreshed)`;
+   without it the log says the demo accounts are not provisioned. Either way the
+   login attempt itself now logs why it was rejected
+   (`no account for 0999***01` vs `wrong password for 0999***01`), so the
+   function log answers the question without touching the database.
+
+Bootstrapping is not a substitute: with `SEED_AUTH_ACCOUNTS` unset the first
+boot creates a single admin from `AUTH_BOOTSTRAP_MOBILE` /
+`AUTH_BOOTSTRAP_PASSWORD` (or a random password printed once to stderr), so
+`09991000001` simply does not exist yet.
+
 ## Limits worth knowing
 
 - **No background work.** Everything must fit in one request. The default

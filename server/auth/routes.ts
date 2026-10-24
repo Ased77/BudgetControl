@@ -296,14 +296,28 @@ authRouter.post('/login', loginLimiter, async (req, res, next) => {
     const normalized = normalizeMobile(mobile);
     const row = normalized ? await getAuthUserByMobile(normalized) : undefined;
 
+    // The RESPONSE below must stay identical for "no such user", "wrong
+    // password" and "account disabled" so login cannot enumerate accounts.
+    // The LOG does not have that constraint: without it a deployment whose
+    // demo accounts were never seeded is indistinguishable from a typo, which
+    // is the single most common support question for this app. Mask the
+    // number — the log needs to identify the attempt, not the person.
+    const maskedMobile = normalized ? `${normalized.slice(0, 4)}***${normalized.slice(-2)}` : '(unparseable)';
+
     if (!row) {
-      // Same answer for "no such user" and "wrong password"; verifyPassword
-      // still runs on a decoy path in scalar cost terms below.
+      // Also covers a body that never arrived: normalizeMobile(undefined) is
+      // null, so "(unparseable)" in the log means the request carried no
+      // usable mobile at all (wrong JSON shape, or body not parsed).
+      console.warn(`[auth] login rejected: no account for ${maskedMobile}`);
       return res.status(401).json({ error: 'شماره موبایل یا رمز عبور نادرست است', code: 'AUTH_REQUIRED' });
     }
 
     const valid = await verifyPassword(String(password ?? ''), row.passwordHash);
     if (!valid) {
+      console.warn(
+        `[auth] login rejected: wrong password for ${maskedMobile} ` +
+          `(${row.role}${row.isTestUser ? ', dev seed row' : ''})`,
+      );
       return res.status(401).json({ error: 'شماره موبایل یا رمز عبور نادرست است', code: 'AUTH_REQUIRED' });
     }
     if (!row.isActive) {
