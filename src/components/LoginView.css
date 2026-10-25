@@ -179,6 +179,29 @@
   opacity: 1;
 }
 
+/* Browser autofill (and some password managers) paints saved fields with its
+   own pale-yellow highlight, which ignores the app's white shell. Cover that
+   paint without disabling autofill: the inset shadow is drawn over the
+   browser's background, and the fill colour keeps the field ink on-palette.
+   This also covers the segmented mobile cells, whose yellow fill would
+   otherwise show up in a single cell. */
+.login-input-wrap input:-webkit-autofill,
+.login-input-wrap input:-webkit-autofill:hover,
+.login-input-wrap input:-webkit-autofill:focus,
+.login-input-wrap input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #fff inset !important;
+  box-shadow: 0 0 0 1000px #fff inset !important;
+  -webkit-text-fill-color: #17335f;
+  caret-color: #2563eb;
+}
+
+.login-input-wrap input:autofill {
+  background-color: #fff;
+  box-shadow: 0 0 0 1000px #fff inset !important;
+  color: #17335f;
+  caret-color: #2563eb;
+}
+
 /* ---------------------------------------------------------------------------
    Segmented mobile field — eleven cells, the `09` head prefilled.
 
