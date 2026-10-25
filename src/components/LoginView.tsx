@@ -3,14 +3,11 @@ import { useAuth } from '../context/AuthContext';
 import {
   ShieldCheck,
   KeyRound,
-  LogIn,
   AlertTriangle,
-  Loader2,
   Smartphone,
   Lock,
   Eye,
   EyeOff,
-  ArrowLeft,
   ChartNoAxesCombined,
   CircleDollarSign,
   Landmark,
@@ -253,14 +250,8 @@ export const LoginView: React.FC = () => {
                 className={`login-submit${busy ? ' is-busy' : ''}`}
                 aria-busy={busy}
               >
-                <span className="login-submit-icon" aria-hidden="true">
-                  {busy ? <Loader2 className="login-spinner" /> : <LogIn />}
-                </span>
                 <span className="login-submit-label">
                   {busy ? 'در حال ورود...' : 'ورود به سامانه'}
-                </span>
-                <span className="login-submit-hint" aria-hidden="true">
-                  <ArrowLeft />
                 </span>
               </button>
 
