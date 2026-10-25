@@ -157,7 +157,9 @@
   stroke-width: 1.7;
 }
 
-.login-input-wrap input {
+/* The free-text fields of the wrap (password); the segmented mobile field has
+   its own `.login-mobile-cell` inputs below. */
+.login-input-wrap input:not(.login-mobile-cell) {
   width: 100%;
   min-width: 0;
   height: 44px;
@@ -172,14 +174,88 @@
   text-align: right;
 }
 
-.login-input-wrap input::placeholder {
+.login-input-wrap input:not(.login-mobile-cell)::placeholder {
   color: #a3afc4;
   opacity: 1;
 }
 
-.login-input-wrap input[type='tel'] {
+/* ---------------------------------------------------------------------------
+   Segmented mobile field — eleven cells, the `09` head prefilled.
+
+   The first two cells are static: the local head `۰۹` is always there and the
+   user's nine digits land in the rest. The writable cells are real
+   single-digit inputs, so native keyboards, paste and IMEs keep working; the
+   caret (cell focus) jumps along as digits land and can never retreat into
+   the head. Each cell is an underline and nothing more — state reads through
+   the underline's colour — while the shell itself is strokeless (no border,
+   no focus ring), so the cells carry the entire look. The stored value always
+   stays in Latin digits and keeps its `09` head; only the rendering converts.
+   --------------------------------------------------------------------------- */
+/* The shell is strokeless: cells carry the entire look. Focus feedback lives
+   on the focused cell's blue underline, so the shared wrap border/ring stays
+   off for this field. */
+.login-mobile-input {
+  gap: 0;
+  padding: 0 6px;
+  border: 0;
+  background: transparent;
+  cursor: text;
+}
+
+.login-mobile-input:focus-within {
+  border: 0;
+  box-shadow: none;
+}
+
+/* Bottom-border-only cells: the segment is an underline, nothing more — no
+   box, no fill, no ring. State reads purely through the underline's colour:
+   empty rests light, filled firms up, focused goes blue. */
+.login-mobile-cells {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.login-mobile-cell {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 56px;
+  padding: 0;
+  border: 0;
+  border-bottom: 3px solid #dbe3f2;
+  border-radius: 0;
+  background: transparent;
+  color: #17335f;
+  caret-color: #2563eb;
+  font: inherit;
+  font-size: 28px;
+  font-weight: 800;
+  text-align: center;
   direction: ltr;
-  text-align: left;
+  cursor: text;
+  transition: border-color 140ms ease;
+}
+
+/* The fixed `09` head renders as static text in identical cells. */
+.login-mobile-cell.is-fixed {
+  display: grid;
+  place-items: center;
+  cursor: default;
+}
+
+.login-mobile-cell.is-filled {
+  border-bottom-color: #8fadcf;
+}
+
+.login-mobile-cell:focus {
+  outline: 0;
+  border-bottom-color: #2563eb;
+}
+
+.login-mobile-cell:disabled {
+  opacity: 0.55;
 }
 
 .login-password-toggle {
@@ -208,17 +284,15 @@
 /* ---------------------------------------------------------------------------
    Primary action — the one control that advances the whole gate.
 
-   Structure (see LoginView.tsx): a translucent icon chip on the reading-start
-   edge, the label centred on the remaining track, and a directional arrow hint
-   on the reading-end edge. Three paint layers make it read as a solid object
-   instead of a recoloured rectangle: a crisp top inner highlight, a deep shade
-   along the bottom edge, and a soft blue glow that swells on hover. The
+   The label rides centred on the button's track. Three paint layers make it
+   read as a solid object instead of a recoloured rectangle: a crisp top inner
+   highlight, a deep shade along the bottom edge, and a soft blue glow. The
    gradient itself is oversized (190%) and pans on hover, so the surface feels
    lit rather than flat.
 
    While the request is in flight the same sheen sweeps the button continuously:
-   motion reports activity for sighted users, while the spinner + label swap
-   carry it for anyone who cannot perceive the sweep. Both stop under
+   motion reports activity for sighted users, while the label swap carries it
+   for anyone who cannot perceive the sweep. Both stop under
    `prefers-reduced-motion`.
    --------------------------------------------------------------------------- */
 .login-submit {
@@ -1248,7 +1322,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .login-submit,
-  .login-input-wrap {
+  .login-input-wrap,
+  .login-mobile-cell {
     transition: none;
   }
 

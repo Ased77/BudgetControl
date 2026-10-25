@@ -4,7 +4,6 @@ import {
   ShieldCheck,
   KeyRound,
   AlertTriangle,
-  Smartphone,
   Lock,
   Eye,
   EyeOff,
@@ -79,9 +78,63 @@ const toPersianDigits = (value: string | number): string =>
 
 const formatSlideNumber = (value: number): string => toPersianDigits(String(value).padStart(2, '0'));
 
+/** The segmented mobile field holds exactly this many digits. */
+const MOBILE_DIGITS = 11;
+
+/** The fixed local head: two prefilled cells the user cannot edit. */
+const MOBILE_PREFIX = '09';
+const MOBILE_PREFIX_LEN = 2;
+
+/** Persian (۰-۹) and Arabic (٠-٩) numerals in, Latin digits out. */
+const toLatinDigits = (raw: string): string => raw
+  .replace(/[۰-۹]/g, (digit) => String(digit.charCodeAt(0) - 0x06f0))
+  .replace(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - 0x0660))
+  .replace(/[^0-9]/g, '');
+
+/**
+ * Mobile number as typed or pasted in whatever disguise — Latin digits, Persian
+ * numerals, an international "+98 …" prefix — reduced to the plain 11-digit
+ * local form the server expects.
+ */
+const normalizeMobileDigits = (raw: string): string => {
+  let digits = toLatinDigits(raw);
+  if (digits.startsWith('0098')) digits = `0${digits.slice(4)}`;
+  else if (digits.startsWith('98') && digits.length >= 12) digits = `0${digits.slice(2)}`;
+  return digits.slice(0, MOBILE_DIGITS);
+};
+
+/** Replace (or, past the current end, append) the digit at a cell index. */
+const setMobileDigitAt = (value: string, index: number, digit: string): string => {
+  const chars = value.split('');
+  while (chars.length <= index) chars.push('');
+  chars[index] = digit;
+  return chars.join('');
+};
+
+/** Remove the digit at a cell index; anything after it slides left. */
+const removeMobileDigitAt = (value: string, index: number): string => {
+  const chars = value.split('');
+  chars.splice(index, 1);
+  return chars.join('');
+};
+
+/**
+ * Fold a normalized number into the `mobile` string, which always carries the
+ * fixed `09` head: prefixed numbers pass through, bare nine-digit locals gain
+ * the head, and a lone leading 9 gets the missing zero.
+ */
+const withMobilePrefix = (digits: string): string => {
+  if (digits.startsWith(MOBILE_PREFIX)) return digits;
+  if (digits.length === 0) return MOBILE_PREFIX;
+  if (digits.length === MOBILE_DIGITS - MOBILE_PREFIX_LEN) return MOBILE_PREFIX + digits;
+  return `0${digits}`;
+};
+
 export const LoginView: React.FC = () => {
   const { login } = useAuth();
-  const [mobile, setMobile] = useState('');
+  // The `mobile` string always carries the fixed `09` head; the user types
+  // only the nine digits that follow it.
+  const [mobile, setMobile] = useState(MOBILE_PREFIX);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -158,10 +211,83 @@ export const LoginView: React.FC = () => {
     stepSlide(delta < 0 ? 1 : -1);
   };
 
+  // --- Segmented mobile field: eleven cells with jump filling ---------------
+  // Every cell is a real single-digit input, so native keyboards, paste and
+  // IMEs keep working. The shared `mobile` string stays in Latin digits —
+  // only what is rendered converts to Persian numerals. Typing a digit jumps
+  // the caret into the next cell; backspace retreats over an empty cell.
+  const mobileCellRefs = useRef<Array<HTMLInputElement | null>>([]);
+
+  const focusMobileCell = useCallback((index: number) => {
+    const cell = mobileCellRefs.current[
+      Math.max(MOBILE_PREFIX_LEN, Math.min(MOBILE_DIGITS - 1, index))
+    ];
+    cell?.focus();
+  }, []);
+
+  const handleMobileCellChange = (index: number, raw: string) => {
+    const digits = toLatinDigits(raw);
+    if (digits.length === 0) {
+      // The cell was emptied — its digit leaves the sequence.
+      setMobile((prev) => removeMobileDigitAt(prev, index));
+      return;
+    }
+    // More than one character in a cell means the trailing one was just typed.
+    const digit = digits.slice(-1);
+    setMobile((prev) => setMobileDigitAt(prev, index, digit));
+    // Jump fill: the caret rides forward with every accepted digit.
+    if (index < MOBILE_DIGITS - 1) focusMobileCell(index + 1);
+  };
+
+  const handleMobileCellKeyDown = (index: number, event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Backspace') {
+      event.preventDefault();
+      if (mobile[index]) {
+        // Editing mid-sequence: drop this digit, the rest slide left.
+        setMobile((prev) => removeMobileDigitAt(prev, index));
+      } else if (index > MOBILE_PREFIX_LEN) {
+        // Retreating over an empty cell deletes its predecessor — never the
+        // fixed `09` head, which stays put.
+        focusMobileCell(index - 1);
+        setMobile((prev) => removeMobileDigitAt(prev, index - 1));
+      }
+    } else if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      focusMobileCell(index - 1);
+    } else if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      focusMobileCell(index + 1);
+    } else if (event.key === 'Home') {
+      event.preventDefault();
+      focusMobileCell(MOBILE_PREFIX_LEN);
+    } else if (event.key === 'End') {
+      event.preventDefault();
+      focusMobileCell(mobile.length);
+    }
+  };
+
+  const handleMobileCellPaste = (index: number, event: React.ClipboardEvent<HTMLInputElement>) => {
+    const digits = normalizeMobileDigits(event.clipboardData.getData('text'));
+    if (!digits) return;
+    event.preventDefault();
+    // A full `09…` number pasted into the first open cell must not double the
+    // fixed head — shave the pasted prefix before merging.
+    const pasted = index === MOBILE_PREFIX_LEN && digits.startsWith(MOBILE_PREFIX)
+      ? digits.slice(MOBILE_PREFIX_LEN)
+      : digits;
+    setMobile((prev) => `${prev.slice(0, index)}${pasted}`.slice(0, MOBILE_DIGITS));
+    focusMobileCell(Math.min(index + pasted.length, MOBILE_DIGITS - 1));
+  };
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (busy) return;
     setError(null);
+    if (mobile.length < MOBILE_DIGITS) {
+      setError(`شماره موبایل را با ${toPersianDigits(MOBILE_DIGITS)} رقم کامل وارد کنید.`);
+      focusMobileCell(mobile.length);
+      return;
+    }
     setBusy(true);
     try {
       await login(mobile.trim(), password);
@@ -174,6 +300,10 @@ export const LoginView: React.FC = () => {
 
   const activeShowcaseSlide = SHOWCASE_SLIDES[activeSlide];
   const ActiveShowcaseIcon = activeShowcaseSlide.icon;
+
+  // One character slot per cell; holes are impossible because deletions slide
+  // the tail left, so cell N is either digit N or empty.
+  const mobileCells = Array.from({ length: MOBILE_DIGITS }, (_, index) => mobile[index] ?? '');
 
   return (
     <main id="login-view-root" className="login-shell" dir="rtl">
@@ -197,18 +327,55 @@ export const LoginView: React.FC = () => {
             <form id="login-view-credentials" onSubmit={handleSubmit} className="login-form">
               <label className="login-field">
                 <span>شماره موبایل سازمانی</span>
-                <span className="login-input-wrap" dir="ltr">
-                  <Smartphone aria-hidden="true" />
-                  <input
-                    type="tel"
-                    inputMode="numeric"
-                    value={mobile}
-                    onChange={(e) => setMobile(e.target.value)}
-                    required
-                    autoComplete="username"
-                    placeholder="09xxxxxxxxx"
-                    aria-label="شماره موبایل سازمانی"
-                  />
+                <span
+                  className="login-input-wrap login-mobile-input"
+                  dir="ltr"
+                  role="group"
+                  aria-label="شماره موبایل سازمانی، ۱۱ رقم"
+                  onClick={(event) => {
+                    // Clicks that land between cells route the caret to the
+                    // next empty one; the cells themselves handle their own.
+                    if (event.target instanceof HTMLInputElement) return;
+                    focusMobileCell(mobile.length);
+                  }}
+                >
+                  <span className="login-mobile-cells">
+                    {/* The fixed local head: two prefilled, non-editable cells. */}
+                    {Array.from({ length: MOBILE_PREFIX_LEN }, (_, index) => (
+                      <span
+                        key={`prefix-${index}`}
+                        className="login-mobile-cell is-filled is-fixed"
+                        aria-hidden="true"
+                      >
+                        {toPersianDigits(mobileCells[index])}
+                      </span>
+                    ))}
+                    {/* Nine writable cells, one digit each. */}
+                    {mobileCells.slice(MOBILE_PREFIX_LEN).map((digit, position) => {
+                      const index = position + MOBILE_PREFIX_LEN;
+                      return (
+                        <input
+                          key={index}
+                          ref={(node) => {
+                            mobileCellRefs.current[index] = node;
+                          }}
+                          className={`login-mobile-cell${digit ? ' is-filled' : ''}`}
+                          type="text"
+                          inputMode="numeric"
+                          dir="ltr"
+                          value={digit ? toPersianDigits(digit) : ''}
+                          onChange={(e) => handleMobileCellChange(index, e.target.value)}
+                          onKeyDown={(e) => handleMobileCellKeyDown(index, e)}
+                          onPaste={(e) => handleMobileCellPaste(index, e)}
+                          onFocus={(e) => e.target.select()}
+                          disabled={busy}
+                          autoComplete="off"
+                          spellCheck={false}
+                          aria-label={`شماره موبایل، رقم ${toPersianDigits(index + 1)}`}
+                        />
+                      );
+                    })}
+                  </span>
                 </span>
               </label>
 
@@ -262,7 +429,7 @@ export const LoginView: React.FC = () => {
             </form>
 
             <DevSeedLoginPanel onFill={(username, password) => {
-              setMobile(username);
+              setMobile(withMobilePrefix(normalizeMobileDigits(username)));
               setPassword(password);
             }} />
           </div>
