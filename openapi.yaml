@@ -108,11 +108,98 @@ paths:
           $ref: '#/components/responses/RateLimited'
         '500':
           $ref: '#/components/responses/InternalError'
+  /api/auth/otp/request:
+    post:
+      tags: [Authentication]
+      operationId: requestOtpCode
+      summary: Issue a one-time login code for a mobile number
+      description: >
+        Creates (or replaces) the single live challenge for the number. The
+        code is six digits, stored only as an HMAC-SHA256 hash, valid for
+        `AUTH_OTP_TTL_SECONDS` (default 120 s), and single-use. A resend within
+        `AUTH_OTP_RESEND_SECONDS` (default 60 s) answers 429. The response is
+        identical for known and unknown numbers — no account enumeration.
+
+        Delivery is fake until an SMS provider is wired: with
+        `AUTH_OTP_FAKE_DELIVERY=1` (the default) the response includes
+        `devCode`, which the login screen shows as a marked dev hint. Set it to
+        0 and send the code through the provider instead; the field disappears
+        from the response. Rate limited to 6 requests / 10 min / IP.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OtpRequest' }
+            example: { mobile: '09991000001' }
+      responses:
+        '200':
+          description: Code issued (replaces any previous code for the number).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OtpRequestResponse' }
+        '400':
+          description: Mobile is not a valid Iranian mobile number (`INVALID_MOBILE`).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '429':
+          description: Resend cooldown (`OTP_RESEND_COOLDOWN`, with `retryAfterSeconds`) or per-IP rate limit (`RATE_LIMITED`).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/auth/otp/verify:
+    post:
+      tags: [Authentication]
+      operationId: verifyOtpCode
+      summary: Verify a one-time code and start a session
+      description: >
+        Checks expiry and the per-code attempt cap (5 wrong guesses), deletes
+        the challenge — a code is single-use even if the account check fails —
+        then issues the same httpOnly session cookies as password login. An
+        unknown number only learns there is no account after a correct code;
+        a disabled account answers `ACCOUNT_DISABLED`. Rate limited to 20
+        requests / 60 s / IP.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OtpVerifyRequest' }
+            example: { mobile: '09991000001', code: '123456' }
+      responses:
+        '200':
+          description: Code verified; session cookies set.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthSessionResponse' }
+        '400':
+          description: Invalid mobile (`INVALID_MOBILE`) or malformed code (`INVALID_OTP`).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401':
+          description: >
+            Missing/expired code (`OTP_REQUIRED`, `OTP_EXPIRED`), wrong code
+            (`OTP_INVALID`, with `attemptsRemaining`), no account for the number
+            (`ACCOUNT_UNAVAILABLE`) or a disabled account (`ACCOUNT_DISABLED`).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '429':
+          description: Attempt cap reached (`OTP_ATTEMPTS_EXCEEDED`) or per-IP rate limit (`RATE_LIMITED`).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          $ref: '#/components/responses/InternalError'
   /api/auth/login:
     post:
       tags: [Authentication]
       operationId: loginUser
-      summary: Log in with mobile number + password
+      summary: Log in with mobile number + password (machine clients)
       description: >
         Verifies credentials and issues a session (sets `csr_at` + `csr_rt`
         cookies). The mobile is normalized server-side (Persian/Arabic digits,
@@ -1675,6 +1762,38 @@ components:
         displayName:
           type: string
           minLength: 2
+    OtpRequest:
+      type: object
+      required: [mobile]
+      properties:
+        mobile:
+          type: string
+          description: Normalized server-side to `09xxxxxxxxx`.
+          example: '09991000001'
+    OtpRequestResponse:
+      type: object
+      required: [ok, expiresInSeconds, resendAfterSeconds]
+      properties:
+        ok: { type: boolean }
+        expiresInSeconds: { type: integer, example: 120 }
+        resendAfterSeconds: { type: integer, example: 60 }
+        devCode:
+          type: string
+          pattern: '^\d{6}$'
+          description: >
+            Present only while `AUTH_OTP_FAKE_DELIVERY` is on (no SMS provider
+            yet). The login screen displays it as a dev hint.
+    OtpVerifyRequest:
+      type: object
+      required: [mobile, code]
+      properties:
+        mobile:
+          type: string
+          description: Normalized server-side to `09xxxxxxxxx`.
+        code:
+          type: string
+          pattern: '^\d{6}$'
+          description: Persian/Arabic digits are accepted and normalized.
     LoginRequest:
       type: object
       required: [mobile, password]

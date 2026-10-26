@@ -16,7 +16,14 @@
 import { and, eq, isNull, lt, ne, or, sql } from 'drizzle-orm';
 import { withDbErrorMapping } from '../db/errors.js';
 import { db, type DrizzleDb, type Tx } from '../db/client.js';
-import { authUsers, refreshTokens, type AuthUserRow, type RefreshTokenRow } from '../db/schema.js';
+import {
+  authOtpChallenges,
+  authUsers,
+  refreshTokens,
+  type AuthUserRow,
+  type OtpChallengeRow,
+  type RefreshTokenRow,
+} from '../db/schema.js';
 import { SYSTEM_ACTOR_ID } from '../db/system-actor.js';
 import { normalizeMobile } from './mobile.js';
 import type { UserRole } from '../../src/types.js';
@@ -112,6 +119,80 @@ export async function hasRealUsers(executor: Executor = db): Promise<boolean> {
       .where(ne(authUsers.id, SYSTEM_ACTOR_ID))
       .limit(1);
     return rows.length > 0;
+  });
+}
+
+// ---------------------------------------------------------------------------
+// One-time-code challenges
+// ---------------------------------------------------------------------------
+
+export interface NewOtpChallenge {
+  /** Already-normalized mobile — entry points validate before calling. */
+  mobile: string;
+  codeHash: string;
+  expiresAt: Date;
+  sentAt: Date;
+}
+
+/** The live challenge for a number, if one was ever issued (expiry not checked here). */
+export async function getOtpChallenge(
+  mobile: string,
+  executor: Executor = db,
+): Promise<OtpChallengeRow | undefined> {
+  return withDbErrorMapping(async () => {
+    const rows = await executor
+      .select()
+      .from(authOtpChallenges)
+      .where(eq(authOtpChallenges.mobile, mobile))
+      .limit(1);
+    return rows[0];
+  });
+}
+
+/**
+ * Issue (or replace) the challenge for a number. Replacement is intentional:
+ * a resend invalidates the previous code and restarts the attempt counter, so
+ * at most one code is ever valid for a mobile.
+ */
+export async function saveOtpChallenge(input: NewOtpChallenge, executor: Executor = db): Promise<void> {
+  return withDbErrorMapping(async () => {
+    await executor
+      .insert(authOtpChallenges)
+      .values({
+        mobile: input.mobile,
+        codeHash: input.codeHash,
+        expiresAt: input.expiresAt,
+        sentAt: input.sentAt,
+        attempts: 0,
+      })
+      .onConflictDoUpdate({
+        target: authOtpChallenges.mobile,
+        set: {
+          codeHash: input.codeHash,
+          expiresAt: input.expiresAt,
+          sentAt: input.sentAt,
+          attempts: 0,
+        },
+      });
+  });
+}
+
+/** Count a wrong guess; returns the new count so the caller can enforce the cap. */
+export async function incrementOtpAttempts(mobile: string, executor: Executor = db): Promise<number> {
+  return withDbErrorMapping(async () => {
+    const rows = await executor
+      .update(authOtpChallenges)
+      .set({ attempts: sql`${authOtpChallenges.attempts} + 1` })
+      .where(eq(authOtpChallenges.mobile, mobile))
+      .returning({ attempts: authOtpChallenges.attempts });
+    return rows[0]?.attempts ?? 0;
+  });
+}
+
+/** Consume the challenge — a code is single-use even when the account check fails. */
+export async function deleteOtpChallenge(mobile: string, executor: Executor = db): Promise<void> {
+  return withDbErrorMapping(async () => {
+    await executor.delete(authOtpChallenges).where(eq(authOtpChallenges.mobile, mobile));
   });
 }
 

@@ -4,9 +4,7 @@ import {
   ShieldCheck,
   KeyRound,
   AlertTriangle,
-  Lock,
-  Eye,
-  EyeOff,
+  CheckCircle2,
   ChartNoAxesCombined,
   CircleDollarSign,
   Landmark,
@@ -14,6 +12,7 @@ import {
   History,
   Pause,
   Play,
+  FlaskConical,
 } from 'lucide-react';
 // === Dev Seed Login (disposable dev helper): import + render below live together —
 // delete both halves of this comment block to remove the feature. ===
@@ -23,14 +22,19 @@ import './LoginView.css';
 /**
  * Access gate for the national development system.
  *
- * This is real authentication: the mobile-number/password pair is verified
- * server-side, and the session lives in httpOnly cookies the browser can
- * neither read nor forge. Success means one thing only — an auth_users.id
- * (the verified user_id) that every API call on the way forward exposes
- * (as `req.auth.userId`) and every business row references. The previous
- * identity-picker ("signing in" by choosing a persona) is gone: without
- * credentials there is no session, and without a session the API answers
- * 401 to every user-data call.
+ * This is real authentication in two steps: the mobile number receives a
+ * short-lived one-time code, and only a correct code mints a session. The
+ * session lives in httpOnly cookies the browser can neither read nor forge.
+ * Success means one thing only — an auth_users.id (the verified user_id)
+ * that every API call on the way forward exposes (as `req.auth.userId`) and
+ * every business row references.
+ *
+ * The verification code is delivered by a FAKE channel for now: no SMS
+ * provider is connected, so the server hands the generated code back as
+ * `devCode` (AUTH_OTP_FAKE_DELIVERY=1, the default) and this screen shows it
+ * in a clearly marked dev box. The challenge itself is real — hashed at rest,
+ * single-use, short-lived and attempt-capped — so wiring an SMS provider only
+ * replaces the delivery step.
  *
  * There is NO self-registration: accounts are provisioned exclusively by
  * an admin in the role & permission manager. This gate is login-only.
@@ -81,6 +85,9 @@ const formatSlideNumber = (value: number): string => toPersianDigits(String(valu
 /** The segmented mobile field holds exactly this many digits. */
 const MOBILE_DIGITS = 11;
 
+/** One-time-code cells. Mirrors server/auth/otp.ts (OTP_CODE_LENGTH). */
+const OTP_DIGITS = 6;
+
 /** The fixed local head: two prefilled cells the user cannot edit. */
 const MOBILE_PREFIX = '09';
 const MOBILE_PREFIX_LEN = 2;
@@ -130,13 +137,26 @@ const withMobilePrefix = (digits: string): string => {
   return `0${digits}`;
 };
 
+type LoginStep = 'mobile' | 'code';
+
 export const LoginView: React.FC = () => {
-  const { login } = useAuth();
+  const { requestOtp, verifyOtp, establishSession } = useAuth();
   // The `mobile` string always carries the fixed `09` head; the user types
   // only the nine digits that follow it.
   const [mobile, setMobile] = useState(MOBILE_PREFIX);
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [step, setStep] = useState<LoginStep>('mobile');
+  const [otp, setOtp] = useState('');
+  // No SMS provider yet: the server returns the generated code so the dev
+  // box can show it. Null when the backend has fake delivery turned off.
+  const [devCode, setDevCode] = useState<string | null>(null);
+  const [resendIn, setResendIn] = useState(0);
+  const [notice, setNotice] = useState<string | null>(null);
+  // The code verified this instant. Kept for a beat so the success state is
+  // visible before the access gate swaps to the dashboard.
+  const [verified, setVerified] = useState(false);
+  // The last submission did not verify (wrong/expired code or an incomplete
+  // entry). Cleared as soon as the user edits the code again.
+  const [codeInvalid, setCodeInvalid] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -279,7 +299,90 @@ export const LoginView: React.FC = () => {
     focusMobileCell(Math.min(index + pasted.length, MOBILE_DIGITS - 1));
   };
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  // --- Segmented one-time-code field ---------------------------------------
+  // Same editing model as the mobile field: one real input per digit, so
+  // typing, paste and native keyboards all behave; the caret rides forward.
+  const otpCellRefs = useRef<Array<HTMLInputElement | null>>([]);
+
+  const focusOtpCell = useCallback((index: number) => {
+    const cell = otpCellRefs.current[
+      Math.max(0, Math.min(OTP_DIGITS - 1, index))
+    ];
+    cell?.focus();
+  }, []);
+
+  const handleOtpCellChange = (index: number, raw: string) => {
+    setCodeInvalid(false);
+    const digits = toLatinDigits(raw);
+    if (digits.length === 0) {
+      setOtp((prev) => removeMobileDigitAt(prev, index));
+      return;
+    }
+    const digit = digits.slice(-1);
+    setOtp((prev) => setMobileDigitAt(prev, index, digit));
+    if (index < OTP_DIGITS - 1) focusOtpCell(index + 1);
+  };
+
+  const handleOtpCellKeyDown = (index: number, event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Backspace') {
+      event.preventDefault();
+      setCodeInvalid(false);
+      if (otp[index]) {
+        setOtp((prev) => removeMobileDigitAt(prev, index));
+      } else if (index > 0) {
+        focusOtpCell(index - 1);
+        setOtp((prev) => removeMobileDigitAt(prev, index - 1));
+      }
+    } else if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      focusOtpCell(index - 1);
+    } else if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      focusOtpCell(index + 1);
+    } else if (event.key === 'Home') {
+      event.preventDefault();
+      focusOtpCell(0);
+    } else if (event.key === 'End') {
+      event.preventDefault();
+      focusOtpCell(otp.length);
+    }
+  };
+
+  const handleOtpCellPaste = (index: number, event: React.ClipboardEvent<HTMLInputElement>) => {
+    const digits = toLatinDigits(event.clipboardData.getData('text')).slice(0, OTP_DIGITS);
+    if (digits) setCodeInvalid(false);
+    if (!digits) return;
+    event.preventDefault();
+    setOtp((prev) => `${prev.slice(0, index)}${digits}`.slice(0, OTP_DIGITS));
+    focusOtpCell(Math.min(index + digits.length, OTP_DIGITS - 1));
+  };
+
+  // Resend cooldown: one timer per remaining second; the server enforces the
+  // same limit, this only keeps the button honest in the browser.
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const timer = window.setTimeout(() => setResendIn((value) => Math.max(0, value - 1)), 1000);
+    return () => window.clearTimeout(timer);
+  }, [resendIn]);
+
+  // The code step gets focus on the first cell as soon as it appears.
+  useEffect(() => {
+    if (step !== 'code') return;
+    const timer = window.setTimeout(() => otpCellRefs.current[0]?.focus(), 60);
+    return () => window.clearTimeout(timer);
+  }, [step]);
+
+  const startCodeStep = (challenge: { devCode?: string; resendAfterSeconds: number }) => {
+    setStep('code');
+    setOtp('');
+    setVerified(false);
+    setCodeInvalid(false);
+    setDevCode(challenge.devCode ?? null);
+    setResendIn(challenge.resendAfterSeconds);
+    setNotice(`کد تأیید به شماره ${toPersianDigits(mobile)} ارسال شد.`);
+  };
+
+  const handleRequestCode = async (event: React.FormEvent) => {
     event.preventDefault();
     if (busy) return;
     setError(null);
@@ -290,12 +393,75 @@ export const LoginView: React.FC = () => {
     }
     setBusy(true);
     try {
-      await login(mobile.trim(), password);
+      startCodeStep(await requestOtp(mobile));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'خطای نامشخص در ورود');
+      setError(err instanceof Error ? err.message : 'خطای نامشخص در ارسال کد');
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleVerifyCode = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (busy) return;
+    setError(null);
+    if (otp.length < OTP_DIGITS) {
+      setError(`کد تأیید را با ${toPersianDigits(OTP_DIGITS)} رقم کامل وارد کنید.`);
+      setCodeInvalid(true);
+      focusOtpCell(otp.length);
+      return;
+    }
+    setBusy(true);
+    try {
+      // Verification sets the httpOnly cookies but not the React session yet:
+      // the green confirmation below gets a moment to be seen before the gate
+      // hands over to the dashboard.
+      const profile = await verifyOtp(mobile, otp);
+      setCodeInvalid(false);
+      setVerified(true);
+      setBusy(false);
+      await new Promise((resolve) => window.setTimeout(resolve, 1000));
+      establishSession(profile);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'خطای نامشخص در تأیید کد');
+      setVerified(false);
+      setCodeInvalid(true);
+      setOtp('');
+      setBusy(false);
+      focusOtpCell(0);
+    }
+  };
+
+  const handleResendCode = async () => {
+    if (busy || resendIn > 0) return;
+    setError(null);
+    setBusy(true);
+    try {
+      const challenge = await requestOtp(mobile);
+      setOtp('');
+      setVerified(false);
+      setCodeInvalid(false);
+      setDevCode(challenge.devCode ?? null);
+      setResendIn(challenge.resendAfterSeconds);
+      setNotice(`کد تأیید تازه به شماره ${toPersianDigits(mobile)} ارسال شد.`);
+      focusOtpCell(0);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'خطای نامشخص در ارسال دوباره کد');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleEditMobile = () => {
+    setStep('mobile');
+    setOtp('');
+    setVerified(false);
+    setCodeInvalid(false);
+    setDevCode(null);
+    setResendIn(0);
+    setNotice(null);
+    setError(null);
+    window.setTimeout(() => focusMobileCell(mobile.length), 60);
   };
 
   const activeShowcaseSlide = SHOWCASE_SLIDES[activeSlide];
@@ -304,6 +470,7 @@ export const LoginView: React.FC = () => {
   // One character slot per cell; holes are impossible because deletions slide
   // the tail left, so cell N is either digit N or empty.
   const mobileCells = Array.from({ length: MOBILE_DIGITS }, (_, index) => mobile[index] ?? '');
+  const otpCells = Array.from({ length: OTP_DIGITS }, (_, index) => otp[index] ?? '');
 
   return (
     <main id="login-view-root" className="login-shell" dir="rtl">
@@ -319,90 +486,175 @@ export const LoginView: React.FC = () => {
 
           <div className="login-content">
             <div className="login-heading">
-              <span className="login-eyebrow">پنل مدیریت و برنامه‌ریزی</span>
-              <h1>به سامانه خوش آمدید</h1>
-              <p>برای ادامه، با حساب کاربری سازمانی خود وارد شوید.</p>
+              <span className="login-eyebrow">
+                {step === 'mobile' ? 'ورود دومرحله‌ای امن' : 'تأیید هویت'}
+              </span>
+              <h1>{step === 'mobile' ? 'به سامانه خوش آمدید' : 'کد تأیید را وارد کنید'}</h1>
+              <p>
+                {step === 'mobile'
+                  ? 'شماره موبایل سازمانی خود را وارد کنید تا کد یکبار مصرف برایتان ارسال شود.'
+                  : (
+                    <>
+                      کد تأیید ارسال‌شده به{' '}
+                      <b dir="ltr" className="login-mobile-inline">{toPersianDigits(mobile)}</b>{' '}
+                      را وارد کنید.
+                    </>
+                  )}
+              </p>
             </div>
 
-            <form id="login-view-credentials" onSubmit={handleSubmit} className="login-form">
-              <label className="login-field">
-                <span>شماره موبایل سازمانی</span>
-                <span
-                  className="login-input-wrap login-mobile-input"
-                  dir="ltr"
-                  role="group"
-                  aria-label="شماره موبایل سازمانی، ۱۱ رقم"
-                  onClick={(event) => {
-                    // Clicks that land between cells route the caret to the
-                    // next empty one; the cells themselves handle their own.
-                    if (event.target instanceof HTMLInputElement) return;
-                    focusMobileCell(mobile.length);
-                  }}
-                >
-                  <span className="login-mobile-cells">
-                    {/* The fixed local head: two prefilled, non-editable cells. */}
-                    {Array.from({ length: MOBILE_PREFIX_LEN }, (_, index) => (
-                      <span
-                        key={`prefix-${index}`}
-                        className="login-mobile-cell is-filled is-fixed"
-                        aria-hidden="true"
-                      >
-                        {toPersianDigits(mobileCells[index])}
-                      </span>
-                    ))}
-                    {/* Nine writable cells, one digit each. */}
-                    {mobileCells.slice(MOBILE_PREFIX_LEN).map((digit, position) => {
-                      const index = position + MOBILE_PREFIX_LEN;
-                      return (
+            <form
+              id="login-view-credentials"
+              onSubmit={step === 'mobile' ? handleRequestCode : handleVerifyCode}
+              className="login-form"
+            >
+              {step === 'mobile' ? (
+                <label className="login-field">
+                  <span>شماره موبایل سازمانی</span>
+                  <span
+                    className="login-input-wrap login-mobile-input"
+                    dir="ltr"
+                    role="group"
+                    aria-label="شماره موبایل سازمانی، ۱۱ رقم"
+                    onClick={(event) => {
+                      // Clicks that land between cells route the caret to the
+                      // next empty one; the cells themselves handle their own.
+                      if (event.target instanceof HTMLInputElement) return;
+                      focusMobileCell(mobile.length);
+                    }}
+                  >
+                    <span className="login-mobile-cells">
+                      {/* The fixed local head: two prefilled, non-editable cells. */}
+                      {Array.from({ length: MOBILE_PREFIX_LEN }, (_, index) => (
+                        <span
+                          key={`prefix-${index}`}
+                          className="login-mobile-cell is-filled is-fixed"
+                          aria-hidden="true"
+                        >
+                          {toPersianDigits(mobileCells[index])}
+                        </span>
+                      ))}
+                      {/* Nine writable cells, one digit each. */}
+                      {mobileCells.slice(MOBILE_PREFIX_LEN).map((digit, position) => {
+                        const index = position + MOBILE_PREFIX_LEN;
+                        return (
+                          <input
+                            key={index}
+                            ref={(node) => {
+                              mobileCellRefs.current[index] = node;
+                            }}
+                            className={`login-mobile-cell${digit ? ' is-filled' : ''}`}
+                            type="text"
+                            inputMode="numeric"
+                            dir="ltr"
+                            value={digit ? toPersianDigits(digit) : ''}
+                            onChange={(e) => handleMobileCellChange(index, e.target.value)}
+                            onKeyDown={(e) => handleMobileCellKeyDown(index, e)}
+                            onPaste={(e) => handleMobileCellPaste(index, e)}
+                            onFocus={(e) => e.target.select()}
+                            disabled={busy}
+                            autoComplete="off"
+                            spellCheck={false}
+                            aria-label={`شماره موبایل، رقم ${toPersianDigits(index + 1)}`}
+                          />
+                        );
+                      })}
+                    </span>
+                  </span>
+                </label>
+              ) : (
+                <>
+                  <div className="login-mobile-summary">
+                    <span><ShieldCheck aria-hidden="true" /> کد به این شماره ارسال شد</span>
+                    <b dir="ltr">{toPersianDigits(mobile)}</b>
+                  </div>
+
+                  <label className="login-field">
+                    <span>کد تأیید ۶ رقمی</span>
+                    <span
+                      className={`login-input-wrap login-otp-input${verified ? ' is-verified' : ''}${codeInvalid ? ' is-invalid' : ''}`}
+                      dir="ltr"
+                      role="group"
+                      aria-label="کد تأیید، ۶ رقم"
+                    >
+                      {otpCells.map((digit, index) => (
                         <input
                           key={index}
                           ref={(node) => {
-                            mobileCellRefs.current[index] = node;
+                            otpCellRefs.current[index] = node;
                           }}
-                          className={`login-mobile-cell${digit ? ' is-filled' : ''}`}
+                          className={`login-mobile-cell login-otp-cell${digit ? ' is-filled' : ''}${verified ? ' is-verified' : ''}${codeInvalid ? ' is-invalid' : ''}`}
                           type="text"
                           inputMode="numeric"
                           dir="ltr"
                           value={digit ? toPersianDigits(digit) : ''}
-                          onChange={(e) => handleMobileCellChange(index, e.target.value)}
-                          onKeyDown={(e) => handleMobileCellKeyDown(index, e)}
-                          onPaste={(e) => handleMobileCellPaste(index, e)}
+                          onChange={(e) => handleOtpCellChange(index, e.target.value)}
+                          onKeyDown={(e) => handleOtpCellKeyDown(index, e)}
+                          onPaste={(e) => handleOtpCellPaste(index, e)}
                           onFocus={(e) => e.target.select()}
-                          disabled={busy}
-                          autoComplete="off"
+                          disabled={busy || verified}
+                          autoComplete={index === 0 ? 'one-time-code' : 'off'}
                           spellCheck={false}
-                          aria-label={`شماره موبایل، رقم ${toPersianDigits(index + 1)}`}
+                          aria-invalid={codeInvalid}
+                          aria-describedby={codeInvalid ? 'login-view-error' : undefined}
+                          aria-label={`کد تأیید، رقم ${toPersianDigits(index + 1)}`}
                         />
-                      );
-                    })}
-                  </span>
-                </span>
-              </label>
+                      ))}
+                    </span>
+                  </label>
 
-              <label className="login-field">
-                <span>رمز عبور</span>
-                <span className="login-input-wrap" dir="ltr">
-                  <Lock aria-hidden="true" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    autoComplete="current-password"
-                    placeholder="رمز عبور خود را وارد کنید"
-                    aria-label="رمز عبور"
-                  />
-                  <button
-                    className="login-password-toggle"
-                    type="button"
-                    onClick={() => setShowPassword((visible) => !visible)}
-                    aria-label={showPassword ? 'پنهان کردن رمز عبور' : 'نمایش رمز عبور'}
-                    title={showPassword ? 'پنهان کردن رمز عبور' : 'نمایش رمز عبور'}
-                  >
-                    {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
-                  </button>
-                </span>
-              </label>
+                  {verified && (
+                    <div className="login-verified" role="status" aria-live="polite">
+                      <CheckCircle2 aria-hidden="true" />
+                      <span>کد تأیید شد — در حال ورود به سامانه…</span>
+                    </div>
+                  )}
+
+                  {devCode && !verified && (
+                    <div className="login-dev-code" role="note">
+                      <FlaskConical aria-hidden="true" />
+                      <span>
+                        پیامک هنوز متصل نیست؛ کد تأیید آزمایشی:
+                        <b dir="ltr" className="login-dev-code-value">{toPersianDigits(devCode)}</b>
+                      </span>
+                    </div>
+                  )}
+
+                  {!verified && (
+                    <div className="login-otp-actions">
+                      <button
+                        type="button"
+                        className="login-link-button"
+                        onClick={handleEditMobile}
+                        disabled={busy}
+                      >
+                        ویرایش شماره
+                      </button>
+                      {resendIn > 0 ? (
+                        <span className="login-resend-hint">
+                          ارسال دوباره تا {toPersianDigits(resendIn)} ثانیه
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          className="login-link-button"
+                          onClick={handleResendCode}
+                          disabled={busy}
+                        >
+                          ارسال دوباره کد
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {notice && step === 'code' && !verified && (
+                <div className="login-notice" role="status">
+                  <ShieldCheck aria-hidden="true" />
+                  <span>{notice}</span>
+                </div>
+              )}
 
               {error && (
                 <div id="login-view-error" className="login-error" role="alert">
@@ -413,24 +665,36 @@ export const LoginView: React.FC = () => {
 
               <button
                 type="submit"
-                disabled={busy}
-                className={`login-submit${busy ? ' is-busy' : ''}`}
+                disabled={busy || verified}
+                className={`login-submit${busy ? ' is-busy' : ''}${verified ? ' is-verified' : ''}`}
                 aria-busy={busy}
               >
                 <span className="login-submit-label">
-                  {busy ? 'در حال ورود...' : 'ورود به سامانه'}
+                  {verified
+                    ? 'کد تأیید شد'
+                    : busy
+                      ? (step === 'mobile' ? 'در حال ارسال کد...' : 'در حال تأیید...')
+                      : (step === 'mobile' ? 'دریافت کد تأیید' : 'تأیید و ورود')}
                 </span>
               </button>
 
               <p className="login-security-note">
                 <ShieldCheck aria-hidden="true" />
-                نشست شما با اتصال امن و کوکی‌های محافظت‌شده نگهداری می‌شود.
+                {verified
+                  ? 'هویت تأیید شد؛ نشست امن شما در حال ایجاد است.'
+                  : step === 'mobile'
+                    ? 'کد یکبار مصرف کوتاه‌عمر است و نشست شما در کوکی‌های محافظت‌شده نگهداری می‌شود.'
+                    : 'این کد یکبار مصرف است و بلافاصله پس از ورود باطل می‌شود.'}
               </p>
             </form>
 
-            <DevSeedLoginPanel onFill={(username, password) => {
+            <DevSeedLoginPanel onFill={(username) => {
               setMobile(withMobilePrefix(normalizeMobileDigits(username)));
-              setPassword(password);
+              setStep('mobile');
+              setOtp('');
+              setVerified(false);
+              setCodeInvalid(false);
+              setError(null);
             }} />
           </div>
 

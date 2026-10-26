@@ -11,6 +11,19 @@
 import { UserProfile } from '../types';
 import { api } from './api';
 
+export interface OtpRequestResult {
+  ok: boolean;
+  /** How long the code stays valid. */
+  expiresInSeconds: number;
+  /** Seconds before another code may be requested for the same mobile. */
+  resendAfterSeconds: number;
+  /**
+   * Present only while AUTH_OTP_FAKE_DELIVERY is on (no SMS provider wired
+   * yet). The login screen shows it as a dev hint instead of receiving an SMS.
+   */
+  devCode?: string;
+}
+
 export interface CreateAccountInput {
   /** Normalized on the server (server/auth/mobile.ts): 09123456789 etc. */
   mobile: string;
@@ -32,7 +45,11 @@ export interface CreateAccountResult {
 export const authApi = {
   createAccount: (input: CreateAccountInput) =>
     post<CreateAccountResult>(`/api/auth/users`, input),
+  /** Password login — kept for machine clients; the browser uses OTP. */
   login: (mobile: string, password: string) => post<{ user: SessionProfile }>(`/api/auth/login`, { mobile, password }),
+  requestOtp: (mobile: string) => post<OtpRequestResult>(`/api/auth/otp/request`, { mobile }),
+  verifyOtp: (mobile: string, code: string) =>
+    post<{ user: SessionProfile }>(`/api/auth/otp/verify`, { mobile, code }),
   logout: () => post<{ ok: boolean }>(`/api/auth/logout`, {}),
   me: () => get<{ user: SessionProfile }>(`/api/auth/me`),
 };

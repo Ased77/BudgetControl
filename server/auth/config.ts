@@ -12,6 +12,11 @@
      AUTH_REFRESH_TTL_DAYS      refresh-token lifetime (default 30)
      AUTH_COOKIE_SECURE         Secure flag on cookies (default: in production)
      AUTH_COOKIE_SAMESITE       SameSite lax|strict    (default lax)
+     AUTH_OTP_TTL_SECONDS       one-time-code lifetime   (default 120)
+     AUTH_OTP_MAX_ATTEMPTS      wrong guesses per code   (default 5)
+     AUTH_OTP_RESEND_SECONDS    resend cooldown          (default 60)
+     AUTH_OTP_FAKE_DELIVERY     return the code to the client instead of
+                                sending an SMS (default 1 — SMS is not wired)
      AUTH_BOOTSTRAP_MOBILE / AUTH_BOOTSTRAP_PASSWORD
                                 credentials for the first-admin repair; unset
                                 makes the repair generate and print a one-time
@@ -32,6 +37,14 @@ export interface AuthSettings {
   audience: 'csr-web';
   accessTtlSeconds: number;
   refreshTtlDays: number;
+  /** One-time-code lifetime; short on purpose. */
+  otpTtlSeconds: number;
+  /** Wrong guesses a single challenge tolerates before it dies. */
+  otpMaxAttempts: number;
+  /** Minimum gap between two codes for the same mobile number. */
+  otpResendSeconds: number;
+  /** No SMS provider yet: hand the generated code back to the client. */
+  otpFakeDelivery: boolean;
   cookieSecure: boolean;
   cookieSameSite: 'lax' | 'strict';
   bootstrapMobile: string | null;
@@ -79,6 +92,14 @@ export function loadAuthConfig(env: Env = process.env): AuthSettings {
     audience: 'csr-web',
     accessTtlSeconds: positiveInt(env, 'AUTH_ACCESS_TTL_SECONDS', 900),
     refreshTtlDays: positiveInt(env, 'AUTH_REFRESH_TTL_DAYS', 30),
+    otpTtlSeconds: positiveInt(env, 'AUTH_OTP_TTL_SECONDS', 120),
+    otpMaxAttempts: positiveInt(env, 'AUTH_OTP_MAX_ATTEMPTS', 5),
+    otpResendSeconds: positiveInt(env, 'AUTH_OTP_RESEND_SECONDS', 60),
+    // Deliberately ON: no SMS provider is connected yet, and the login flow
+    // must stay testable. Set AUTH_OTP_FAKE_DELIVERY=0 once delivery is real
+    // — the code is then only written to the server log, never to the
+    // response body (see server/auth/routes.ts).
+    otpFakeDelivery: boolean(env, 'AUTH_OTP_FAKE_DELIVERY', true),
     // Behind a TLS-terminating proxy/CDN the browser still needs `Secure` —
     // the flag is about the client connection, so production defaults to on.
     cookieSecure: boolean(env, 'AUTH_COOKIE_SECURE', process.env.NODE_ENV === 'production'),

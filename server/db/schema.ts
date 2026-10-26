@@ -659,6 +659,34 @@ export const refreshTokens = pgTable('refresh_tokens', {
 ]);
 
 /* =========================================================================
+   auth_otp_challenges — one live one-time-code challenge per mobile number.
+
+   The code itself is never stored: `code_hash` is an HMAC-SHA256 of
+   `<mobile>:<code>` keyed with AUTH_JWT_SECRET (see server/auth/otp.ts), so a
+   database dump cannot be replayed as a login. A row is replaced on every
+   resend (attempts reset), deleted on successful verification (single use),
+   and ignored once `expires_at` passes.
+
+   The mobile number is the key rather than a user_id on purpose: the request
+   endpoint answers identically for known and unknown numbers, so it cannot
+   be used to enumerate accounts. Account existence is only checked after a
+   correct code has been presented.
+   ========================================================================= */
+export const authOtpChallenges = pgTable('auth_otp_challenges', {
+  /** Canonical mobile (server/auth/mobile.ts). One challenge at a time. */
+  mobile: text().primaryKey(),
+  /** HMAC-SHA256 hex of `<mobile>:<code>` — never the code. */
+  codeHash: text().notNull(),
+  /** Wrong guesses so far; the challenge dies at AUTH_OTP_MAX_ATTEMPTS. */
+  attempts: integer().notNull().default(0),
+  expiresAt: timestamp({ withTimezone: true }).notNull(),
+  /** Issued-at instant — drives the resend cooldown. */
+  sentAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('idx_auth_otp_challenges_expires').on(t.expiresAt),
+]);
+
+/* =========================================================================
    Row types inferred from the schema — repositories use these for typing.
    ========================================================================= */
 export type ProjectRow = typeof projects.$inferSelect;
@@ -671,3 +699,4 @@ export type AuditLogRow = typeof auditLogs.$inferSelect;
 export type AnalysisSourceRow = typeof analysisSources.$inferSelect;
 export type AuthUserRow = typeof authUsers.$inferSelect;
 export type RefreshTokenRow = typeof refreshTokens.$inferSelect;
+export type OtpChallengeRow = typeof authOtpChallenges.$inferSelect;

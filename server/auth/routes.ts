@@ -3,8 +3,10 @@
 
    Flow map (matches the architecture doc in docs/AUTH.md):
 
-     POST /login     → verify credentials → issue session          (⇐ real id)
-     POST /users     → admin-only account issuance (role & permission
+     POST /otp/request → (re)issue a one-time code for a mobile
+     POST /otp/verify  → verify the code → issue session            (⇐ real id)
+     POST /login     → verify password → issue session (machine clients)
+     POST /users     → admin-only account issuance (role & permission)
                         manager). This is the ONLY way a new account is
                         born — self-registration was removed by policy:
      POST /refresh   → validate+rotate refresh → new access token
@@ -24,6 +26,7 @@ import express, { type Request, type RequestHandler, type Response } from 'expre
 import { randomBytes, randomUUID } from 'node:crypto';
 import { loadAuthConfig, ACCESS_COOKIE, REFRESH_COOKIE, type AuthSettings } from './config.js';
 import { MIN_PASSWORD_LENGTH, hashPassword, verifyPassword } from './password.js';
+import { generateOtpCode, hashOtpCode, normalizeOtpCode, verifyOtpCode } from './otp.js';
 import {
   hashRefreshToken,
   newRefreshToken,
@@ -32,12 +35,16 @@ import {
 import {
   authUserToSession,
   consumeRefreshToken,
+  deleteOtpChallenge,
   getAuthUserByMobile,
   getAuthUserById,
+  getOtpChallenge,
   getRefreshTokenState,
+  incrementOtpAttempts,
   insertAuthUser,
   insertRefreshToken,
   revokeRefreshFamily,
+  saveOtpChallenge,
 } from './repo.js';
 import { normalizeMobile } from './mobile.js';
 import { requireAuth, requireAdmin } from './middleware.js';
@@ -56,20 +63,39 @@ const LOGIN_WINDOW_MS = 60_000;
 const LOGIN_MAX_ATTEMPTS = 8;
 const attempts = new Map<string, { count: number; resetAt: number }>();
 
-const loginLimiter: RequestHandler = (req, res, next) => {
-  const key = `${req.socket.remoteAddress ?? 'unknown'}`;
-  const now = Date.now();
-  const entry = attempts.get(key);
-  if (!entry || now > entry.resetAt) {
-    attempts.set(key, { count: 1, resetAt: now + LOGIN_WINDOW_MS });
+/** One per-IP window limiter; the map is per instance (see the note above). */
+function createIpLimiter(
+  store: Map<string, { count: number; resetAt: number }>,
+  windowMs: number,
+  max: number,
+): RequestHandler {
+  return (req, res, next) => {
+    const key = `${req.socket.remoteAddress ?? 'unknown'}`;
+    const now = Date.now();
+    const entry = store.get(key);
+    if (!entry || now > entry.resetAt) {
+      store.set(key, { count: 1, resetAt: now + windowMs });
+      return next();
+    }
+    entry.count += 1;
+    if (entry.count > max) {
+      return res.status(429).json({ error: 'تلاش‌های ناموفق بیش از حد مجاز — کمی بعد دوباره تلاش کنید', code: 'RATE_LIMITED' });
+    }
     return next();
-  }
-  entry.count += 1;
-  if (entry.count > LOGIN_MAX_ATTEMPTS) {
-    return res.status(429).json({ error: 'تلاش‌های ناموفق بیش از حد مجاز — کمی بعد دوباره تلاش کنید', code: 'RATE_LIMITED' });
-  }
-  return next();
-};
+  };
+}
+
+const loginLimiter = createIpLimiter(attempts, LOGIN_WINDOW_MS, LOGIN_MAX_ATTEMPTS);
+
+/* OTP has two throttles: per-IP request windows and the per-challenge attempt
+   cap in the verify route (the code itself is only six digits). */
+const otpSendLimiter = createIpLimiter(new Map(), 10 * 60_000, 6);
+const otpVerifyLimiter = createIpLimiter(new Map(), 60_000, 20);
+
+/** Log-safe mobile: enough to identify the attempt, not the person. */
+function maskMobile(mobile: string): string {
+  return `${mobile.slice(0, 4)}***${mobile.slice(-2)}`;
+}
 
 /* --------------------------------------------------------------------------
    Response shaping
@@ -300,7 +326,151 @@ authRouter.post('/users', requireAuth, requireAdmin, async (req, res, next) => {
 });
 
 // ---------------------------------------------------------------------------
+// POST /otp/request — issue a six-digit one-time code for a mobile number.
+//
+// The response is the same whether or not an account exists for the number:
+// this route must never become an account-enumeration oracle. The code is
+// delivered by the fake channel for now (AUTH_OTP_FAKE_DELIVERY=1 returns it
+// in `devCode`); swapping in an SMS provider means sending it there and
+// turning the flag off — the rest of the flow stays as is.
+// ---------------------------------------------------------------------------
+authRouter.post('/otp/request', otpSendLimiter, async (req, res, next) => {
+  try {
+    const { mobile } = (req.body ?? {}) as { mobile?: unknown };
+    const normalized = normalizeMobile(mobile);
+    if (!normalized) {
+      return res.status(400).json({ error: 'شماره موبایل معتبر وارد کنید (نمونه: 09123456789)', code: 'INVALID_MOBILE' });
+    }
+
+    const config = loadAuthConfig();
+    const now = Date.now();
+
+    // Resend cooldown is per number, so two tabs (or two people) cannot
+    // churn codes; a new code would invalidate the previous one anyway.
+    const existing = await getOtpChallenge(normalized);
+    if (existing) {
+      const elapsedMs = now - existing.sentAt.getTime();
+      const cooldownMs = config.otpResendSeconds * 1000;
+      if (elapsedMs < cooldownMs) {
+        const retryAfterSeconds = Math.ceil((cooldownMs - elapsedMs) / 1000);
+        return res.status(429).json({
+          error: `ارسال دوباره کد تا ${retryAfterSeconds} ثانیه دیگر ممکن است`,
+          code: 'OTP_RESEND_COOLDOWN',
+          retryAfterSeconds,
+        });
+      }
+    }
+
+    const code = generateOtpCode();
+    await saveOtpChallenge({
+      mobile: normalized,
+      codeHash: hashOtpCode(normalized, code),
+      expiresAt: new Date(now + config.otpTtlSeconds * 1000),
+      sentAt: new Date(now),
+    });
+
+    if (config.otpFakeDelivery) {
+      console.info(`[auth] OTP (fake delivery) for ${maskMobile(normalized)}: ${code}`);
+    } else {
+      console.info(`[auth] OTP issued for ${maskMobile(normalized)} (delivery not configured)`);
+    }
+
+    return res.json({
+      ok: true,
+      expiresInSeconds: config.otpTtlSeconds,
+      resendAfterSeconds: config.otpResendSeconds,
+      ...(config.otpFakeDelivery ? { devCode: code } : {}),
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// POST /otp/verify — check the code, then a verified user_id flows out.
+//
+// Single use, short lived and attempt-capped: a correct code deletes the
+// challenge before the account lookup, so even a number without an account
+// cannot reuse the same code. Sessions are issued by the same issueSession()
+// as password login — every downstream invariant is unchanged.
+// ---------------------------------------------------------------------------
+authRouter.post('/otp/verify', otpVerifyLimiter, async (req, res, next) => {
+  try {
+    const { mobile, code: rawCode } = (req.body ?? {}) as { mobile?: unknown; code?: unknown };
+    const normalized = normalizeMobile(mobile);
+    const code = normalizeOtpCode(rawCode);
+    if (!normalized) {
+      return res.status(400).json({ error: 'شماره موبایل معتبر وارد کنید (نمونه: 09123456789)', code: 'INVALID_MOBILE' });
+    }
+    if (!code) {
+      return res.status(400).json({ error: 'کد تأیید ۶ رقمی را وارد کنید', code: 'INVALID_OTP' });
+    }
+
+    const config = loadAuthConfig();
+    const challenge = await getOtpChallenge(normalized);
+    if (!challenge) {
+      return res.status(401).json({
+        error: 'کد تأیید نامعتبر یا منقضی شده است — دوباره کد بگیرید',
+        code: 'OTP_REQUIRED',
+      });
+    }
+    if (challenge.expiresAt.getTime() <= Date.now()) {
+      await deleteOtpChallenge(normalized);
+      return res.status(401).json({
+        error: 'کد تأیید منقضی شده است — دوباره کد بگیرید',
+        code: 'OTP_EXPIRED',
+      });
+    }
+    if (challenge.attempts >= config.otpMaxAttempts) {
+      await deleteOtpChallenge(normalized);
+      return res.status(429).json({
+        error: 'تعداد تلاش‌های ناموفق بیش از حد مجاز — کد جدید درخواست کنید',
+        code: 'OTP_ATTEMPTS_EXCEEDED',
+      });
+    }
+
+    if (!verifyOtpCode(normalized, code, challenge.codeHash)) {
+      const used = await incrementOtpAttempts(normalized);
+      const remaining = Math.max(0, config.otpMaxAttempts - used);
+      console.warn(`[auth] OTP rejected for ${maskMobile(normalized)}: wrong code (${used}/${config.otpMaxAttempts})`);
+      if (remaining === 0) {
+        return res.status(429).json({
+          error: 'تعداد تلاش‌های ناموفق بیش از حد مجاز — کد جدید درخواست کنید',
+          code: 'OTP_ATTEMPTS_EXCEEDED',
+        });
+      }
+      return res.status(401).json({
+        error: `کد تأیید نادرست است — ${remaining} تلاش دیگر باقی مانده`,
+        code: 'OTP_INVALID',
+        attemptsRemaining: remaining,
+      });
+    }
+
+    // Correct code: burn it before anything else can fail.
+    await deleteOtpChallenge(normalized);
+
+    const row = await getAuthUserByMobile(normalized);
+    if (!row) {
+      console.warn(`[auth] OTP verified for ${maskMobile(normalized)} but no account exists`);
+      return res.status(401).json({
+        error: 'امکان ورود با این شماره وجود ندارد — با مدیر سامانه تماس بگیرید',
+        code: 'ACCOUNT_UNAVAILABLE',
+      });
+    }
+    if (!row.isActive) {
+      return res.status(401).json({ error: 'این حساب کاربری غیرفعال شده است', code: 'ACCOUNT_DISABLED' });
+    }
+
+    await issueSession(res, req, row.id);
+    return res.json({ user: await toPublicProfile(row) });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+// ---------------------------------------------------------------------------
 // POST /login — verify credentials, then a verified user_id flows out.
+// Kept for machine clients and admin tooling; the browser login uses OTP.
 // ---------------------------------------------------------------------------
 authRouter.post('/login', loginLimiter, async (req, res, next) => {
   try {

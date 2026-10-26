@@ -12,14 +12,18 @@ column. There is no guest id, no impersonation, no client-assigned id.
 
 ```
                  ┌───────────────────────────── the SPA ─────────────────────────────┐
-mobile+password  │  LoginView → AuthContext.login()                                  │
- ───────────────►│      fetch POST /api/auth/login  (credentials:'include')          │
+mobile  ────────►│  LoginView → AuthContext.requestOtp()                             │
+                 │      POST /api/auth/otp/request  (credentials:'include')          │
+code    ────────►│  AuthContext.loginWithOtp()                                       │
+                 │      POST /api/auth/otp/verify                                    │
                  └──────────────────────── correlator ───────────────────────────────┘
                               │
                               ▼
  Express  authRouter
-   · /register  hashPassword(scrypt) → INSERT auth_users  ← user_id minted HERE
-   · /login     verifyPassword → issueSession()
+   · /otp/request  code → HMAC(hash at rest, TTL, cooldown) — no session yet
+   · /otp/verify   code checked → issueSession()  ← the only browser login
+   · /login        verifyPassword → issueSession() (machine clients only)
+   · /register     disabled by policy (accounts come from /users)
    · /refresh   rotate (reuse detection → family revoke)
    · /logout    revoke family + clear cookies
                               │
@@ -76,7 +80,15 @@ mobile+password  │  LoginView → AuthContext.login()                         
 - **Revocation, global:** password change bumps `tokens_valid_from`; any access token with `iat < tokens_valid_from` dies on its next use even without a DB hit against refresh_tokens.
 - **Door lock:** `is_active=false` → all sessions invalid immediately (checked per request).
 - **Missing/invalid user_id:** a JWT without a resolvable `sub` row can never pass `requireAuth`. Handlers without an auth context throw in `actorId()` (401), and the database would reject the write anyway. Defense in depth.
+- **OTP brute force:** each challenge allows 5 wrong guesses (then it dies), a resend is limited to one per 60s per number, and the request/verify routes carry per-IP window limiters. The code is six CSPRNG digits, hashed with HMAC-SHA256 keyed by `AUTH_JWT_SECRET` and bound to the mobile number.
 - **Brute force:** in-memory per-instance limiter (8/min/IP) on /register and /login. Multi-replica deployments add a shared store (Redis) ahead of the map.
+
+### OTP login (current browser flow)
+
+1. `POST /api/auth/otp/request { mobile }` normalizes the number and writes/replaces the `auth_otp_challenges` row. The response is identical for known and unknown numbers (no account enumeration).
+2. The code is delivered by a fake channel for now: with `AUTH_OTP_FAKE_DELIVERY=1` (default) it comes back as `devCode` and the login screen shows it in a marked dev box. A real SMS provider replaces only this delivery step.
+3. `POST /api/auth/otp/verify { mobile, code }` checks expiry and attempts, then deletes the challenge (single use) and looks up the active `auth_users` row. Only here does an unknown number learn there is no account.
+4. A correct code calls the same `issueSession()` as password login, so cookies, rotation and `requireAuth` are unchanged.
 
 ## 4. Secrets & configuration
 
@@ -85,6 +97,8 @@ mobile+password  │  LoginView → AuthContext.login()                         
 | `AUTH_JWT_SECRET` | required, ≥32 chars — signs the access token. Refuses to boot if missing |
 | `AUTH_ACCESS_TTL_SECONDS` / `AUTH_REFRESH_TTL_DAYS` | lifetimes |
 | `AUTH_COOKIE_SECURE` / `AUTH_COOKIE_SAMESITE` | cookie flags (Secure auto in prod) |
+| `AUTH_OTP_TTL_SECONDS` / `AUTH_OTP_MAX_ATTEMPTS` / `AUTH_OTP_RESEND_SECONDS` | one-time-code lifetime (120s), wrong guesses (5) and resend cooldown (60s) |
+| `AUTH_OTP_FAKE_DELIVERY` | 1 (default): return the code to the login screen; 0: never put it in the response |
 | `AUTH_ALLOW_REGISTRATION` | self-service signup gate (default OFF) |
 | `AUTH_BOOTSTRAP_MOBILE` / `AUTH_BOOTSTRAP_PASSWORD` | the first operator account (falls back to a generated one-time password printed once) |
 

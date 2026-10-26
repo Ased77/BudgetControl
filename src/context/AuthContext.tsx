@@ -13,7 +13,7 @@
  */
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { authApi, SessionProfile } from '../services/authApi';
+import { authApi, OtpRequestResult, SessionProfile } from '../services/authApi';
 import { setUnauthorizedHandler } from '../services/api';
 
 export type AuthStatus = 'loading' | 'anonymous' | 'authenticated';
@@ -22,6 +22,17 @@ interface AuthContextType {
   status: AuthStatus;
   /** The verified user — every consumer treats this as server-issued truth. */
   user: SessionProfile | null;
+  /** Requests a one-time code (no session yet). */
+  requestOtp: (mobile: string) => Promise<OtpRequestResult>;
+  /**
+   * Verifies a one-time code and receives the session cookies, but does NOT
+   * flip React state yet. Splitting verification from adoption lets the login
+   * screen show its green confirmation before the gate hands over to the app.
+   */
+  verifyOtp: (mobile: string, code: string) => Promise<SessionProfile>;
+  /** Adopts a profile returned by verifyOtp() as the live session. */
+  establishSession: (profile: SessionProfile) => void;
+  /** Password login — kept for machine clients; the browser uses OTP. */
   login: (mobile: string, password: string) => Promise<SessionProfile>;
   logout: () => Promise<void>;
 }
@@ -64,6 +75,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => setUnauthorizedHandler(null);
   }, []);
 
+  const requestOtp = useCallback(
+    (mobile: string): Promise<OtpRequestResult> => authApi.requestOtp(mobile),
+    [],
+  );
+
+  const verifyOtp = useCallback(async (mobile: string, code: string): Promise<SessionProfile> => {
+    const res = await authApi.verifyOtp(mobile, code);
+    return res.user;
+  }, []);
+
+  const establishSession = useCallback((profile: SessionProfile): void => {
+    if (!mounted.current) return;
+    setUser(profile);
+    setStatus('authenticated');
+  }, []);
+
   const login = useCallback(async (mobile: string, password: string): Promise<SessionProfile> => {
     const res = await authApi.login(mobile, password);
     if (!mounted.current) return res.user;
@@ -84,8 +111,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const value = useMemo(
-    () => ({ status, user, login, logout }),
-    [status, user, login, logout],
+    () => ({ status, user, requestOtp, verifyOtp, establishSession, login, logout }),
+    [status, user, requestOtp, verifyOtp, establishSession, login, logout],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
