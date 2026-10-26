@@ -185,7 +185,7 @@
         ],
         "operationId": "requestOtpCode",
         "summary": "Issue a one-time login code for a mobile number",
-        "description": "Creates (or replaces) the single live challenge for the number. The code is six digits, stored only as an HMAC-SHA256 hash, valid for `AUTH_OTP_TTL_SECONDS` (default 120 s), and single-use. A resend within `AUTH_OTP_RESEND_SECONDS` (default 60 s) answers 429. The response is identical for known and unknown numbers — no account enumeration.\nDelivery is fake until an SMS provider is wired: with `AUTH_OTP_FAKE_DELIVERY=1` (the default) the response includes `devCode`, which the login screen shows as a marked dev hint. Set it to 0 and send the code through the provider instead; the field disappears from the response. Rate limited to 6 requests / 10 min / IP.\n",
+        "description": "Creates (or replaces) the single live challenge for the number. The code is six digits, stored only as an HMAC-SHA256 hash, valid for `AUTH_OTP_TTL_SECONDS` (default 120 s), and single-use. A resend within `AUTH_OTP_RESEND_SECONDS` (default 60 s) answers 429.\nThe number must belong to an account: an unregistered mobile is refused immediately with 404 `ACCOUNT_NOT_FOUND` («چنین کاربری وجود ندارد») and no challenge is written.\nDelivery is fake until an SMS provider is wired: with `AUTH_OTP_FAKE_DELIVERY=1` (the default) the response includes `devCode`, which the login screen shows as a marked dev hint. Set it to 0 and send the code through the provider instead; the field disappears from the response. Rate limited to 6 requests / 10 min / IP.\n",
         "security": [],
         "requestBody": {
           "required": true,
@@ -221,6 +221,20 @@
               }
             }
           },
+          "404": {
+            "description": "No account exists for this mobile (`ACCOUNT_NOT_FOUND`); no code is sent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "چنین کاربری وجود ندارد",
+                  "code": "ACCOUNT_NOT_FOUND"
+                }
+              }
+            }
+          },
           "429": {
             "description": "Resend cooldown (`OTP_RESEND_COOLDOWN`, with `retryAfterSeconds`) or per-IP rate limit (`RATE_LIMITED`).",
             "content": {
@@ -244,7 +258,7 @@
         ],
         "operationId": "verifyOtpCode",
         "summary": "Verify a one-time code and start a session",
-        "description": "Checks expiry and the per-code attempt cap (5 wrong guesses), deletes the challenge — a code is single-use even if the account check fails — then issues the same httpOnly session cookies as password login. An unknown number only learns there is no account after a correct code; a disabled account answers `ACCOUNT_DISABLED`. Rate limited to 20 requests / 60 s / IP.\n",
+        "description": "Checks expiry and the per-code attempt cap (5 wrong guesses), deletes the challenge — a code is single-use even if the account check fails — then issues the same httpOnly session cookies as password login. The account is re-checked here as a race guard, so a row deleted after the request answers `ACCOUNT_NOT_FOUND`; a disabled account answers `ACCOUNT_DISABLED`. Rate limited to 20 requests / 60 s / IP.\n",
         "security": [],
         "requestBody": {
           "required": true,
@@ -282,7 +296,7 @@
             }
           },
           "401": {
-            "description": "Missing/expired code (`OTP_REQUIRED`, `OTP_EXPIRED`), wrong code (`OTP_INVALID`, with `attemptsRemaining`), no account for the number (`ACCOUNT_UNAVAILABLE`) or a disabled account (`ACCOUNT_DISABLED`).\n",
+            "description": "Missing/expired code (`OTP_REQUIRED`, `OTP_EXPIRED`), wrong code (`OTP_INVALID`, with `attemptsRemaining`), no account for the number (`ACCOUNT_NOT_FOUND`, race guard) or a disabled account (`ACCOUNT_DISABLED`).\n",
             "content": {
               "application/json": {
                 "schema": {

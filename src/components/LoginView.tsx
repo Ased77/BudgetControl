@@ -80,7 +80,6 @@ const PERSIAN_DIGITS = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '�
 const toPersianDigits = (value: string | number): string =>
   String(value).replace(/[0-9]/g, (digit) => PERSIAN_DIGITS[Number(digit)]);
 
-const formatSlideNumber = (value: number): string => toPersianDigits(String(value).padStart(2, '0'));
 
 /** The segmented mobile field holds exactly this many digits. */
 const MOBILE_DIGITS = 11;
@@ -838,9 +837,6 @@ export const LoginView: React.FC = () => {
               >
                 <div className="showcase-slide-meta">
                   <span className="showcase-slide-icon" aria-hidden="true"><ActiveShowcaseIcon /></span>
-                  <span className="showcase-slide-count" dir="ltr" aria-hidden="true">
-                    <b>{formatSlideNumber(activeSlide + 1)}</b> / {formatSlideNumber(SHOWCASE_SLIDES.length)}
-                  </span>
                 </div>
                 <p className="showcase-slide-text">{activeShowcaseSlide.text}</p>
               </article>

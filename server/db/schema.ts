@@ -668,9 +668,9 @@ export const refreshTokens = pgTable('refresh_tokens', {
    and ignored once `expires_at` passes.
 
    The mobile number is the key rather than a user_id on purpose: the request
-   endpoint answers identically for known and unknown numbers, so it cannot
-   be used to enumerate accounts. Account existence is only checked after a
-   correct code has been presented.
+   endpoint confirms the number belongs to an account before issuing a code,
+   so a challenge only ever exists for a real user. The verify route repeats
+   the lookup as a race guard in case the account disappears mid-flow.
    ========================================================================= */
 export const authOtpChallenges = pgTable('auth_otp_challenges', {
   /** Canonical mobile (server/auth/mobile.ts). One challenge at a time. */

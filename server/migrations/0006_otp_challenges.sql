@@ -6,9 +6,9 @@
    AUTH_JWT_SECRET (server/auth/otp.ts). A resend replaces the row and resets
    `attempts`; a successful verification deletes it, so a code is single-use.
 
-   No foreign key to auth_users: the request endpoint must answer identically
-   for known and unknown numbers (no account enumeration). Account existence
-   is checked only after a correct code is presented.
+   No foreign key to auth_users: the request endpoint checks account existence
+   before issuing a challenge, so rows only exist for real users. The verify
+   route repeats the lookup as a race guard.
    ============================================================================= */
 
 CREATE TABLE IF NOT EXISTS "auth_otp_challenges" (

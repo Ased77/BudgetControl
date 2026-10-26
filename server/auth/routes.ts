@@ -328,11 +328,13 @@ authRouter.post('/users', requireAuth, requireAdmin, async (req, res, next) => {
 // ---------------------------------------------------------------------------
 // POST /otp/request — issue a six-digit one-time code for a mobile number.
 //
-// The response is the same whether or not an account exists for the number:
-// this route must never become an account-enumeration oracle. The code is
-// delivered by the fake channel for now (AUTH_OTP_FAKE_DELIVERY=1 returns it
-// in `devCode`); swapping in an SMS provider means sending it there and
-// turning the flag off — the rest of the flow stays as is.
+// The number must belong to an account: an unregistered mobile gets an
+// explicit `ACCOUNT_NOT_FOUND` before any code is generated, so the login
+// screen can say «چنین کاربری وجود ندارد» instead of sending a code that
+// could never sign anyone in. The code is delivered by the fake channel for
+// now (AUTH_OTP_FAKE_DELIVERY=1 returns it in `devCode`); swapping in an SMS
+// provider means sending it there and turning the flag off — the rest of the
+// flow stays as is.
 // ---------------------------------------------------------------------------
 authRouter.post('/otp/request', otpSendLimiter, async (req, res, next) => {
   try {
@@ -340,6 +342,15 @@ authRouter.post('/otp/request', otpSendLimiter, async (req, res, next) => {
     const normalized = normalizeMobile(mobile);
     if (!normalized) {
       return res.status(400).json({ error: 'شماره موبایل معتبر وارد کنید (نمونه: 09123456789)', code: 'INVALID_MOBILE' });
+    }
+
+    // Deliberate account check at this step: no challenge is issued for a
+    // number that has no auth_users row. (The verify route still repeats the
+    // lookup as a race guard in case the account is removed mid-flow.)
+    const account = await getAuthUserByMobile(normalized);
+    if (!account) {
+      console.warn(`[auth] OTP requested for unknown mobile ${maskMobile(normalized)}`);
+      return res.status(404).json({ error: 'چنین کاربری وجود ندارد', code: 'ACCOUNT_NOT_FOUND' });
     }
 
     const config = loadAuthConfig();
@@ -453,8 +464,8 @@ authRouter.post('/otp/verify', otpVerifyLimiter, async (req, res, next) => {
     if (!row) {
       console.warn(`[auth] OTP verified for ${maskMobile(normalized)} but no account exists`);
       return res.status(401).json({
-        error: 'امکان ورود با این شماره وجود ندارد — با مدیر سامانه تماس بگیرید',
-        code: 'ACCOUNT_UNAVAILABLE',
+        error: 'چنین کاربری وجود ندارد',
+        code: 'ACCOUNT_NOT_FOUND',
       });
     }
     if (!row.isActive) {

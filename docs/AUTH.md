@@ -85,9 +85,9 @@ code    ────────►│  AuthContext.loginWithOtp()              
 
 ### OTP login (current browser flow)
 
-1. `POST /api/auth/otp/request { mobile }` normalizes the number and writes/replaces the `auth_otp_challenges` row. The response is identical for known and unknown numbers (no account enumeration).
+1. `POST /api/auth/otp/request { mobile }` normalizes the number and looks up `auth_users`. A number with no account is refused immediately with 404 `ACCOUNT_NOT_FOUND` («چنین کاربری وجود ندارد») and no challenge is written; a known number gets its `auth_otp_challenges` row written/replaced.
 2. The code is delivered by a fake channel for now: with `AUTH_OTP_FAKE_DELIVERY=1` (default) it comes back as `devCode` and the login screen shows it in a marked dev box. A real SMS provider replaces only this delivery step.
-3. `POST /api/auth/otp/verify { mobile, code }` checks expiry and attempts, then deletes the challenge (single use) and looks up the active `auth_users` row. Only here does an unknown number learn there is no account.
+3. `POST /api/auth/otp/verify { mobile, code }` checks expiry and attempts, then deletes the challenge (single use) and re-checks the account (a race guard if the row was removed after step 1).
 4. A correct code calls the same `issueSession()` as password login, so cookies, rotation and `requireAuth` are unchanged.
 
 ## 4. Secrets & configuration
