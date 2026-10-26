@@ -288,3 +288,21 @@ html:has(.login-shell) body {
     animation: none;
   }
 }
+
+/* -------------------------------------------------------------------------
+   Scope-change card (SwipeToast, `app-scope-toast`).
+   The card is `position: fixed`, so it measures from the viewport — while this
+   app is a capped, centred canvas, and from `lg` up its right edge is owned by
+   the nav rail. Left alone, the card would sit on top of the rail (or, past the
+   1600px canvas, out in the gutter beyond the app entirely). Only `right` is
+   moved here: the component's `--st-offset` also drives `bottom`, which should
+   keep the component's own distance from the floor. The maths below is the
+   canvas gutter — zero until the canvas is narrower than the window — plus the
+   rail (288px) and the gap the card keeps clear of it. Phones and tablets keep
+   the component's own inset: there the rail is an overlay drawer.
+   ------------------------------------------------------------------------- */
+@media (min-width: 1024px) {
+  .swipe-toast[data-inline='false'].app-scope-toast {
+    right: calc(max(0px, (100vw - var(--app-canvas-width)) / 2) + 18rem + 2.25rem);
+  }
+}

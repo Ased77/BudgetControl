@@ -432,26 +432,6 @@
   }
 }
 
-.login-error {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 10px 11px;
-  border: 1px solid #fecaca;
-  border-radius: 9px;
-  background: #fff7f7;
-  color: #a32525;
-  font-size: 11px;
-  line-height: 1.8;
-}
-
-.login-error svg {
-  width: 15px;
-  height: 15px;
-  flex: 0 0 auto;
-  margin-top: 2px;
-}
-
 .login-security-note {
   display: flex;
   align-items: center;
@@ -1600,7 +1580,7 @@
    Rejected code — the mirror of the verified state.
 
    A failed submission paints the digits and their underlines red, while the
-   existing `login-error` alert carries the server's reason (wrong code,
+   error toast (`#login-view-error`) carries the server's reason (wrong code,
    expired, attempt cap). Editing any cell clears `.is-invalid` immediately.
    --------------------------------------------------------------------------- */
 .login-otp-input.is-invalid {

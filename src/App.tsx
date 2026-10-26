@@ -26,12 +26,14 @@ import { AiAnalysisModal } from './components/AiAnalysisModal';
 import { GlobalLocationSelector } from './components/GlobalLocationSelector';
 import { LoginView } from './components/LoginView';
 import { SystemTour } from './components/SystemTour';
+import SwipeToast from './components/SwipeToast';
 import {
   hasSeenSystemTour,
   hasSeenRelaunchHint,
   markRelaunchHintShown,
   markSystemTourSeen,
 } from './utils/systemTour';
+import { LocationData } from './types';
 
 import {
   LayoutDashboard,
@@ -318,6 +320,37 @@ function AppContent() {
     const timer = setTimeout(() => setShowTourHint(false), 20000);
     return () => clearTimeout(timer);
   }, [showTourHint]);
+
+  // Scope-change card — the shell re-filters every page when the active
+  // geographic scope moves, but never said so. The toast announces the new
+  // scope and offers one step back; swiping it away or letting the fuse burn
+  // out only dismisses it, while the action puts the scope back.
+  const [scopeToast, setScopeToast] = useState<{ loc: LocationData; previousId: string } | null>(null);
+  const lastScopeRef = useRef(selectedLocation);
+  // Raised only by the toast's own undo, so that change does not announce
+  // itself a second time — and cannot be ping-ponged back and forth forever.
+  const undoingScopeRef = useRef(false);
+  useEffect(() => {
+    const previous = lastScopeRef.current;
+    lastScopeRef.current = selectedLocation;
+    // Indicator edits and refreshes replace the object but keep the scope.
+    if (previous.id === selectedLocation.id) return;
+    if (undoingScopeRef.current) {
+      undoingScopeRef.current = false;
+      return;
+    }
+    setScopeToast({ loc: selectedLocation, previousId: previous.id });
+  }, [selectedLocation]);
+
+  // One step back, to the scope the card was raised for. The previous scope is
+  // looked up in the live list so it is restored with its current data rather
+  // than the snapshot taken when the toast appeared.
+  const handleUndoScopeChange = () => {
+    const target = locations.find((l) => l.id === scopeToast?.previousId);
+    if (!target) return;
+    undoingScopeRef.current = true;
+    handleSelectLocation(target);
+  };
 
   // Exports
   const handleExportPdf = () => {
@@ -709,6 +742,31 @@ function AppContent() {
           bar. It sits at the shell level so its spotlight can frame the session
           strip, the sidebar and any page's header without being clipped. */}
       <SystemTour open={showSystemTour} onClose={handleSystemTourClose} />
+
+      {/* Scope-change card — mounted only while there is something to announce.
+          Its key restarts the burning fuse when a second change lands before the
+          first card has been dismissed, and the card unmounts itself as soon as
+          it has closed (timeout, swipe, Escape or the action). */}
+      {scopeToast && (
+        // The card is keyed so a second change remounts it with a fresh fuse.
+        // The wrapper stays out of the shell's flex row — it generates no box,
+        // while the toast inside keeps its own fixed positioning.
+        <div key={`${scopeToast.previousId}:${scopeToast.loc.id}`} style={{ display: 'contents' }}>
+          <SwipeToast
+            title="محدوده فعال تغییر کرد"
+            description={`${scopeToast.loc.province} — ${scopeToast.loc.county}`}
+            icon={<MapPin size={18} color="#2563eb" />}
+            actionLabel="بازگردانی"
+            onAction={handleUndoScopeChange}
+            onClose={() => setScopeToast(null)}
+            background="#ffffff"
+            color="#0f172a"
+            fuseColor="#2563eb"
+            duration={6000}
+            className="app-scope-toast"
+          />
+        </div>
+      )}
 
       {/* AI Analysis Modal */}
       {showAiModal && (

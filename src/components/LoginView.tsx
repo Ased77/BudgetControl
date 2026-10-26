@@ -17,6 +17,7 @@ import {
 // === Dev Seed Login (disposable dev helper): import + render below live together —
 // delete both halves of this comment block to remove the feature. ===
 import { DevSeedLoginPanel } from './DevSeedLoginPanel';
+import SwipeToast from './SwipeToast';
 import './LoginView.css';
 
 /**
@@ -655,12 +656,6 @@ export const LoginView: React.FC = () => {
                 </div>
               )}
 
-              {error && (
-                <div id="login-view-error" className="login-error" role="alert">
-                  <AlertTriangle aria-hidden="true" />
-                  <span>{error}</span>
-                </div>
-              )}
 
               <button
                 type="submit"
@@ -686,6 +681,38 @@ export const LoginView: React.FC = () => {
                     : 'این کد یکبار مصرف است و بلافاصله پس از ورود باطل می‌شود.'}
               </p>
             </form>
+
+            {/* The login error rides a toast now. It keeps the id and the alert
+                role the OTP cells point at with `aria-describedby`, so the
+                screen-reader contract is unchanged — only where the operator
+                sees it moved: the card slides in over the shell, swipes (or
+                drags) away, and burns down after eight seconds instead of
+                sitting inside the form.
+
+                It is a child of `.login-content`, a plain block container: a
+                fixed child contributes no height, so nothing in the form
+                jumps when an error appears. The wrapper is keyed by the
+                message so a different error always gets a fresh card and a
+                fresh fuse, and clearing `error` on close puts the state back
+                in step with the card being gone. */}
+            {error && (
+              <div id="login-view-error" role="alert" key={error}>
+                <SwipeToast
+                  title={error}
+                  icon={<AlertTriangle />}
+                  actionLabel="بستن"
+                  // The card closes itself the moment the action is pressed
+                  // and `onClose` below does the state cleanup, so the button
+                  // needs no work of its own.
+                  onAction={() => {}}
+                  duration={8000}
+                  background="#fff7f7"
+                  color="#a32525"
+                  fuseColor="#dc2626"
+                  onClose={() => setError(null)}
+                />
+              </div>
+            )}
 
             <DevSeedLoginPanel onFill={(username) => {
               setMobile(withMobilePrefix(normalizeMobileDigits(username)));
