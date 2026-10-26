@@ -7,9 +7,9 @@
    conditions it repairs can no longer occur), so they run at every boot.
    ========================================================================= */
 
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { db } from './client.js';
-import { priorities } from './schema.js';
+import { authUsers, auditLogs, priorities, users } from './schema.js';
 import { withDbErrorMapping } from './errors.js';
 
 /**
@@ -38,6 +38,71 @@ export async function refreshPriorityTitlesIfNeeded(): Promise<void> {
         .update(priorities)
         .set({ title: m.current })
         .where(and(eq(priorities.id, m.id), eq(priorities.title, m.previous)));
+    });
+  }
+}
+
+/**
+ * Lost-encoding display names — the "???? ??? ????????" repair.
+ *
+ * A request body that loses its encoding in transit (a shell client sending
+ * the JSON in an ANSI codepage, for example) arrives with every non-ASCII
+ * letter already replaced by ASCII "?". Neither PostgreSQL nor this API ever
+ * substitutes "?", so a value made only of "?" and separators is
+ * unambiguously a transit artifact, never a real name — and once stored it
+ * propagates: the account's identity row, its roster mirror (both written by
+ * POST /api/auth/users) and every audit row the account later writes carry
+ * the skeleton to the UI, which renders it as "؟؟؟؟" in RTL text.
+ *
+ * The original text cannot be derived from the skeleton, so each repair is a
+ * declared exact previous→current pair, applied like the title refresh above:
+ * an exact match only, one row each, a no-op the moment it is applied. The
+ * pair list stays closed because POST /api/auth/users now rejects "?"-only
+ * names at the door.
+ */
+const LOST_ENCODING_NAME_REPAIRS: ReadonlyArray<{ previous: string; current: string }> = [
+  // The deployed operator account «دکتر مسعود عبداللهی» (SYSTEM_ADMIN) was
+  // provisioned through an ANSI-mangled body: 4 + 5 + 8 letters → 4 + 5 + 8 "?".
+  { previous: '???? ????? ????????', current: 'دکتر مسعود عبداللهی' },
+];
+
+export async function repairLostEncodingNamesIfNeeded(): Promise<void> {
+  for (const repair of LOST_ENCODING_NAME_REPAIRS) {
+    await withDbErrorMapping(async () => {
+      const auth = await db
+        .update(authUsers)
+        .set({ displayName: repair.current })
+        .where(eq(authUsers.displayName, repair.previous))
+        .returning({ id: authUsers.id });
+
+      const roster = await db
+        .update(users)
+        .set({ name: repair.current })
+        .where(eq(users.name, repair.previous))
+        .returning({ id: users.id });
+
+      const audit = await db
+        .update(auditLogs)
+        .set({ userName: repair.current })
+        .where(eq(auditLogs.userName, repair.previous))
+        .returning({ id: auditLogs.id });
+
+      // The same skeleton is also quoted inside free-text rationales
+      // («خروج <name> از سامانه…»); replace only the exact corrupted substring.
+      const rationale = (await db.execute(
+        sql`UPDATE audit_logs
+               SET rationale = replace(rationale, ${repair.previous}, ${repair.current})
+             WHERE rationale LIKE ${`%${repair.previous}%`}
+         RETURNING id`,
+      )) as { rows: { id: string }[] };
+
+      const touched = auth.length + roster.length + audit.length + rationale.rows.length;
+      if (touched > 0) {
+        console.log(
+          `[db] repaired ${touched} lost-encoding name row(s) ` +
+            `(auth: ${auth.length}, roster: ${roster.length}, audit: ${audit.length + rationale.rows.length})`,
+        );
+      }
     });
   }
 }

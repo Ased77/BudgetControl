@@ -14,7 +14,7 @@
      2b. OPTIONAL `seedAuthAccounts()` — only when SEED_AUTH_ACCOUNTS=1.
         Creates the 13 demo role accounts as real auth users; see
         server/seed/auth-accounts.ts.
-     3. idempotent repairs (priority title refresh),
+     3. idempotent repairs (priority title refresh, lost-encoding names),
         each a no-op when already applied.
 
    Called explicitly from server startup, not as an import side effect,
@@ -31,7 +31,7 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { db, closePool, pool, type Tx } from './client.js';
 import * as schema from './schema.js';
 import { seedDatabase } from './seed.js';
-import { refreshPriorityTitlesIfNeeded } from './repairs.js';
+import { refreshPriorityTitlesIfNeeded, repairLostEncodingNamesIfNeeded } from './repairs.js';
 import { ensureBootstrapAdminIfNeeded } from '../auth/bootstrap.js';
 import { seedAuthAccounts, seedDevTestAccounts } from '../seed/auth-accounts.js';
 
@@ -328,6 +328,9 @@ export async function initializeDatabase(): Promise<void> {
   }
 
   await refreshPriorityTitlesIfNeeded();
+  // Restore rows whose display name was stored as an ANSI-mangled "?-only"
+  // skeleton (see server/db/repairs.ts) — a no-op on healthy databases.
+  await repairLostEncodingNamesIfNeeded();
   // Last boot step: guarantees ≥ 1 real login exists so the very first
   // session is a verified identity (the SYSTEM actor is never loggable).
   await ensureBootstrapAdminIfNeeded();

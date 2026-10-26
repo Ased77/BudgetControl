@@ -222,6 +222,18 @@ authRouter.post('/users', requireAuth, requireAdmin, async (req, res, next) => {
     if (!displayName || String(displayName).trim().length < 2) {
       return res.status(400).json({ error: 'نام نمایشی را وارد کنید' });
     }
+    // A name made only of "?" (plus separators) is a request body that lost its
+    // encoding in transit — e.g. a shell client sent the JSON in an ANSI
+    // codepage and every non-ASCII letter arrived as "?". Storing it would
+    // poison the identity row, its roster mirror and every audit row written
+    // afterwards with an unrecoverable skeleton (rendered as "؟؟؟؟"), so it is
+    // rejected here; see repairLostEncodingNamesIfNeeded for the recovery path.
+    if (!/[^\s?؟]/.test(String(displayName))) {
+      return res.status(400).json({
+        error: 'نام نمایشی فقط از «؟» تشکیل شده است — متن هنگام ارسال رمزگذاری خود را از دست داده؛ درخواست را با کدگذاری UTF-8 دوباره بفرستید',
+        code: 'NAME_ENCODING_LOST',
+      });
+    }
     if (!role || !String(role).trim()) {
       return res.status(400).json({ error: 'نقش کاربر را انتخاب کنید' });
     }
