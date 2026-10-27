@@ -4,6 +4,7 @@ import { CrisisHarmItem, UrgencyLevel, AdministrativeLevel } from '../types';
 import { useOutsideClick } from '../hooks/useOutsideClick';
 import { PageHeader } from './PageHeader';
 import RubberSegment from './RubberSegment/RubberSegment';
+import CometDial from './CometDial/CometDial';
 import {
   AlertTriangle,
   AlertCircle,
@@ -452,13 +453,13 @@ export const CrisesHarmsView: React.FC = () => {
 
             <div
               id="crises-harms-view-urgency-filter"
-              className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400"
+              className="flex items-center gap-1.5 min-w-0 max-w-full text-xs text-slate-500 dark:text-slate-400"
             >
               <Flame className="w-3.5 h-3.5 shrink-0" />
               <span className="whitespace-nowrap">سطح فوریت:</span>
               <div
                 id="crises-harms-view-urgency-chips"
-                className="max-w-full overflow-x-auto scrollbar-none py-0.5"
+                className="min-w-0 max-w-full overflow-x-auto scrollbar-none py-0.5"
               >
                 <RubberSegment
                   aria-label="سطح فوریت"
@@ -474,7 +475,7 @@ export const CrisesHarmsView: React.FC = () => {
                   thumbColor="var(--crisis-seg-thumb)"
                   textColor="var(--crisis-seg-ink)"
                   activeTextColor="var(--crisis-seg-ink-active)"
-                  className="[--crisis-seg-track:#f1f5f9] [--crisis-seg-thumb:#e11d48] [--crisis-seg-ink:#475569] [--crisis-seg-ink-active:#ffffff] dark:[--crisis-seg-track:#1e293b] dark:[--crisis-seg-thumb:#fb7185] dark:[--crisis-seg-ink:#cbd5e1] dark:[--crisis-seg-ink-active:#0f172a]"
+                  className="w-max [--crisis-seg-track:#f1f5f9] [--crisis-seg-thumb:#e11d48] [--crisis-seg-ink:#475569] [--crisis-seg-ink-active:#ffffff] dark:[--crisis-seg-track:#1e293b] dark:[--crisis-seg-thumb:#fb7185] dark:[--crisis-seg-ink:#cbd5e1] dark:[--crisis-seg-ink-active:#0f172a]"
                 />
               </div>
             </div>
@@ -1033,16 +1034,22 @@ export const CrisesHarmsView: React.FC = () => {
                 </div>
               </div>
 
-              <div id="crises-harms-view-crud-modal-11" className="grid grid-cols-2 gap-3">
-                <div id="crises-harms-view-crud-modal-12">
-                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">شاخص شدت محرومیت (۰-۱۰۰)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="100"
+              <div id="crises-harms-view-crud-modal-11" className="grid grid-cols-2 gap-3 items-center">
+                <div id="crises-harms-view-crud-modal-12" className="flex flex-col items-center gap-1.5">
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold">شاخص شدت محرومیت (۰-۱۰۰)</label>
+                  <CometDial
                     value={formSeverity}
-                    onChange={(e) => setFormSeverity(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-rose-500 focus:outline-none font-mono"
+                    onChange={setFormSeverity}
+                    min={0}
+                    max={100}
+                    step={1}
+                    unit="٪"
+                    label="شاخص شدت محرومیت"
+                    size={156}
+                    thickness={6}
+                    accent="var(--crisis-dial-accent)"
+                    ink="var(--crisis-dial-ink)"
+                    className="[--crisis-dial-accent:#e11d48] [--crisis-dial-ink:#0f172a] dark:[--crisis-dial-accent:#fb7185] dark:[--crisis-dial-ink:#e2e8f0]"
                   />
                 </div>
                 <div id="crises-harms-view-crud-modal-13">

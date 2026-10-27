@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { HelpTooltip } from './HelpTooltip';
 import { Num } from './Num';
+import CometDial from './CometDial/CometDial';
 
 const FULL_PRIORITY_TITLES: Record<number, string> = {
   1: 'توسعه زیرساخت‌های عمومی، عمران و خدمات شهری/روستایی',
@@ -262,13 +263,6 @@ export const PrioritiesView: React.FC = () => {
           const isExpanded = expandedSubItemId === p.id;
           const sliderMin = p.minPercent || 1;
           const sliderMax = p.maxPercent || 60;
-          // Filled share of the track between this priority's min/max bounds
-          // (clamped, since smart rebalancing can push a value past the max).
-          const fillPct =
-            sliderMax > sliderMin
-              ? Math.min(100, Math.max(0, ((currentPct - sliderMin) / (sliderMax - sliderMin)) * 100))
-              : 0;
-
           return (
             <div
               id="priorities-view-priorities-grid-card"
@@ -358,20 +352,24 @@ export const PrioritiesView: React.FC = () => {
                     </div>
                   </div>
 
-                  <div id={`priorities-view-slider-and-percentage-display-5-${p.id}`}>
-                    <input
-                      type="range"
+                  <div id={`priorities-view-slider-and-percentage-display-5-${p.id}`} className="flex flex-col items-center gap-1.5">
+                    <CometDial
+                      value={currentPct}
+                      onChange={(next) => handlePercentageChange(p.id, next)}
                       min={sliderMin}
                       max={sliderMax}
-                      step="0.5"
+                      step={0.5}
+                      unit="٪"
+                      label={`درصد تخصیص ${p.title}`}
+                      size={140}
+                      sweep={300}
+                      thickness={5}
                       disabled={isLocked}
-                      value={currentPct}
-                      onChange={(e) => handlePercentageChange(p.id, parseFloat(e.target.value))}
-                      style={{ '--range-fill': `${fillPct}%` } as React.CSSProperties}
-                      aria-label={`درصد تخصیص ${p.title}`}
-                      className="priority-range w-full"
+                      accent="var(--priority-dial-accent)"
+                      ink="var(--priority-dial-ink)"
+                      className="[--priority-dial-accent:#7c3aed] [--priority-dial-ink:#0f172a] dark:[--priority-dial-accent:#a78bfa] dark:[--priority-dial-ink:#e2e8f0]"
                     />
-                    <div className="flex items-center justify-between mt-1 text-[9px] font-mono text-slate-400 dark:text-slate-500">
+                    <div className="flex w-full items-center justify-between text-[9px] font-mono text-slate-400 dark:text-slate-500">
                       <span>حداقل: <Num value={toPersianDigits(sliderMin)} />٪</span>
                       <span>حداکثر: <Num value={toPersianDigits(sliderMax)} />٪</span>
                     </div>
