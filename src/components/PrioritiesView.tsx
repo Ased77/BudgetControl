@@ -357,9 +357,10 @@ export const PrioritiesView: React.FC = () => {
                       unit="٪"
                       format={(v) => formatNumber(v, true, 1)}
                       label={`درصد تخصیص ${p.title}`}
-                      size={140}
+                      size={120}
                       sweep={300}
-                      thickness={8}
+                      thickness={12}
+                      bead={1}
                       disabled={isLocked}
                       accent="var(--priority-dial-accent)"
                       ink="var(--priority-dial-ink)"

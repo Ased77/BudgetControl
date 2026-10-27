@@ -57,6 +57,9 @@ export default function CometDial({
   momentum = 1,
   cometReach = 180,
   cometWidth = 12,
+  // Bead radius as a multiple of `thickness`, so a fat ring can keep a knob
+  // that fits it instead of growing with the stroke.
+  bead = 1.8,
   disabled = false,
   onChange,
   onChangeEnd = undefined,
@@ -378,7 +381,7 @@ export default function CometDial({
             />
           ))}
         </g>
-        <circle ref={headRef} className="comet-dial__head" r={thickness * 1.8} />
+        <circle ref={headRef} className="comet-dial__head" r={thickness * bead} />
       </svg>
       <div className="comet-dial__readout" aria-hidden="true">
         <span className="comet-dial__value">
