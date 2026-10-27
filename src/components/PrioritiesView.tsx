@@ -280,11 +280,7 @@ export const PrioritiesView: React.FC = () => {
                       <Target className="w-5 h-5" />
                     </div>
                     <div id={`priorities-view-priorities-grid-7-${p.id}`} className="min-w-0 flex-1">
-                      <span className="text-[10px] font-bold text-slate-400 block">اولویت کد #{p.code}</span>
-                      <div className="flex items-start gap-1 min-w-0">
-                        <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight min-w-0 flex-1 break-words">{p.title}</h3>
-                        <HelpTooltip text={p.description} label="مشاهده توضیح اولویت" size="sm" />
-                      </div>
+                      <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight break-words">{p.title}</h3>
                       <p className="mt-1 text-[10px] leading-relaxed text-slate-500 dark:text-slate-400 break-words">{FULL_PRIORITY_TITLES[p.code] ?? p.title}</p>
                     </div>
                   </div>
@@ -301,6 +297,8 @@ export const PrioritiesView: React.FC = () => {
                     >
                       {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
                     </button>
+
+                    <HelpTooltip text={p.description} label="مشاهده توضیح اولویت" size="sm" />
 
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                       {p.category}
@@ -346,9 +344,6 @@ export const PrioritiesView: React.FC = () => {
                           <span>قفل شده</span>
                         </span>
                       )}
-                      <span className="font-black text-lg font-mono text-purple-700 dark:text-purple-300">
-                        <Num value={toPersianDigits(currentPct)} />٪
-                      </span>
                     </div>
                   </div>
 
@@ -364,7 +359,7 @@ export const PrioritiesView: React.FC = () => {
                       label={`درصد تخصیص ${p.title}`}
                       size={140}
                       sweep={300}
-                      thickness={5}
+                      thickness={8}
                       disabled={isLocked}
                       accent="var(--priority-dial-accent)"
                       ink="var(--priority-dial-ink)"
