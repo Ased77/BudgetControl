@@ -1044,6 +1044,7 @@ export const CrisesHarmsView: React.FC = () => {
                     max={100}
                     step={1}
                     unit="٪"
+                    format={(v) => formatNumber(v, true, 0)}
                     label="شاخص شدت محرومیت"
                     size={156}
                     thickness={6}

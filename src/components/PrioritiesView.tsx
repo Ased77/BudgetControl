@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { CsrPriority } from '../types';
-import { formatMoneyParts, formatToman, roundPercentage, toPersianDigits } from '../utils/numberUtils';
+import { formatMoneyParts, formatNumber, formatToman, roundPercentage, toPersianDigits } from '../utils/numberUtils';
 import { useConfirmDelete } from './ConfirmDeleteModal';
 import { useOutsideClick } from '../hooks/useOutsideClick';
 import { PageHeader } from './PageHeader';
@@ -360,6 +360,7 @@ export const PrioritiesView: React.FC = () => {
                       max={sliderMax}
                       step={0.5}
                       unit="٪"
+                      format={(v) => formatNumber(v, true, 1)}
                       label={`درصد تخصیص ${p.title}`}
                       size={140}
                       sweep={300}

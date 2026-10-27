@@ -60,6 +60,10 @@ export default function CometDial({
   disabled = false,
   onChange,
   onChangeEnd = undefined,
+  // Optional formatter for the centre figure (e.g. Persian digits). It receives
+  // the live numeric reading and must return the number only — `unit` is
+  // rendered separately, and `aria-valuenow` stays a plain number.
+  format,
   className = ''
 }) {
   const reduce = useReducedMotion();
@@ -72,7 +76,7 @@ export default function CometDial({
   const target = useRef(clamp(value ?? defaultValue, min, max));
   const grip = useRef(null);
   const unbind = useRef(null);
-  const loop = useRef({ raf: 0, last: 0, v: 0, rPrev: null, text: '', valueText: '' });
+  const loop = useRef({ raf: 0, last: 0, v: 0, rPrev: null, text: '', valueText: '', shown: '' });
   const live = useRef({});
   const reading = useMotionValue(target.current);
 
@@ -166,13 +170,18 @@ export default function CometDial({
       el.setAttribute('stroke-width', (thickness + cometWidth * w * s).toFixed(2));
       el.style.opacity = (w * s).toFixed(3);
     }
-    const shown = clamp(r, min, max).toFixed(decimals);
-    if (shown !== L.text) {
-      L.text = shown;
-      if (figure.current) figure.current.textContent = shown;
+    const numeric = clamp(r, min, max);
+    const shown = numeric.toFixed(decimals);
+    const display = format ? format(numeric) : shown;
+    if (display !== L.text) {
+      L.text = display;
+      if (figure.current) figure.current.textContent = display;
+    }
+    if (shown !== L.shown) {
+      L.shown = shown;
       svg.setAttribute('aria-valuenow', shown);
     }
-    const valueText = `${target.current}${unit}`;
+    const valueText = format ? `${format(target.current)}${unit}` : `${target.current}${unit}`;
     if (valueText !== L.valueText) {
       L.valueText = valueText;
       svg.setAttribute('aria-valuetext', valueText);
@@ -308,6 +317,7 @@ export default function CometDial({
     const L = loop.current;
     L.text = '';
     L.valueText = '';
+    L.shown = '';
     paintRef.current?.(performance.now());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [min, max, step, sweep, thickness, cometReach, cometWidth, unit]);
@@ -350,7 +360,7 @@ export default function CometDial({
         aria-valuemin={min}
         aria-valuemax={max}
         aria-valuenow={target.current}
-        aria-valuetext={`${target.current}${unit}`}
+        aria-valuetext={`${format ? format(target.current) : target.current}${unit}`}
         aria-disabled={disabled || undefined}
         onPointerDown={down}
         onKeyDown={key}
