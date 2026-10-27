@@ -3,6 +3,7 @@ import { useAppContext } from '../context/AppContext';
 import { CrisisHarmItem, UrgencyLevel, AdministrativeLevel } from '../types';
 import { useOutsideClick } from '../hooks/useOutsideClick';
 import { PageHeader } from './PageHeader';
+import RubberSegment from './RubberSegment/RubberSegment';
 import {
   AlertTriangle,
   AlertCircle,
@@ -304,6 +305,20 @@ export const CrisesHarmsView: React.FC = () => {
     return counts;
   }, [crisesHarms]);
 
+  // Options for the urgency Rubber Segment — worst first, and only the levels
+  // some record actually carries, since a segment no record matches would only
+  // ever empty the page. `ALL` keeps the total so the strip always shows scale.
+  const urgencyFilterItems = useMemo(
+    () => [
+      { value: 'ALL', label: `همه سطوح (${toPersianDigits(crisesHarms.length)})` },
+      ...URGENCY_ORDER.filter((urgency) => (urgencyCounts[urgency] || 0) > 0).map((urgency) => ({
+        value: urgency,
+        label: `${URGENCY_STYLE[urgency].label} (${toPersianDigits(urgencyCounts[urgency] || 0)})`,
+      })),
+    ],
+    [crisesHarms.length, urgencyCounts]
+  );
+
   const resetFilters = () => {
     setSearchQuery('');
     setSelectedUrgency('ALL');
@@ -357,7 +372,18 @@ export const CrisesHarmsView: React.FC = () => {
         title="آسیب‌ها، بحران‌ها و نیازسنجی محلی / منطقه‌ای"
         subtitle={`${toPersianDigits(crisesHarms.length)} مورد ثبت‌شده — ${toPersianDigits(criticalCount)} کانون بحرانی و ${formatNumber(totalAffected)} نفر جمعیت متأثر در ${selectedLocation.province} - ${selectedLocation.county}`}
         tone="text-rose-600"
-      />
+      >
+        {canManage && (
+          <button
+            id="btn-add-crisis"
+            onClick={handleOpenAdd}
+            className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-xl font-bold text-xs shadow-md shadow-rose-600/25 transition-all hover:scale-105 active:scale-95"
+          >
+            <Plus className="w-4 h-4" />
+            <span>ثبت آسیب یا بحران جدید</span>
+          </button>
+        )}
+      </PageHeader>
 
       {/* Macro KPI Cards — totals across every registered crisis and harm */}
       <div id="crises-harms-view-kpi-cards" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -388,7 +414,7 @@ export const CrisesHarmsView: React.FC = () => {
         })}
       </div>
 
-      {/* Toolbar — search, result count, status/urgency filters and the add action */}
+      {/* Toolbar — search and the status/urgency filters */}
       <div
         id="crises-harms-view-toolbar"
         className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs p-4 space-y-3"
@@ -406,13 +432,6 @@ export const CrisesHarmsView: React.FC = () => {
               />
             </div>
 
-            <span
-              id="crises-harms-view-result-count"
-              className="text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 whitespace-nowrap"
-            >
-              <ListChecks className="w-3.5 h-3.5 text-rose-500" />
-              <Num value={toPersianDigits(filteredCrises.length)} unit="مورد" /> یافت شد
-            </span>
           </div>
 
           <div id="crises-harms-view-toolbar-actions" className="flex items-center gap-2 flex-wrap">
@@ -435,33 +454,30 @@ export const CrisesHarmsView: React.FC = () => {
               id="crises-harms-view-urgency-filter"
               className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400"
             >
-              <Flame className="w-3.5 h-3.5" />
-              <span>سطح فوریت:</span>
-              <select
+              <Flame className="w-3.5 h-3.5 shrink-0" />
+              <span className="whitespace-nowrap">سطح فوریت:</span>
+              <div
                 id="crises-harms-view-urgency-chips"
-                value={selectedUrgency}
-                onChange={(e) => setSelectedUrgency(e.target.value)}
-                className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                className="max-w-full overflow-x-auto scrollbar-none py-0.5"
               >
-                <option value="ALL">همه سطوح ({toPersianDigits(crisesHarms.length)})</option>
-                {URGENCY_ORDER.filter((urgency) => (urgencyCounts[urgency] || 0) > 0).map((urgency) => (
-                  <option key={urgency} value={urgency}>
-                    {URGENCY_STYLE[urgency].label} ({toPersianDigits(urgencyCounts[urgency] || 0)})
-                  </option>
-                ))}
-              </select>
+                <RubberSegment
+                  aria-label="سطح فوریت"
+                  items={urgencyFilterItems}
+                  value={selectedUrgency}
+                  defaultValue="ALL"
+                  onChange={setSelectedUrgency}
+                  size="sm"
+                  radius={999}
+                  equalSlots={false}
+                  draggable
+                  trackColor="var(--crisis-seg-track)"
+                  thumbColor="var(--crisis-seg-thumb)"
+                  textColor="var(--crisis-seg-ink)"
+                  activeTextColor="var(--crisis-seg-ink-active)"
+                  className="[--crisis-seg-track:#f1f5f9] [--crisis-seg-thumb:#e11d48] [--crisis-seg-ink:#475569] [--crisis-seg-ink-active:#ffffff] dark:[--crisis-seg-track:#1e293b] dark:[--crisis-seg-thumb:#fb7185] dark:[--crisis-seg-ink:#cbd5e1] dark:[--crisis-seg-ink-active:#0f172a]"
+                />
+              </div>
             </div>
-
-            {canManage && (
-              <button
-                id="btn-add-crisis"
-                onClick={handleOpenAdd}
-                className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-xl font-bold text-xs shadow-md shadow-rose-600/25 transition-all hover:scale-105 active:scale-95"
-              >
-                <Plus className="w-4 h-4" />
-                <span>ثبت آسیب یا بحران جدید</span>
-              </button>
-            )}
           </div>
         </div>
 
