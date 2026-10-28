@@ -74,6 +74,12 @@ function subscribeToFrames(callback: FrameCallback): () => void {
  * The hold is skipped when the run starts from a non-zero figure — a value
  * edited later in a card should slide straight to the new number, not wait out
  * the card's entrance offset again.
+ *
+ * `start` defers the entrance run until the caller says the figure is actually
+ * on screen (see `useInViewOnce`): while it is false the displayed figure stays
+ * at its opening value and no clock is subscribed, and the run begins the moment
+ * it turns true. Figures edited afterwards behave the same either way — the run
+ * only ever waits for its first entrance.
  */
 export function useCountUp(
   target: number,
@@ -81,7 +87,8 @@ export function useCountUp(
   enabled = true,
   resetKey = 0,
   fractionDigits?: number,
-  delayMs = 0
+  delayMs = 0,
+  start = true
 ): number {
   const [value, setValue] = useState(() =>
     enabled ? (prefersReducedMotion() ? target : 0) : target
@@ -97,6 +104,9 @@ export function useCountUp(
       setValue(target);
       return;
     }
+    // Still off screen: keep the opening figure and subscribe to nothing. The
+    // effect re-runs when `start` flips, which is when the entrance begins.
+    if (!start) return;
     if (reset) {
       // Snap the visible figure back to zero before replaying, even when the
       // display resolution would suppress the first few commits.
@@ -131,7 +141,7 @@ export function useCountUp(
     };
 
     return subscribeToFrames(frame);
-  }, [target, durationMs, enabled, resetKey, fractionDigits, delayMs]);
+  }, [target, durationMs, enabled, resetKey, fractionDigits, delayMs, start]);
 
   return value;
 }

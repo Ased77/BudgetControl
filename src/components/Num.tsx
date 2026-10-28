@@ -1,5 +1,6 @@
 import React, { useContext } from 'react';
 import { useCountUp } from '../hooks/useCountUp';
+import { useInViewOnce } from '../hooks/useInViewOnce';
 import { formatNumber } from '../utils/numberUtils';
 
 /**
@@ -80,8 +81,10 @@ function parseNumeral(
  *  - The optional unit prints in a smaller, lighter size next to the number,
  *    per the dashboard's single-unit («همت») convention.
  *
- * Count-up: a countable figure eases from 0 to its value on mount (see
- * `useCountUp`), so every page's numbers count in as the page loads. Animated
+ * Count-up: a countable figure eases from 0 to its value the first time it
+ * scrolls into the app's workspace viewport (see `useCountUp` and
+ * `useInViewOnce`), so a long page counts its figures in as they arrive rather
+ * than spending them all above the fold. Animated
  * frames re-format with the same digit count as the final string, so the last
  * frame is bit-identical to a static render; the unit label stays put the
  * whole time. `NumCountUpContext` disables the entrance in tooltip shells,
@@ -101,6 +104,7 @@ export const Num: React.FC<NumProps> = ({
 }) => {
   const countUpEnabled = useContext(NumCountUpContext);
   const trigger = useContext(NumCountUpTriggerContext);
+  const [ref, inView] = useInViewOnce<HTMLSpanElement>();
   const parsed = parseNumeral(value);
   const animate = countUpEnabled && parsed !== null;
   const animated = useCountUp(
@@ -109,7 +113,8 @@ export const Num: React.FC<NumProps> = ({
     animate,
     trigger,
     parsed?.fractionDigits,
-    countUpDelayMs
+    countUpDelayMs,
+    inView
   );
   const display =
     countUpEnabled && parsed
@@ -117,7 +122,7 @@ export const Num: React.FC<NumProps> = ({
       : value;
 
   return (
-    <span className={`tabular-nums ${className}`} title={title}>
+    <span ref={ref} className={`tabular-nums ${className}`} title={title}>
       <bdi dir="ltr">{display}</bdi>
       {unit ? <span className={unitClassName}>{unit}</span> : null}
     </span>
