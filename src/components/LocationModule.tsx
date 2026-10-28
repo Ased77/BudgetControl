@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { LocationData, LocalIndicators } from '../types';
 import { toPersianDigits } from '../utils/numberUtils';
-import { MapPin, Sliders, CheckCircle2, Search, Filter, Globe, Pencil, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MapPin, Sliders, CheckCircle2, Search, Filter, Globe, Pencil, X } from 'lucide-react';
 import { useOutsideClick } from '../hooks/useOutsideClick';
 import { ComparativeHarmsTable } from './ComparativeHarmsTable';
 import { PageHeader } from './PageHeader';
@@ -33,14 +33,6 @@ const LOCATION_INDICATOR_FIELDS: Array<{
   { key: 'vulnerableGroupsPopulation', label: 'جمعیت گروه‌های آسیب‌پذیر', hint: 'افراد نیازمند حمایت مستقیم', max: null, unit: 'نفر' },
 ];
 
-/**
- * Location cards revealed per page of the region grid. The grid is a single
- * horizontal row of fixed-width cards that scrolls sideways rather than wrapping
- * into columns, so a page fills that row's own track; the pager under the grid
- * walks the rest of whatever the filters left behind.
- */
-const LOCATION_PAGE_SIZE = 12;
-
 interface LocationModuleProps {
   locations: LocationData[];
   selectedLocation: LocationData;
@@ -60,8 +52,68 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
   // Province filter state (defaults to selectedLocation.province)
   const [selectedProvinceFilter, setSelectedProvinceFilter] = useState<string>(selectedLocation.province);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  /** Current page of the region grid — 1-based, and clamped to the result set. */
-  const [locationPage, setLocationPage] = useState<number>(1);
+
+  // Drag-to-swipe for the cards strip: the row scrolls natively on touch and
+  // trackpad, but a mouse has no scrollbar to grab (the track is hidden), so
+  // a pressed-and-held drag walks the row sideways. Capture is claimed only
+  // once the gesture has genuinely started moving — capturing on a plain
+  // pointerdown would re-target the follow-up click to the strip and deaden
+  // the cards and their buttons; once a drag has moved, its release must not
+  // land as a card click.
+  const cardsGridRef = useRef<HTMLDivElement>(null);
+  const gridDrag = useRef<{ pointerId: number; startX: number; startScroll: number; moved: boolean } | null>(null);
+  const suppressGridClick = useRef(false);
+
+  const handleGridPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    const grid = cardsGridRef.current;
+    if (!grid || event.pointerType !== 'mouse' || event.button !== 0) return;
+    gridDrag.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startScroll: grid.scrollLeft,
+      moved: false,
+    };
+  };
+
+  const handleGridPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const grid = cardsGridRef.current;
+    const drag = gridDrag.current;
+    if (!grid || !drag || event.pointerId !== drag.pointerId) return;
+    const delta = event.clientX - drag.startX;
+    if (!drag.moved) {
+      // A few pixels of wobble still count as a click, not a drag — and a
+      // click keeps its natural card/button target, so capture starts here.
+      if (Math.abs(delta) < 4) return;
+      try {
+        grid.setPointerCapture(event.pointerId);
+      } catch {
+        // Pointer already gone; the grid's own pointerup ends the drag.
+      }
+      drag.moved = true;
+      grid.style.userSelect = 'none';
+    }
+    // `startScroll - delta` tracks the pointer in every scrollLeft convention
+    // (LTR, and the RTL mirrors browsers use for this dir-rtl page).
+    grid.scrollLeft = drag.startScroll - delta;
+  };
+
+  const handleGridPointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+    const grid = cardsGridRef.current;
+    const drag = gridDrag.current;
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    gridDrag.current = null;
+    if (grid) grid.style.userSelect = '';
+    if (drag.moved) suppressGridClick.current = true;
+  };
+
+  // A real drag ended on a card — swallow the click so the editor does not
+  // open for a swipe. The flag is one-shot: the next genuine click works.
+  const handleGridClickCapture = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!suppressGridClick.current) return;
+    suppressGridClick.current = false;
+    event.preventDefault();
+    event.stopPropagation();
+  };
 
   // Card click opens this dialog instead of re-scoping the whole system: the
   // active location only changes from the card's own selection control.
@@ -131,22 +183,6 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
       return matchesProvince && matchesSearch;
     });
   }, [locations, selectedProvinceFilter, searchQuery]);
-
-  // Paging of the region grid: the registry is filtered first and sliced second,
-  // so the pager always speaks about what the filters left behind rather than the
-  // whole country. The page is clamped rather than trusted — a filter can shrink
-  // the set under it — and any narrowing of that set drops the reader back to
-  // page one, so a new filter can never strand them on a page with no rows.
-  const locationPageCount = Math.max(1, Math.ceil(filteredLocations.length / LOCATION_PAGE_SIZE));
-  const safeLocationPage = Math.min(locationPage, locationPageCount);
-  const pagedLocations = useMemo(
-    () => filteredLocations.slice((safeLocationPage - 1) * LOCATION_PAGE_SIZE, safeLocationPage * LOCATION_PAGE_SIZE),
-    [filteredLocations, safeLocationPage]
-  );
-
-  useEffect(() => {
-    setLocationPage(1);
-  }, [searchQuery, selectedProvinceFilter]);
 
   const handleIndicatorChange = (key: keyof LocalIndicators, val: number) => {
     onUpdateIndicators({
@@ -245,20 +281,32 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
           </div>
         </div>
 
-        {/* Location Cards Grid — one row of fixed-width cards that scrolls
-            sideways instead of wrapping into columns, so every region sits on the
-            same line and the strip's height stays constant however many a page
-            holds. The cards are `shrink-0` so the row scrolls rather than
-            squashing them; `scrollbar-none` hides the track, matching the
-            province filter above and the sidebar nav. The `py-3` keeps the
-            selected card's ring and the hover shadow from being clipped. */}
-        <div id="location-module-location-cards-grid" className="flex gap-4 py-3 overflow-x-auto scrollbar-none">
+        {/* Location Cards Grid — every filtered region sits on one line of
+            fixed-width cards that scrolls sideways instead of wrapping into
+            columns, so the strip's height stays constant however many the
+            filters leave behind. The cards are `shrink-0` so the row scrolls
+            rather than squashing them; `scrollbar-none` hides the track,
+            matching the province filter above and the sidebar nav. The `py-3`
+            keeps the selected card's ring and the hover shadow from being
+            clipped. The pointer handlers make the row swipable: press and
+            drag to slide it sideways (see handleGridPointer* above), while
+            touch and trackpad keep their native scrolling. */}
+        <div
+          id="location-module-location-cards-grid"
+          ref={cardsGridRef}
+          onPointerDown={handleGridPointerDown}
+          onPointerMove={handleGridPointerMove}
+          onPointerUp={handleGridPointerEnd}
+          onPointerCancel={handleGridPointerEnd}
+          onClickCapture={handleGridClickCapture}
+          className="flex gap-4 py-3 overflow-x-auto scrollbar-none"
+        >
           {filteredLocations.length === 0 ? (
             <div id="location-module-location-cards-grid-2" className="w-full text-center py-8 text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200">
               هیچ لوکیشنی با مشخصات جستجو شده یافت نشد
             </div>
           ) : (
-            pagedLocations.map((loc) => {
+            filteredLocations.map((loc) => {
               const isSelected = loc.id === selectedLocation.id;
               return (
                 <div
@@ -352,73 +400,6 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
             })
           )}
         </div>
-
-        {/* Pager — drawn only when the filtered set spills past one page, so a
-            short result list keeps the panel as quiet as it was before. */}
-        {locationPageCount > 1 && (
-          <div
-            id="location-module-region-selector-pagination"
-            className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-slate-100"
-          >
-            <span
-              id="location-module-region-selector-pagination-summary"
-              className="text-[11px] font-bold text-slate-500"
-            >
-              نمایش <Num value={toPersianDigits((safeLocationPage - 1) * LOCATION_PAGE_SIZE + 1)} /> تا{' '}
-              <Num value={toPersianDigits(Math.min(safeLocationPage * LOCATION_PAGE_SIZE, filteredLocations.length))} /> از{' '}
-              <Num value={toPersianDigits(filteredLocations.length)} unit="لوکیشن" />
-            </span>
-
-            <div id="location-module-region-selector-pagination-controls" className="flex items-center gap-1.5 flex-wrap">
-              <button
-                id="location-module-region-selector-pagination-prev"
-                type="button"
-                onClick={() => setLocationPage((page) => Math.max(1, page - 1))}
-                disabled={safeLocationPage === 1}
-                title="صفحه قبلی"
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold border border-slate-200 bg-slate-50 text-slate-600 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-50"
-              >
-                <ChevronRight className="w-3.5 h-3.5" />
-                قبلی
-              </button>
-
-              {locationPageCount <= 7 ? (
-                Array.from({ length: locationPageCount }, (_, index) => index + 1).map((page) => (
-                  <button
-                    id={`location-module-region-selector-pagination-page-${page}`}
-                    key={page}
-                    type="button"
-                    onClick={() => setLocationPage(page)}
-                    aria-current={safeLocationPage === page ? 'page' : undefined}
-                    className={`min-w-8 px-2 py-1.5 rounded-xl text-xs font-bold border transition-colors ${
-                      safeLocationPage === page
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                        : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                    }`}
-                  >
-                    <Num value={toPersianDigits(page)} />
-                  </button>
-                ))
-              ) : (
-                <span id="location-module-region-selector-pagination-position" className="px-1 text-xs font-bold text-slate-600">
-                  صفحه <Num value={toPersianDigits(safeLocationPage)} /> از <Num value={toPersianDigits(locationPageCount)} />
-                </span>
-              )}
-
-              <button
-                id="location-module-region-selector-pagination-next"
-                type="button"
-                onClick={() => setLocationPage((page) => Math.min(locationPageCount, page + 1))}
-                disabled={safeLocationPage === locationPageCount}
-                title="صفحه بعدی"
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold border border-slate-200 bg-slate-50 text-slate-600 transition-colors hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-50"
-              >
-                بعدی
-                <ChevronLeft className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Comparative Social Harms Table (Local vs Province & National) */}
