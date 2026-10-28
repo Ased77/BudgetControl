@@ -9,6 +9,7 @@
         "dotenv": "^17.2.3",
         "drizzle-orm": "^0.45.4",
         "express": "^4.21.2",
+        "gsap": "^3.15.0",
         "jsonwebtoken": "^9.0.3",
         "pg": "^8.23.1",
       },
@@ -469,6 +470,8 @@
     "gopd": ["gopd@1.2.0", "", {}, ""],
 
     "graceful-fs": ["graceful-fs@4.2.11", "", {}, ""],
+
+    "gsap": ["gsap@3.15.0", "", {}, "sha512-dMW4CWBTUK1AEEDeZc1g4xpPGIrSf9fJF960qbTZmN/QwZIWY5wgliS6JWl9/25fpTGJrMRtSjGtOmPnfjZB+A=="],
 
     "has-symbols": ["has-symbols@1.1.0", "", {}, ""],
 

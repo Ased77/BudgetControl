@@ -26,6 +26,7 @@ import {
   Coins,
 } from 'lucide-react';
 import { HelpTooltip } from './HelpTooltip';
+import AnimatedContent from './AnimatedContent/AnimatedContent';
 import { Num } from './Num';
 import CometDial from './CometDial/CometDial';
 
@@ -253,8 +254,17 @@ export const PrioritiesView: React.FC = () => {
           />
         </div>
 
-        {/* Priorities Grid */}
-        <div id="priorities-view-priorities-grid" className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+        {/* Priorities Grid — cards ride in on scroll, a beat apart. */}
+        <AnimatedContent
+          id="priorities-view-priorities-grid"
+          className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full"
+          container="#app-scrollable-main-workspace"
+          distance={24}
+          duration={0.5}
+          ease="power2.out"
+          stagger={0.06}
+          threshold={0.05}
+        >
         {filteredPriorities.map((p) => {
           const currentPct = currentPercentages[p.id] || 0;
           const isLocked = lockedIds.has(p.id);
@@ -267,7 +277,7 @@ export const PrioritiesView: React.FC = () => {
             <div
               id="priorities-view-priorities-grid-card"
               key={p.id}
-              className={`bg-white dark:bg-slate-900 rounded-2xl p-5 border shadow-sm hover:shadow-md transition-all flex flex-col justify-between ${
+              className={`bg-white dark:bg-slate-900 rounded-2xl p-5 border shadow-sm hover:shadow-md transition-[box-shadow,border-color,background-color] flex flex-col justify-between ${
                 isLocked
                   ? 'border-indigo-400/80 dark:border-indigo-600/60 bg-indigo-50/10 dark:bg-indigo-950/10'
                   : 'border-slate-200 dark:border-slate-800'
@@ -481,7 +491,7 @@ export const PrioritiesView: React.FC = () => {
             </div>
           );
         })}
-        </div>
+        </AnimatedContent>
       </div>
 
       {/* CRUD Modal */}
