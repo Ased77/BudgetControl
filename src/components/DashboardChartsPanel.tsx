@@ -9,6 +9,7 @@ import {
   TooltipShell,
   shortLabel,
 } from './ChartCard';
+import AnimatedContent from './AnimatedContent/AnimatedContent';
 import {
   formatHemmat,
   formatMoney,
@@ -645,7 +646,18 @@ export const DashboardChartsPanel: React.FC = () => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Each chart card reveals on its own as it enters the workspace viewport,
+          a beat apart in reading order. The panel header above is already visible
+          by the time the first card fires. */}
+      <AnimatedContent
+        className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+        container="#app-scrollable-main-workspace"
+        distance={24}
+        duration={0.5}
+        ease="power2.out"
+        stagger={0.06}
+        threshold={0.05}
+      >
         {/* 1. Deprivation radar ------------------------------------------------ */}
         <ChartCard
           id="dashboard-charts-panel-indicator-radar"
@@ -1229,7 +1241,7 @@ export const DashboardChartsPanel: React.FC = () => {
             </>
           )}
         </ChartCard>
-      </div>
+      </AnimatedContent>
 
       {/* Closing strip — ties the visual panel back to the live allocation state
           and offers the two next steps (allocation page, project register). */}

@@ -5,6 +5,7 @@ import { Num } from './Num';
 import { AnimatedGauge } from './AnimatedGauge';
 import { DashboardPredictiveEngine } from './DashboardPredictiveEngine';
 import { DashboardChartsPanel } from './DashboardChartsPanel';
+import AnimatedContent from './AnimatedContent/AnimatedContent';
 import { PageHeader } from './PageHeader';
 import {
   ShieldAlert,
@@ -94,8 +95,19 @@ export const NationalDashboardView: React.FC = () => {
       </PageHeader>
 
       {/* Primary Macro KPI Cards — compact strip so the forecast chart below
-          stays visible on a 1080p screen without scrolling. */}
-      <div id="national-dashboard-view-primary-macro-kpi-cards" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
+          stays visible on a 1080p screen without scrolling. The four cards rise
+          in one after another as the strip enters the workspace viewport — the
+          same scroll reveal the priorities grid uses, so the dashboard scrolls
+          as one system instead of animating some blocks on mount. */}
+      <AnimatedContent
+        id="national-dashboard-view-primary-macro-kpi-cards"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch"
+        container="#app-scrollable-main-workspace"
+        distance={24}
+        duration={0.5}
+        ease="power2.out"
+        stagger={0.06}
+      >
         {/* کل منابع مالی مصوب — regular KPI: neutral ink */}
         <button
           id="national-dashboard-view-kpi-budget-sources"
@@ -204,15 +216,32 @@ export const NationalDashboardView: React.FC = () => {
             </div>
           )}
         </div>
-      </div>
+      </AnimatedContent>
 
-      {/* Predictive Analysis Engine Module */}
-      <DashboardPredictiveEngine />
+      {/* Predictive Analysis Engine Module — below the fold, so it rides in as
+          the workspace scrolls down to it rather than with the KPI strip. */}
+      <AnimatedContent
+        container="#app-scrollable-main-workspace"
+        distance={24}
+        duration={0.5}
+        ease="power2.out"
+        threshold={0.05}
+      >
+        <DashboardPredictiveEngine />
+      </AnimatedContent>
 
       {/* Dashboard analytics panel — the dashboard's own charts: deprivation
           profile, funding mix and drawdown, project portfolio, crisis map,
           department delivery and anti-duplication alerts. */}
-      <DashboardChartsPanel />
+      <AnimatedContent
+        container="#app-scrollable-main-workspace"
+        distance={24}
+        duration={0.5}
+        ease="power2.out"
+        threshold={0.05}
+      >
+        <DashboardChartsPanel />
+      </AnimatedContent>
 
       {isBudgetSourcesModalOpen && (
         <div

@@ -8,6 +8,7 @@ import {
   formatPercent,
 } from '../utils/numberUtils';
 import { Num, NumCountUpContext } from './Num';
+import AnimatedContent from './AnimatedContent/AnimatedContent';
 import {
   runDashboardPredictiveAnalysis,
   ForecastScenario,
@@ -355,7 +356,16 @@ export const DashboardPredictiveEngine: React.FC = () => {
       {/* 4 Macro Forecast KPI Cards — color carries meaning: neutral ink for
           regular figures, amber for growth pressure, and the financial gap as
           THE prominent alert in the risk color. Equal heights via stretch. */}
-      <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
+      <AnimatedContent
+        id="dashboard-predictive-engine-4-macro-forecast-kpi-cards"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch"
+        container="#app-scrollable-main-workspace"
+        distance={24}
+        duration={0.5}
+        ease="power2.out"
+        stagger={0.06}
+        threshold={0.05}
+      >
         <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards-2" className="bg-white rounded-xl p-4 border border-slate-200 flex flex-col gap-1.5 h-full">
           <div id="dashboard-predictive-engine-4-macro-forecast-kpi-cards-3" className="flex items-center justify-between text-slate-500 text-xs font-semibold">
             <span>برآورد کل نیاز بودجه‌ای ۱۴۰۴</span>
@@ -423,7 +433,7 @@ export const DashboardPredictiveEngine: React.FC = () => {
             نیاز به جذب منابع مسئولیت اجتماعی و خیرین
           </span>
         </div>
-      </div>
+      </AnimatedContent>
 
       {/* Main Interactive Trend Chart Section — the scenario switcher moved
           here, right above the chart it drives, and the active scenario is
@@ -727,7 +737,16 @@ export const DashboardPredictiveEngine: React.FC = () => {
 
         {/* Sector Cards Grid — summary only; click opens the full detail modal */}
         {filteredSectors.length > 0 ? (
-        <div id="dashboard-predictive-engine-sector-cards-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <AnimatedContent
+          id="dashboard-predictive-engine-sector-cards-grid"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
+          container="#app-scrollable-main-workspace"
+          distance={24}
+          duration={0.5}
+          ease="power2.out"
+          stagger={0.06}
+          threshold={0.05}
+        >
           {filteredSectors.map((sector) => (
             <div
               id="dashboard-predictive-engine-sector-cards-grid-card"
@@ -784,7 +803,7 @@ export const DashboardPredictiveEngine: React.FC = () => {
               </div>
             </div>
           ))}
-        </div>
+        </AnimatedContent>
         ) : (
           <div id="dashboard-predictive-engine-sector-cards-grid-empty" className="flex flex-col items-center justify-center gap-2 py-10 bg-white rounded-xl border border-dashed border-slate-300 text-center">
             <span className="p-2.5 rounded-full bg-slate-100">
