@@ -206,7 +206,16 @@ export const PopulationView: React.FC = () => {
 
       <div id="population-view-header-banner" className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-sm relative overflow-hidden">
         {/* 4 Core County KPI Cards */}
-        <div id="population-view-4-core-county-kpi-cards" className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <AnimatedContent
+          id="population-view-4-core-county-kpi-cards"
+          className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4"
+          container="#app-scrollable-main-workspace"
+          distance={24}
+          duration={0.5}
+          ease="power2.out"
+          stagger={0.06}
+          threshold={0.05}
+        >
           <div id="population-view-4-core-county-kpi-cards-2" className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
             <span className="text-xs text-slate-500 font-semibold block mb-1">کل جمعیت {countyRow.county}</span>
             <Num value={formatNumber(totalCountyPopulation)} className="text-2xl md:text-3xl font-black text-slate-900 font-mono block" />
@@ -241,7 +250,7 @@ export const PopulationView: React.FC = () => {
               <Num value={formatPercent(Number(deprivedPercentage))} /> از جمعیت کل شهرستان
             </span>
           </div>
-        </div>
+        </AnimatedContent>
       </div>
 
       {/* Explanatory Clarification Alert regarding Project Reach vs Deprived Pop */}
@@ -315,7 +324,16 @@ export const PopulationView: React.FC = () => {
 
       {/* SUB-TAB 1: Overview & Comparative Metrics */}
       {activeSubTab === 'OVERVIEW' && (
-        <div id="population-view-sub-tab-1-overview-comparative" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <AnimatedContent
+          id="population-view-sub-tab-1-overview-comparative"
+          className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+          container="#app-scrollable-main-workspace"
+          distance={24}
+          duration={0.5}
+          ease="power2.out"
+          stagger={0.06}
+          threshold={0.05}
+        >
           {/* Population Distribution by Bakhsh */}
           <div id="population-view-population-distribution-by" className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
             <div id="population-view-population-distribution-by-2" className="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -399,7 +417,7 @@ export const PopulationView: React.FC = () => {
               نرخ محرومیت شناسایی‌شده در {countyRow.county} معادل <Num value={`${toPersianDigits(deprivedPercentage)}٪`} /> جمعیت است، اما عمق محرومیت در بخش‌های دارای کمبود آب شرب و ریسک بالای زیست‌محیطی، نیازمند مداخله هدفمند و تخصیص اعتبارات متناسب است.
             </div>
           </div>
-        </div>
+        </AnimatedContent>
       )}
 
       {/* SUB-TAB 2: Detailed Districts Table */}
@@ -477,7 +495,16 @@ export const PopulationView: React.FC = () => {
               </span>
             </div>
 
-            <div id="population-view-sub-tab-3-vulnerable-groups-5" className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <AnimatedContent
+              id="population-view-sub-tab-3-vulnerable-groups-5"
+              className="grid grid-cols-1 md:grid-cols-2 gap-4"
+              container="#app-scrollable-main-workspace"
+              distance={24}
+              duration={0.5}
+              ease="power2.out"
+              stagger={0.06}
+              threshold={0.05}
+            >
               {vulnerableBreakdown.map((item, idx) => {
                 const Icon = item.icon;
                 return (
@@ -512,7 +539,7 @@ export const PopulationView: React.FC = () => {
                   </div>
                 );
               })}
-            </div>
+            </AnimatedContent>
           </div>
         </div>
       )}

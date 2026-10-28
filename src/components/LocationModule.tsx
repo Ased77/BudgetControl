@@ -442,7 +442,16 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
           </span>
         </div>
 
-        <div id="location-module-interactive-indicators-panel-4" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 text-xs">
+        <AnimatedContent
+          id="location-module-interactive-indicators-panel-4"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 text-xs"
+          container="#app-scrollable-main-workspace"
+          distance={24}
+          duration={0.5}
+          ease="power2.out"
+          stagger={0.06}
+          threshold={0.05}
+        >
           
           {/* Poverty Rate */}
           <div id="location-module-poverty-rate" className="bg-slate-50 p-4 rounded-xl border border-slate-200">
@@ -558,7 +567,7 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
             </p>
           </div>
 
-        </div>
+        </AnimatedContent>
       </div>
 
       {/* Location Edit Dialog — opened by clicking a card in the grid above.

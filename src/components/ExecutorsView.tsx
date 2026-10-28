@@ -235,7 +235,16 @@ export const ExecutorsView: React.FC = () => {
         </div>
 
         {/* Micro-KPI Strip */}
-        <div id="executors-view-micro-kpi-strip" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-cyan-200/60">
+        <AnimatedContent
+          id="executors-view-micro-kpi-strip"
+          className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-cyan-200/60"
+          container="#app-scrollable-main-workspace"
+          distance={24}
+          duration={0.5}
+          ease="power2.out"
+          stagger={0.06}
+          threshold={0.05}
+        >
           <div id="executors-view-micro-kpi-strip-2" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">کل مجریان شناسنامه‌دار</span>
             <Num value={formatNumber(executors.length)} unit="نهاد" className="text-xl font-black text-slate-900 mt-0.5 block font-mono" />
@@ -252,7 +261,7 @@ export const ExecutorsView: React.FC = () => {
             <span className="text-xs text-slate-500 block">مجریان دارای ظرفیت آزاد</span>
             <Num value={formatNumber(availableCount)} unit="مجری" className="text-xl font-black text-amber-700 mt-0.5 block font-mono" />
           </div>
-        </div>
+        </AnimatedContent>
       </div>
 
       {/* Filter and Search Bar */}
@@ -302,7 +311,16 @@ export const ExecutorsView: React.FC = () => {
 
       {/* Executors Grid — each card summarises one executor and opens a drill-down modal */}
       {filteredExecutors.length > 0 ? (
-        <div id="executors-view-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <AnimatedContent
+          id="executors-view-grid"
+          className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+          container="#app-scrollable-main-workspace"
+          distance={24}
+          duration={0.5}
+          ease="power2.out"
+          stagger={0.06}
+          threshold={0.05}
+        >
           {filteredExecutors.map((exec, index) => {
             const gaugeDelayMs = gaugeStaggerDelay(index);
             const execProjects = projects.filter((p) => p.executorId === exec.id);
@@ -414,7 +432,7 @@ export const ExecutorsView: React.FC = () => {
               </article>
             );
           })}
-        </div>
+        </AnimatedContent>
       ) : (
         <div
           id="executors-view-empty-state"

@@ -383,7 +383,15 @@ export const SettingsView: React.FC = () => {
         </div>
       </form>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      <AnimatedContent
+        className="grid grid-cols-1 xl:grid-cols-2 gap-4"
+        container="#app-scrollable-main-workspace"
+        distance={24}
+        duration={0.5}
+        ease="power2.out"
+        stagger={0.06}
+        threshold={0.05}
+      >
         {/* ۲. محدوده فعال */}
         <div
           id="settings-view-workspace-card"
@@ -526,7 +534,7 @@ export const SettingsView: React.FC = () => {
             </button>
           </div>
         </div>
-      </div>
+      </AnimatedContent>
 
       {/* ۳. داده‌ها و پشتیبان‌گیری */}
       <div
@@ -550,7 +558,16 @@ export const SettingsView: React.FC = () => {
           </span>
         </div>
 
-        <div id="settings-view-data-records" className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <AnimatedContent
+          id="settings-view-data-records"
+          className="grid grid-cols-2 md:grid-cols-4 gap-3"
+          container="#app-scrollable-main-workspace"
+          distance={24}
+          duration={0.5}
+          ease="power2.out"
+          stagger={0.06}
+          threshold={0.05}
+        >
           {datasetCounts.map((set) => {
             const SetIcon = set.icon;
             return (
@@ -569,7 +586,7 @@ export const SettingsView: React.FC = () => {
               </div>
             );
           })}
-        </div>
+        </AnimatedContent>
 
         <div className="flex flex-wrap items-center gap-2 pt-1">
           <button

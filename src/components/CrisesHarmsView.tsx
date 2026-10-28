@@ -397,7 +397,16 @@ export const CrisesHarmsView: React.FC = () => {
       </PageHeader>
 
       {/* Macro KPI Cards — totals across every registered crisis and harm */}
-      <div id="crises-harms-view-kpi-cards" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <AnimatedContent
+        id="crises-harms-view-kpi-cards"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
+        container="#app-scrollable-main-workspace"
+        distance={24}
+        duration={0.5}
+        ease="power2.out"
+        stagger={0.06}
+        threshold={0.05}
+      >
         {kpiCards.map((kpi) => {
           const KpiIcon = kpi.icon;
           return (
@@ -423,7 +432,7 @@ export const CrisesHarmsView: React.FC = () => {
             </div>
           );
         })}
-      </div>
+      </AnimatedContent>
 
       {/* Toolbar — search and the status/urgency filters */}
       <div
@@ -497,7 +506,16 @@ export const CrisesHarmsView: React.FC = () => {
       {/* Crises Grid — every card is a door into the record's own page, so the
           grid only has to carry the identity, the state and three numbers. */}
       {filteredCrises.length > 0 ? (
-        <div id="crises-harms-view-crises-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <AnimatedContent
+          id="crises-harms-view-crises-grid"
+          className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+          container="#app-scrollable-main-workspace"
+          distance={24}
+          duration={0.5}
+          ease="power2.out"
+          stagger={0.06}
+          threshold={0.05}
+        >
           {filteredCrises.map((item, index) => {
             const gaugeDelayMs = gaugeStaggerDelay(index);
             const style = URGENCY_STYLE[item.urgency];
@@ -632,7 +650,7 @@ export const CrisesHarmsView: React.FC = () => {
               </article>
             );
           })}
-        </div>
+        </AnimatedContent>
       ) : (
         <div
           id="crises-harms-view-empty-state"

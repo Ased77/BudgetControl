@@ -3569,7 +3569,16 @@ export const CreateProjectView: React.FC = () => {
                     </span>
                   </div>
 
-                  <div id="create-project-view-priority-cards-list-3" className="grid grid-cols-1 gap-2.5">
+                  <AnimatedContent
+                    id="create-project-view-priority-cards-list-3"
+                    className="grid grid-cols-1 gap-2.5"
+                    container="#app-scrollable-main-workspace"
+                    distance={24}
+                    duration={0.5}
+                    ease="power2.out"
+                    stagger={0.06}
+                    threshold={0.05}
+                  >
                     {demographicPrioritySuggestions.map((prop, idx) => (
                       <div
                         id={`create-project-view-priority-cards-list-4-${prop.id}`}
@@ -3634,7 +3643,7 @@ export const CreateProjectView: React.FC = () => {
                         </div>
                       </div>
                     ))}
-                  </div>
+                  </AnimatedContent>
                 </div>
               </div>
             </div>

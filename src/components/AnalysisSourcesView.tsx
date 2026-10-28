@@ -273,7 +273,16 @@ export const AnalysisSourcesView: React.FC = () => {
           )}
         </div>
 
-        <div id="analysis-sources-view-micro-kpi-strip" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-violet-200/60">
+        <AnimatedContent
+          id="analysis-sources-view-micro-kpi-strip"
+          className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-violet-200/60"
+          container="#app-scrollable-main-workspace"
+          distance={24}
+          duration={0.5}
+          ease="power2.out"
+          stagger={0.06}
+          threshold={0.05}
+        >
           <div id="analysis-sources-view-micro-kpi-strip-1" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">کل منابع ثبت‌شده</span>
             <Num value={formatNumber(stats.total)} unit="منبع" className="text-xl font-black text-slate-900 mt-0.5 block font-mono" />
@@ -293,7 +302,7 @@ export const AnalysisSourcesView: React.FC = () => {
               <Num value={formatNumber(stats.ai)} unit="منبع" unitClassName="text-[0.6em] font-bold text-violet-700 ms-1" />
             </span>
           </div>
-        </div>
+        </AnimatedContent>
       </div>
 
       {/* Filter and search bar */}
@@ -353,7 +362,16 @@ export const AnalysisSourcesView: React.FC = () => {
 
       {/* Sources list */}
       {filteredSources.length > 0 ? (
-        <div id="analysis-sources-view-list" className="grid grid-cols-3 gap-4">
+        <AnimatedContent
+          id="analysis-sources-view-list"
+          className="grid grid-cols-3 gap-4"
+          container="#app-scrollable-main-workspace"
+          distance={24}
+          duration={0.5}
+          ease="power2.out"
+          stagger={0.06}
+          threshold={0.05}
+        >
           {filteredSources.map((source) => {
             const origin = ORIGIN_META[source.origin];
             const kind = KIND_META[source.kind];
@@ -429,7 +447,7 @@ export const AnalysisSourcesView: React.FC = () => {
               </article>
             );
           })}
-        </div>
+        </AnimatedContent>
       ) : (
         <div id="analysis-sources-view-empty" className="flex flex-col items-center justify-center gap-2 py-12 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 text-center">
           <span className="p-3 rounded-full bg-slate-100 dark:bg-slate-800">

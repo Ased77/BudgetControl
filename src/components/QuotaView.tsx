@@ -201,7 +201,16 @@ export const QuotaView: React.FC = () => {
 
       {/* KPI banner */}
       <div id="quota-view-header-banner" className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-sm">
-        <div id="quota-view-4-core-kpi-cards" className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <AnimatedContent
+          id="quota-view-4-core-kpi-cards"
+          className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4"
+          container="#app-scrollable-main-workspace"
+          distance={24}
+          duration={0.5}
+          ease="power2.out"
+          stagger={0.06}
+          threshold={0.05}
+        >
           <div id="quota-view-kpi-budget" className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
             <span className="text-xs text-slate-500 font-semibold block mb-1">بودجه کل مصوب سهمیه‌بندی</span>
             <Num
@@ -245,7 +254,7 @@ export const QuotaView: React.FC = () => {
               کسری گردکردن جداول نسبت به بودجه: <Num value={formatMoneyParts(Math.abs(quotaSumDrift)).value} unit={formatMoneyParts(Math.abs(quotaSumDrift)).unit} unitClassName="text-[0.85em] font-bold text-violet-500 ms-0.5" />
             </span>
           </div>
-        </div>
+        </AnimatedContent>
       </div>
 
       {/* Method notice */}

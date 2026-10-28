@@ -292,8 +292,8 @@ export const PrioritiesView: React.FC = () => {
                   : 'border-slate-200 dark:border-slate-800'
               }`}
             >
-              <div id={`priorities-view-priorities-grid-3-${p.id}`}>
-                <div id={`priorities-view-priorities-grid-4-${p.id}`} className="flex items-start justify-between gap-2 mb-3">
+              <div id={`priorities-view-priorities-grid-3-${p.id}`} className="lg:grid lg:grid-cols-2 lg:gap-x-3.5 lg:items-start">
+                <div id={`priorities-view-priorities-grid-4-${p.id}`} className="flex items-start justify-between gap-2 mb-3 min-w-0 lg:col-start-1 lg:row-start-1">
                   <div id={`priorities-view-priorities-grid-5-${p.id}`} className="flex items-center gap-2.5">
                     <div id={`priorities-view-priorities-grid-6-${p.id}`} className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
                       <Target className="w-5 h-5" />
@@ -326,8 +326,8 @@ export const PrioritiesView: React.FC = () => {
                 </div>
 
                 {/* Slider and Percentage Display */}
-                <div id={`priorities-view-slider-and-percentage-display-${p.id}`} className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3.5 border border-slate-100 dark:border-slate-800/80 mb-3 space-y-3">
-                  <div id={`priorities-view-slider-and-percentage-display-2-${p.id}`} className="flex items-center justify-between gap-2">
+                <div id={`priorities-view-slider-and-percentage-display-${p.id}`} className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3.5 border border-slate-100 dark:border-slate-800/80 mb-3 lg:mb-0 space-y-3 min-w-0 lg:col-start-2 lg:row-start-1 lg:row-span-2">
+                  <div id={`priorities-view-slider-and-percentage-display-2-${p.id}`} className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
                     <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">درصد تخصیص فعلی</span>
                     <div id={`priorities-view-slider-and-percentage-display-3-${p.id}`} className="flex items-center gap-2">
                       {aiRecPct > 0 && (
@@ -391,7 +391,7 @@ export const PrioritiesView: React.FC = () => {
                     </div>
                   </div>
 
-                  <div id={`priorities-view-slider-and-percentage-display-4-${p.id}`} className="flex items-center justify-between text-xs pt-2 border-t border-slate-200/60 dark:border-slate-700/50">
+                  <div id={`priorities-view-slider-and-percentage-display-4-${p.id}`} className="flex flex-wrap items-center justify-between gap-x-2 text-xs pt-2 border-t border-slate-200/60 dark:border-slate-700/50">
                     <span className="text-slate-400 dark:text-slate-500 text-[11px] flex items-center gap-1">
                       <Coins className="w-3 h-3 text-purple-500" />
                       بودجه متناظر ریالی:
@@ -403,7 +403,7 @@ export const PrioritiesView: React.FC = () => {
                 </div>
 
                 {/* Sub-items accordion */}
-                <div id={`priorities-view-sub-items-accordion-${p.id}`} className="border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden mb-3">
+                <div id={`priorities-view-sub-items-accordion-${p.id}`} className="border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden mb-3 min-w-0 lg:col-start-1 lg:row-start-2">
                   <button
                     onClick={() => setExpandedSubItemId(isExpanded ? null : p.id)}
                     className="w-full flex items-center justify-between px-3 py-2 bg-slate-50/70 dark:bg-slate-800/40 text-[11px] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"

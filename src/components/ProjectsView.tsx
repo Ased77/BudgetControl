@@ -323,7 +323,16 @@ export const ProjectsView: React.FC = () => {
         </div>
 
         {/* Micro-KPI Strip */}
-        <div id="projects-view-micro-kpi-strip" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-blue-200/60">
+        <AnimatedContent
+          id="projects-view-micro-kpi-strip"
+          className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-blue-200/60"
+          container="#app-scrollable-main-workspace"
+          distance={24}
+          duration={0.5}
+          ease="power2.out"
+          stagger={0.06}
+          threshold={0.05}
+        >
           <div id="projects-view-micro-kpi-strip-2" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">
               {ownProjectScope ? 'پروژه‌های ثبت‌شده توسط شما' : 'کل پروژه‌های ثبت‌شده'}
@@ -345,7 +354,7 @@ export const ProjectsView: React.FC = () => {
               <Num value={formatNumber(flaggedCount)} unit="مورد هشدار" unitClassName="text-[0.6em] font-bold text-rose-700 ms-1" />
             </span>
           </div>
-        </div>
+        </AnimatedContent>
       </div>
 
       {/* Filter and Search Bar */}
@@ -420,7 +429,16 @@ export const ProjectsView: React.FC = () => {
       </div>
 
       {/* Projects List — compact summary cards; click opens the full detail modal. */}
-      <div id="projects-view-projects-list" className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <AnimatedContent
+        id="projects-view-projects-list"
+        className="grid grid-cols-1 md:grid-cols-2 gap-4"
+        container="#app-scrollable-main-workspace"
+        distance={24}
+        duration={0.5}
+        ease="power2.out"
+        stagger={0.06}
+        threshold={0.05}
+      >
         {filteredProjects.map((proj) => {
           const isWarning = proj.antiOverlapStatus !== 'CLEAR';
           const statusMeta = PROJECT_STATUS_META[proj.status];
@@ -502,7 +520,7 @@ export const ProjectsView: React.FC = () => {
             </article>
           );
         })}
-      </div>
+      </AnimatedContent>
 
       {/* Project Detail Modal — full record; edit/delete live here, not on the card. */}
       {detailProject && (

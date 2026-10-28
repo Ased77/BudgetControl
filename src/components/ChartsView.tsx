@@ -1287,7 +1287,12 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
       {/* ======================================================================= */}
       {/* 4. COMPOSITION — the same allocation as shares, as money and as shape   */}
       {/* ======================================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <AnimatedContent
+        className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+        container="#app-scrollable-main-workspace"
+        trigger="mount"
+        stagger={0.06}
+      >
         {/* Shares */}
         <ChartCard
           id="charts-view-allocation-shares"
@@ -1448,7 +1453,7 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
             </ResponsiveContainer>
           </div>
         </ChartCard>
-      </div>
+      </AnimatedContent>
     </AnimatedContent>
   );
 };

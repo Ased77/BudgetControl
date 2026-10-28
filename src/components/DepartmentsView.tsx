@@ -498,7 +498,16 @@ export const DepartmentsView: React.FC = () => {
       />
 
       {/* Macro KPI Cards — totals across every registered department */}
-      <div id="departments-view-kpi-cards" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <AnimatedContent
+        id="departments-view-kpi-cards"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
+        container="#app-scrollable-main-workspace"
+        distance={24}
+        duration={0.5}
+        ease="power2.out"
+        stagger={0.06}
+        threshold={0.05}
+      >
         {kpiCards.map((kpi) => {
           const KpiIcon = kpi.icon;
           return (
@@ -524,7 +533,7 @@ export const DepartmentsView: React.FC = () => {
             </div>
           );
         })}
-      </div>
+      </AnimatedContent>
 
       {/* Toolbar — search, result count, level/category filters and the add action */}
       <div
@@ -617,9 +626,15 @@ export const DepartmentsView: React.FC = () => {
 
       {/* Departments Grid */}
       {filteredDepartments.length > 0 ? (
-        <div
+        <AnimatedContent
           id="departments-view-departments-grid"
           className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+          container="#app-scrollable-main-workspace"
+          distance={24}
+          duration={0.5}
+          ease="power2.out"
+          stagger={0.06}
+          threshold={0.05}
         >
           {visibleDepartments.map((dept, index) => {
             const catStyle = DEPARTMENT_CATEGORY_STYLE[dept.category];
@@ -754,7 +769,7 @@ export const DepartmentsView: React.FC = () => {
               </article>
             );
           })}
-        </div>
+        </AnimatedContent>
       ) : (
         <div
           id="departments-view-empty-state"

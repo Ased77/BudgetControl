@@ -257,7 +257,16 @@ export const BudgetSourcesView: React.FC = () => {
         </div>
 
         {/* Aggregate KPI Strip */}
-        <div id="budget-sources-view-aggregate-kpi-strip" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-emerald-200/60">
+        <AnimatedContent
+          id="budget-sources-view-aggregate-kpi-strip"
+          className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-emerald-200/60"
+          container="#app-scrollable-main-workspace"
+          distance={24}
+          duration={0.5}
+          ease="power2.out"
+          stagger={0.06}
+          threshold={0.05}
+        >
           <div id="budget-sources-view-aggregate-kpi-strip-2" className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs">
             <span className="text-xs text-slate-500 block">کل منابع اعتباری مصوب</span>
             <Num {...formatMoneyParts(grandTotal)} className="text-xl font-black text-emerald-700 mt-0.5 block font-mono" />
@@ -274,7 +283,7 @@ export const BudgetSourcesView: React.FC = () => {
             <span className="text-xs text-slate-500 block">درصد پوشش تعهدات</span>
             <Num value={formatPercent(allocationRate)} className="text-xl font-black text-slate-900 mt-0.5 block font-mono" />
           </div>
-        </div>
+        </AnimatedContent>
       </div>
 
       {/* Filter and Search Bar */}
@@ -312,7 +321,16 @@ export const BudgetSourcesView: React.FC = () => {
       </div>
 
       {/* Sources Grid — a section of its own, exactly like the departments cards. */}
-      <div id="budget-sources-view-sources-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <AnimatedContent
+        id="budget-sources-view-sources-grid"
+        className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+        container="#app-scrollable-main-workspace"
+        distance={24}
+        duration={0.5}
+        ease="power2.out"
+        stagger={0.06}
+        threshold={0.05}
+      >
         {filteredSources.map((source, index) => {
           const gaugeDelayMs = gaugeStaggerDelay(index);
           const linkedProjects = projects.filter((p) => p.budgetSourceId === source.id);
@@ -439,7 +457,7 @@ export const BudgetSourcesView: React.FC = () => {
             </article>
           );
         })}
-      </div>
+      </AnimatedContent>
 
       {/* Budget-source drill-down dialog — the card grid keeps only the summary,
           and the edit/delete actions live here, exactly like the departments cards. */}
