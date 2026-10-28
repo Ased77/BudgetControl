@@ -6,6 +6,7 @@ import { useOutsideClick } from '../hooks/useOutsideClick';
 import { ComparativeHarmsTable } from './ComparativeHarmsTable';
 import { PageHeader } from './PageHeader';
 import { Num } from './Num';
+import AnimatedContent from './AnimatedContent/AnimatedContent';
 
 /**
  * The eleven local indicators every location record carries, in the order the
@@ -155,7 +156,16 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
   };
 
   return (
-    <div id="location-module-root" className="space-y-6 dir-rtl">
+    <AnimatedContent
+      id="location-module-root"
+      className="space-y-6 dir-rtl"
+      container="#app-scrollable-main-workspace"
+      distance={24}
+      duration={0.5}
+      ease="power2.out"
+      stagger={0.06}
+      threshold={0.05}
+    >
       {/* Page title block — this tab previously opened straight into the card below. */}
       <PageHeader
         id="location-module-page-header"
@@ -728,7 +738,7 @@ export const LocationModule: React.FC<LocationModuleProps> = ({
         </div>
       )}
 
-    </div>
+    </AnimatedContent>
   );
 };
 

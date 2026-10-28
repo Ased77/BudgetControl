@@ -33,6 +33,7 @@ import { Num } from './Num';
 import { AnimatedGauge } from './AnimatedGauge';
 import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
 import { useConfirmDelete } from './ConfirmDeleteModal';
+import AnimatedContent from './AnimatedContent/AnimatedContent';
 
 /**
  * Card gauge geometry — a 56px frame with the stroke centred on a 22px radius,
@@ -366,7 +367,16 @@ export const CrisesHarmsView: React.FC = () => {
   ];
 
   return (
-    <div id="crises-harms-view-root" className="space-y-5">
+    <AnimatedContent
+      id="crises-harms-view-root"
+      className="space-y-5"
+      container="#app-scrollable-main-workspace"
+      distance={24}
+      duration={0.5}
+      ease="power2.out"
+      stagger={0.06}
+      threshold={0.05}
+    >
       <PageHeader
         id="crises-harms-view-page-header"
         icon={AlertTriangle}
@@ -1107,6 +1117,6 @@ export const CrisesHarmsView: React.FC = () => {
         </div>
       )}
       {deleteConfirmModal}
-    </div>
+    </AnimatedContent>
   );
 };

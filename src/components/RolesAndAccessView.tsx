@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { api } from '../services/api';
 import { authApi, CreateAccountResult } from '../services/authApi';
+import AnimatedContent from './AnimatedContent/AnimatedContent';
 
 /** Columns of the audit trail, in render order. The header, the <colgroup> widths
  *  and the sort keys all read from this one list, so a column can never be
@@ -350,7 +351,16 @@ export const RolesAndAccessView: React.FC = () => {
     AUDIT_LOG_COLUMNS.find((column) => column.key === logSort.key) ?? AUDIT_LOG_COLUMNS[0];
 
   return (
-    <div id="roles-and-access-view-root" className="space-y-6">
+    <AnimatedContent
+      id="roles-and-access-view-root"
+      className="space-y-6"
+      container="#app-scrollable-main-workspace"
+      distance={24}
+      duration={0.5}
+      ease="power2.out"
+      stagger={0.06}
+      threshold={0.05}
+    >
       {/* Page title block — above the banner, per the page-header reference. */}
       <PageHeader
         id="roles-and-access-view-page-header"
@@ -972,6 +982,6 @@ export const RolesAndAccessView: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </AnimatedContent>
   );
 };

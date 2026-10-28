@@ -50,6 +50,7 @@ import {
   Pencil,
   X,
 } from 'lucide-react';
+import AnimatedContent from './AnimatedContent/AnimatedContent';
 
 export type ProjectCategoryKey =
   | 'WATER'
@@ -1672,7 +1673,16 @@ export const CreateProjectView: React.FC = () => {
   const stepRailProgress = FORM_STEPS.length > 1 ? (activeStep - 1) / (FORM_STEPS.length - 1) : 0;
 
   return (
-    <div id="create-project-view-root" className="space-y-6 pb-16">
+    <AnimatedContent
+      id="create-project-view-root"
+      className="space-y-6 pb-16"
+      container="#app-scrollable-main-workspace"
+      distance={24}
+      duration={0.5}
+      ease="power2.out"
+      stagger={0.06}
+      threshold={0.05}
+    >
       {/* Page title block — the header banner was folded into the page header,
           so the title row now carries its own trailing action. */}
       <PageHeader
@@ -3634,6 +3644,6 @@ export const CreateProjectView: React.FC = () => {
 
       </div>
 
-    </div>
+    </AnimatedContent>
   );
 };

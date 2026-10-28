@@ -27,6 +27,7 @@ import {
   LayoutDashboard,
   BarChart3,
 } from 'lucide-react';
+import AnimatedContent from './AnimatedContent/AnimatedContent';
 
 type PopulationSubTabId = 'OVERVIEW' | 'DISTRICTS' | 'VULNERABLE' | 'PYRAMID';
 
@@ -177,7 +178,16 @@ export const PopulationView: React.FC = () => {
   });
 
   return (
-    <div id="population-view-root" className="space-y-6">
+    <AnimatedContent
+      id="population-view-root"
+      className="space-y-6"
+      container="#app-scrollable-main-workspace"
+      distance={24}
+      duration={0.5}
+      ease="power2.out"
+      stagger={0.06}
+      threshold={0.05}
+    >
       {/* Page title block — above the banner, per the page-header reference. */}
       <PageHeader
         id="population-view-page-header"
@@ -560,6 +570,6 @@ export const PopulationView: React.FC = () => {
         </div>      )}
         </div>
       </div>
-    </div>
+    </AnimatedContent>
   );
 };

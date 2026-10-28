@@ -149,7 +149,16 @@ export const PrioritiesView: React.FC = () => {
   };
 
   return (
-    <div id="priorities-view-root" className="space-y-6">
+    <AnimatedContent
+      id="priorities-view-root"
+      className="space-y-6"
+      container="#app-scrollable-main-workspace"
+      distance={24}
+      duration={0.5}
+      ease="power2.out"
+      stagger={0.06}
+      threshold={0.05}
+    >
       {/* Page title block — above the banner, per the page-header reference. */}
       <PageHeader
         id="priorities-view-page-header"
@@ -581,6 +590,6 @@ export const PrioritiesView: React.FC = () => {
       )}
 
       {deleteConfirmModal}
-    </div>
+    </AnimatedContent>
   );
 };

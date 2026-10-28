@@ -14,6 +14,7 @@ import {
   Info,
   ChevronRight,
 } from 'lucide-react';
+import AnimatedContent from './AnimatedContent/AnimatedContent';
 
 /**
  * سهمیه — budget share by population.
@@ -162,7 +163,16 @@ export const QuotaView: React.FC = () => {
   };
 
   return (
-    <div id="quota-view-root" className="space-y-6">
+    <AnimatedContent
+      id="quota-view-root"
+      className="space-y-6"
+      container="#app-scrollable-main-workspace"
+      distance={24}
+      duration={0.5}
+      ease="power2.out"
+      stagger={0.06}
+      threshold={0.05}
+    >
       {/* Page title block */}
       <PageHeader
         id="quota-view-page-header"
@@ -413,6 +423,6 @@ export const QuotaView: React.FC = () => {
           </div>
         )}
       </div>
-    </div>
+    </AnimatedContent>
   );
 };

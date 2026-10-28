@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
 import { hasOwnProjectScope, projectsForUser } from '../utils/recordScope';
+import AnimatedContent from './AnimatedContent/AnimatedContent';
 
 export const ProjectsView: React.FC = () => {
   const {
@@ -256,7 +257,16 @@ export const ProjectsView: React.FC = () => {
   const flaggedCount = useMemo(() => visibleProjects.filter((p) => p.antiOverlapStatus !== 'CLEAR').length, [visibleProjects]);
 
   return (
-    <div id="projects-view-root" className="space-y-6">
+    <AnimatedContent
+      id="projects-view-root"
+      className="space-y-6"
+      container="#app-scrollable-main-workspace"
+      distance={24}
+      duration={0.5}
+      ease="power2.out"
+      stagger={0.06}
+      threshold={0.05}
+    >
       {/* Page title block — above the banner, per the page-header reference. */}
       <PageHeader
         id="projects-view-page-header"
@@ -944,6 +954,6 @@ export const ProjectsView: React.FC = () => {
       )}
 
       {deleteConfirmModal}
-    </div>
+    </AnimatedContent>
   );
 };

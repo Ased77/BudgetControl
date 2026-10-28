@@ -25,6 +25,7 @@ import { gaugeStaggerDelay } from '../utils/gaugeStagger';
 import { Num } from './Num';
 import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
 import { useConfirmDelete } from './ConfirmDeleteModal';
+import AnimatedContent from './AnimatedContent/AnimatedContent';
 
 /** Radius of the commitment gauge on both the card strip and the dialog. */
 const USAGE_GAUGE_RADIUS = 22;
@@ -213,7 +214,16 @@ export const BudgetSourcesView: React.FC = () => {
   const allocationRate = grandTotal > 0 ? Math.round((grandAllocated / grandTotal) * 100) : 0;
 
   return (
-    <div id="budget-sources-view-root" className="space-y-6">
+    <AnimatedContent
+      id="budget-sources-view-root"
+      className="space-y-6"
+      container="#app-scrollable-main-workspace"
+      distance={24}
+      duration={0.5}
+      ease="power2.out"
+      stagger={0.06}
+      threshold={0.05}
+    >
       {/* Page title block — above the banner, per the page-header reference. */}
       <PageHeader
         id="budget-sources-view-page-header"
@@ -869,6 +879,6 @@ export const BudgetSourcesView: React.FC = () => {
       )}
 
       {deleteConfirmModal}
-    </div>
+    </AnimatedContent>
   );
 };

@@ -27,6 +27,7 @@ import {
   History,
   LayoutGrid,
 } from 'lucide-react';
+import AnimatedContent from './AnimatedContent/AnimatedContent';
 
 /**
  * Labels for the organization-type dropdown. The union carries five legal
@@ -231,7 +232,16 @@ export const SettingsView: React.FC = () => {
   };
 
   return (
-    <div id="settings-view-root" className="space-y-4">
+    <AnimatedContent
+      id="settings-view-root"
+      className="space-y-4"
+      container="#app-scrollable-main-workspace"
+      distance={24}
+      duration={0.5}
+      ease="power2.out"
+      stagger={0.06}
+      threshold={0.05}
+    >
       <PageHeader
         id="settings-view-page-header"
         icon={Settings}
@@ -582,6 +592,6 @@ export const SettingsView: React.FC = () => {
           </button>
         </div>
       </div>
-    </div>
+    </AnimatedContent>
   );
 };

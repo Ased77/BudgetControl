@@ -30,6 +30,7 @@ import {
   Award,
 } from 'lucide-react';
 import { useConfirmDelete } from './ConfirmDeleteModal';
+import AnimatedContent from './AnimatedContent/AnimatedContent';
 
 /** Radius of the quality-score ring drawn on each contractor card. */
 const GAUGE_RADIUS = 22;
@@ -225,7 +226,16 @@ export const ContractorsView: React.FC = () => {
   );
 
   return (
-    <div id="contractors-view-root" className="space-y-6">
+    <AnimatedContent
+      id="contractors-view-root"
+      className="space-y-6"
+      container="#app-scrollable-main-workspace"
+      distance={24}
+      duration={0.5}
+      ease="power2.out"
+      stagger={0.06}
+      threshold={0.05}
+    >
       {/* Page title block — above the banner, per the page-header reference. */}
       <PageHeader
         id="contractors-view-page-header"
@@ -872,6 +882,6 @@ export const ContractorsView: React.FC = () => {
         </div>
       )}
       {deleteConfirmModal}
-    </div>
+    </AnimatedContent>
   );
 };

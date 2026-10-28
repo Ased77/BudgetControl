@@ -41,6 +41,7 @@ import { gaugeStaggerDelay } from '../utils/gaugeStagger';
 import { Num } from './Num';
 import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
 import { useConfirmDelete } from './ConfirmDeleteModal';
+import AnimatedContent from './AnimatedContent/AnimatedContent';
 
 /**
  * Departments revealed per batch of the card grid. Reaching the bottom of the
@@ -478,7 +479,16 @@ export const DepartmentsView: React.FC = () => {
   ];
 
   return (
-    <div id="departments-view-root" className="space-y-5">
+    <AnimatedContent
+      id="departments-view-root"
+      className="space-y-5"
+      container="#app-scrollable-main-workspace"
+      distance={24}
+      duration={0.5}
+      ease="power2.out"
+      stagger={0.06}
+      threshold={0.05}
+    >
       <PageHeader
         id="departments-view-page-header"
         icon={Building2}
@@ -1311,6 +1321,6 @@ export const DepartmentsView: React.FC = () => {
       )}
 
       {deleteConfirmModal}
-    </div>
+    </AnimatedContent>
   );
 };

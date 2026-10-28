@@ -38,6 +38,7 @@ import {
   ArrowUpRight,
   Gauge,
 } from 'lucide-react';
+import AnimatedContent from './AnimatedContent/AnimatedContent';
 
 /* Label + colour lookups. Kept local to the page: it is the only consumer. */
 
@@ -232,7 +233,16 @@ export const AnalysisSourcesView: React.FC = () => {
   );
 
   return (
-    <div id="analysis-sources-view-root" className="space-y-6">
+    <AnimatedContent
+      id="analysis-sources-view-root"
+      className="space-y-6"
+      container="#app-scrollable-main-workspace"
+      distance={24}
+      duration={0.5}
+      ease="power2.out"
+      stagger={0.06}
+      threshold={0.05}
+    >
       <PageHeader
         id="analysis-sources-view-page-header"
         icon={FileSearch}
@@ -818,6 +828,6 @@ export const AnalysisSourcesView: React.FC = () => {
       )}
 
       {deleteConfirmModal}
-    </div>
+    </AnimatedContent>
   );
 };

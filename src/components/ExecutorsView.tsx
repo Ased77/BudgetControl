@@ -27,6 +27,7 @@ import { gaugeStaggerDelay } from '../utils/gaugeStagger';
 import { Num } from './Num';
 import { AnimatedGauge } from './AnimatedGauge';
 import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
+import AnimatedContent from './AnimatedContent/AnimatedContent';
 
 /** Radius of the success-rate ring drawn on each executor card. */
 const GAUGE_RADIUS = 22;
@@ -191,7 +192,16 @@ export const ExecutorsView: React.FC = () => {
   const availableCount = useMemo(() => executors.filter((e) => e.capacityStatus === 'AVAILABLE').length, [executors]);
 
   return (
-    <div id="executors-view-root" className="space-y-6">
+    <AnimatedContent
+      id="executors-view-root"
+      className="space-y-6"
+      container="#app-scrollable-main-workspace"
+      distance={24}
+      duration={0.5}
+      ease="power2.out"
+      stagger={0.06}
+      threshold={0.05}
+    >
       {/* Page title block — above the banner, per the page-header reference. */}
       <PageHeader
         id="executors-view-page-header"
@@ -802,6 +812,6 @@ export const ExecutorsView: React.FC = () => {
         </div>
       )}
       {deleteConfirmModal}
-    </div>
+    </AnimatedContent>
   );
 };

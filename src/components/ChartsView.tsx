@@ -61,6 +61,7 @@ import {
   ReferenceLine,
   Label,
 } from 'recharts';
+import AnimatedContent from './AnimatedContent/AnimatedContent';
 
 interface ChartsViewProps {
   priorities?: CsrPriority[];
@@ -533,7 +534,12 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
   };
 
   return (
-    <div id="charts-view-root" className="space-y-6">
+    <AnimatedContent
+      id="charts-view-root"
+      className="space-y-6"
+      container="#app-scrollable-main-workspace"
+      trigger="mount"
+    >
       <PageHeader
         id="charts-view-page-header"
         icon={BarChart3}
@@ -1443,6 +1449,6 @@ export const ChartsView: React.FC<ChartsViewProps> = (props) => {
           </div>
         </ChartCard>
       </div>
-    </div>
+    </AnimatedContent>
   );
 };
