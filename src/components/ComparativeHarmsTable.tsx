@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { LocationData, LocalIndicators } from '../types';
-import { toPersianDigits } from '../utils/numberUtils';
+import { formatNumber, toPersianDigits } from '../utils/numberUtils';
 import { GAUGE_TONES } from '../utils/gaugeTone';
 import { Num } from './Num';
 import { AnimatedGauge } from './AnimatedGauge';
@@ -353,6 +353,10 @@ const GaugeHoverTip: React.FC<{ text: string; children: React.ReactNode }> = ({ 
  */
 const GAUGE_RADIUS = 22;
 
+/** Display whole-number benchmarks without insignificant decimal zeros. */
+const formatGaugeValue = (value: number): string =>
+  formatNumber(Number(value.toFixed(2)), true, 2);
+
 interface IndicatorGaugeProps {
   id: string;
   value: number;
@@ -380,7 +384,9 @@ const IndicatorGauge: React.FC<IndicatorGaugeProps> = ({
       >
         <span className="absolute inset-0 flex items-center justify-center">
           <GaugeHoverTip text={tip}>
-            <span className="text-[11px] font-black text-slate-800"><Num value={`${toPersianDigits(value)}٪`} /></span>
+            <span className="text-[11px] font-black text-slate-800">
+              <bdi dir="ltr">{formatGaugeValue(value)}٪</bdi>
+            </span>
           </GaugeHoverTip>
         </span>
       </AnimatedGauge>
@@ -854,7 +860,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
           <tbody className="divide-y divide-slate-200">
             {filteredBenchmarks.map((item, idx) => {
               const localVal = currentLocation.indicators[item.key] ?? 0;
-              const provVal = item.provinceAvgs[currentProvince] ?? (item.nationalAvg * 1.1);
+              const provVal = item.provinceAvgs[currentProvince] ?? Number((item.nationalAvg * 1.1).toFixed(2));
               const natVal = item.nationalAvg;
               
               // Gap calculations
@@ -902,7 +908,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                         id={`comparative-harms-table-local-value-${item.key}`}
                         value={localVal}
                         toneClass={isHotspot ? GAUGE_TONES.risk : isWorseThanNat ? GAUGE_TONES.warning : GAUGE_TONES.good}
-                        tip={`«${item.title}» — مقدار سنجش‌شده در منطقه جاری (استان ${currentLocation.province} - شهرستان ${currentLocation.county}): ${toPersianDigits(localVal)}٪. میانگین کشوری: ${toPersianDigits(natVal)}٪.`}
+                        tip={`«${item.title}» — مقدار سنجش‌شده در منطقه جاری (استان ${currentLocation.province} - شهرستان ${currentLocation.county}): ${formatGaugeValue(localVal)}٪. میانگین کشوری: ${formatGaugeValue(natVal)}٪.`}
                       />
                     </td>
 
@@ -913,7 +919,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                           id={`comparative-harms-table-province-average-${item.key}`}
                           value={provVal}
                           toneClass="stroke-indigo-400"
-                          tip={`میانگین رسمی «${item.title}» در استان ${currentProvince}: ${toPersianDigits(provVal)}٪ — مبنای مقایسه استانی.`}
+                          tip={`میانگین رسمی «${item.title}» در استان ${currentProvince}: ${formatGaugeValue(provVal)}٪ — مبنای مقایسه استانی.`}
                         />
                       </td>
                     )}
@@ -925,7 +931,7 @@ export const ComparativeHarmsTable: React.FC<ComparativeHarmsTableProps> = ({
                           id={`comparative-harms-table-national-average-${item.key}`}
                           value={natVal}
                           toneClass="stroke-slate-400"
-                          tip={`میانگین رسمی کشوری «${item.title}» (${item.source}): ${toPersianDigits(natVal)}٪.`}
+                          tip={`میانگین رسمی کشوری «${item.title}» (${item.source}): ${formatGaugeValue(natVal)}٪.`}
                         />
                       </td>
                     )}
