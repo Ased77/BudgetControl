@@ -56,6 +56,51 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # Local development server. Bun and the complete dependency tree come from
+  # the Docker image; the bind mount exposes source edits without requiring a
+  # Bun install or node_modules on the host.
+  dev:
+    profiles: ["dev"]
+    build:
+      context: .
+      target: deps
+      args:
+        BUN_VERSION: "1.4.2"
+    image: csr-budgeting-dev:local
+    working_dir: /app
+    command: ["bun", "run", "dev"]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      APP_ENV: development
+      VITE_APP_ENV: development
+      PORT: "3000"
+      PGHOST: db
+      PGPORT: "5432"
+      PGUSER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      PGDATABASE: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      PG_POOL_MAX: ${PG_POOL_MAX:-10}
+      PG_CONNECTION_TIMEOUT_MS: ${PG_CONNECTION_TIMEOUT_MS:-5000}
+      PG_STATEMENT_TIMEOUT_MS: ${PG_STATEMENT_TIMEOUT_MS:-60000}
+      DB_WAIT_TIMEOUT_MS: ${DB_WAIT_TIMEOUT_MS:-60000}
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:?generate one with openssl rand -hex 32 and put it in .env}
+      AUTH_ACCESS_TTL_SECONDS: ${AUTH_ACCESS_TTL_SECONDS:-900}
+      AUTH_REFRESH_TTL_DAYS: ${AUTH_REFRESH_TTL_DAYS:-30}
+      AUTH_COOKIE_SAMESITE: ${AUTH_COOKIE_SAMESITE:-lax}
+      AUTH_BOOTSTRAP_EMAIL: ${AUTH_BOOTSTRAP_EMAIL:-}
+      AUTH_BOOTSTRAP_PASSWORD: ${AUTH_BOOTSTRAP_PASSWORD:-}
+    volumes:
+      - .:/app
+      - dev_node_modules:/app/node_modules
+    ports:
+      - "127.0.0.1:${DEV_HOST_PORT:-3000}:3000"
+    init: true
+    networks: [backend]
+    stop_grace_period: 30s
+
   app:
     build:
       context: .
@@ -154,6 +199,7 @@ services:
 
 volumes:
   pgdata:
+  dev_node_modules:
 
 networks:
   backend:
