@@ -350,37 +350,47 @@ export const BudgetSourcesView: React.FC = () => {
                 }
               }}
               title="کلیک برای مشاهده جزئیات منبع"
-              className="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs hover:shadow-lg hover:border-emerald-300 dark:hover:border-emerald-800 cursor-pointer transition-all flex flex-col overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+              className="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-950/10 hover:border-emerald-300 dark:hover:border-emerald-800 cursor-pointer transition-all duration-200 flex flex-col overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
             >
-              {/* Lead with the allocated amount and its commitment context. */}
+              {/* Allocation leads the card; the supporting metrics stay secondary. */}
               <div
                 id={`budget-sources-view-card-allocation-${source.id}`}
-                className="relative overflow-hidden bg-gradient-to-br from-emerald-700 via-emerald-600 to-teal-700 px-5 py-5 text-right text-white"
+                className="relative overflow-hidden border-b border-emerald-100 dark:border-emerald-900/70 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-emerald-950/50 dark:via-slate-900 dark:to-teal-950/40 px-5 py-4 text-right"
               >
                 <div
-                  className="absolute -left-8 -top-12 h-36 w-36 rounded-full border border-white/10"
+                  className="absolute -left-10 -top-14 h-36 w-36 rounded-full border border-emerald-200/50 dark:border-emerald-800/30"
                   aria-hidden="true"
                 >
-                  <div className="absolute inset-3 rounded-full border border-white/10" />
+                  <div className="absolute inset-3 rounded-full border border-emerald-200/40 dark:border-emerald-800/20" />
                 </div>
                 <div className="relative">
-                  <span className="text-xs font-semibold text-emerald-50/80">مبلغ تخصیص</span>
-                  <div className="flex items-baseline gap-2 mt-1">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/80 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-300 shadow-sm">
+                        <Banknote className="h-4 w-4" />
+                      </span>
+                      مبلغ تخصیص
+                    </span>
+                    <span className="rounded-full border border-emerald-200/80 dark:border-emerald-800 bg-white/75 dark:bg-slate-900/70 px-2.5 py-1 text-[10px] font-bold text-emerald-800 dark:text-emerald-300">
+                      <Num value={formatPercent(usagePercent)} />
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-2 mt-3">
                     <Num
                       value={allocatedAmount.value}
-                      className="text-3xl font-black tracking-tight leading-none text-white"
+                      className="text-3xl font-black tracking-tight leading-none text-emerald-900 dark:text-emerald-100"
                     />
-                    <span className="text-xs font-bold text-emerald-50/90">
+                    <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
                       {allocatedAmount.unit}
                     </span>
                   </div>
                   <div className="mt-4">
-                    <div className="mb-1.5 flex items-center justify-between gap-3 text-[10px] text-emerald-50/85">
-                      <span>نرخ تعهد از سقف اعتبار</span>
-                      <Num value={formatPercent(usagePercent)} className="font-bold text-white" />
+                    <div className="mb-1.5 flex items-center justify-between gap-3 text-[10px] font-medium text-slate-500 dark:text-slate-400">
+                      <span>از سقف کل اعتبار</span>
+                      <span>نرخ تعهد</span>
                     </div>
                     <div
-                      className="h-1.5 overflow-hidden rounded-full bg-emerald-950/25"
+                      className="h-2 overflow-hidden rounded-full bg-emerald-900/10 dark:bg-emerald-100/10"
                       role="progressbar"
                       aria-label="نرخ تعهد از سقف اعتبار"
                       aria-valuemin={0}
@@ -388,7 +398,7 @@ export const BudgetSourcesView: React.FC = () => {
                       aria-valuenow={usagePercent}
                     >
                       <div
-                        className="ml-auto h-full rounded-full bg-white/90 transition-[width]"
+                        className="ml-auto h-full rounded-full bg-gradient-to-l from-emerald-500 to-teal-400 transition-[width]"
                         style={{ width: `${usagePercent}%` }}
                       />
                     </div>
@@ -396,9 +406,9 @@ export const BudgetSourcesView: React.FC = () => {
                 </div>
               </div>
 
-              <div id={`budget-sources-view-card-identity-${source.id}`} className="flex flex-1 flex-col p-5 text-right">
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <span className="text-[10px] font-mono text-slate-400 tracking-wider">{source.code}</span>
+              <div id={`budget-sources-view-card-identity-${source.id}`} className="flex flex-1 flex-col p-4 text-right">
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <span className="rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-1 text-[9px] font-mono text-slate-500 dark:text-slate-400 tracking-wider">{source.code}</span>
                   <span
                     id={`budget-sources-view-card-status-${source.id}`}
                     className={`px-2 py-0.5 rounded-full text-[10px] font-bold border whitespace-nowrap ${SOURCE_STATUS_META[source.status].badge}`}
@@ -407,19 +417,19 @@ export const BudgetSourcesView: React.FC = () => {
                   </span>
                 </div>
 
-                <div id={`budget-sources-view-card-title-${source.id}`} className="w-full min-w-0">
+                <div id={`budget-sources-view-card-title-${source.id}`} className="w-full min-w-0 min-h-11">
                   <h3
-                    className="font-black text-base text-slate-900 dark:text-slate-100 leading-tight line-clamp-2 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors"
+                    className="font-black text-[15px] text-slate-900 dark:text-slate-100 leading-6 line-clamp-2 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors"
                     title={source.title}
                   >
                     {source.title}
                   </h3>
                 </div>
 
-                <div className="flex items-center gap-1.5 flex-wrap mt-3">
+                <div className="flex items-center gap-1.5 flex-wrap mt-2">
                   <span
                     id={`budget-sources-view-card-type-${source.id}`}
-                    className="px-2.5 py-0.5 rounded-full text-[10px] font-bold border whitespace-nowrap bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+                    className="px-2.5 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
                   >
                     {source.sourceTypeFa}
                   </span>
@@ -430,11 +440,15 @@ export const BudgetSourcesView: React.FC = () => {
                   className="mt-4 flex flex-col gap-2 border-t border-slate-100 dark:border-slate-800 pt-3 text-[10px] text-slate-500 dark:text-slate-400"
                 >
                   <span className="flex items-center gap-1.5 min-w-0">
-                    <Building2 className="w-3 h-3 text-slate-400 shrink-0" />
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-100 dark:bg-slate-800">
+                      <Building2 className="w-3 h-3 text-slate-400" />
+                    </span>
                     <span className="truncate" title={source.sponsorOrganization}>{source.sponsorOrganization}</span>
                   </span>
                   <span className="flex items-center gap-1 whitespace-nowrap">
-                    <CalendarDays className="w-3 h-3 text-slate-400" />
+                    <span className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-100 dark:bg-slate-800">
+                      <CalendarDays className="w-3 h-3 text-slate-400" />
+                    </span>
                     <span>سال مالی {source.fiscalYear}</span>
                   </span>
                 </div>
@@ -442,28 +456,35 @@ export const BudgetSourcesView: React.FC = () => {
 
               <div
                 id={`budget-sources-view-card-metrics-${source.id}`}
-                className="mt-auto grid grid-cols-2 items-stretch border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/30"
+                className="mt-auto grid grid-cols-2 items-stretch border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/40"
               >
                 <div
                   id={`budget-sources-view-card-total-metric-${source.id}`}
-                  className="flex flex-col items-center justify-center gap-1 px-2 py-3 border-l border-slate-100 dark:border-slate-800 text-center"
+                  className="flex flex-col items-center justify-center gap-1.5 px-2 py-3 border-l border-slate-100 dark:border-slate-800 text-center"
                 >
-                  <div className="flex items-baseline justify-center gap-1">
-                    <Num value={totalAmount.value} className="text-sm font-black text-slate-800 dark:text-slate-100 leading-none" />
-                    <span className="text-[9px] text-slate-500 dark:text-slate-400">{totalAmount.unit}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm">
+                      <Banknote className="h-3.5 w-3.5" />
+                    </span>
+                    <div className="flex items-baseline gap-1">
+                      <Num value={totalAmount.value} className="text-sm font-black text-slate-800 dark:text-slate-100 leading-none" />
+                      <span className="text-[9px] text-slate-500 dark:text-slate-400">{totalAmount.unit}</span>
+                    </div>
                   </div>
                   <span className="text-[10px] text-slate-500 dark:text-slate-400">سقف کل اعتبار</span>
                 </div>
 
                 <div
                   id={`budget-sources-view-card-projects-metric-${source.id}`}
-                  className="flex flex-col items-center justify-center gap-1 px-2 py-3 text-center"
+                  className="flex flex-col items-center justify-center gap-1.5 px-2 py-3 text-center"
                 >
-                  <Num value={formatNumber(linkedProjects.length)} className="text-sm font-black text-slate-800 dark:text-slate-100 leading-none" />
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                    <Layers className="w-3 h-3 text-slate-400" />
-                    پروژه تأمین‌شده
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm">
+                      <Layers className="h-3.5 w-3.5" />
+                    </span>
+                    <Num value={formatNumber(linkedProjects.length)} className="text-sm font-black text-slate-800 dark:text-slate-100 leading-none" />
+                  </div>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400">پروژه تأمین‌شده</span>
                 </div>
               </div>
             </article>
