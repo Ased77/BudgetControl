@@ -186,7 +186,10 @@ export function calculatePredictiveForecast(
     totalImprovementSum += improvementPercentage;
 
     // Beneficiaries
-    const itemBeneficiaries = Math.round((impactBudget / adjustedTotalBudget) * (population * 0.45));
+    const itemBeneficiaries =
+      adjustedTotalBudget === 0
+        ? 0
+        : Math.round((impactBudget / adjustedTotalBudget) * (population * 0.45));
     totalBeneficiaries += itemBeneficiaries;
 
     // Impact level
@@ -224,7 +227,10 @@ export function calculatePredictiveForecast(
   
   // Calculate Social ROI ratio (e.g. Total monetized social value created / Total Budget)
   const totalSocialValueCreated = adjustedTotalBudget * (1.8 + (overallRegionalImprovementPct / 10));
-  const roiSocialRatio = Math.round((totalSocialValueCreated / adjustedTotalBudget) * 10) / 10;
+  const roiSocialRatio =
+    adjustedTotalBudget === 0
+      ? 0
+      : Math.round((totalSocialValueCreated / adjustedTotalBudget) * 10) / 10;
 
   // Top impact areas sorted
   const sortedByImprovement = [...forecasts].sort((a, b) => b.improvementPercentage - a.improvementPercentage);
