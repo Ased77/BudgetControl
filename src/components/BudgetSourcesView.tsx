@@ -19,16 +19,12 @@ import {
   AlertCircle,
   X,
 } from 'lucide-react';
-import { compactToman, formatMoneyParts, formatPercent, formatToman, formatNumber, toPersianDigits } from '../utils/numberUtils';
+import { formatMoneyParts, formatPercent, formatToman, formatNumber, toPersianDigits } from '../utils/numberUtils';
 import { gaugeTone } from '../utils/gaugeTone';
-import { gaugeStaggerDelay } from '../utils/gaugeStagger';
 import { Num } from './Num';
 import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
 import { useConfirmDelete } from './ConfirmDeleteModal';
 import AnimatedContent from './AnimatedContent/AnimatedContent';
-
-/** Radius of the commitment gauge on both the card strip and the dialog. */
-const USAGE_GAUGE_RADIUS = 22;
 
 /*
  * Commitment gauges read on the shared utilization scale (see
@@ -331,14 +327,14 @@ export const BudgetSourcesView: React.FC = () => {
         stagger={0.06}
         threshold={0.05}
       >
-        {filteredSources.map((source, index) => {
-          const gaugeDelayMs = gaugeStaggerDelay(index);
+        {filteredSources.map((source) => {
           const linkedProjects = projects.filter((p) => p.budgetSourceId === source.id);
           const usagePercent =
             source.totalAmountToman > 0
               ? Math.min(100, Math.round((source.allocatedAmountToman / source.totalAmountToman) * 100))
               : 0;
-          const allocated = compactToman(source.allocatedAmountToman);
+          const allocatedAmount = formatMoneyParts(source.allocatedAmountToman);
+          const totalAmount = formatMoneyParts(source.totalAmountToman);
 
           return (
             <article
@@ -354,37 +350,55 @@ export const BudgetSourcesView: React.FC = () => {
                 }
               }}
               title="کلیک برای مشاهده جزئیات منبع"
-              className="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs hover:shadow-md cursor-pointer transition-all flex flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+              className="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs hover:shadow-lg hover:border-emerald-300 dark:hover:border-emerald-800 cursor-pointer transition-all flex flex-col overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
             >
-              {/* Identity — centred emblem over the source title, per the departments cards. */}
+              {/* Lead with the allocated amount and its commitment context. */}
               <div
-                id={`budget-sources-view-card-identity-${source.id}`}
-                className="p-5 pb-4 flex flex-col items-center text-center"
+                id={`budget-sources-view-card-allocation-${source.id}`}
+                className="relative overflow-hidden bg-gradient-to-br from-emerald-700 via-emerald-600 to-teal-700 px-5 py-5 text-right text-white"
               >
                 <div
-                  id={`budget-sources-view-card-icon-${source.id}`}
-                  className="w-20 h-20 rounded-2xl border border-slate-200 dark:border-slate-700 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0"
+                  className="absolute -left-8 -top-12 h-36 w-36 rounded-full border border-white/10"
+                  aria-hidden="true"
                 >
-                  <Wallet className="w-10 h-10" />
+                  <div className="absolute inset-3 rounded-full border border-white/10" />
                 </div>
-
-                <div id={`budget-sources-view-card-title-${source.id}`} className="mt-3 w-full min-w-0">
-                  <span className="text-[10px] font-mono text-slate-400 tracking-wider block">{source.code}</span>
-                  <h3
-                    className="font-black text-base text-slate-900 dark:text-slate-100 leading-tight line-clamp-2 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors"
-                    title={source.title}
-                  >
-                    {source.title}
-                  </h3>
+                <div className="relative">
+                  <span className="text-xs font-semibold text-emerald-50/80">مبلغ تخصیص</span>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <Num
+                      value={allocatedAmount.value}
+                      className="text-3xl font-black tracking-tight leading-none text-white"
+                    />
+                    <span className="text-xs font-bold text-emerald-50/90">
+                      {allocatedAmount.unit}
+                    </span>
+                  </div>
+                  <div className="mt-4">
+                    <div className="mb-1.5 flex items-center justify-between gap-3 text-[10px] text-emerald-50/85">
+                      <span>نرخ تعهد از سقف اعتبار</span>
+                      <Num value={formatPercent(usagePercent)} className="font-bold text-white" />
+                    </div>
+                    <div
+                      className="h-1.5 overflow-hidden rounded-full bg-emerald-950/25"
+                      role="progressbar"
+                      aria-label="نرخ تعهد از سقف اعتبار"
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={usagePercent}
+                    >
+                      <div
+                        className="ml-auto h-full rounded-full bg-white/90 transition-[width]"
+                        style={{ width: `${usagePercent}%` }}
+                      />
+                    </div>
+                  </div>
                 </div>
+              </div>
 
-                <div className="flex items-center justify-center gap-1.5 flex-wrap mt-2">
-                  <span
-                    id={`budget-sources-view-card-type-${source.id}`}
-                    className="px-2.5 py-0.5 rounded-full text-[10px] font-bold border whitespace-nowrap bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
-                  >
-                    {source.sourceTypeFa}
-                  </span>
+              <div id={`budget-sources-view-card-identity-${source.id}`} className="flex flex-1 flex-col p-5 text-right">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-mono text-slate-400 tracking-wider">{source.code}</span>
                   <span
                     id={`budget-sources-view-card-status-${source.id}`}
                     className={`px-2 py-0.5 rounded-full text-[10px] font-bold border whitespace-nowrap ${SOURCE_STATUS_META[source.status].badge}`}
@@ -393,62 +407,60 @@ export const BudgetSourcesView: React.FC = () => {
                   </span>
                 </div>
 
+                <div id={`budget-sources-view-card-title-${source.id}`} className="w-full min-w-0">
+                  <h3
+                    className="font-black text-base text-slate-900 dark:text-slate-100 leading-tight line-clamp-2 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors"
+                    title={source.title}
+                  >
+                    {source.title}
+                  </h3>
+                </div>
+
+                <div className="flex items-center gap-1.5 flex-wrap mt-3">
+                  <span
+                    id={`budget-sources-view-card-type-${source.id}`}
+                    className="px-2.5 py-0.5 rounded-full text-[10px] font-bold border whitespace-nowrap bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+                  >
+                    {source.sourceTypeFa}
+                  </span>
+                </div>
+
                 <div
                   id={`budget-sources-view-card-meta-${source.id}`}
-                  className="flex items-center justify-center gap-3 mt-3 text-[10px] text-slate-500 dark:text-slate-400 flex-wrap"
+                  className="mt-4 flex flex-col gap-2 border-t border-slate-100 dark:border-slate-800 pt-3 text-[10px] text-slate-500 dark:text-slate-400"
                 >
-                  <span className="flex items-center gap-1 min-w-0">
+                  <span className="flex items-center gap-1.5 min-w-0">
                     <Building2 className="w-3 h-3 text-slate-400 shrink-0" />
                     <span className="truncate" title={source.sponsorOrganization}>{source.sponsorOrganization}</span>
                   </span>
                   <span className="flex items-center gap-1 whitespace-nowrap">
                     <CalendarDays className="w-3 h-3 text-slate-400" />
-                    <span>{source.fiscalYear}</span>
+                    <span>سال مالی {source.fiscalYear}</span>
                   </span>
                 </div>
               </div>
 
-              {/* Three-metric strip: commitment gauge / allocated budget / funded projects */}
               <div
                 id={`budget-sources-view-card-metrics-${source.id}`}
-                className="mt-auto grid grid-cols-3 items-stretch border-y border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30 rounded-b-2xl"
+                className="mt-auto grid grid-cols-2 items-stretch border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/30"
               >
                 <div
-                  id={`budget-sources-view-card-gauge-${source.id}`}
-                  className="flex items-center justify-center py-3"
+                  id={`budget-sources-view-card-total-metric-${source.id}`}
+                  className="flex flex-col items-center justify-center gap-1 px-2 py-3 border-l border-slate-100 dark:border-slate-800 text-center"
                 >
-                  <AnimatedGauge
-                    value={usagePercent}
-                    radius={USAGE_GAUGE_RADIUS}
-                    toneClassName={gaugeTone(usagePercent, 'UTILIZATION')}
-                    className="w-14 h-14"
-                    delayMs={gaugeDelayMs}
-                  >
-                    <Num
-                      value={formatPercent(usagePercent)}
-                      countUpDelayMs={gaugeDelayMs}
-                      className="absolute inset-0 flex items-center justify-center text-xs font-black text-slate-800 dark:text-slate-100"
-                    />
-                  </AnimatedGauge>
-                </div>
-
-                <div
-                  id={`budget-sources-view-card-allocated-metric-${source.id}`}
-                  className="flex flex-col items-center justify-center gap-0.5 px-1 py-3 border-x border-slate-100 dark:border-slate-800 text-center"
-                >
-                  <Num value={allocated.value} className="text-base font-black text-slate-900 dark:text-slate-100 leading-none" />
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
-                    <Banknote className="w-3 h-3 text-slate-400" />
-                    تخصیص‌یافته ({allocated.unit})
-                  </span>
+                  <div className="flex items-baseline justify-center gap-1">
+                    <Num value={totalAmount.value} className="text-sm font-black text-slate-800 dark:text-slate-100 leading-none" />
+                    <span className="text-[9px] text-slate-500 dark:text-slate-400">{totalAmount.unit}</span>
+                  </div>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400">سقف کل اعتبار</span>
                 </div>
 
                 <div
                   id={`budget-sources-view-card-projects-metric-${source.id}`}
-                  className="flex flex-col items-center justify-center gap-0.5 px-1 py-3 text-center"
+                  className="flex flex-col items-center justify-center gap-1 px-2 py-3 text-center"
                 >
-                  <Num value={formatNumber(linkedProjects.length)} className="text-base font-black text-slate-900 dark:text-slate-100 leading-none" />
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
+                  <Num value={formatNumber(linkedProjects.length)} className="text-sm font-black text-slate-800 dark:text-slate-100 leading-none" />
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
                     <Layers className="w-3 h-3 text-slate-400" />
                     پروژه تأمین‌شده
                   </span>
