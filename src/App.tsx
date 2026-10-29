@@ -27,6 +27,7 @@ import { GlobalLocationSelector } from './components/GlobalLocationSelector';
 import { LoginView } from './components/LoginView';
 import { SystemTour } from './components/SystemTour';
 import SwipeToast from './components/SwipeToast';
+import { useAuth } from './context/AuthContext';
 import {
   hasSeenSystemTour,
   hasSeenRelaunchHint,
@@ -371,12 +372,6 @@ function AppContent() {
     setOpenMenuSections(activeMenuSection >= 0 ? [activeMenuSection] : []);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
-
-  // Access gate — every hook above runs unconditionally, then signed-out users
-  // see only the identity screen.
-  if (!isAuthenticated) {
-    return <LoginView />;
-  }
 
   return (
     <div id="app-root" className="flex h-screen w-full bg-app-page text-slate-800 font-sans antialiased overflow-hidden dir-rtl">
@@ -783,6 +778,25 @@ function AppContent() {
 }
 
 export default function App() {
+  const { status } = useAuth();
+
+  if (status === 'loading') {
+    return (
+      <div
+        className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-600"
+        role="status"
+        aria-live="polite"
+      >
+        <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600" />
+        <span className="ms-3">در حال بررسی نشست...</span>
+      </div>
+    );
+  }
+
+  if (status === 'anonymous') {
+    return <LoginView />;
+  }
+
   return (
     <AppProvider>
       <AppContent />

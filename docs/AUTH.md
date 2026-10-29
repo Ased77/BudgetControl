@@ -73,7 +73,7 @@ code    ────────►│  AuthContext.loginWithOtp()              
 
 ## 3. Token lifecycle & edge cases
 
-- **Expiry (access):** 15-min default (`AUTH_ACCESS_TTL_SECONDS`); client transport retries once after `/api/auth/refresh`; a second 401 ends the session (no refresh storms).
+- **Expiry (access):** 15-min default (`AUTH_ACCESS_TTL_SECONDS`); on page load, `/api/auth/me` falls back to `/api/auth/refresh` after a 401, with simultaneous probes coalesced to prevent refresh-token replay. Business API requests also retry once after refresh; a failed refresh ends the session.
 - **Expiry (refresh):** 30-day default; an absent/expired refresh cookie returns 401 → user re-authenticates.
 - **Rotation:** every refresh consumes the presented token and mints a successor in the same `family_id`. Presenting a consumed/revoked token (replay of a stolen one) revokes the whole family.
 - **Revocation, targeted:** `POST /api/auth/logout` revokes the family. `revokeAllRefreshTokensForUser()` exists for admin/password flows.

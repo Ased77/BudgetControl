@@ -4,12 +4,11 @@
  * The client stores NOTHING that can manufacture an identity: no userId in
  * localStorage, no user picker, no token in JS. The state machine is:
  *
- *   loading → anonymous → authenticated → (401 refresh loop gone) → anonymous
+ *   loading → authenticated (with one cookie refresh if needed) | anonymous
  *
- * After login (cookies set), the app polls /api/auth/me exactly on mount.
- * Losing the session (expired rotation family, disabled account) drops
- * back to anonymous, driven by the transport's onUnauthorized hook — one
- * funnel, no refresh storms.
+ * After login (cookies set), the app checks /api/auth/me on mount and refreshes
+ * once if the access cookie expired. Losing the session (expired rotation
+ * family, disabled account) drops back to anonymous through one funnel.
  */
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';

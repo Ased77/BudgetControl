@@ -51,7 +51,7 @@ export const authApi = {
   verifyOtp: (mobile: string, code: string) =>
     post<{ user: SessionProfile }>(`/api/auth/otp/verify`, { mobile, code }),
   logout: () => post<{ ok: boolean }>(`/api/auth/logout`, {}),
-  me: () => get<{ user: SessionProfile }>(`/api/auth/me`),
+  me: getCurrentSession,
 };
 
 /**
@@ -62,13 +62,39 @@ export const authApi = {
  */
 const AUTH_REQUEST_TIMEOUT_MS = 60_000;
 
-/** A GET against the auth router (uses request() without the 401-refresh path). */
+class AuthRequestError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+    this.name = 'AuthRequestError';
+  }
+}
+
+let sessionProbe: Promise<{ user: SessionProfile }> | null = null;
+
+/** Revalidates the session, refreshing an expired access cookie when possible. */
+function getCurrentSession(): Promise<{ user: SessionProfile }> {
+  if (!sessionProbe) {
+    sessionProbe = get<{ user: SessionProfile }>('/api/auth/me')
+      .catch((error: unknown) => {
+        if (error instanceof AuthRequestError && error.status === 401) {
+          return post<{ user: SessionProfile }>('/api/auth/refresh', {});
+        }
+        throw error;
+      })
+      .finally(() => {
+        sessionProbe = null;
+      });
+  }
+  return sessionProbe;
+}
+
+/** A GET against the auth router, kept separate from business API requests. */
 async function get<T>(path: string): Promise<T> {
   const res = await fetchWithTimeout(path, {
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
   });
-  if (!res.ok) throw new Error(`Auth probe failed: ${res.status}`);
+  if (!res.ok) throw new AuthRequestError(`Auth probe failed: ${res.status}`, res.status);
   return res.json() as Promise<T>;
 }
 
