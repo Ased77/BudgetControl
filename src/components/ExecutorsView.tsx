@@ -313,7 +313,7 @@ export const ExecutorsView: React.FC = () => {
       {filteredExecutors.length > 0 ? (
         <AnimatedContent
           id="executors-view-grid"
-          className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+          className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4"
           container="#app-scrollable-main-workspace"
           distance={24}
           duration={0.5}
