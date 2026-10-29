@@ -88,7 +88,7 @@ services:
       DB_WAIT_TIMEOUT_MS: ${DB_WAIT_TIMEOUT_MS:-60000}
       AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:?generate one with openssl rand -hex 32 and put it in .env}
       AUTH_ACCESS_TTL_SECONDS: ${AUTH_ACCESS_TTL_SECONDS:-900}
-      AUTH_REFRESH_TTL_DAYS: ${AUTH_REFRESH_TTL_DAYS:-30}
+      AUTH_REFRESH_TTL_SECONDS: ${AUTH_REFRESH_TTL_SECONDS:-14400}
       AUTH_COOKIE_SAMESITE: ${AUTH_COOKIE_SAMESITE:-lax}
       AUTH_BOOTSTRAP_EMAIL: ${AUTH_BOOTSTRAP_EMAIL:-}
       AUTH_BOOTSTRAP_PASSWORD: ${AUTH_BOOTSTRAP_PASSWORD:-}
@@ -129,7 +129,7 @@ services:
       # Authentication (see .env.example — required):
       AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:?generate one with openssl rand -hex 32 and put it in .env}
       AUTH_ACCESS_TTL_SECONDS: ${AUTH_ACCESS_TTL_SECONDS:-900}
-      AUTH_REFRESH_TTL_DAYS: ${AUTH_REFRESH_TTL_DAYS:-30}
+      AUTH_REFRESH_TTL_SECONDS: ${AUTH_REFRESH_TTL_SECONDS:-14400}
       AUTH_COOKIE_SAMESITE: ${AUTH_COOKIE_SAMESITE:-lax}
       # There is no self-registration: accounts are created by admins from the
       # role & permission manager (POST /api/auth/users). Optional first-admin

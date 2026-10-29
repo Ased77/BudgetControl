@@ -9,7 +9,7 @@
 
      AUTH_JWT_SECRET            HMAC-SHA256 signing key (REQUIRED, ≥32 chars)
      AUTH_ACCESS_TTL_SECONDS    access-token lifetime   (default 900 = 15 min)
-     AUTH_REFRESH_TTL_DAYS      refresh-token lifetime (default 30)
+     AUTH_REFRESH_TTL_SECONDS   absolute session lifetime (default 14400 = 4 h)
      AUTH_COOKIE_SECURE         Secure flag on cookies (default: in production)
      AUTH_COOKIE_SAMESITE       SameSite lax|strict    (default lax)
      AUTH_OTP_TTL_SECONDS       one-time-code lifetime   (default 120)
@@ -36,7 +36,7 @@ export interface AuthSettings {
   issuer: 'csr-budgeting';
   audience: 'csr-web';
   accessTtlSeconds: number;
-  refreshTtlDays: number;
+  refreshTtlSeconds: number;
   /** One-time-code lifetime; short on purpose. */
   otpTtlSeconds: number;
   /** Wrong guesses a single challenge tolerates before it dies. */
@@ -91,7 +91,7 @@ export function loadAuthConfig(env: Env = process.env): AuthSettings {
     issuer: 'csr-budgeting',
     audience: 'csr-web',
     accessTtlSeconds: positiveInt(env, 'AUTH_ACCESS_TTL_SECONDS', 900),
-    refreshTtlDays: positiveInt(env, 'AUTH_REFRESH_TTL_DAYS', 30),
+    refreshTtlSeconds: positiveInt(env, 'AUTH_REFRESH_TTL_SECONDS', 14_400),
     otpTtlSeconds: positiveInt(env, 'AUTH_OTP_TTL_SECONDS', 120),
     otpMaxAttempts: positiveInt(env, 'AUTH_OTP_MAX_ATTEMPTS', 5),
     otpResendSeconds: positiveInt(env, 'AUTH_OTP_RESEND_SECONDS', 60),

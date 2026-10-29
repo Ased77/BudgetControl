@@ -4,7 +4,7 @@
     "title": "CSR Budgeting API",
     "version": "0.0.0",
     "summary": "National CSR budget allocation, project monitoring and analysis API.",
-    "description": "Backend for \"سامانه جامع و ملی مدیریت هوشمند توسعه روستایی و شهری\" — a Persian-language budget-allocation and executive-project monitoring platform. All money is Toman/Rial (1 Toman = 10 Rial). Sessions use an httpOnly access-token cookie (`csr_at`, HS256 JWT, default 15 min) plus a rotating httpOnly refresh cookie (`csr_rt`, path=/api/auth, default 30 d); machine clients may send the access JWT as `Authorization: Bearer`. Errors are always `{ \"error\": <message>, \"code\"?: <machine-code> }`.\n"
+    "description": "Backend for \"سامانه جامع و ملی مدیریت هوشمند توسعه روستایی و شهری\" — a Persian-language budget-allocation and executive-project monitoring platform. All money is Toman/Rial (1 Toman = 10 Rial). Sessions use an httpOnly access-token cookie (`csr_at`, HS256 JWT, default 15 min) plus a rotating httpOnly refresh cookie (`csr_rt`, path=/api/auth) with a four-hour absolute session lifetime; machine clients may send the access JWT as `Authorization: Bearer`. Errors are always `{ \"error\": <message>, \"code\"?: <machine-code> }.\n"
   },
   "servers": [
     {

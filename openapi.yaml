@@ -12,8 +12,8 @@ info:
     Backend for "سامانه جامع و ملی مدیریت هوشمند توسعه روستایی و شهری" — a
     Persian-language budget-allocation and executive-project monitoring
     platform. All money is Toman/Rial (1 Toman = 10 Rial). Sessions use an
-    httpOnly access-token cookie (`csr_at`, HS256 JWT, default 15 min) plus a
-    rotating httpOnly refresh cookie (`csr_rt`, path=/api/auth, default 30 d);
+    httpOnly access-token cookie (`csr_at`, HS256 JWT, default 15 min, capped at the session deadline) plus a
+    rotating httpOnly refresh cookie (`csr_rt`, path=/api/auth, four-hour absolute session);
     machine clients may send the access JWT as `Authorization: Bearer`.
     Errors are always `{ "error": <message>, "code"?: <machine-code> }`.
 servers:
@@ -2421,4 +2421,3 @@ components:
           type: array
           items: { type: string }
         strategicAdvice: { type: string }
-

@@ -13,7 +13,7 @@
       by the hash — never by a client-supplied id.
    ========================================================================= */
 
-import { and, eq, isNull, lt, ne, or, sql } from 'drizzle-orm';
+import { and, asc, eq, isNull, lt, ne, or, sql } from 'drizzle-orm';
 import { withDbErrorMapping } from '../db/errors.js';
 import { db, type DrizzleDb, type Tx } from '../db/client.js';
 import {
@@ -231,6 +231,22 @@ export async function getRefreshTokenState(
   return withDbErrorMapping(async () => {
     const rows = await executor.select().from(refreshTokens).where(eq(refreshTokens.tokenHash, tokenHash)).limit(1);
     return rows[0];
+  });
+}
+
+/** Login time for a rotation family, used to enforce the absolute session cap. */
+export async function getRefreshFamilyCreatedAt(
+  familyId: string,
+  executor: Executor = db,
+): Promise<Date | undefined> {
+  return withDbErrorMapping(async () => {
+    const rows = await executor
+      .select({ createdAt: refreshTokens.createdAt })
+      .from(refreshTokens)
+      .where(eq(refreshTokens.familyId, familyId))
+      .orderBy(asc(refreshTokens.createdAt))
+      .limit(1);
+    return rows[0]?.createdAt;
   });
 }
 

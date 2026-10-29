@@ -14,7 +14,7 @@
      GET  /me        → the verified identity of the current cookie
 
    Every response that carries a session sets BOTH cookies httpOnly:
-     csr_at (access, 15 min) and csr_rt (refresh, 30 d, path=/api/auth).
+     csr_at (access, 15 min) and csr_rt (refresh, 4 h absolute, path=/api/auth).
    The SPA never sees a token string it could store or leak.
 
    "Issue session" always means: sign access JWT (sub = auth_users.id) and
@@ -38,6 +38,7 @@ import {
   deleteOtpChallenge,
   getAuthUserByMobile,
   getAuthUserById,
+  getRefreshFamilyCreatedAt,
   getOtpChallenge,
   getRefreshTokenState,
   incrementOtpAttempts,
@@ -145,10 +146,17 @@ async function toPublicProfile(row: {
    -------------------------------------------------------------------------- */
 
 function refreshExpiry(config: AuthSettings): Date {
-  return new Date(Date.now() + config.refreshTtlDays * 24 * 60 * 60 * 1000);
+  return new Date(Date.now() + config.refreshTtlSeconds * 1000);
 }
 
-function setAuthCookies(res: Response, user: ReturnType<typeof authUserToSession>, accessToken: string, rawRefresh: string, config: AuthSettings): void {
+function setAuthCookies(
+  res: Response,
+  user: ReturnType<typeof authUserToSession>,
+  accessToken: string,
+  rawRefresh: string,
+  refreshExpiresAt: Date,
+  config: AuthSettings,
+): void {
   // Access: every API request needs it.
   res.cookie(ACCESS_COOKIE, accessToken, {
     httpOnly: true,
@@ -166,7 +174,7 @@ function setAuthCookies(res: Response, user: ReturnType<typeof authUserToSession
     secure: config.cookieSecure,
     sameSite: config.cookieSameSite,
     path: '/api/auth',
-    maxAge: config.refreshTtlDays * 24 * 60 * 60 * 1000,
+    maxAge: Math.max(0, refreshExpiresAt.getTime() - Date.now()),
   });
 }
 
@@ -178,7 +186,8 @@ function clearAuthCookies(res: Response): void {
 async function issueSession(res: Response, req: Request, userId: string): Promise<void> {
   const config = loadAuthConfig();
   const session = await getPersistedSession(userId);
-  const accessToken = signAccessToken(session);
+  const expiresAt = refreshExpiry(config);
+  const accessToken = signAccessToken(session, config, expiresAt);
 
   const refresh = newRefreshToken();
   await insertRefreshToken({
@@ -186,11 +195,11 @@ async function issueSession(res: Response, req: Request, userId: string): Promis
     userId,
     tokenHash: refresh.tokenHash,
     familyId: randomUUID(), // fresh rotation chain per login
-    expiresAt: refreshExpiry(config),
+    expiresAt,
     userAgent: req.headers['user-agent'] ?? null,
     ipAddress: req.socket.remoteAddress ?? null,
   });
-  setAuthCookies(res, session, accessToken, refresh.token, config);
+  setAuthCookies(res, session, accessToken, refresh.token, expiresAt, config);
 }
 
 /** Re-fetch to mint claims from the DB row (role/scope are never client input). */
@@ -557,7 +566,17 @@ authRouter.post('/refresh', async (req, res, next) => {
       return res.status(401).json({ error: 'نشست باطل شد — دوباره وارد شوید', code: 'SESSION_REVOKED' });
     }
 
-    if (state.expiresAt.getTime() <= Date.now()) {
+    const config = loadAuthConfig();
+    const familyCreatedAt = await getRefreshFamilyCreatedAt(state.familyId);
+    if (!familyCreatedAt) {
+      clearAuthCookies(res);
+      return res.status(401).json({ error: 'نشست معتبر نیست — دوباره وارد شوید', code: 'AUTH_REQUIRED' });
+    }
+    const sessionExpiresAt = new Date(Math.min(
+      state.expiresAt.getTime(),
+      familyCreatedAt.getTime() + config.refreshTtlSeconds * 1000,
+    ));
+    if (sessionExpiresAt.getTime() <= Date.now()) {
       await consumeRefreshToken(tokenHash);
       clearAuthCookies(res);
       return res.status(401).json({ error: 'نشست منقضی شده — دوباره وارد شوید', code: 'AUTH_REQUIRED' });
@@ -572,19 +591,18 @@ authRouter.post('/refresh', async (req, res, next) => {
     // Rotate: consume the presented token, mint the successor in the SAME
     // family, and hand the client a new access token.
     await consumeRefreshToken(tokenHash);
-    const config = loadAuthConfig();
-    const accessToken = signAccessToken(authUserToSession(row));
+    const accessToken = signAccessToken(authUserToSession(row), config, sessionExpiresAt);
     const next = newRefreshToken();
     await insertRefreshToken({
       id: randomUUID(),
       userId: row.id,
       tokenHash: next.tokenHash,
       familyId: state.familyId, // lineage preserved for reuse detection
-      expiresAt: refreshExpiry(config),
+      expiresAt: sessionExpiresAt,
       userAgent: req.headers['user-agent'] ?? null,
       ipAddress: req.socket.remoteAddress ?? null,
     });
-    setAuthCookies(res, authUserToSession(row), accessToken, next.token, config);
+    setAuthCookies(res, authUserToSession(row), accessToken, next.token, sessionExpiresAt, config);
 
     return res.json({ user: await toPublicProfile(row) });
   } catch (error) {

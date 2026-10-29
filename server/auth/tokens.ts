@@ -8,7 +8,7 @@
      against auth_users anyway by the middleware (revocation beats
      statelessness — see requireAuth).
 
-   REFRESH TOKEN (cookie `csr_rt`, default 30 days, opaque+stateful):
+   REFRESH TOKEN (cookie `csr_rt`, four-hour absolute session by default, opaque+stateful):
      48 random bytes, base64url. Only its sha256 is persisted, so a DB
      dump never yields a usable session. Rotation + family revocation
      live in server/auth/repo.ts.
@@ -45,9 +45,19 @@ export interface SessionUser {
   allowedLocationId?: string;
 }
 
-export function signAccessToken(user: SessionUser, config: AuthSettings = loadAuthConfig()): string {
+export function signAccessToken(
+  user: SessionUser,
+  config: AuthSettings = loadAuthConfig(),
+  sessionExpiresAt?: Date,
+): string {
   if (!user.userId) {
     throw new Error('[auth] refusing to sign a token with no user_id (sub claim)');
+  }
+  const accessTtlSeconds = sessionExpiresAt
+    ? Math.min(config.accessTtlSeconds, Math.floor((sessionExpiresAt.getTime() - Date.now()) / 1000))
+    : config.accessTtlSeconds;
+  if (accessTtlSeconds <= 0) {
+    throw new Error('[auth] refusing to sign an access token after the session has expired');
   }
   return jwt.sign(
     {
@@ -61,7 +71,7 @@ export function signAccessToken(user: SessionUser, config: AuthSettings = loadAu
       algorithm: 'HS256',
       issuer: config.issuer,
       audience: config.audience,
-      expiresIn: config.accessTtlSeconds,
+      expiresIn: accessTtlSeconds,
     },
   );
 }

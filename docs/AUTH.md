@@ -73,9 +73,9 @@ code    ────────►│  AuthContext.loginWithOtp()              
 
 ## 3. Token lifecycle & edge cases
 
-- **Expiry (access):** 15-min default (`AUTH_ACCESS_TTL_SECONDS`); on page load, `/api/auth/me` falls back to `/api/auth/refresh` after a 401, with simultaneous probes coalesced to prevent refresh-token replay. Business API requests also retry once after refresh; a failed refresh ends the session.
-- **Expiry (refresh):** 30-day default; an absent/expired refresh cookie returns 401 → user re-authenticates.
-- **Rotation:** every refresh consumes the presented token and mints a successor in the same `family_id`. Presenting a consumed/revoked token (replay of a stolen one) revokes the whole family.
+- **Expiry (access):** 15-min default (`AUTH_ACCESS_TTL_SECONDS`), capped at the four-hour absolute session deadline; on page load, `/api/auth/me` falls back to `/api/auth/refresh` after a 401, with simultaneous probes coalesced to prevent refresh-token replay. Business API requests also retry once after refresh; a failed refresh ends the session.
+- **Expiry (refresh):** four-hour absolute session lifetime from login; an absent/expired refresh cookie returns 401 → user re-authenticates. Refresh rotation preserves the original expiry and never extends the session.
+- **Rotation:** every refresh consumes the presented token and mints a successor in the same `family_id`, retaining its original expiry. Presenting a consumed/revoked token (replay of a stolen one) revokes the whole family.
 - **Revocation, targeted:** `POST /api/auth/logout` revokes the family. `revokeAllRefreshTokensForUser()` exists for admin/password flows.
 - **Revocation, global:** password change bumps `tokens_valid_from`; any access token with `iat < tokens_valid_from` dies on its next use even without a DB hit against refresh_tokens.
 - **Door lock:** `is_active=false` → all sessions invalid immediately (checked per request).
@@ -95,7 +95,7 @@ code    ────────►│  AuthContext.loginWithOtp()              
 | Env | Role |
 |---|---|
 | `AUTH_JWT_SECRET` | required, ≥32 chars — signs the access token. Refuses to boot if missing |
-| `AUTH_ACCESS_TTL_SECONDS` / `AUTH_REFRESH_TTL_DAYS` | lifetimes |
+| `AUTH_ACCESS_TTL_SECONDS` / `AUTH_REFRESH_TTL_SECONDS` | access-token lifetime / absolute session lifetime (900 seconds / 14,400 seconds by default) |
 | `AUTH_COOKIE_SECURE` / `AUTH_COOKIE_SAMESITE` | cookie flags (Secure auto in prod) |
 | `AUTH_OTP_TTL_SECONDS` / `AUTH_OTP_MAX_ATTEMPTS` / `AUTH_OTP_RESEND_SECONDS` | one-time-code lifetime (120s), wrong guesses (5) and resend cooldown (60s) |
 | `AUTH_OTP_FAKE_DELIVERY` | 1 (default): return the code to the login screen; 0: never put it in the response |

@@ -32,8 +32,8 @@ Database is **PostgreSQL** (Drizzle ORM). On boot (or first serverless request) 
 
 | Cookie | Content | TTL | Scope |
 |---|---|---|---|
-| `csr_at` | HS256 **JWT** — `sub` is the user_id; claims: `role`, `departmentId?`, `allowedLocationId?`; iss `csr-budgeting`, aud `csr-web` | 15 min (`AUTH_ACCESS_TTL_SECONDS`) | path `/` |
-| `csr_rt` | Opaque **48-byte base64url** refresh token (only sha256 stored server-side) | 30 days (`AUTH_REFRESH_TTL_DAYS`) | path `/api/auth` only |
+| `csr_at` | HS256 **JWT** — `sub` is the user_id; claims: `role`, `departmentId?`, `allowedLocationId?`; iss `csr-budgeting`, aud `csr-web` | 15 min max (`AUTH_ACCESS_TTL_SECONDS`), capped at the 4-hour session deadline | path `/` |
+| `csr_rt` | Opaque **48-byte base64url** refresh token (only sha256 stored server-side) | 4-hour absolute session (`AUTH_REFRESH_TTL_SECONDS`; refresh rotation does not extend it) | path `/api/auth` only |
 
 Both cookies are `httpOnly` (+ `Secure` in production). The SPA never sees a token string.
 
@@ -346,4 +346,3 @@ Full JSON Schemas live in `openapi.yaml#components/schemas`. Summary:
 2. **Missing permission gates** on DELETEs, `PATCH …/status`, and analysis-source writes — intentional or gap?
 3. **Unexposed paginator** — `pageAuditLogs` (actionType/province/county filters + offset + total) exists in `server/db/repositories/audit-log.repository.ts` but no route uses it. Plan to expose?
 4. **Auth rate limiting** is per-instance in memory — multi-replica deployments have no limiting. Acceptable?
-
