@@ -21,7 +21,7 @@ import {
   OMIDIYEH_EXECUTORS,
   OMIDIYEH_PROJECTS,
   OMIDIYEH_USERS,
-} from './omidiyehData.js';
+} from './omidiyehCountyData.js';
 
 /* =========================================================================
    ۱. ادارات و نهادهای متولی (Departments & Agencies)

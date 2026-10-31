@@ -9,7 +9,7 @@ import {
   ProjectExecutor,
   UserProfile,
 } from '../types.js';
-import { PRIORITY_TITLE_BY_ID } from './omidiyehData.js';
+import { PRIORITY_TITLE_BY_ID } from './omidiyehCountyData.js';
 import { urgencyForSeverity } from '../utils/crisisSeverity.js';
 
 /**

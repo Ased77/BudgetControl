@@ -50,7 +50,7 @@ import {
   INITIAL_USERS,
 } from '../../src/data/initialData.js';
 import { buildCountyDataset, type CountyDataset } from '../../src/data/countyTemplates.js';
-import { OMIDIYEH_COUNTY } from '../../src/data/omidiyehData.js';
+import { OMIDIYEH_COUNTY } from '../../src/data/omidiyehCountyData.js';
 import { db } from './client.js';
 import { SYSTEM_ACTOR_ID } from './system-actor.js';
 import { projectToRow, contributionsToRows } from './repositories/project.repository.js';
