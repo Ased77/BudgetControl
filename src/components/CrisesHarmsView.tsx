@@ -16,6 +16,7 @@ import {
   MapPin,
   CheckCircle2,
   Clock,
+  ChevronRight,
   ArrowRight,
   Edit,
   Trash2,
@@ -27,7 +28,8 @@ import {
   ListChecks,
 } from 'lucide-react';
 import { formatMoneyParts, formatPercent, formatNumber, formatToman, toPersianDigits } from '../utils/numberUtils';
-import { gaugeTone } from '../utils/gaugeTone';
+import { gaugeTone, GAUGE_GOOD_AT, GAUGE_WARNING_AT } from '../utils/gaugeTone';
+import { useCountUp } from '../hooks/useCountUp';
 import { gaugeStaggerDelay } from '../utils/gaugeStagger';
 import { Num } from './Num';
 import { AnimatedGauge } from './AnimatedGauge';
@@ -36,12 +38,74 @@ import { useConfirmDelete } from './ConfirmDeleteModal';
 import AnimatedContent from './AnimatedContent/AnimatedContent';
 
 /**
- * Card gauge geometry — a 56px frame with the stroke centred on a 22px radius,
- * which leaves room for the six-pixel stroke and its round cap. It is the same
- * frame the departments page draws its absorption ring in, so the metric strips
- * of the two pages line up when they sit side by side.
+ * Div-bar twins of the shared ring palette (`utils/gaugeTone`): the same three
+ * severity bands colour the card's linear severity bar and its headline
+ * figure, keyed off the shared cut-off constants so a score never reads in
+ * two different colours at once. `info` is absent — severity never uses the
+ * blue band.
  */
-const GAUGE_RADIUS = 22;
+const SEVERITY_TONES = {
+  good: {
+    text: 'text-emerald-600 dark:text-emerald-400',
+    bar: 'bg-emerald-500 dark:bg-emerald-400',
+  },
+  warning: {
+    text: 'text-amber-600 dark:text-amber-400',
+    bar: 'bg-amber-500 dark:bg-amber-400',
+  },
+  risk: {
+    text: 'text-rose-600 dark:text-rose-400',
+    bar: 'bg-rose-500 dark:bg-rose-400',
+  },
+} as const;
+
+/**
+ * Severity band on the shared higher-is-worse scale (see `utils/gaugeTone`):
+ * ≥ ۷۰ risk, ۵۰–۶۹ warning, below ۵۰ good. Reads the shared cut-off
+ * constants rather than restating them.
+ */
+function severityBand(value: number): keyof typeof SEVERITY_TONES {
+  const v = Number.isFinite(value) ? value : 0;
+  if (v >= GAUGE_GOOD_AT) return 'risk';
+  if (v >= GAUGE_WARNING_AT) return 'warning';
+  return 'good';
+}
+
+/**
+ * The linear severity bar the card heads with, shaped like a budget card's
+ * spend bar: a slate track and a round-capped fill that eases 0 → score on
+ * mount. It rides the same count-up easing and per-card `delayMs` lead-in the
+ * old ring used (see `utils/gaugeStagger`), so the fill still ripples across
+ * the grid and the headline `Num` beside it moves with it.
+ */
+const SeverityBar: React.FC<{
+  value: number;
+  band: keyof typeof SEVERITY_TONES;
+  delayMs?: number;
+}> = ({ value, band, delayMs = 0 }) => {
+  const animatedValue = useCountUp(value, 800, true, 0, undefined, delayMs);
+  return (
+    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+      <div
+        className={`h-full rounded-full ${SEVERITY_TONES[band].bar}`}
+        style={{ width: `${Math.min(100, Math.max(0, animatedValue))}%` }}
+      />
+    </div>
+  );
+};
+
+/**
+ * The metrics-list row chevron of the redesigned card, pointing to the
+ * inline end like the budget card's «›» and flipping for the RTL workspace.
+ * It catches the card's group hover, so every row signals that the card
+ * opens the record's own page.
+ */
+const RowChevron: React.FC = () => (
+  <ChevronRight
+    aria-hidden="true"
+    className="h-3.5 w-3.5 shrink-0 text-slate-300 transition-all group-hover:text-rose-500 group-hover:-translate-x-0.5 rtl:rotate-180"
+  />
+);
 /** Radius of the enlarged gauge that heads the drill-down modal. */
 const DETAIL_GAUGE_RADIUS = 32;
 
@@ -67,10 +131,6 @@ const URGENCY_STYLE: Record<
     tile: string;
     soft: string;
     chip: string;
-    /** Tinted surface of the card's reading band. */
-    band: string;
-    /** Ring around the severity instrument, tying it to the band tint. */
-    halo: string;
   }
 > = {
   CRITICAL: {
@@ -79,8 +139,6 @@ const URGENCY_STYLE: Record<
     tile: 'bg-rose-50 dark:bg-rose-950/50 border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400',
     soft: 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800',
     chip: 'bg-rose-600 text-white border-rose-600 shadow-sm shadow-rose-600/25',
-    band: 'border-rose-100 bg-gradient-to-br from-rose-50 via-white to-rose-100/40 dark:border-rose-900/60 dark:from-rose-950/50 dark:via-slate-900 dark:to-rose-950/20',
-    halo: 'ring-rose-200/70 dark:ring-rose-900/60',
   },
   HIGH: {
     label: 'شدت بالا',
@@ -88,8 +146,6 @@ const URGENCY_STYLE: Record<
     tile: 'bg-amber-50 dark:bg-amber-950/50 border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400',
     soft: 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
     chip: 'bg-amber-500 text-white border-amber-500 shadow-sm shadow-amber-500/25',
-    band: 'border-amber-100 bg-gradient-to-br from-amber-50 via-white to-amber-100/40 dark:border-amber-900/60 dark:from-amber-950/50 dark:via-slate-900 dark:to-amber-950/20',
-    halo: 'ring-amber-200/70 dark:ring-amber-900/60',
   },
   MEDIUM: {
     label: 'شدت متوسط',
@@ -97,8 +153,6 @@ const URGENCY_STYLE: Record<
     tile: 'bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400',
     soft: 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800',
     chip: 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/25',
-    band: 'border-blue-100 bg-gradient-to-br from-blue-50 via-white to-blue-100/40 dark:border-blue-900/60 dark:from-blue-950/50 dark:via-slate-900 dark:to-blue-950/20',
-    halo: 'ring-blue-200/70 dark:ring-blue-900/60',
   },
   LOW: {
     label: 'قابل پایش',
@@ -106,8 +160,6 @@ const URGENCY_STYLE: Record<
     tile: 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400',
     soft: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
     chip: 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/25',
-    band: 'border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-emerald-100/40 dark:border-emerald-900/60 dark:from-emerald-950/50 dark:via-slate-900 dark:to-emerald-950/20',
-    halo: 'ring-emerald-200/70 dark:ring-emerald-900/60',
   },
 };
 
@@ -153,6 +205,25 @@ function crisisStatusMeta(status: CrisisHarmItem['status'], projectCount: number
     className: 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300',
   };
 }
+
+/**
+ * The follow-up sentence each intervention state reads under the severity bar,
+ * in the voice of a budget card's «Great job!» line: the state in bold first,
+ * then what the record still needs. The count of live projects is already
+ * inside `crisisStatusMeta`'s label while a response is running.
+ */
+const STATUS_MESSAGE_REST: Record<CrisisHarmItem['status'], string> = {
+  UNRESOLVED: 'نیازمند ثبت پروژه پاسخ‌دهنده است',
+  UNDER_INTERVENTION: 'با اجرای پروژه‌ها در حال برطرف شدن است',
+  CONTROLLED: 'وضعیت پایدار شده و در حال پایش است',
+};
+
+/** Text colour of the bold state lead, matched to the state pill's meaning. */
+const STATUS_MESSAGE_TONES: Record<CrisisHarmItem['status'], string> = {
+  UNRESOLVED: 'text-rose-600 dark:text-rose-400',
+  UNDER_INTERVENTION: 'text-blue-600 dark:text-blue-400',
+  CONTROLLED: 'text-emerald-600 dark:text-emerald-400',
+};
 
 export const CrisesHarmsView: React.FC = () => {
   const {
@@ -515,9 +586,10 @@ export const CrisesHarmsView: React.FC = () => {
 
       </div>
 
-      {/* Crises Grid — every card is a door into the record's own page, so the
-          severity reading and the urgency lead, the title and state identify, and
-          the footer strip carries population, projects and progress. */}
+      {/* Crises Grid — every card is a door into the record's own page, shaped
+          like a budget card: a title up top, one oversized reading with its
+          scale named beside it, a linear severity bar, a status line, and a
+          closing list of the record's key figures with a chevron each. */}
       {filteredCrises.length > 0 ? (
         <AnimatedContent
           id="crises-harms-view-crises-grid"
@@ -536,6 +608,9 @@ export const CrisesHarmsView: React.FC = () => {
             const matchedProjects = projects.filter((p) => p.crisisHarmId === item.id);
             const status = crisisStatusMeta(item.status, matchedProjects.length);
             const StatusIcon = status.icon;
+            // The severity band drives every colour on the card — headline
+            // figure and bar alike — on the shared higher-is-worse scale.
+            const toneBand = severityBand(item.severityScore);
             // Average delivery progress of the projects answering this crisis —
             // the one reading that says how far the response has actually come.
             // A crisis with no linked project reads as «—» rather than ۰٪, which
@@ -562,74 +637,14 @@ export const CrisesHarmsView: React.FC = () => {
                 title="کلیک برای مشاهده جزئیات بحران"
                 className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:border-rose-200 dark:hover:border-rose-900/70 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
               >
-                {/* Reading band — the severity ring leads the card, because the
-                    score is what ranks one crisis against another. The band is
-                    tinted by the urgency it names in words, so colour is never
-                    the only way to read it, and the record's own code sits
-                    quietly opposite the badge. */}
+                {/* Header — the budget card's «January Budget»: the title leads,
+                    while the registered scope — county, village and subject
+                    area — reads as a quiet subtitle under it. */}
                 <div
                   id={`crises-harms-view-card-identity-${item.id}`}
-                  className={`relative overflow-hidden border-b px-4 pb-3.5 pt-4 ${style.band}`}
+                  className="px-4 pb-2.5 pt-4"
                 >
-                  <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute -left-10 -top-14 h-32 w-32 rounded-full border border-slate-900/5 dark:border-white/5"
-                  >
-                    <div className="absolute inset-3 rounded-full border border-slate-900/5 dark:border-white/5" />
-                  </div>
-
-                  <div className="relative flex items-center gap-3">
-                    <div
-                      id={`crises-harms-view-card-gauge-${item.id}`}
-                      className={`shrink-0 rounded-2xl bg-white/85 p-1.5 shadow-2xs ring-1 dark:bg-slate-900/60 ${style.halo}`}
-                    >
-                      <AnimatedGauge
-                        value={item.severityScore}
-                        radius={GAUGE_RADIUS}
-                        toneClassName={gaugeTone(item.severityScore, 'HIGHER_IS_WORSE')}
-                        className="w-14 h-14"
-                        delayMs={gaugeDelayMs}
-                      >
-                        <span className="absolute inset-0 flex flex-col items-center justify-center">
-                          <Num
-                            value={formatNumber(item.severityScore)}
-                            countUpDelayMs={gaugeDelayMs}
-                            className="text-[13px] font-black leading-none text-slate-800 dark:text-slate-100"
-                          />
-                          <span className="mt-0.5 text-[8px] leading-none text-slate-400">٪</span>
-                        </span>
-                      </AnimatedGauge>
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <span
-                          id={`crises-harms-view-card-urgency-${item.id}`}
-                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold whitespace-nowrap ${style.soft}`}
-                        >
-                          <UrgencyIcon className="w-3 h-3 shrink-0" />
-                          {style.label}
-                        </span>
-                        <span
-                          id={`crises-harms-view-card-code-${item.id}`}
-                          className="shrink-0 rounded-md bg-white/70 px-1.5 py-0.5 text-[9px] font-mono tracking-wider text-slate-500 dark:bg-slate-900/50 dark:text-slate-400"
-                        >
-                          {item.code}
-                        </span>
-                      </div>
-
-                      <p className="mt-2 text-[10px] font-medium leading-snug text-slate-500 dark:text-slate-400">
-                        شدت آسیب
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Identity — the title first, then the subject area and the state
-                    of intervention, so the card answers «what is this» before
-                    «how bad». */}
-                <div className="flex flex-1 flex-col px-4 py-3.5 text-right">
-                  <div id={`crises-harms-view-card-title-${item.id}`} className="w-full min-w-0 min-h-12">
+                  <div id={`crises-harms-view-card-title-${item.id}`} className="min-h-12 min-w-0">
                     <h3
                       className="font-black text-[15px] leading-6 text-slate-900 dark:text-slate-100 line-clamp-2 group-hover:text-rose-700 dark:group-hover:text-rose-300 transition-colors"
                       title={item.title}
@@ -637,73 +652,137 @@ export const CrisesHarmsView: React.FC = () => {
                       {item.title}
                     </h3>
                   </div>
-
-                  <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                  <p className="mt-1 flex min-w-0 items-center gap-1 text-[10px] text-slate-400 dark:text-slate-500">
+                    <MapPin className="h-3 w-3 shrink-0" />
                     <span
-                      id={`crises-harms-view-card-category-${item.id}`}
-                      className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 whitespace-nowrap"
+                      className="truncate"
+                      title={`${item.province} - ${item.county} (${item.districtOrVillage})`}
                     >
+                      {item.county} ({item.districtOrVillage})
+                    </span>
+                    <span aria-hidden="true">·</span>
+                    <span id={`crises-harms-view-card-category-${item.id}`} className="truncate">
                       {item.category}
                     </span>
-                    <span
-                      id={`crises-harms-view-card-status-${item.id}`}
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap ${status.className}`}
-                    >
-                      <StatusIcon className="w-3 h-3 shrink-0" />
-                      {status.label}
-                    </span>
-                  </div>
-
-                  <div
-                    id={`crises-harms-view-card-meta-${item.id}`}
-                    className="mt-auto flex items-center justify-between gap-2 pt-3 text-[10px] text-slate-500 dark:text-slate-400"
-                  >
-                    <span className="flex items-center gap-1 min-w-0">
-                      <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                      <span className="truncate" title={`${item.province} - ${item.county} (${item.districtOrVillage})`}>
-                        {item.county} ({item.districtOrVillage})
-                      </span>
-                    </span>
-                    <ArrowRight
-                      aria-hidden="true"
-                      className="w-3.5 h-3.5 shrink-0 text-slate-300 transition-all group-hover:text-rose-500 group-hover:-translate-x-0.5 rtl:rotate-180"
-                    />
-                  </div>
+                  </p>
                 </div>
 
-                {/* Footer strip: who the crisis touches, how many projects answer
-                    it, and how far those projects have come. */}
+                {/* Reading — the budget card's «$448 of $251 spent» figure: the
+                    severity score oversized in the shared band colour, its
+                    100-point scale named beside it, the urgency badge opposite
+                    so the words never rely on colour alone, then the linear
+                    severity bar eased in with the grid's ripple. */}
+                <div id={`crises-harms-view-card-gauge-${item.id}`} className="px-4 pb-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="flex min-w-0 items-baseline gap-1">
+                      <Num
+                        value={formatNumber(item.severityScore)}
+                        countUpDelayMs={gaugeDelayMs}
+                        className={`leading-none font-black text-3xl ${SEVERITY_TONES[toneBand].text}`}
+                      />
+                      <span aria-hidden="true" className="text-base font-black leading-none text-slate-300 dark:text-slate-600">٪</span>
+                      <span className="ms-1 whitespace-nowrap text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                        شدت آسیب از ۱۰۰
+                      </span>
+                    </p>
+                    <span
+                      id={`crises-harms-view-card-urgency-${item.id}`}
+                      className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold whitespace-nowrap ${style.soft}`}
+                    >
+                      <UrgencyIcon className="h-3 w-3 shrink-0" />
+                      {style.label}
+                    </span>
+                  </div>
+
+                  <div className="mt-2.5">
+                    <SeverityBar value={item.severityScore} band={toneBand} delayMs={gaugeDelayMs} />
+                  </div>
+
+                  {/* The budget card's «Great job!» line — the state bold, then
+                      what the record still needs. */}
+                  <p className="mt-2.5 flex min-w-0 items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                    <StatusIcon className={`h-3.5 w-3.5 shrink-0 ${STATUS_MESSAGE_TONES[item.status]}`} />
+                    <span className="min-w-0 truncate">
+                      <span
+                        id={`crises-harms-view-card-status-${item.id}`}
+                        className={`font-bold ${STATUS_MESSAGE_TONES[item.status]}`}
+                      >
+                        {status.label}
+                      </span>
+                      {` — ${STATUS_MESSAGE_REST[item.status]}`}
+                    </span>
+                  </p>
+                </div>
+
+                {/* Metrics — the budget card's «Top Monthly Budgets» list: one
+                    row per figure, each led by an emblem tile and closed by a
+                    chevron, so the card's numbers read like the door they are
+                    instead of a grid of stats. */}
                 <div
                   id={`crises-harms-view-card-metrics-${item.id}`}
-                  className="grid grid-cols-3 items-stretch border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/30"
+                  className="mt-auto border-t border-slate-100 px-1.5 py-2 dark:border-slate-800"
                 >
-                  <div
-                    id={`crises-harms-view-card-population-metric-${item.id}`}
-                    className="flex flex-col items-center justify-center gap-1 px-1 py-3 text-center"
-                  >
-                    <Num value={formatNumber(item.affectedPopulation)} className="text-base font-black text-slate-900 dark:text-slate-100 leading-none" />
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400">نفر متأثر</span>
-                  </div>
+                  <p className="px-2 pb-1 text-[11px] font-bold text-slate-800 dark:text-slate-200">
+                    شاخص‌های بحران
+                  </p>
+                  <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+                    <li
+                      id={`crises-harms-view-card-population-metric-${item.id}`}
+                      className="flex items-center gap-2.5 rounded-xl px-2 py-2"
+                    >
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-500">
+                        <Users className="h-4 w-4" />
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                        جمعیت متأثر
+                      </span>
+                      <Num
+                        value={formatNumber(item.affectedPopulation)}
+                        unit="نفر"
+                        unitClassName="text-[9px] font-bold text-slate-400 ms-0.5"
+                        className="shrink-0 text-[12px] font-black text-slate-900 dark:text-slate-100"
+                      />
+                      <RowChevron />
+                    </li>
 
-                  <div
-                    id={`crises-harms-view-card-projects-metric-${item.id}`}
-                    className="flex flex-col items-center justify-center gap-1 px-1 py-3 text-center border-s border-slate-100 dark:border-slate-800"
-                  >
-                    <Num value={formatNumber(matchedProjects.length)} className="text-base font-black text-slate-900 dark:text-slate-100 leading-none" />
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400">پروژه فعال</span>
-                  </div>
+                    <li
+                      id={`crises-harms-view-card-projects-metric-${item.id}`}
+                      className="flex items-center gap-2.5 rounded-xl px-2 py-2"
+                    >
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-500">
+                        <FolderGit2 className="h-4 w-4" />
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                        پروژه فعال
+                      </span>
+                      <Num
+                        value={formatNumber(matchedProjects.length)}
+                        className="shrink-0 text-[12px] font-black text-slate-900 dark:text-slate-100"
+                      />
+                      <RowChevron />
+                    </li>
 
-                  <div
-                    id={`crises-harms-view-card-progress-metric-${item.id}`}
-                    className="flex flex-col items-center justify-center gap-1 px-1 py-3 text-center border-s border-slate-100 dark:border-slate-800"
-                  >
-                    {avgProgress === null ? (
-                      <span className="text-base font-black leading-none text-slate-300 dark:text-slate-600">—</span>
-                    ) : (
-                      <Num value={formatPercent(avgProgress)} className="text-base font-black text-slate-900 dark:text-slate-100 leading-none" />
-                    )}
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400">میانگین پیشرفت</span>
-                  </div>
+                    <li
+                      id={`crises-harms-view-card-progress-metric-${item.id}`}
+                      className="flex items-center gap-2.5 rounded-xl px-2 py-2"
+                    >
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-500">
+                        <Activity className="h-4 w-4" />
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                        میانگین پیشرفت
+                      </span>
+                      {avgProgress === null ? (
+                        <span className="shrink-0 text-[12px] font-black leading-none text-slate-300 dark:text-slate-600">—</span>
+                      ) : (
+                        <Num
+                          value={formatPercent(avgProgress)}
+                          className="shrink-0 text-[12px] font-black text-slate-900 dark:text-slate-100"
+                        />
+                      )}
+                      <RowChevron />
+                    </li>
+                  </ul>
                 </div>
               </article>
             );
