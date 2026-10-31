@@ -10,6 +10,7 @@ import {
   UserProfile,
 } from '../types.js';
 import { PRIORITY_TITLE_BY_ID } from './omidiyehData.js';
+import { urgencyForSeverity } from '../utils/crisisSeverity.js';
 
 /**
  * ============================================================================
@@ -434,6 +435,8 @@ export function buildCountyDataset(location: LocationData): CountyDataset {
   const dustSeverity = Math.min(Math.round(ind.environmentalRiskScore + 10), 95);
   const waterSeverity = Math.min(Math.round(ind.infrastructureDeficit + 35), 94);
   const jobSeverity = Math.min(Math.round(ind.unemploymentRate * 3.5 + 10), 92);
+  const sectorSeverity = Math.min(Math.round((ind.crisisVulnerabilityScore + ind.environmentalRiskScore) / 2), 90);
+  const socialSeverity = Math.min(Math.round(ind.socialHarmsIndex + 8), 90);
 
   const crisesHarms: CrisisHarmItem[] = [
     {
@@ -446,7 +449,7 @@ export function buildCountyDataset(location: LocationData): CountyDataset {
       county,
       districtOrVillage: `کل ${county}`,
       severityScore: dustSeverity,
-      urgency: dustSeverity >= 80 ? 'CRITICAL' : 'HIGH',
+      urgency: urgencyForSeverity(dustSeverity),
       affectedPopulation: population,
       primaryCause: 'کانون‌های گردوغبار داخلی و برون‌مرزی، خشکیدگی اراضی و کاهش پوشش گیاهی',
       recommendedIntervention: 'تثبیت کانون‌های گردوغبار با مالچ‌پاشی زیستی، کاشت کمربند سبز، پایش برخط کیفیت هوا و تجهیز خدمات درمان تنفسی',
@@ -464,7 +467,7 @@ export function buildCountyDataset(location: LocationData): CountyDataset {
       county,
       districtOrVillage: `شهرهای ${short} و روستاهای تابعه`,
       severityScore: waterSeverity,
-      urgency: waterSeverity >= 80 ? 'CRITICAL' : 'HIGH',
+      urgency: urgencyForSeverity(waterSeverity),
       affectedPopulation: Math.round(population * 0.45),
       primaryCause: 'فرسودگی شبکه انتقال، خشکسالی و شوری منابع آب، کمبود مخازن ذخیره',
       recommendedIntervention: 'احداث مخازن ذخیره، اصلاح خطوط انتقال، نصب سامانه‌های نمک‌زدایی و آبرسانی سیار تابستانه',
@@ -482,7 +485,7 @@ export function buildCountyDataset(location: LocationData): CountyDataset {
       county,
       districtOrVillage: `شهرها و روستاهای ${county}`,
       severityScore: jobSeverity,
-      urgency: jobSeverity >= 80 ? 'CRITICAL' : 'HIGH',
+      urgency: urgencyForSeverity(jobSeverity),
       affectedPopulation: Math.round(population * (ind.unemploymentRate / 100) * 1.8),
       primaryCause: `نرخ بیکاری ${ind.unemploymentRate.toFixed(1)} درصدی، وابستگی اقتصاد محلی و نبود صنایع تبدیلی`,
       recommendedIntervention: 'مهارت‌آموزی فنی‌وحرفه‌ای، تسهیلات اشتغال خرد، حمایت از صنایع تبدیلی و پیمانکاری بومی',
@@ -515,8 +518,8 @@ export function buildCountyDataset(location: LocationData): CountyDataset {
       province,
       county,
       districtOrVillage: `محدوده شاخص ${county}`,
-      severityScore: Math.min(Math.round((ind.crisisVulnerabilityScore + ind.environmentalRiskScore) / 2), 90),
-      urgency: 'HIGH',
+      severityScore: sectorSeverity,
+      urgency: urgencyForSeverity(sectorSeverity),
       affectedPopulation: Math.round(population * 0.3),
       primaryCause: profile.note,
       recommendedIntervention: has(profile, 'PETCHEM') || has(profile, 'OIL')
@@ -539,8 +542,8 @@ export function buildCountyDataset(location: LocationData): CountyDataset {
       province,
       county,
       districtOrVillage: `محلات کم‌برخودار ${short}`,
-      severityScore: Math.min(Math.round(ind.socialHarmsIndex + 8), 90),
-      urgency: ind.socialHarmsIndex >= 50 ? 'HIGH' : 'MEDIUM',
+      severityScore: socialSeverity,
+      urgency: urgencyForSeverity(socialSeverity),
       affectedPopulation: ind.vulnerableGroupsPopulation,
       primaryCause: `شاخص آسیب اجتماعی ${ind.socialHarmsIndex.toFixed(0)}٪ و حاشیه‌نشینی ${ind.marginalizationRate.toFixed(1)} درصد`,
       recommendedIntervention: 'تقویت اورژانس اجتماعی، مراکز مشاوره و درمان اعتیاد، حمایت معیشتی و برنامه‌های اشتغال بهبودیافتگان',

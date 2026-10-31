@@ -107,3 +107,50 @@ export async function repairLostEncodingNamesIfNeeded(): Promise<void> {
   }
 }
 
+/* ===========================================================================
+   Crisis urgency reconciliation.
+
+   The stored `urgency` on a crisis is derived from its `severity_score` on the
+   shared higher-is-worse bands (see `src/utils/crisisSeverity.ts`), so the
+   urgency shown anywhere — chip, filter, chart, project intake — always agrees
+   with the percentage the same record prints:
+
+     ≥ ۷۰ → CRITICAL   «بحرانی و فوری»
+     ۵۰–۶۹ → HIGH      «شدت بالا»
+     ۲۵–۴۹ → MEDIUM    «شدت متوسط»
+     < ۲۵ → LOW        «قابل پایش»
+
+   The thresholds are restated in SQL — `server` does not import client
+   `src/utils` — and must stay in lockstep with `urgencyForSeverity` there.
+
+   Older datasets stamped urgency by hand or under earlier ad-hoc thresholds
+   (dustSeverity >= 80, and so on), so a field edit could leave a row carrying
+   CRITICAL at 26٪. The UPDATE below is an exact-match only repair: rows
+   already on the correct band are not touched, and it is a momentary no-op
+   once applied, so operator plateaus stay intact.
+   =========================================================================== */
+export async function reconcileCrisisUrgencyIfNeeded(): Promise<void> {
+  // A fresh SQL.raw per embedding: repeated raw chunks in one statement stay
+  // independent of how the migrator's driver serializes them.
+  const band = () => sql.raw(
+    `CASE
+       WHEN severity_score >= 70 THEN 'CRITICAL'
+       WHEN severity_score >= 50 THEN 'HIGH'
+       WHEN severity_score >= 25 THEN 'MEDIUM'
+       ELSE 'LOW' END`
+  );
+  await withDbErrorMapping(async () => {
+    const result = (await db.execute(
+      sql`UPDATE crises_harms
+             SET urgency = ${band()}
+           WHERE urgency <> ${band()}
+         RETURNING id`,
+    )) as { rows: { id: string }[] };
+    if (result.rows.length > 0) {
+      console.log(
+        `[db] reconciled urgency on ${result.rows.length} crisis row(s) to the severity bands`,
+      );
+    }
+  });
+}
+

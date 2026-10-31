@@ -8,6 +8,7 @@ import {
   ProjectExecutor,
   UserProfile,
 } from '../types.js';
+import { urgencyForSeverity } from '../utils/crisisSeverity.js';
 
 /**
  * ============================================================================
@@ -805,7 +806,7 @@ export const OMIDIYEH_CRISES_HARMS: CrisisHarmItem[] = [
     county: OMIDIYEH_COUNTY,
     districtOrVillage: 'کل شهرستان امیدیه، شهرهای امیدیه، میانکوه و جایزان',
     severityScore: 88,
-    urgency: 'CRITICAL',
+    urgency: urgencyForSeverity(88),
     affectedPopulation: 92000,
     primaryCause: 'کانون‌های گردوغبار داخلی و برون‌مرزی، خشکیدگی تالاب‌ها و اراضی کشاورزی پیرامون',
     recommendedIntervention: 'تثبیت کانون‌های گردوغبار با مالچ‌پاشی و کمربند سبز، پایش برخط کیفیت هوا و تجهیز مراکز درمانی به خدمات تنفسی',
@@ -823,7 +824,7 @@ export const OMIDIYEH_CRISES_HARMS: CrisisHarmItem[] = [
     county: OMIDIYEH_COUNTY,
     districtOrVillage: 'شهر امیدیه، میانکوه و روستاهای چاه سالم و آسیاب',
     severityScore: 85,
-    urgency: 'CRITICAL',
+    urgency: urgencyForSeverity(85),
     affectedPopulation: 81000,
     primaryCause: 'اقلیم فوق‌گرم جنوب خوزستان، فرسودگی شبکه توزیع و اوج مصرف تابستانه',
     recommendedIntervention: 'ایجاد پناهگاه‌های خنک عمومی، بازسازی شبکه آب و برق، تأمین برق پشتیبان مراکز درمانی و مخازن ذخیره آب',
@@ -841,7 +842,7 @@ export const OMIDIYEH_CRISES_HARMS: CrisisHarmItem[] = [
     county: OMIDIYEH_COUNTY,
     districtOrVillage: 'حاشیه رودخانه مارون، جولکی و روستاهای محدوده تأسیسات نفت',
     severityScore: 86,
-    urgency: 'HIGH',
+    urgency: urgencyForSeverity(86),
     affectedPopulation: 34000,
     primaryCause: 'نشت خطوط لوله و تأسیسات فرسوده نفتی، مشعل‌سوزی گاز و تخلیه پساب صنعتی',
     recommendedIntervention: 'پایش مستمر آلودگی آب و خاک، پاکسازی نقاط نشت، الزام شرکت‌های نفتی به بازسازی خطوط و کاشت گونه‌های پالاینده',
@@ -859,7 +860,7 @@ export const OMIDIYEH_CRISES_HARMS: CrisisHarmItem[] = [
     county: OMIDIYEH_COUNTY,
     districtOrVillage: 'روستاهای دهستان‌های چاه سالم، آسیاب و جایزان',
     severityScore: 79,
-    urgency: 'HIGH',
+    urgency: urgencyForSeverity(79),
     affectedPopulation: 21500,
     primaryCause: 'فرسودگی شبکه انتقال، کیفیت نامناسب آب ورودی و نبود مخازن ذخیره کافی',
     recommendedIntervention: 'احداث مخازن بتنی ذخیره، اصلاح خطوط انتقال، نصب سامانه‌های نمک‌زدایی و آبرسانی سیار تابستانه',
@@ -877,7 +878,7 @@ export const OMIDIYEH_CRISES_HARMS: CrisisHarmItem[] = [
     county: OMIDIYEH_COUNTY,
     districtOrVillage: 'شهر امیدیه و بخش‌های مرکزی و جایزان',
     severityScore: 84,
-    urgency: 'HIGH',
+    urgency: urgencyForSeverity(84),
     affectedPopulation: 28000,
     primaryCause: 'کاهش استخدام‌های نفت‌محور، نبود صنایع تبدیلی و مهاجرت نیروی کار مهارت‌دیده',
     recommendedIntervention: 'توسعه مهارت‌آموزی فنی‌وحرفه‌ای، تسهیلات اشتغال خرد غیرنفتی، حمایت از صنایع تبدیلی کشاورزی و پیمانکاری‌های بومی',
@@ -895,7 +896,7 @@ export const OMIDIYEH_CRISES_HARMS: CrisisHarmItem[] = [
     county: OMIDIYEH_COUNTY,
     districtOrVillage: 'محلات حاشیه‌ای امیدیه و امیدیه علیا (علی‌آباد)',
     severityScore: 73,
-    urgency: 'MEDIUM',
+    urgency: urgencyForSeverity(73),
     affectedPopulation: 12400,
     primaryCause: 'مهاجرت روستایی، کمبود مسکن ارزان و ضعف زیرساخت محله‌ای',
     recommendedIntervention: 'بهسازی معابر و روشنایی، احداث مراکز خدمات اجتماعی و خانه امید، ساماندهی اراضی و تأمین مسکن محرومان',

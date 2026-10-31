@@ -31,6 +31,7 @@ import { formatMoneyParts, formatPercent, formatNumber, formatToman, toPersianDi
 import { gaugeTone, GAUGE_GOOD_AT, GAUGE_WARNING_AT } from '../utils/gaugeTone';
 import { useCountUp } from '../hooks/useCountUp';
 import { gaugeStaggerDelay } from '../utils/gaugeStagger';
+import { urgencyForSeverity } from '../utils/crisisSeverity';
 import { Num } from './Num';
 import { AnimatedGauge } from './AnimatedGauge';
 import { PROJECT_STATUS_META } from '../utils/projectStatusMeta';
@@ -119,9 +120,9 @@ const URGENCY_ORDER: UrgencyLevel[] = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
 /**
  * Per-urgency visual identity: icon, emblem tile, badge tint and the active
  * filter chip, shaped like `DEPARTMENT_CATEGORY_STYLE` in DepartmentsView so a
- * "state of a record" looks the same on both pages. It deliberately carries no
- * ring token: the gauge colour reports the severity score itself and is derived
- * at render time, never the urgency.
+ * "state of a record" looks the same on both pages. Which level a record
+ * carries is derived from its severity score (`urgencyForSeverity`), so the
+ * badge's words and colours always agree with the percentage the card prints.
  */
 const URGENCY_STYLE: Record<
   UrgencyLevel,
@@ -263,7 +264,6 @@ export const CrisesHarmsView: React.FC = () => {
   const [formCounty, setFormCounty] = useState(selectedLocation.county);
   const [formDistrict, setFormDistrict] = useState(selectedLocation.district);
   const [formSeverity, setFormSeverity] = useState<number>(85);
-  const [formUrgency, setFormUrgency] = useState<UrgencyLevel>('CRITICAL');
   const [formAffectedPop, setFormAffectedPop] = useState<number>(45000);
   const [formCause, setFormCause] = useState('');
   const [formSolution, setFormSolution] = useState('');
@@ -286,7 +286,6 @@ export const CrisesHarmsView: React.FC = () => {
     setFormCounty(selectedLocation.county);
     setFormDistrict(selectedLocation.district);
     setFormSeverity(85);
-    setFormUrgency('CRITICAL');
     setFormAffectedPop(40000);
     setFormCause('');
     setFormSolution('');
@@ -305,7 +304,6 @@ export const CrisesHarmsView: React.FC = () => {
     setFormCounty(item.county);
     setFormDistrict(item.districtOrVillage);
     setFormSeverity(item.severityScore);
-    setFormUrgency(item.urgency);
     setFormAffectedPop(item.affectedPopulation);
     setFormCause(item.primaryCause);
     setFormSolution(item.recommendedIntervention);
@@ -318,6 +316,11 @@ export const CrisesHarmsView: React.FC = () => {
     e.preventDefault();
     if (!formTitle.trim()) return;
 
+    const severity = Number(formSeverity);
+    // The stored urgency is always the derived band of the severity score, so a
+    // saved record can never reintroduce a badge/percentage mismatch.
+    const urgency = urgencyForSeverity(severity);
+
     if (editingCrisis) {
       handleUpdateCrisisHarm({
         ...editingCrisis,
@@ -328,8 +331,8 @@ export const CrisesHarmsView: React.FC = () => {
         province: formProvince.trim(),
         county: formCounty.trim(),
         districtOrVillage: formDistrict.trim(),
-        severityScore: Number(formSeverity),
-        urgency: formUrgency,
+        severityScore: severity,
+        urgency,
         affectedPopulation: Number(formAffectedPop),
         primaryCause: formCause.trim(),
         recommendedIntervention: formSolution.trim(),
@@ -345,8 +348,8 @@ export const CrisesHarmsView: React.FC = () => {
         province: formProvince.trim(),
         county: formCounty.trim(),
         districtOrVillage: formDistrict.trim(),
-        severityScore: Number(formSeverity),
-        urgency: formUrgency,
+        severityScore: severity,
+        urgency,
         affectedPopulation: Number(formAffectedPop),
         primaryCause: formCause.trim(),
         recommendedIntervention: formSolution.trim(),
@@ -358,7 +361,9 @@ export const CrisesHarmsView: React.FC = () => {
     setIsModalOpen(false);
   };
 
-  // Filtered Crises
+  // Filtered Crises — urgency filters against the derived urgency, the same
+  // value the badges print, so a record never filters out of the very chip it
+  // displays.
   const filteredCrises = useMemo(() => {
     return crisesHarms.filter((c) => {
       const matchQ =
@@ -366,14 +371,17 @@ export const CrisesHarmsView: React.FC = () => {
         c.districtOrVillage.toLowerCase().includes(searchQuery.toLowerCase()) ||
         c.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
         c.code.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchUrg = selectedUrgency === 'ALL' || c.urgency === selectedUrgency;
+      const matchUrg = selectedUrgency === 'ALL' || urgencyForSeverity(c.severityScore) === selectedUrgency;
       const matchStat = selectedStatus === 'ALL' || c.status === selectedStatus;
       return matchQ && matchUrg && matchStat;
     });
   }, [crisesHarms, searchQuery, selectedUrgency, selectedStatus]);
 
   // Aggregate stats — the four numbers that head the page
-  const criticalCount = useMemo(() => crisesHarms.filter((c) => c.urgency === 'CRITICAL').length, [crisesHarms]);
+  const criticalCount = useMemo(
+    () => crisesHarms.filter((c) => urgencyForSeverity(c.severityScore) === 'CRITICAL').length,
+    [crisesHarms]
+  );
   const totalAffected = useMemo(() => crisesHarms.reduce((s, c) => s + c.affectedPopulation, 0), [crisesHarms]);
   const underInterventionCount = useMemo(
     () => crisesHarms.filter((c) => c.status === 'UNDER_INTERVENTION').length,
@@ -385,7 +393,8 @@ export const CrisesHarmsView: React.FC = () => {
   const urgencyCounts = useMemo(() => {
     const counts: Partial<Record<UrgencyLevel, number>> = {};
     crisesHarms.forEach((c) => {
-      counts[c.urgency] = (counts[c.urgency] || 0) + 1;
+      const urgency = urgencyForSeverity(c.severityScore);
+      counts[urgency] = (counts[urgency] || 0) + 1;
     });
     return counts;
   }, [crisesHarms]);
@@ -603,7 +612,10 @@ export const CrisesHarmsView: React.FC = () => {
         >
           {filteredCrises.map((item, index) => {
             const gaugeDelayMs = gaugeStaggerDelay(index);
-            const style = URGENCY_STYLE[item.urgency];
+            // The badge derives from the severity score, not the stored
+            // urgency — words and bar colour must agree with the percentage.
+            const urgency = urgencyForSeverity(item.severityScore);
+            const style = URGENCY_STYLE[urgency];
             const UrgencyIcon = style.icon;
             const matchedProjects = projects.filter((p) => p.crisisHarmId === item.id);
             const status = crisisStatusMeta(item.status, matchedProjects.length);
@@ -812,7 +824,9 @@ export const CrisesHarmsView: React.FC = () => {
           panels and the projects that answer it. */}
       {detailCrisis &&
         (() => {
-          const style = URGENCY_STYLE[detailCrisis.urgency];
+          // Same derivation as the cards: the badge reads the score.
+          const urgency = urgencyForSeverity(detailCrisis.severityScore);
+          const style = URGENCY_STYLE[urgency];
           const UrgencyIcon = style.icon;
           const matchedProjects = projects.filter((p) => p.crisisHarmId === detailCrisis.id);
           const status = crisisStatusMeta(detailCrisis.status, matchedProjects.length);
@@ -1164,9 +1178,10 @@ export const CrisesHarmsView: React.FC = () => {
                 <div id="crises-harms-view-crud-modal-7">
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">سطح فوریت و اولویت</label>
                   <select
-                    value={formUrgency}
-                    onChange={(e) => setFormUrgency(e.target.value as UrgencyLevel)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-rose-500 focus:outline-none"
+                    value={urgencyForSeverity(formSeverity)}
+                    disabled
+                    title="سطح فوریت به‌صورت خودکار از شاخص شدت محرومیت محاسبه می‌شود"
+                    className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl cursor-not-allowed"
                   >
                     <option value="CRITICAL">بحرانی و فوری (اقدام عاجل)</option>
                     <option value="HIGH">شدت بالا</option>

@@ -31,7 +31,7 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { db, closePool, pool, type Tx } from './client.js';
 import * as schema from './schema.js';
 import { seedDatabase } from './seed.js';
-import { refreshPriorityTitlesIfNeeded, repairLostEncodingNamesIfNeeded } from './repairs.js';
+import { refreshPriorityTitlesIfNeeded, repairLostEncodingNamesIfNeeded, reconcileCrisisUrgencyIfNeeded } from './repairs.js';
 import { ensureBootstrapAdminIfNeeded } from '../auth/bootstrap.js';
 import { seedAuthAccounts, seedDevTestAccounts } from '../seed/auth-accounts.js';
 
@@ -331,6 +331,10 @@ export async function initializeDatabase(): Promise<void> {
   // Restore rows whose display name was stored as an ANSI-mangled "?-only"
   // skeleton (see server/db/repairs.ts) — a no-op on healthy databases.
   await repairLostEncodingNamesIfNeeded();
+  // Derive each crisis's stored urgency from its severity bands so the label
+  // every surface prints agrees with the percentage of the same record (see
+  // server/db/repairs.ts) — a no-op once applied.
+  await reconcileCrisisUrgencyIfNeeded();
   // Last boot step: guarantees ≥ 1 real login exists so the very first
   // session is a verified identity (the SYSTEM actor is never loggable).
   await ensureBootstrapAdminIfNeeded();
