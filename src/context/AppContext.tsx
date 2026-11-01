@@ -40,7 +40,7 @@ import {
 import { calculateSmartRecommendations } from '../utils/recommendationEngine';
 import { formatMoney, formatNumber, roundPercentage, toPersianDigits } from '../utils/numberUtils';
 import { analyzeProjectDuplicatesAndEfficiency, OptimizationMetrics } from '../utils/antiDuplicationEngine';
-import { api } from '../services/api';
+import { api, isApiError } from '../services/api';
 import { useAuth } from './AuthContext';
 import { canAccessSection, firstAccessibleSection } from '../utils/sectionAccess';
 
@@ -226,6 +226,9 @@ interface AppContextType {
   handleToggleUserPermission: (userId: string, field: UserPermissionField) => void;
 
   handleSaveOrgConfig: (updated: OrganizationConfig) => void;
+  /** The last write the server refused; the shell renders it as one toast. */
+  writeError: WriteError | null;
+  dismissWriteError: () => void;
   addAuditLog: (
     actionType: AuditActionType,
     targetPriorityTitle?: string,
@@ -234,6 +237,38 @@ interface AppContextType {
     rationale?: string,
     actingUser?: UserProfile
   ) => void;
+}
+
+export interface WriteError {
+  /** Changes per failure so a repeated failure restarts the toast. */
+  id: number;
+  title: string;
+  description: string;
+}
+
+/**
+ * Why a write failed, in the user's language. The status is what matters: the
+ * server never sends its internal text for a 5xx, so a raw message would only
+ * ever be a stack-shaped string that means nothing to an operator.
+ */
+function describeWriteError(action: string, error: unknown): string {
+  if (isApiError(error)) {
+    switch (error.status) {
+      case 400:
+        return `${action}: داده‌های واردشده معتبر نیست.`;
+      case 403:
+        return `${action}: سطح دسترسی شما این تغییر را مجاز نمی‌داند.`;
+      case 404:
+        return `${action}: رکورد مورد نظر یافت نشد — صفحه را از نو بارگذاری کنید.`;
+      case 409:
+        return `${action}: این رکورد در جای دیگری استفاده شده و قابل تغییر نیست.`;
+      case 429:
+        return `${action}: تعداد درخواست‌ها بیش از حد مجاز است — کمی بعد دوباره تلاش کنید.`;
+      default:
+        return `${action}: سرور درخواست را نپذیرفت (${toPersianDigits(error.status)}).`;
+    }
+  }
+  return `${action}: ارتباط با سرور برقرار نشد — اتصال شبکه را بررسی کنید.`;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -487,6 +522,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAuditLogs((prev) => [newEntry, ...prev]);
     api.auditLogs.create(newEntry).catch(() => {});
   };
+
+  // --- Write failures -------------------------------------------------------
+  // Mutations are optimistic: the screen already shows the change. Until now a
+  // refused request died in `console.error` and the UI kept showing a change the
+  // database had rejected — a row that vanished on screen but not on the server,
+  // or one that stayed after failing to save. Now every write either matches the
+  // server or is rolled back and announced.
+  const [writeError, setWriteError] = useState<WriteError | null>(null);
+
+  const reportWriteError = useCallback((action: string, error: unknown) => {
+    setWriteError({ id: Date.now(), title: 'ذخیره نشد', description: describeWriteError(action, error) });
+  }, []);
+
+  const dismissWriteError = useCallback(() => setWriteError(null), []);
+
+  /**
+   * Await one optimistic write. `rollback` restores the state as it was before
+   * the optimistic update; `onSuccess` runs the audit entry, so the audit trail
+   * never records a change the database refused.
+   */
+  const persist = useCallback(
+    (action: string, rollback: () => void, request: Promise<unknown>, onSuccess?: () => void) => {
+      void request.then(
+        () => {
+          onSuccess?.();
+        },
+        (error: unknown) => {
+          rollback();
+          reportWriteError(action, error);
+        }
+      );
+    },
+    [reportWriteError]
+  );
 
   // --- Verified access gate (replaces the identity simulation) -------------
   // The API call and the audit trail both authenticate through the same
@@ -761,39 +830,72 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       maxPercent: 50,
       subItems: [],
     };
+    const previousPriorities = priorities;
+    const previousPercentages = currentPercentages;
     setPriorities((prev) => [...prev, newPriority]);
     setCurrentPercentages((prev) => ({ ...prev, [newId]: defaultPct }));
-    api.priorities.create(newPriority).catch(console.error);
-    addAuditLog('PRIORITY_ADD', title, 'عدم وجود', `${toPersianDigits(defaultPct)}٪`, 'افزودن اولویت توسعه جدید');
+    persist(
+      'افزودن اولویت',
+      () => {
+        setPriorities(previousPriorities);
+        setCurrentPercentages(previousPercentages);
+      },
+      api.priorities.create(newPriority),
+      () => addAuditLog('PRIORITY_ADD', title, 'عدم وجود', `${toPersianDigits(defaultPct)}٪`, 'افزودن اولویت توسعه جدید')
+    );
   };
 
   const handleUpdatePriority = (updated: CsrPriority) => {
+    const previousPriorities = priorities;
     setPriorities((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
-    api.priorities.update(updated).catch(console.error);
-    addAuditLog('PRIORITY_EDIT', updated.title, 'نسخه پیشین', 'به‌روزرسانی', 'ویرایش مشخصات اولویت توسعه');
+    persist(
+      'ویرایش اولویت',
+      () => setPriorities(previousPriorities),
+      api.priorities.update(updated),
+      () => addAuditLog('PRIORITY_EDIT', updated.title, 'نسخه پیشین', 'به‌روزرسانی', 'ویرایش مشخصات اولویت توسعه')
+    );
   };
 
   const handleDeletePriority = (priorityId: string) => {
     const prio = priorities.find((p) => p.id === priorityId);
+    const previousPriorities = priorities;
+    const previousPercentages = currentPercentages;
     setPriorities((prev) => prev.filter((p) => p.id !== priorityId));
     setCurrentPercentages((prev) => {
       const next = { ...prev };
       delete next[priorityId];
       return next;
     });
-    api.priorities.remove(priorityId).catch(console.error);
-    addAuditLog('PRIORITY_DELETE', prio?.title, 'فعال', 'حذف شده', 'حذف اولویت از ماتریس تخصیص');
+    persist(
+      'حذف اولویت',
+      () => {
+        setPriorities(previousPriorities);
+        setCurrentPercentages(previousPercentages);
+      },
+      api.priorities.remove(priorityId),
+      () => addAuditLog('PRIORITY_DELETE', prio?.title, 'فعال', 'حذف شده', 'حذف اولویت از ماتریس تخصیص')
+    );
   };
 
   const handleImportPriorities = (imported: CsrPriority[]) => {
+    const previousPriorities = priorities;
+    const previousPercentages = currentPercentages;
     setPriorities(imported);
     const newPctMap: Record<string, number> = {};
     imported.forEach((p) => {
       newPctMap[p.id] = p.defaultPercentage;
     });
     setCurrentPercentages(newPctMap);
-    api.priorities.importAll(imported).catch(console.error);
-    addAuditLog('PRIORITY_ADD', 'ایمپورت داده‌ها', '-', `${toPersianDigits(imported.length)} اولویت`, 'بارگذاری اولویت‌ها');
+    persist(
+      'بارگذاری اولویت‌ها',
+      () => {
+        setPriorities(previousPriorities);
+        setCurrentPercentages(previousPercentages);
+      },
+      api.priorities.importAll(imported),
+      () =>
+        addAuditLog('PRIORITY_ADD', 'ایمپورت داده‌ها', '-', `${toPersianDigits(imported.length)} اولویت`, 'بارگذاری اولویت‌ها')
+    );
   };
 
   const handleAddSubItem = (priorityId: string, subItemTitle: string) => {
@@ -840,139 +942,234 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       costPerBeneficiaryToman: costPer,
       antiOverlapStatus: 'CLEAR',
     };
+    const previousProjects = projects;
     setProjects((prev) => [proj, ...prev]);
-    api.projects.create(proj).catch(console.error);
-    addAuditLog('PROJECT_ADD', newP.title, 'تعریف اولیه', formatMoney(newP.estimatedCostToman), `ثبت پروژه توسط ${newP.departmentName}`);
+    persist(
+      'ثبت پروژه',
+      () => setProjects(previousProjects),
+      api.projects.create(proj),
+      () => addAuditLog('PROJECT_ADD', newP.title, 'تعریف اولیه', formatMoney(newP.estimatedCostToman), `ثبت پروژه توسط ${newP.departmentName}`)
+    );
   };
 
   const handleUpdateProject = (updated: ExecutiveProject) => {
     const beneficiaries = Math.max(1, updated.beneficiariesCount);
     const costPer = Math.round(updated.estimatedCostToman / beneficiaries);
     const finalized = { ...updated, costPerBeneficiaryToman: costPer };
+    const previousProjects = projects;
     setProjects((prev) => prev.map((p) => (p.id === finalized.id ? finalized : p)));
-    api.projects.update(finalized).catch(console.error);
-    addAuditLog('PROJECT_EDIT', updated.title, 'ویرایش', `${toPersianDigits(updated.progressPercentage)}٪ پیشرفت`, 'به‌روزرسانی اطلاعات پروژه');
+    persist(
+      'ویرایش پروژه',
+      () => setProjects(previousProjects),
+      api.projects.update(finalized),
+      () => addAuditLog('PROJECT_EDIT', updated.title, 'ویرایش', `${toPersianDigits(updated.progressPercentage)}٪ پیشرفت`, 'به‌روزرسانی اطلاعات پروژه')
+    );
   };
 
   const handleDeleteProject = (projectId: string) => {
     const proj = projects.find((p) => p.id === projectId);
+    const previousProjects = projects;
     setProjects((prev) => prev.filter((p) => p.id !== projectId));
-    api.projects.remove(projectId).catch(console.error);
-    addAuditLog('PROJECT_DELETE', proj?.title, 'موجود', 'حذف شده', 'حذف پروژه از سامانه');
+    persist(
+      'حذف پروژه',
+      () => setProjects(previousProjects),
+      api.projects.remove(projectId),
+      () => addAuditLog('PROJECT_DELETE', proj?.title, 'موجود', 'حذف شده', 'حذف پروژه از سامانه')
+    );
   };
 
   const handleToggleProjectStatus = (projectId: string, newStatus: ExecutiveProject['status']) => {
+    const proj = projects.find((p) => p.id === projectId);
+    const previousProjects = projects;
     setProjects((prev) =>
       prev.map((p) => (p.id === projectId ? { ...p, status: newStatus } : p))
     );
-    api.projects.setStatus(projectId, newStatus).catch(console.error);
-    const proj = projects.find((p) => p.id === projectId);
-    addAuditLog('PROJECT_STATUS_CHANGE', proj?.title, proj?.status, newStatus, `تغییر وضعیت پروژه به ${newStatus}`);
+    persist(
+      'تغییر وضعیت پروژه',
+      () => setProjects(previousProjects),
+      api.projects.setStatus(projectId, newStatus),
+      () => addAuditLog('PROJECT_STATUS_CHANGE', proj?.title, proj?.status, newStatus, `تغییر وضعیت پروژه به ${newStatus}`)
+    );
   };
 
   // Departments CRUD
   const handleAddDepartment = (dept: Omit<Department, 'id'>) => {
     const newDept: Department = { ...dept, id: `dept-${Date.now()}` };
+    const previousDepartments = departments;
     setDepartments((prev) => [...prev, newDept]);
-    api.departments.create(newDept).catch(console.error);
-    addAuditLog('DEPARTMENT_ADD', dept.name, 'تعریف جدید', dept.categoryFa, `ثبت نهاد/اداره جدید در سامانه ملی`);
+    persist(
+      'ثبت اداره',
+      () => setDepartments(previousDepartments),
+      api.departments.create(newDept),
+      () => addAuditLog('DEPARTMENT_ADD', dept.name, 'تعریف جدید', dept.categoryFa, `ثبت نهاد/اداره جدید در سامانه ملی`)
+    );
   };
 
   const handleUpdateDepartment = (dept: Department) => {
+    const previousDepartments = departments;
     setDepartments((prev) => prev.map((d) => (d.id === dept.id ? dept : d)));
-    api.departments.update(dept).catch(console.error);
-    addAuditLog('DEPARTMENT_EDIT', dept.name, 'ویرایش', formatMoney(dept.allocatedBudgetToman), 'ویرایش مشخصات نهاد');
+    persist(
+      'ویرایش اداره',
+      () => setDepartments(previousDepartments),
+      api.departments.update(dept),
+      () => addAuditLog('DEPARTMENT_EDIT', dept.name, 'ویرایش', formatMoney(dept.allocatedBudgetToman), 'ویرایش مشخصات نهاد')
+    );
   };
 
   const handleDeleteDepartment = (departmentId: string) => {
     const dept = departments.find((d) => d.id === departmentId);
+    const previous = departments;
     setDepartments((prev) => prev.filter((d) => d.id !== departmentId));
-    api.departments.remove(departmentId).catch(console.error);
-    addAuditLog('DEPARTMENT_DELETE', dept?.name, 'فعال', 'حذف شده', 'حذف اداره متولی');
+    persist(
+      'حذف اداره',
+      () => setDepartments(previous),
+      api.departments.remove(departmentId),
+      () => addAuditLog('DEPARTMENT_DELETE', dept?.name, 'فعال', 'حذف شده', 'حذف اداره متولی')
+    );
   };
 
   // Budget Sources CRUD
   const handleAddBudgetSource = (source: Omit<BudgetSource, 'id'>) => {
     const newSrc: BudgetSource = { ...source, id: `src-${Date.now()}` };
+    const previousSources = budgetSources;
     setBudgetSources((prev) => [...prev, newSrc]);
-    api.budgetSources.create(newSrc).catch(console.error);
-    addAuditLog('BUDGET_SOURCE_ADD', source.title, 'سرفصل جدید', formatMoney(source.totalAmountToman), `تعریف منبع بودجه جدید (${source.sourceTypeFa})`);
+    persist(
+      'ثبت منبع بودجه',
+      () => setBudgetSources(previousSources),
+      api.budgetSources.create(newSrc),
+      () => addAuditLog('BUDGET_SOURCE_ADD', source.title, 'سرفصل جدید', formatMoney(source.totalAmountToman), `تعریف منبع بودجه جدید (${source.sourceTypeFa})`)
+    );
   };
 
   const handleUpdateBudgetSource = (source: BudgetSource) => {
+    const previousSources = budgetSources;
     setBudgetSources((prev) => prev.map((s) => (s.id === source.id ? source : s)));
-    api.budgetSources.update(source).catch(console.error);
-    addAuditLog('BUDGET_SOURCE_EDIT', source.title, 'ویرایش', formatMoney(source.totalAmountToman), 'به‌روزرسانی منبع مالی');
+    persist(
+      'ویرایش منبع بودجه',
+      () => setBudgetSources(previousSources),
+      api.budgetSources.update(source),
+      () => addAuditLog('BUDGET_SOURCE_EDIT', source.title, 'ویرایش', formatMoney(source.totalAmountToman), 'به‌روزرسانی منبع مالی')
+    );
   };
 
   const handleDeleteBudgetSource = (sourceId: string) => {
     const src = budgetSources.find((s) => s.id === sourceId);
+    const previousSources = budgetSources;
     setBudgetSources((prev) => prev.filter((s) => s.id !== sourceId));
-    api.budgetSources.remove(sourceId).catch(console.error);
-    addAuditLog('BUDGET_SOURCE_DELETE', src?.title, 'فعال', 'حذف شده', 'حذف سرفصل تأمین مالی');
+    persist(
+      'حذف منبع بودجه',
+      () => setBudgetSources(previousSources),
+      api.budgetSources.remove(sourceId),
+      () => addAuditLog('BUDGET_SOURCE_DELETE', src?.title, 'فعال', 'حذف شده', 'حذف سرفصل تأمین مالی')
+    );
   };
 
   // Crises & Harms CRUD
   const handleAddCrisisHarm = (item: Omit<CrisisHarmItem, 'id'>) => {
     const newItem: CrisisHarmItem = { ...item, id: `crisis-${Date.now()}` };
+    const previousCrises = crisesHarms;
     setCrisesHarms((prev) => [...prev, newItem]);
-    api.crisesHarms.create(newItem).catch(console.error);
-    addAuditLog('CRISIS_ADD', item.title, 'نیازسنجی جدید', item.urgency, `ثبت آسیب یا بحران محلی با ضریب فوریت ${item.urgency}`);
+    persist(
+      'ثبت بحران/آسیب',
+      () => setCrisesHarms(previousCrises),
+      api.crisesHarms.create(newItem),
+      () => addAuditLog('CRISIS_ADD', item.title, 'نیازسنجی جدید', item.urgency, `ثبت آسیب یا بحران محلی با ضریب فوریت ${item.urgency}`)
+    );
   };
 
   const handleUpdateCrisisHarm = (item: CrisisHarmItem) => {
+    const previousCrises = crisesHarms;
     setCrisesHarms((prev) => prev.map((c) => (c.id === item.id ? item : c)));
-    api.crisesHarms.update(item).catch(console.error);
-    addAuditLog('CRISIS_EDIT', item.title, 'ویرایش', item.status, 'ویرایش مشخصات بحران/آسیب');
+    persist(
+      'ویرایش بحران/آسیب',
+      () => setCrisesHarms(previousCrises),
+      api.crisesHarms.update(item),
+      () => addAuditLog('CRISIS_EDIT', item.title, 'ویرایش', item.status, 'ویرایش مشخصات بحران/آسیب')
+    );
   };
 
   const handleDeleteCrisisHarm = (crisisId: string) => {
     const crisis = crisesHarms.find((c) => c.id === crisisId);
+    const previousCrises = crisesHarms;
     setCrisesHarms((prev) => prev.filter((c) => c.id !== crisisId));
-    api.crisesHarms.remove(crisisId).catch(console.error);
-    addAuditLog('CRISIS_DELETE', crisis?.title, 'موجود', 'حذف شده', 'حذف آسیب از پایگاه داده');
+    persist(
+      'حذف بحران/آسیب',
+      () => setCrisesHarms(previousCrises),
+      api.crisesHarms.remove(crisisId),
+      () => addAuditLog('CRISIS_DELETE', crisis?.title, 'موجود', 'حذف شده', 'حذف آسیب از پایگاه داده')
+    );
   };
 
   // Executors CRUD
   const handleAddExecutor = (executor: Omit<ProjectExecutor, 'id'>) => {
     const newExec: ProjectExecutor = { ...executor, id: `exec-${Date.now()}` };
+    const previousExecutors = executors;
     setExecutors((prev) => [...prev, newExec]);
-    api.executors.create(newExec).catch(console.error);
-    addAuditLog('EXECUTOR_ADD', executor.name, 'تعریف جدید', executor.typeFa, 'ثبت مجری جدید');
+    persist(
+      'ثبت مجری',
+      () => setExecutors(previousExecutors),
+      api.executors.create(newExec),
+      () => addAuditLog('EXECUTOR_ADD', executor.name, 'تعریف جدید', executor.typeFa, 'ثبت مجری جدید')
+    );
   };
 
   const handleUpdateExecutor = (executor: ProjectExecutor) => {
+    const previousExecutors = executors;
     setExecutors((prev) => prev.map((e) => (e.id === executor.id ? executor : e)));
-    api.executors.update(executor).catch(console.error);
-    addAuditLog('EXECUTOR_EDIT', executor.name, 'ویرایش', executor.capacityStatus, 'به‌روزرسانی مشخصات مجری');
+    persist(
+      'ویرایش مجری',
+      () => setExecutors(previousExecutors),
+      api.executors.update(executor),
+      () => addAuditLog('EXECUTOR_EDIT', executor.name, 'ویرایش', executor.capacityStatus, 'به‌روزرسانی مشخصات مجری')
+    );
   };
 
   const handleDeleteExecutor = (executorId: string) => {
     const exec = executors.find((e) => e.id === executorId);
+    const previousExecutors = executors;
     setExecutors((prev) => prev.filter((e) => e.id !== executorId));
-    api.executors.remove(executorId).catch(console.error);
-    addAuditLog('EXECUTOR_DELETE', exec?.name, 'فعال', 'حذف شده', 'حذف مجری');
+    persist(
+      'حذف مجری',
+      () => setExecutors(previousExecutors),
+      api.executors.remove(executorId),
+      () => addAuditLog('EXECUTOR_DELETE', exec?.name, 'فعال', 'حذف شده', 'حذف مجری')
+    );
   };
 
   // Contractors CRUD
   const handleAddContractor = (contractor: Omit<Contractor, 'id'>) => {
     const newCnt: Contractor = { ...contractor, id: `cnt-${Date.now()}` };
+    const previousContractors = contractors;
     setContractors((prev) => [...prev, newCnt]);
-    api.contractors.create(newCnt).catch(console.error);
-    addAuditLog('CONTRACTOR_ADD', contractor.companyName, 'ثبت نام جدید', contractor.gradeFa, 'ثبت پیمانکار واجد صلاحیت');
+    persist(
+      'ثبت پیمانکار',
+      () => setContractors(previousContractors),
+      api.contractors.create(newCnt),
+      () => addAuditLog('CONTRACTOR_ADD', contractor.companyName, 'ثبت نام جدید', contractor.gradeFa, 'ثبت پیمانکار واجد صلاحیت')
+    );
   };
 
   const handleUpdateContractor = (contractor: Contractor) => {
+    const previousContractors = contractors;
     setContractors((prev) => prev.map((c) => (c.id === contractor.id ? contractor : c)));
-    api.contractors.update(contractor).catch(console.error);
-    addAuditLog('CONTRACTOR_EDIT', contractor.companyName, 'ویرایش', `${toPersianDigits(contractor.performanceScore)} امتیاز`, 'ویرایش مشخصات پیمانکار');
+    persist(
+      'ویرایش پیمانکار',
+      () => setContractors(previousContractors),
+      api.contractors.update(contractor),
+      () => addAuditLog('CONTRACTOR_EDIT', contractor.companyName, 'ویرایش', `${toPersianDigits(contractor.performanceScore)} امتیاز`, 'ویرایش مشخصات پیمانکار')
+    );
   };
 
   const handleDeleteContractor = (contractorId: string) => {
     const cnt = contractors.find((c) => c.id === contractorId);
+    const previousContractors = contractors;
     setContractors((prev) => prev.filter((c) => c.id !== contractorId));
-    api.contractors.remove(contractorId).catch(console.error);
-    addAuditLog('CONTRACTOR_DELETE', cnt?.companyName, 'موجود', 'حذف شده', 'حذف پیمانکار');
+    persist(
+      'حذف پیمانکار',
+      () => setContractors(previousContractors),
+      api.contractors.remove(contractorId),
+      () => addAuditLog('CONTRACTOR_DELETE', cnt?.companyName, 'موجود', 'حذف شده', 'حذف پیمانکار')
+    );
   };
 
   // Analysis Sources CRUD + human-in-the-loop review. Every mutation records an
@@ -988,15 +1185,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       status: 'PENDING',
       createdAt: `${now.toLocaleDateString('fa-IR')} - ${now.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' })}`,
     };
+    const previousSources = analysisSources;
     setAnalysisSources((prev) => [newSource, ...prev]);
-    api.analysisSources.create(newSource).catch(console.error);
-    addAuditLog('ANALYSIS_SOURCE_ADD', source.title, 'ثبت جدید', source.provider, 'افزودن منبع تحلیل جدید به سامانه');
+    persist(
+      'افزودن منبع تحلیل',
+      () => setAnalysisSources(previousSources),
+      api.analysisSources.create(newSource),
+      () => addAuditLog('ANALYSIS_SOURCE_ADD', source.title, 'ثبت جدید', source.provider, 'افزودن منبع تحلیل جدید به سامانه')
+    );
   };
 
   const handleUpdateAnalysisSource = (source: AnalysisSource) => {
+    const previousSources = analysisSources;
     setAnalysisSources((prev) => prev.map((s) => (s.id === source.id ? source : s)));
-    api.analysisSources.update(source).catch(console.error);
-    addAuditLog('ANALYSIS_SOURCE_EDIT', source.title, 'ویرایش', source.provider, 'ویرایش منبع تحلیل');
+    persist(
+      'ویرایش منبع تحلیل',
+      () => setAnalysisSources(previousSources),
+      api.analysisSources.update(source),
+      () => addAuditLog('ANALYSIS_SOURCE_EDIT', source.title, 'ویرایش', source.provider, 'ویرایش منبع تحلیل')
+    );
   };
 
   const handleReviewAnalysisSource = (sourceId: string, status: AnalysisSourceStatus, note?: string) => {
@@ -1008,18 +1215,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       reviewedBy: currentUser.name,
       reviewNote: note ?? target.reviewNote,
     };
+    const previousSources = analysisSources;
     setAnalysisSources((prev) => prev.map((s) => (s.id === sourceId ? updated : s)));
-    api.analysisSources.update(updated).catch(console.error);
     const verdict =
       status === 'APPROVED' ? 'تأیید' : status === 'REJECTED' ? 'رد' : 'بازگشت به صف بررسی';
-    addAuditLog('ANALYSIS_SOURCE_REVIEW', target.title, target.status, status, `بازبینی منبع تحلیل: ${verdict}`);
+    persist(
+      'بازبینی منبع تحلیل',
+      () => setAnalysisSources(previousSources),
+      api.analysisSources.update(updated),
+      () => addAuditLog('ANALYSIS_SOURCE_REVIEW', target.title, target.status, status, `بازبینی منبع تحلیل: ${verdict}`)
+    );
   };
 
   const handleDeleteAnalysisSource = (sourceId: string) => {
     const target = analysisSources.find((s) => s.id === sourceId);
+    const previousSources = analysisSources;
     setAnalysisSources((prev) => prev.filter((s) => s.id !== sourceId));
-    api.analysisSources.remove(sourceId).catch(console.error);
-    addAuditLog('ANALYSIS_SOURCE_DELETE', target?.title, 'موجود', 'حذف شده', 'حذف منبع تحلیل از سامانه');
+    persist(
+      'حذف منبع تحلیل',
+      () => setAnalysisSources(previousSources),
+      api.analysisSources.remove(sourceId),
+      () => addAuditLog('ANALYSIS_SOURCE_DELETE', target?.title, 'موجود', 'حذف شده', 'حذف منبع تحلیل از سامانه')
+    );
   };
 
   // Toggle one permission flag for a single user only. Other users — even
@@ -1049,9 +1266,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Save Org Config
   const handleSaveOrgConfig = (updated: OrganizationConfig) => {
+    const previousOrg = orgConfig;
     setOrgConfig(updated);
-    api.organization.save(updated).catch(console.error);
-    addAuditLog('BUDGET_UPDATE', 'مشخصات سامانه ملی', 'ویرایش شده', `${formatNumber(updated.totalBudget)} تومان`, 'به‌روزرسانی مشخصات و تنظیمات کلان');
+    persist(
+      'ذخیره تنظیمات کلان',
+      () => setOrgConfig(previousOrg),
+      api.organization.save(updated),
+      () => addAuditLog('BUDGET_UPDATE', 'مشخصات سامانه ملی', 'ویرایش شده', `${formatNumber(updated.totalBudget)} تومان`, 'به‌روزرسانی مشخصات و تنظیمات کلان')
+    );
   };
 
   const value: AppContextType = {
@@ -1123,6 +1345,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     getUserPermissions,
     handleToggleUserPermission,
     handleSaveOrgConfig,
+    writeError,
+    dismissWriteError,
     addAuditLog,
   };
 

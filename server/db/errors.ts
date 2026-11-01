@@ -9,6 +9,10 @@
 
      23505  unique_violation        → ConflictError                    (409)
      23503  foreign_key_violation   → ReferentialViolationError        (409)
+     23502  not_null_violation      → InvalidInputError                (400)
+     23514  check_violation         → InvalidInputError                (400)
+     22P02  invalid_text_repr.      → InvalidInputError                (400)
+     22001  string_data_right_trunc → InvalidInputError                (400)
      40001  serialization_failure   → retryable                        (503)
      40P01  deadlock_detected       → retryable                        (503)
      57014  query_canceled          → StatementTimeoutError            (503)
@@ -22,6 +26,10 @@
 export const PG_ERROR_CODES = {
   UNIQUE_VIOLATION: '23505',
   FOREIGN_KEY_VIOLATION: '23503',
+  NOT_NULL_VIOLATION: '23502',
+  CHECK_VIOLATION: '23514',
+  INVALID_TEXT_REPRESENTATION: '22P02',
+  STRING_DATA_RIGHT_TRUNCATION: '22001',
   SERIALIZATION_FAILURE: '40001',
   DEADLOCK_DETECTED: '40P01',
   QUERY_CANCELED: '57014',
@@ -84,16 +92,41 @@ export class ConflictError extends DbError {
 /**
  * The DELETE/INSERT/UPDATE would break a relationship that now really
  * exists (normalized model). Better-audited 409 than a silent stale id.
+ *
+ * The PostgreSQL `detail` (constraint name, referenced table, even the key
+ * values) is deliberately kept OUT of the message: it is client-visible and
+ * describes the schema. It stays on the error object for the server log.
  */
 export class ReferentialViolationError extends DbError {
   constructor(cause: RawPgErrorFields) {
-    super(
-      `This record is still referenced by other records and cannot be written or deleted` +
-        `${cause.detail ? ` (${cause.detail})` : ''}`,
-      cause,
-    );
+    super('This record is still referenced by other records and cannot be written or deleted', cause);
     this.name = 'ReferentialViolationError';
     this.status = 409;
+  }
+}
+
+/**
+ * The request carried values the schema refuses: a NOT NULL column left empty,
+ * a CHECK the value fails, a key of the wrong shape. That is the caller's
+ * mistake, not a server fault → 400, and the message names no SQL.
+ */
+export class InvalidInputError extends DbError {
+  constructor(cause: RawPgErrorFields) {
+    super('Invalid input: the request contains values the system does not accept', cause);
+    this.name = 'InvalidInputError';
+    this.status = 400;
+  }
+}
+
+/** Raised by the HTTP layer itself when a body fails route-level validation → 400. */
+export class BadRequestError extends DbError {
+  readonly code: string;
+
+  constructor(message: string, code = 'INVALID_INPUT') {
+    super(message);
+    this.name = 'BadRequestError';
+    this.status = 400;
+    this.code = code;
   }
 }
 
@@ -149,6 +182,11 @@ export function mapDbError(error: unknown): unknown {
       return new ConflictError(pg);
     case PG_ERROR_CODES.FOREIGN_KEY_VIOLATION:
       return new ReferentialViolationError(pg);
+    case PG_ERROR_CODES.NOT_NULL_VIOLATION:
+    case PG_ERROR_CODES.CHECK_VIOLATION:
+    case PG_ERROR_CODES.INVALID_TEXT_REPRESENTATION:
+    case PG_ERROR_CODES.STRING_DATA_RIGHT_TRUNCATION:
+      return new InvalidInputError(pg);
     case PG_ERROR_CODES.SERIALIZATION_FAILURE:
     case PG_ERROR_CODES.DEADLOCK_DETECTED:
       return new TransactionConflictError(pg);

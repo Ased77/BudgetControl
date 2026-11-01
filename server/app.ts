@@ -1,6 +1,7 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import path from 'path';
+import { randomUUID } from 'node:crypto';
 import {
   getOrganization,
   saveOrganization,
@@ -47,9 +48,19 @@ import { authRouter } from './auth/routes.js';
 import { devSeedRouter, isDevEnvironment } from './dev/seed-routes.js';
 import { restoreOriginalUrl } from './rewrite-path.js';
 import { requireAuth, requirePermission } from './auth/middleware.js';
+import { BadRequestError } from './db/errors.js';
 import { calculateSmartRecommendations } from '../src/utils/recommendationEngine.js';
 import { toPersianDigits } from '../src/utils/numberUtils.js';
 import type { CsrPriority, ExecutiveProject, OrganizationConfig } from '../src/types.js';
+
+/** Mirrors the `projects_status_check` constraint in server/db/schema.ts. */
+const PROJECT_STATUSES: readonly string[] = [
+  'PROPOSED',
+  'APPROVED',
+  'IN_PROGRESS',
+  'COMPLETED',
+  'SUSPENDED',
+];
 
 /** Wrap a handler so thrown errors become 500 JSON instead of crashing the process. */
 const wrap = (fn: express.RequestHandler): express.RequestHandler => (req, res, next) => {
@@ -279,7 +290,7 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
     await upsertPriority(priority, actorId(req));
     res.json(priority);
   }));
-  app.delete('/api/priorities/:id', wrap(async (req, res) => {
+  app.delete('/api/priorities/:id', requirePermission('canManagePriorities'), wrap(async (req, res) => {
     const ok = await deletePriority(req.params.id);
     if (!ok) return res.status(404).json({ error: 'Priority not found' });
     res.json({ ok: true });
@@ -305,13 +316,18 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
     await upsertProject(project, actorId(req));
     res.json(project);
   }));
-  app.patch('/api/projects/:id/status', wrap(async (req, res) => {
-    const { status } = req.body;
+  app.patch('/api/projects/:id/status', requirePermission('canApproveProjects'), wrap(async (req, res) => {
+    // Validated here, before the UPDATE: an unknown status used to reach the
+    // check constraint and come back as a 500 carrying the SQL statement.
+    const { status } = req.body ?? {};
+    if (!PROJECT_STATUSES.includes(status)) {
+      throw new BadRequestError(`status must be one of: ${PROJECT_STATUSES.join(', ')}`, 'INVALID_STATUS');
+    }
     const updated = await updateProjectStatus(req.params.id, status);
     if (!updated) return res.status(404).json({ error: 'Project not found' });
     res.json(updated);
   }));
-  app.delete('/api/projects/:id', wrap(async (req, res) => {
+  app.delete('/api/projects/:id', requirePermission('canApproveProjects'), wrap(async (req, res) => {
     const ok = await deleteProject(req.params.id);
     if (!ok) return res.status(404).json({ error: 'Project not found' });
     res.json({ ok: true });
@@ -330,7 +346,7 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
     await upsertDepartment(req.body, actorId(req));
     res.json(req.body);
   }));
-  app.delete('/api/departments/:id', wrap(async (req, res) => {
+  app.delete('/api/departments/:id', requirePermission('canEditDepartments'), wrap(async (req, res) => {
     const ok = await deleteDepartment(req.params.id);
     if (!ok) return res.status(404).json({ error: 'Department not found' });
     res.json({ ok: true });
@@ -349,7 +365,7 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
     await upsertBudgetSource(req.body, actorId(req));
     res.json(req.body);
   }));
-  app.delete('/api/budget-sources/:id', wrap(async (req, res) => {
+  app.delete('/api/budget-sources/:id', requirePermission('canManageBudget'), wrap(async (req, res) => {
     const ok = await deleteBudgetSource(req.params.id);
     if (!ok) return res.status(404).json({ error: 'Budget source not found' });
     res.json({ ok: true });
@@ -368,7 +384,7 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
     await upsertCrisisHarm(req.body, actorId(req));
     res.json(req.body);
   }));
-  app.delete('/api/crises-harms/:id', wrap(async (req, res) => {
+  app.delete('/api/crises-harms/:id', requirePermission('canManageCrises'), wrap(async (req, res) => {
     const ok = await deleteCrisisHarm(req.params.id);
     if (!ok) return res.status(404).json({ error: 'Crisis/harm item not found' });
     res.json({ ok: true });
@@ -387,7 +403,7 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
     await upsertExecutor(req.body, actorId(req));
     res.json(req.body);
   }));
-  app.delete('/api/executors/:id', wrap(async (req, res) => {
+  app.delete('/api/executors/:id', requirePermission('canManageExecutors'), wrap(async (req, res) => {
     const ok = await deleteExecutor(req.params.id);
     if (!ok) return res.status(404).json({ error: 'Executor not found' });
     res.json({ ok: true });
@@ -406,7 +422,7 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
     await upsertContractor(req.body, actorId(req));
     res.json(req.body);
   }));
-  app.delete('/api/contractors/:id', wrap(async (req, res) => {
+  app.delete('/api/contractors/:id', requirePermission('canManageContractors'), wrap(async (req, res) => {
     const ok = await deleteContractor(req.params.id);
     if (!ok) return res.status(404).json({ error: 'Contractor not found' });
     res.json({ ok: true });
@@ -438,16 +454,16 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
   app.get('/api/analysis-sources', wrap(async (req, res) => {
     res.json(await listAnalysisSources());
   }));
-  app.post('/api/analysis-sources', wrap(async (req, res) => {
+  app.post('/api/analysis-sources', requirePermission('canApproveProjects'), wrap(async (req, res) => {
     await upsertAnalysisSource(req.body, actorId(req));
     res.status(201).json(req.body);
   }));
-  app.put('/api/analysis-sources/:id', wrap(async (req, res) => {
+  app.put('/api/analysis-sources/:id', requirePermission('canApproveProjects'), wrap(async (req, res) => {
     if (req.body.id !== req.params.id) return res.status(400).json({ error: 'Body id must match URL id' });
     await upsertAnalysisSource(req.body, actorId(req));
     res.json(req.body);
   }));
-  app.delete('/api/analysis-sources/:id', wrap(async (req, res) => {
+  app.delete('/api/analysis-sources/:id', requirePermission('canApproveProjects'), wrap(async (req, res) => {
     const ok = await deleteAnalysisSource(req.params.id);
     if (!ok) return res.status(404).json({ error: 'Analysis source not found' });
     res.json({ ok: true });
@@ -499,6 +515,12 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
 
   // --- VITE OR STATIC MIDDLEWARE ---
 
+  // Unknown /api path. Registered before the SPA fallback so an API client gets
+  // a JSON 404 instead of index.html served with status 200.
+  app.use('/api', (req, res) => {
+    res.status(404).json({ error: 'Not found', code: 'NOT_FOUND', path: req.originalUrl });
+  });
+
   if (clientDevMiddleware) {
     app.use(clientDevMiddleware);
   } else if (serveStatic) {
@@ -516,11 +538,22 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
     });
   }
 
-  // JSON error handler for rejected promises / malformed bodies
+  // JSON error handler for rejected promises / malformed bodies.
+  //
+  // Only errors the application classified as client-facing (status < 500) keep
+  // their message. Everything else is a server fault or an unclassified driver
+  // error; it is logged with a correlation id and answered generically, because
+  // echoing `err.message` leaked the failing SQL statement and its parameter
+  // values to the caller.
   app.use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    console.error('[api] Unhandled error:', err);
-    res.status(err?.status || err?.statusCode || 500).json({
-      error: err?.message || 'Internal server error',
+    const requestId = randomUUID();
+    const status = Number(err?.status ?? err?.statusCode ?? 500) || 500;
+    const clientFacing = status >= 400 && status < 500;
+    console.error(`[api] ${requestId} ${req.method} ${req.originalUrl}:`, err);
+    res.status(status).json({
+      error: clientFacing ? err.message : 'خطای داخلی سرور — لطفاً دوباره تلاش کنید',
+      code: err?.code,
+      requestId,
     });
   });
 

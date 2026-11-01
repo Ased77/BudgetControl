@@ -69,6 +69,7 @@ import {
   ChevronDown,
   ChevronLeft,
   Percent,
+  AlertTriangle,
 } from 'lucide-react';/**
  * Row icons keep the hue they wore before the branched menu took over the rail.
  * The hue is handed to the menu as a token rather than baked onto the glyph, so
@@ -166,6 +167,8 @@ function AppContent() {
     optimizationMetrics,
     addAuditLog,
     canAccessTab,
+    writeError,
+    dismissWriteError,
   } = useAppContext();
 
   // The nav tree is the app's access map: only the sections this role's
@@ -759,6 +762,28 @@ function AppContent() {
             fuseColor="#2563eb"
             duration={6000}
             className="app-scope-toast"
+          />
+        </div>
+      )}
+
+      {/* Failed-write card — the mutation was rolled back, so this is the only
+          place the operator learns the change did not reach the database.
+          Keyed by failure id so a second failure restarts the fuse. */}
+      {writeError && (
+        <div key={writeError.id} style={{ display: 'contents' }}>
+          <SwipeToast
+            title={writeError.title}
+            description={writeError.description}
+            icon={<AlertTriangle size={18} color="#b91c1c" />}
+            actionLabel="بستن"
+            // The card closes itself on press; the cleanup below drops the state.
+            onAction={() => {}}
+            onClose={dismissWriteError}
+            background="#fff7f7"
+            color="#a32525"
+            fuseColor="#dc2626"
+            duration={8000}
+            className="app-write-error-toast"
           />
         </div>
       )}

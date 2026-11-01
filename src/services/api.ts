@@ -16,6 +16,28 @@
 
 const BASE = import.meta.env.VITE_API_BASE ?? '';
 
+/**
+ * A failed request that still knows WHY it failed. Callers need the status to
+ * tell "you may not do this" (403) from "someone else still uses this record"
+ * (409) from "the server broke" (5xx) — `err.message` alone cannot.
+ */
+export class ApiError extends Error {
+  readonly status: number;
+  readonly code?: string;
+
+  constructor(message: string, status: number, code?: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
+  }
+}
+
+/** True for a request the server answered with a refusal (vs. a lost network). */
+export function isApiError(error: unknown): error is ApiError {
+  return error instanceof ApiError;
+}
+
 /** Set by AuthContext so transport and identity stay in one channel. */
 let onUnauthorized: (() => void) | null = null;
 let refreshing: Promise<boolean> | null = null;
@@ -56,13 +78,15 @@ async function request<T>(path: string, options: RequestInit = {}, retried = fal
 
   if (!res.ok) {
     let message = `Request failed: ${res.status}`;
+    let code: string | undefined;
     try {
       const body = await res.json();
       if (body?.error) message = body.error;
+      if (typeof body?.code === 'string') code = body.code;
     } catch {
       /* non-JSON error body — keep the status-based message */
     }
-    throw new Error(message);
+    throw new ApiError(message, res.status, code);
   }
   return res.json() as Promise<T>;
 }
