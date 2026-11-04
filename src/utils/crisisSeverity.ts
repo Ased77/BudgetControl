@@ -18,8 +18,8 @@
  * `server/db/repairs.ts`), so every other reader — charts, the projects
  * roster, project intake defaults — sees the same wording.
  */
-import { GAUGE_GOOD_AT, GAUGE_WARNING_AT } from './gaugeTone';
-import type { UrgencyLevel } from '../types';
+import { GAUGE_GOOD_AT, GAUGE_WARNING_AT } from './gaugeTone.js';
+import type { UrgencyLevel } from '../types.js';
 
 /** Below this share a crisis is monitored rather than treated urgently. */
 export const URGENCY_LOW_AT = 25;
