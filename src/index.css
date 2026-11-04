@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./modal-themes.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 

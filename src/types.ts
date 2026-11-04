@@ -431,6 +431,83 @@ export interface AuditLogItem {
 }
 
 /* =========================================================================
+   ۱۰.۱ داده‌کاوی کاربران — گزارش هشدار زودهنگام پیش از گزارش خود کاربر
+   ========================================================================= */
+export type UserMiningSeverity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+export type UserMiningRiskLevel = UserMiningSeverity | 'HEALTHY';
+
+export type UserMiningSignalCode =
+  | 'NEVER_SIGNED_IN'
+  | 'DORMANT_ACCOUNT'
+  | 'ACCOUNT_DISABLED'
+  | 'PRIVILEGED_DORMANT'
+  | 'NO_TASK_ACTIVITY'
+  | 'ROLE_WITHOUT_ACCESS'
+  | 'SCOPE_DRIFT'
+  | 'SESSION_SPRAWL';
+
+/** One reason a user may need help, with the action that removes the cause. */
+export interface UserMiningSignal {
+  code: UserMiningSignalCode;
+  severity: UserMiningSeverity;
+  label: string;
+  detail: string;
+  recommendation: string;
+}
+
+/** One account, scored. The mobile is masked server-side — this report is for
+ *  triage, not for exporting credentials or contact lists. */
+export interface UserMiningUser {
+  id: string;
+  name: string;
+  mobileMasked: string;
+  role: UserRole;
+  roleFa: string;
+  province?: string;
+  county?: string;
+  isActive: boolean;
+  isTestUser: boolean;
+  accountAgeDays: number;
+  /** ISO instant of the last session token issued; null when never signed in. */
+  lastSessionAt?: string;
+  /** Persian display label of the newest audit event (newest by sequence). */
+  lastActionLabel?: string;
+  logins: number;
+  actions: number;
+  activeSessions: number;
+  riskScore: number;
+  riskLevel: UserMiningRiskLevel;
+  signals: UserMiningSignal[];
+}
+
+/** How many accounts carry a given issue — the triage summary above the list. */
+export interface UserMiningIssueSummary {
+  code: UserMiningSignalCode;
+  label: string;
+  severity: UserMiningSeverity;
+  count: number;
+  recommendation: string;
+}
+
+export interface UserMiningReport {
+  generatedAt: string;
+  /** Inactivity threshold the report was built with, in days. */
+  dormantDays: number;
+  totals: {
+    accounts: number;
+    activeAccounts: number;
+    inactiveAccounts: number;
+    usersWithSignals: number;
+    criticalUsers: number;
+    neverSignedIn: number;
+    dormant: number;
+  };
+  issues: UserMiningIssueSummary[];
+  /** Highest risk first. */
+  users: UserMiningUser[];
+}
+
+/* =========================================================================
    شاخص‌های محلی، سناریوها و موتور پیشنهاد هوشمند
    ========================================================================= */
 export interface LocalIndicators {

@@ -45,6 +45,11 @@ const SECTION_GATES: Record<string, SectionGate> = {
   ANALYSIS_SOURCES: (p) => p?.canApproveProjects ?? true,
   SETTINGS: (p) => p?.canManageBudget ?? true,
 
+  // Reserved audience: the technical manager and the system administrator.
+  // This is a role gate, not a matrix flag — the report exposes account-level
+  // risk data, so it must not open up merely because a role can manage budget.
+  USER_MINING: (_p, role) => role === 'SYSTEM_ADMIN' || role === 'TECH_SUPPORT',
+
   // Admin-only page; auditors are admitted for its audit-trail sub-tab and
   // RolesAndAccessView keeps them there.
   ROLES_PERMISSIONS: (p, role) => role === 'SYSTEM_ADMIN' || (p?.canAuditLogs ?? false),

@@ -114,6 +114,7 @@ import {
   SystemRolePermission,
   UserProfile,
   AnalysisSource,
+  UserMiningReport,
 } from '../types';
 
 export const api = {
@@ -192,6 +193,10 @@ export const api = {
     list: (limit = 200) => get<AuditLogItem[]>(`/api/audit-logs?limit=${limit}`),
     create: (entry: AuditLogItem) => post<{ ok: boolean }>('/api/audit-logs', entry),
   },
+
+  /** Early-warning user mining report (admin + technical manager only). */
+  userMining: (dormantDays = 30) =>
+    get<UserMiningReport>(`/api/user-mining?dormantDays=${encodeURIComponent(String(dormantDays))}`),
 
   analysisSources: {
     list: () => get<AnalysisSource[]>('/api/analysis-sources'),

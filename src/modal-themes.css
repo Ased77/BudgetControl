@@ -1,0 +1,1465 @@
+/* =========================================================================
+   MODAL IDENTITIES — one distinct design per dialog.
+   -------------------------------------------------------------------------
+   Every modal in the app used to be the same white rounded card with the same
+   dark gradient header. This stylesheet gives each surface its own identity:
+   a shape, a palette, a header treatment, a texture, a folio marker and an
+   entrance of its own — so a delete confirmation, a crisis case file and a
+   budget ledger never read as the same dialog reskinned.
+
+   HOW IT HOOKS IN
+   The modal roots already carry stable, unique ids. Styling is keyed on those
+   ids (and their panel/header/body/footer children), so no component had to be
+   restructured and no behaviour changed. These rules are deliberately
+   unlayered: Tailwind v4 ships its utilities in `@layer utilities`, and an
+   unlayered declaration outranks every layered one, which lets a theme decide
+   the panel fill, header band and corners without `!important` anywhere.
+
+   The palette is light-only on purpose: this app has no theme switch (no code
+   ever writes the `dark` class), so each dialog owns its own colour world
+   instead of pretending to support one it cannot reach.
+
+   FOLIO MARKERS
+   Each header carries a faded Persian folio numeral (۰۱ … ۳۲). It is the one
+   shared signature of the set — the equivalent of a page number in a dossier —
+   while everything around it stays individual.
+
+   MOTION
+   Entrance animations are transform/opacity only and are fully disabled under
+   `prefers-reduced-motion`.
+   ========================================================================= */
+
+/* -------------------------------------------------------------------------
+   ۰۱ · AI analysis — an "insight drawer".
+   Slides in from the inline start as a full-height sheet, not a centred card.
+   Deep indigo header, amber spark, violet body rail.
+   ------------------------------------------------------------------------- */
+#ai-analysis-modal-root {
+  align-items: stretch;
+  justify-content: flex-start; /* RTL: first child anchors to the right edge */
+  padding: 0;
+  background:
+    radial-gradient(1200px 600px at 88% 0%, rgba(99, 102, 241, 0.34), transparent 62%),
+    rgba(2, 6, 23, 0.74);
+}
+
+#ai-analysis-modal-root > div {
+  width: 100%;
+  max-width: 560px;
+  height: 100dvh;
+  max-height: 100dvh;
+  border: 0;
+  border-inline-start: 1px solid rgba(251, 191, 36, 0.35);
+  border-radius: 28px 0 0 28px;
+  box-shadow: -40px 0 90px -30px rgba(2, 6, 23, 0.85);
+  animation: mt-drawer 340ms cubic-bezier(0.22, 0.8, 0.3, 1) both;
+}
+
+#ai-analysis-modal-header {
+  position: relative;
+  overflow: hidden;
+  padding: 1.35rem 1.5rem;
+  background: linear-gradient(120deg, #1e1b4b, #312e81 55%, #4c1d95);
+}
+
+#ai-analysis-modal-header::after {
+  content: '۰۱';
+  position: absolute;
+  inset-inline-end: 3.4rem;
+  top: -0.75rem;
+  font-size: 5.5rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(251, 191, 36, 0.16);
+  pointer-events: none;
+}
+
+#ai-analysis-modal-body {
+  background: #fbfaff;
+  box-shadow: inset 4px 0 0 rgba(139, 92, 246, 0.16);
+}
+
+#ai-analysis-modal-footer {
+  background: #f5f3ff;
+  border-top: 1px solid #ddd6fe;
+}
+
+/* -------------------------------------------------------------------------
+   ۰۲ · CSV manager — a "data console".
+   Squared card, offset hard shadow, dark terminal band with a cyan rule and a
+   blueprint grid behind the light content.
+   ------------------------------------------------------------------------- */
+#csv-manager-modal-root {
+  background:
+    radial-gradient(900px 420px at 50% 0%, rgba(14, 165, 233, 0.18), transparent 66%),
+    rgba(2, 6, 23, 0.74);
+}
+
+#csv-manager-modal-root > div {
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  box-shadow:
+    12px 12px 0 -4px rgba(2, 6, 23, 0.28),
+    0 30px 60px -20px rgba(2, 6, 23, 0.55);
+  animation: mt-drop 280ms ease-out both;
+}
+
+#csv-manager-modal-header {
+  position: relative;
+  overflow: hidden;
+  background: #0f172a;
+  border-bottom: 3px solid #06b6d4;
+}
+
+#csv-manager-modal-header::before {
+  content: '▚ CSV / IMPORT';
+  position: absolute;
+  inset-inline-start: 1.4rem;
+  bottom: 0.4rem;
+  font-size: 0.5rem;
+  letter-spacing: 0.34em;
+  color: #22d3ee;
+  opacity: 0.65;
+}
+
+#csv-manager-modal-header::after {
+  content: '۰۲';
+  position: absolute;
+  inset-inline-end: 3.3rem;
+  top: -0.6rem;
+  font-size: 4.6rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(34, 211, 238, 0.14);
+}
+
+#csv-manager-modal-content {
+  background-color: #f8fafc;
+  background-image:
+    linear-gradient(rgba(15, 23, 42, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.045) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+#csv-manager-modal-footer {
+  background: #0f172a;
+  border-top: 1px solid #1e293b;
+}
+
+#csv-manager-modal-footer button {
+  background: #06b6d4;
+  color: #042f2e;
+}
+
+/* -------------------------------------------------------------------------
+   ۰۳ · Delete confirmation — a "seal".
+   Narrow, circular warning medallion, caution tape along the top edge and a
+   hatched footer: unmistakably a stop sign, not a form.
+   ------------------------------------------------------------------------- */
+#confirm-delete-modal {
+  background: rgba(28, 10, 18, 0.68);
+}
+
+#confirm-delete-modal > div {
+  position: relative;
+  max-width: 430px;
+  padding-top: 1.6rem;
+  border: 1px solid #fecdd3;
+  border-radius: 26px 26px 10px 10px;
+  box-shadow: 0 40px 70px -32px rgba(190, 18, 60, 0.6);
+  animation: mt-scale 200ms ease-out both;
+}
+
+#confirm-delete-modal > div::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 7px;
+  background: repeating-linear-gradient(45deg, #e11d48 0 12px, #fb7185 12px 24px);
+}
+
+#confirm-delete-modal-3 {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.7rem;
+}
+
+#confirm-delete-modal-4 {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 999px;
+  box-shadow: 0 0 0 6px #fff1f2, 0 0 0 7px #fecdd3;
+}
+
+#confirm-delete-modal-title {
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+}
+
+#confirm-delete-modal-5 {
+  padding: 0.9rem;
+  text-align: center;
+  background: #fff7f8;
+  border: 1px dashed #fecdd3;
+  border-radius: 12px;
+}
+
+#confirm-delete-modal-6 {
+  margin-inline: -1.5rem;
+  margin-bottom: -1.5rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px dashed #fecdd3;
+  border-radius: 0 0 10px 10px;
+  background: repeating-linear-gradient(-45deg, #ffffff 0 10px, #fff7f8 10px 20px);
+}
+
+/* -------------------------------------------------------------------------
+   ۰۴ · Global location filter — an "atlas sheet".
+   Wide, teal, topographic contour lines, coordinate ticks and a squared frame.
+   ------------------------------------------------------------------------- */
+#global-location-selector-root {
+  background:
+    radial-gradient(1000px 500px at 50% 100%, rgba(13, 148, 136, 0.22), transparent 62%),
+    rgba(2, 6, 23, 0.72);
+}
+
+#global-location-selector-dialog {
+  max-width: 900px;
+  border: 1px solid #99f6e4;
+  border-radius: 3px;
+  box-shadow:
+    0 0 0 6px rgba(19, 78, 74, 0.32),
+    0 40px 80px -30px rgba(2, 6, 23, 0.7);
+  animation: mt-drop 300ms ease-out both;
+}
+
+#global-location-selector-header {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #f0fdfa, #ccfbf1);
+  border-bottom: 1px solid #99f6e4;
+}
+
+#global-location-selector-header::before {
+  content: 'N ۳۱° / E ۴۸°';
+  position: absolute;
+  inset-inline-end: 3.6rem;
+  bottom: 0.55rem;
+  font-size: 0.5rem;
+  letter-spacing: 0.28em;
+  color: #0f766e;
+  opacity: 0.45;
+}
+
+#global-location-selector-header::after {
+  content: '۰۴';
+  position: absolute;
+  inset-inline-end: 0.9rem;
+  top: -0.7rem;
+  font-size: 4.6rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(15, 118, 110, 0.14);
+}
+
+#global-location-selector-body {
+  background-color: #f8fffd;
+  background-image:
+    repeating-radial-gradient(circle at 82% 18%, rgba(13, 148, 136, 0.09) 0 1px, transparent 1px 16px),
+    repeating-radial-gradient(circle at 18% 82%, rgba(13, 148, 136, 0.07) 0 1px, transparent 1px 22px);
+}
+
+#global-location-selector-footer {
+  background: #ecfdf5;
+  border-top: 1px solid #99f6e4;
+}
+
+#global-location-selector-footer button {
+  border-radius: 2px;
+  background: #0f766e;
+}
+
+/* -------------------------------------------------------------------------
+   ۰۵ · Budget source record — a "ledger page".
+   Warm paper, emerald spine, double ruled header, faint ruled lines behind the
+   figures and tabular numerals.
+   ------------------------------------------------------------------------- */
+#budget-sources-view-detail-modal-panel {
+  background: #fffdf5;
+  border: 1px solid #e7e0c8;
+  border-top: 4px solid #047857;
+  border-radius: 3px;
+  box-shadow: 0 30px 60px -28px rgba(6, 78, 59, 0.55);
+  animation: mt-rise 300ms ease-out both;
+}
+
+#budget-sources-view-detail-modal-header {
+  position: relative;
+  overflow: hidden;
+  background: #fbf6e7;
+  border-bottom: 3px double #d8cfae;
+}
+
+#budget-sources-view-detail-modal-header::after {
+  content: '۰۵';
+  position: absolute;
+  inset-inline-end: 3.2rem;
+  top: -0.7rem;
+  font-size: 4.6rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(4, 120, 87, 0.13);
+}
+
+#budget-sources-view-detail-modal-icon {
+  border-radius: 999px;
+}
+
+#budget-sources-view-detail-modal-body {
+  font-variant-numeric: tabular-nums;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 27px,
+    rgba(68, 64, 60, 0.055) 27px 28px
+  );
+}
+
+#budget-sources-view-detail-modal-footer {
+  background: #fbf6e7;
+  border-top: 1px dashed #d8cfae;
+}
+
+/* -------------------------------------------------------------------------
+   ۰۶ · Budget source form — a "voucher".
+   Cream stock, dashed border, perforated tear strip across the top and squared
+   fields: a finance slip rather than a generic modal form.
+   ------------------------------------------------------------------------- */
+#budget-sources-view-crud-modal-2 {
+  position: relative;
+  padding-top: 2.1rem;
+  background: #fffdf3;
+  border: 1px dashed #d6c9a0;
+  border-radius: 8px;
+  box-shadow: 0 24px 50px -26px rgba(120, 90, 20, 0.5);
+  animation: mt-scale 220ms ease-out both;
+}
+
+#budget-sources-view-crud-modal-2::before {
+  content: '';
+  position: absolute;
+  top: 0.6rem;
+  inset-inline: 1rem;
+  height: 0.5rem;
+  background: radial-gradient(circle, #d6c9a0 1.2px, transparent 1.6px) 0 0 / 12px 12px repeat-x;
+}
+
+#budget-sources-view-crud-modal-3 {
+  padding-bottom: 1rem;
+  border-bottom: 1px dashed #d6c9a0;
+}
+
+#budget-sources-view-crud-modal-3::after {
+  content: '۰۶';
+  font-size: 1.5rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(180, 83, 9, 0.18);
+}
+
+#budget-sources-view-crud-modal input,
+#budget-sources-view-crud-modal select,
+#budget-sources-view-crud-modal textarea {
+  background: #fffef9;
+  border-radius: 4px;
+}
+
+/* -------------------------------------------------------------------------
+   ۰۷ · Contractor record — an "ID badge".
+   Amber card, circular portrait tile, striped header, monospaced identity line.
+   ------------------------------------------------------------------------- */
+#contractors-view-detail-modal-panel {
+  border: 1px solid #f3d9a4;
+  border-radius: 22px;
+  box-shadow: 0 28px 60px -22px rgba(120, 80, 10, 0.45);
+  animation: mt-rise 280ms ease-out both;
+}
+
+#contractors-view-detail-modal-header {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #fffbeb, #fef3c7 65%, #fde68a);
+  border-bottom: 1px solid #f3d9a4;
+}
+
+#contractors-view-detail-modal-header::after {
+  content: '۰۷';
+  position: absolute;
+  inset-inline-end: 3.2rem;
+  top: -0.7rem;
+  font-size: 4.6rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(180, 83, 9, 0.13);
+}
+
+#contractors-view-detail-modal-icon {
+  border-radius: 999px;
+  box-shadow: 0 0 0 4px #fffbeb;
+}
+
+#contractors-view-detail-modal-body {
+  background-image: linear-gradient(90deg, rgba(180, 83, 9, 0.05) 1px, transparent 1px);
+  background-size: 30% 100%;
+}
+
+#contractors-view-detail-modal-footer {
+  background: #fffbeb;
+  border-top: 1px solid #f3d9a4;
+}
+
+/* -------------------------------------------------------------------------
+   ۰۸ · Contractor form — a "registration file".
+   Amber spine down the inline-start edge, full-bleed tinted header, soft card.
+   ------------------------------------------------------------------------- */
+#contractors-view-crud-modal-2 {
+  position: relative;
+  overflow-x: hidden;
+  border: 1px solid #fde68a;
+  border-radius: 14px;
+}
+
+#contractors-view-crud-modal-2::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 5px;
+  background: linear-gradient(#f59e0b, #fbbf24);
+}
+
+#contractors-view-crud-modal-3 {
+  margin: -1.5rem -1.5rem 1rem;
+  padding: 1.5rem 1.75rem 1rem;
+  background: #fffbeb;
+  border-bottom: 1px solid #fde68a;
+}
+
+#contractors-view-crud-modal-3::after {
+  content: '۰۸';
+  font-size: 1.5rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(180, 83, 9, 0.2);
+}
+
+/* -------------------------------------------------------------------------
+   ۰۹ · Executor record — a "scorecard".
+   Cyan header with gauge arcs, column rules behind the metrics, tabular
+   numerals, squared frame.
+   ------------------------------------------------------------------------- */
+#executors-view-detail-modal-panel {
+  border: 1px solid #a5f3fc;
+  border-radius: 6px;
+  box-shadow: 0 26px 60px -26px rgba(8, 51, 68, 0.5);
+  animation: mt-rise 280ms ease-out both;
+}
+
+#executors-view-detail-modal-header {
+  position: relative;
+  overflow: hidden;
+  background: #ecfeff;
+  border-bottom: 3px solid #06b6d4;
+}
+
+#executors-view-detail-modal-header::before {
+  content: '';
+  position: absolute;
+  inset-inline-end: -34px;
+  top: -50px;
+  width: 148px;
+  height: 148px;
+  border: 12px solid rgba(6, 182, 212, 0.1);
+  border-radius: 999px;
+}
+
+#executors-view-detail-modal-header::after {
+  content: '۰۹';
+  position: absolute;
+  inset-inline-end: 3.2rem;
+  top: -0.6rem;
+  font-size: 4.6rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(8, 145, 178, 0.14);
+}
+
+#executors-view-detail-modal-body {
+  font-variant-numeric: tabular-nums;
+  background-image: linear-gradient(90deg, rgba(8, 145, 178, 0.06) 1px, transparent 1px);
+  background-size: 25% 100%;
+}
+
+#executors-view-detail-modal-footer {
+  background: #f0fdff;
+  border-top: 1px solid #a5f3fc;
+}
+
+/* -------------------------------------------------------------------------
+   ۱۰ · Executor form — a "dispatch order".
+   Full-bleed slate command band, cyan left cue, cool grey paper.
+   ------------------------------------------------------------------------- */
+#executors-view-modal-2 {
+  overflow-x: hidden;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+}
+
+#executors-view-modal-3 {
+  position: relative;
+  margin: -1.5rem -1.5rem 1rem;
+  padding: 1.25rem 1.5rem;
+  background: #0f172a;
+  border-bottom: 3px solid #06b6d4;
+}
+
+#executors-view-modal-3 h3 {
+  color: #f8fafc;
+}
+
+#executors-view-modal-3 button {
+  color: #94a3b8;
+}
+
+#executors-view-modal-3::after {
+  content: '۱۰';
+  font-size: 1.6rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(34, 211, 238, 0.35);
+}
+
+/* -------------------------------------------------------------------------
+   ۱۱ · Department record — an "organisation charter".
+   Deep green rounding, dot-grid body (org connectors), mint footer.
+   ------------------------------------------------------------------------- */
+#departments-view-detail-modal-panel {
+  border: 1px solid #a7f3d0;
+  border-radius: 26px;
+  box-shadow: 0 30px 70px -30px rgba(6, 78, 59, 0.5);
+  animation: mt-rise 280ms ease-out both;
+}
+
+#departments-view-detail-modal-header {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #ecfdf5, #d1fae5);
+  border-bottom: 1px solid #a7f3d0;
+}
+
+#departments-view-detail-modal-header::after {
+  content: '۱۱';
+  position: absolute;
+  inset-inline-end: 3.2rem;
+  top: -0.7rem;
+  font-size: 4.6rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(4, 120, 87, 0.14);
+}
+
+#departments-view-detail-modal-body {
+  background-image: radial-gradient(circle, rgba(5, 150, 105, 0.16) 1.4px, transparent 1.6px);
+  background-size: 22px 22px;
+}
+
+#departments-view-detail-modal-footer {
+  background: #ecfdf5;
+  border-top: 1px solid #a7f3d0;
+}
+
+/* -------------------------------------------------------------------------
+   ۱۲ · Department form — a "mandate".
+   Parchment stock, workbook double rule, inset frame: an official instrument.
+   ------------------------------------------------------------------------- */
+#departments-view-crud-modal-2 {
+  background: #faf7ef;
+  border: 1px solid #d8cfb8;
+  border-radius: 3px;
+  box-shadow:
+    inset 0 0 0 5px #f3ede0,
+    0 30px 60px -30px rgba(80, 70, 40, 0.5);
+  animation: mt-scale 220ms ease-out both;
+}
+
+#departments-view-crud-modal-3 {
+  padding-bottom: 1rem;
+  border-bottom: 3px double #d8cfb8;
+}
+
+#departments-view-crud-modal-3::after {
+  content: '۱۲';
+  font-size: 1.5rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(120, 113, 60, 0.22);
+}
+
+#departments-view-crud-modal input,
+#departments-view-crud-modal select,
+#departments-view-crud-modal textarea {
+  background: #fffdf7;
+  border-radius: 3px;
+}
+
+/* -------------------------------------------------------------------------
+   ۱۳ · Crisis record — an "incident file".
+   Rose case strip on top, dashed rules, faint case lines behind the readings.
+   ------------------------------------------------------------------------- */
+#crises-harms-view-detail-modal-panel {
+  border: 1px solid #fecdd3;
+  border-top: 5px solid #e11d48;
+  border-radius: 6px;
+  box-shadow: 0 30px 65px -28px rgba(136, 19, 55, 0.5);
+  animation: mt-rise 280ms ease-out both;
+}
+
+#crises-harms-view-detail-modal-header {
+  position: relative;
+  overflow: hidden;
+  background: #fff1f2;
+  border-bottom: 1px dashed #fda4af;
+}
+
+#crises-harms-view-detail-modal-header::before {
+  content: 'CASE FILE';
+  position: absolute;
+  inset-inline-end: 3.7rem;
+  top: 0.8rem;
+  font-size: 0.5rem;
+  letter-spacing: 0.3em;
+  color: #e11d48;
+  opacity: 0.45;
+}
+
+#crises-harms-view-detail-modal-header::after {
+  content: '۱۳';
+  position: absolute;
+  inset-inline-end: 1rem;
+  top: -0.6rem;
+  font-size: 4.6rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(225, 29, 72, 0.13);
+}
+
+#crises-harms-view-detail-modal-body {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 31px,
+    rgba(225, 29, 72, 0.05) 31px 32px
+  );
+}
+
+#crises-harms-view-detail-modal-footer {
+  background: #fff1f2;
+  border-top: 1px dashed #fda4af;
+}
+
+/* -------------------------------------------------------------------------
+   ۱۴ · Crisis form — a "field report".
+   Notepad cream, amber rule, offset hard shadow, squared inputs.
+   ------------------------------------------------------------------------- */
+#crises-harms-view-crud-modal-2 {
+  background: #fffcf2;
+  border: 1px solid #fde68a;
+  border-radius: 2px;
+  box-shadow:
+    8px 8px 0 -3px #fef3c7,
+    0 30px 60px -30px rgba(120, 53, 15, 0.4);
+  animation: mt-scale 220ms ease-out both;
+}
+
+#crises-harms-view-crud-modal-3 {
+  margin: -1.5rem -1.5rem 1rem;
+  padding: 1.25rem 1.5rem 1rem;
+  background: #fffbeb;
+  border-bottom: 2px solid #fbbf24;
+}
+
+#crises-harms-view-crud-modal-3::after {
+  content: '۱۴';
+  font-size: 1.5rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(180, 83, 9, 0.22);
+}
+
+#crises-harms-view-crud-modal input,
+#crises-harms-view-crud-modal select,
+#crises-harms-view-crud-modal textarea {
+  background: #fffdf5;
+  border-radius: 2px;
+}
+
+/* -------------------------------------------------------------------------
+   ۱۵ · Project record — a "dossier".
+   Indigo document tab, asymmetric corners, vertical column rules, offset sheet.
+   ------------------------------------------------------------------------- */
+#projects-view-detail-modal-panel {
+  border: 1px solid #c7d2fe;
+  border-radius: 14px 2px 14px 2px;
+  box-shadow:
+    -14px 14px 0 -6px #e0e7ff,
+    0 30px 70px -30px rgba(49, 46, 129, 0.5);
+  animation: mt-rise 280ms ease-out both;
+}
+
+#projects-view-detail-modal-header {
+  position: relative;
+  overflow: hidden;
+  background: #eef2ff;
+  border-bottom: 2px solid #818cf8;
+}
+
+#projects-view-detail-modal-header::after {
+  content: '۱۵';
+  position: absolute;
+  inset-inline-end: 3.2rem;
+  top: -0.7rem;
+  font-size: 4.6rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(67, 56, 202, 0.13);
+}
+
+#projects-view-detail-modal-body {
+  background-image: linear-gradient(90deg, rgba(79, 70, 229, 0.055) 1px, transparent 1px);
+  background-size: 56px 100%;
+}
+
+#projects-view-detail-modal-panel > [id$='footer'] {
+  background: #eef2ff;
+  border-top: 1px solid #c7d2fe;
+}
+
+/* -------------------------------------------------------------------------
+   ۱۶ · Project form — an "intake sheet".
+   Blue-to-cyan progress strip on top, rounded card, soft blue fields.
+   ------------------------------------------------------------------------- */
+#projects-view-crud-modal-2 {
+  position: relative;
+  padding-top: 2.1rem;
+  overflow-x: hidden;
+  border: 1px solid #bfdbfe;
+  border-radius: 14px;
+}
+
+#projects-view-crud-modal-2::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 6px;
+  background: linear-gradient(90deg, #2563eb, #06b6d4);
+}
+
+#projects-view-crud-modal-3 {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #dbeafe;
+}
+
+#projects-view-crud-modal-3::after {
+  content: '۱۶';
+  font-size: 1.5rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(37, 99, 235, 0.2);
+}
+
+#projects-view-crud-modal input,
+#projects-view-crud-modal select,
+#projects-view-crud-modal textarea {
+  background: #f8fafc;
+  border-radius: 6px;
+}
+
+/* -------------------------------------------------------------------------
+   ۱۷ · Analysis source record — a "citation".
+   Violet spine, oversized quotation mark, ruled metadata lines.
+   ------------------------------------------------------------------------- */
+#analysis-sources-view-detail-modal > div {
+  max-width: 780px;
+  border-inline-start: 4px solid #7c3aed;
+  border-radius: 2px;
+  box-shadow: 0 30px 70px -30px rgba(76, 29, 149, 0.5);
+  animation: mt-rise 280ms ease-out both;
+}
+
+#analysis-sources-view-detail-modal > div > :first-child {
+  position: relative;
+  overflow: hidden;
+  padding: 1.4rem 1.5rem;
+  background: #faf5ff;
+  border-bottom: 1px solid #ddd6fe;
+}
+
+#analysis-sources-view-detail-modal > div > :first-child::after {
+  content: '”';
+  position: absolute;
+  inset-inline-end: 2.6rem;
+  top: -1.5rem;
+  font-size: 5rem;
+  line-height: 1;
+  color: #7c3aed;
+  opacity: 0.15;
+}
+
+#analysis-sources-view-detail-modal > div > :nth-child(2) {
+  font-variant-numeric: tabular-nums;
+  background-image: linear-gradient(rgba(124, 58, 237, 0.05) 1px, transparent 1px);
+  background-size: 100% 26px;
+}
+
+/* -------------------------------------------------------------------------
+   ۱۸ · Analysis source form — an "intake brief".
+   Violet command band, faint graph paper, squared corners.
+   ------------------------------------------------------------------------- */
+#analysis-sources-view-form-modal > div {
+  background: #fbfaff;
+  border: 1px solid #ddd6fe;
+  border-radius: 2px;
+  animation: mt-scale 220ms ease-out both;
+}
+
+#analysis-sources-view-form-modal > div > :first-child {
+  margin: -1.5rem -1.5rem 1rem;
+  padding: 1.25rem 1.5rem;
+  background: #4c1d95;
+  border-bottom: 3px solid #a78bfa;
+}
+
+#analysis-sources-view-form-modal > div > :first-child h3 {
+  color: #f5f3ff;
+}
+
+#analysis-sources-view-form-modal > div > :first-child button {
+  color: #c4b5fd;
+}
+
+#analysis-sources-view-form-modal > div > :first-child::after {
+  content: '۱۸';
+  font-size: 1.5rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(196, 181, 253, 0.5);
+}
+
+#analysis-sources-view-form-modal input,
+#analysis-sources-view-form-modal select,
+#analysis-sources-view-form-modal textarea {
+  border-radius: 2px;
+  background: #ffffff;
+}
+
+/* -------------------------------------------------------------------------
+   ۱۹ · CSR sub-item — an "index card".
+   Mint stock, green index rule, fine ruled lines: a catalogue card.
+   ------------------------------------------------------------------------- */
+#csr-domains-catalog-view-modal-add-sub-item-2 {
+  background: #f8fdf9;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  box-shadow: 0 24px 50px -26px rgba(6, 78, 59, 0.45);
+  animation: mt-scale 200ms ease-out both;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 25px,
+    rgba(5, 150, 105, 0.045) 25px 26px
+  );
+}
+
+#csr-domains-catalog-view-modal-add-sub-item-3 {
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #86efac;
+}
+
+#csr-domains-catalog-view-modal-add-sub-item-3::after {
+  content: '۱۹';
+  font-size: 1.4rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(5, 150, 105, 0.22);
+}
+
+/* -------------------------------------------------------------------------
+   ۲۰ · CSR domain — a "chapter".
+   Dark green chapter head, thin green rule, squared corners.
+   ------------------------------------------------------------------------- */
+#csr-domains-catalog-view-modal-add-new-main-csr-domain-2 {
+  border: 1px solid #a7f3d0;
+  border-top: 6px solid #065f46;
+  border-radius: 3px;
+  animation: mt-scale 200ms ease-out both;
+}
+
+#csr-domains-catalog-view-modal-add-new-main-csr-domain-3 {
+  padding-bottom: 1rem;
+  background: #ecfdf5;
+  border-bottom: 1px solid #a7f3d0;
+}
+
+#csr-domains-catalog-view-modal-add-new-main-csr-domain-3::after {
+  content: '۲۰';
+  font-size: 1.4rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(6, 95, 70, 0.2);
+}
+
+#csr-domains-catalog-view-modal-add-new-main-csr-domain-2 input,
+#csr-domains-catalog-view-modal-add-new-main-csr-domain-2 select,
+#csr-domains-catalog-view-modal-add-new-main-csr-domain-2 textarea {
+  border-radius: 3px;
+}
+
+/* -------------------------------------------------------------------------
+   ۲۱ · CSR convert-to-project — a "transfer slip".
+   Split green/amber surface, clipped diagonals, transfer arrow in the header.
+   ------------------------------------------------------------------------- */
+#csr-domains-catalog-view-modal-convert-sub-item-directly-2 {
+  border: 1px solid #a7f3d0;
+  border-radius: 22px 4px 22px 4px;
+  background: linear-gradient(135deg, #f0fdf4 0%, #f0fdf4 58%, #fffbeb 58%, #fffbeb 100%);
+  animation: mt-scale 220ms ease-out both;
+}
+
+#csr-domains-catalog-view-modal-convert-sub-item-directly-3 {
+  position: relative;
+  padding-bottom: 1rem;
+  border-bottom: 1px dashed #86efac;
+}
+
+#csr-domains-catalog-view-modal-convert-sub-item-directly-3::before {
+  content: '⟶';
+  position: absolute;
+  inset-inline-end: 3rem;
+  top: 0.9rem;
+  font-size: 1.15rem;
+  color: #059669;
+  opacity: 0.45;
+}
+
+#csr-domains-catalog-view-modal-convert-sub-item-directly-3::after {
+  content: '۲۱';
+  font-size: 1.4rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(5, 150, 105, 0.22);
+}
+
+/* -------------------------------------------------------------------------
+   ۲۲ · Predictive sector — a "forecast panel".
+   Deep teal command header, cyan rule, data-grid body, squared instrument.
+   ------------------------------------------------------------------------- */
+#dashboard-predictive-engine-sector-detail-modal-2 {
+  position: relative;
+  overflow-x: hidden;
+  border: 1px solid #a5f3fc;
+  border-radius: 4px;
+  box-shadow:
+    inset 0 0 0 1px #0e7490,
+    0 30px 70px -30px rgba(8, 51, 68, 0.6);
+  animation: mt-rise 280ms ease-out both;
+}
+
+#dashboard-predictive-engine-sector-detail-modal-3 {
+  position: relative;
+  overflow: hidden;
+  margin: -1.5rem -1.5rem 0;
+  padding: 1.25rem 1.5rem;
+  background: #083344;
+  border-bottom: 3px solid #22d3ee;
+}
+
+#dashboard-predictive-engine-sector-detail-modal-3 h3 {
+  color: #ecfeff;
+}
+
+#dashboard-predictive-engine-sector-detail-modal-5 span {
+  color: #a5f3fc;
+}
+
+#dashboard-predictive-engine-sector-detail-modal-3 > button {
+  color: #a5f3fc;
+}
+
+#dashboard-predictive-engine-sector-detail-modal-3::after {
+  content: '۲۲';
+  position: absolute;
+  inset-inline-end: 3.2rem;
+  top: -0.6rem;
+  font-size: 4.4rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(34, 211, 238, 0.18);
+}
+
+#dashboard-predictive-engine-sector-detail-modal-2 > :not(:first-child) {
+  position: relative;
+  z-index: 1;
+}
+
+#dashboard-predictive-engine-sector-detail-modal-2 {
+  background-image:
+    linear-gradient(rgba(8, 51, 68, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(8, 51, 68, 0.045) 1px, transparent 1px);
+  background-size: 26px 26px;
+}
+
+/* -------------------------------------------------------------------------
+   ۲۳ · National budget split — a "national summary sheet".
+   Wide slate sheet, gold double rule, navy wash, generous margins.
+   ------------------------------------------------------------------------- */
+#national-dashboard-view-card-1-multi-source-budget-modal {
+  background:
+    radial-gradient(900px 500px at 50% 100%, rgba(202, 138, 4, 0.16), transparent 62%),
+    rgba(2, 6, 23, 0.72);
+}
+
+#national-dashboard-view-card-1-multi-source-budget {
+  border: 1px solid #e2e8f0;
+  border-top: 5px double #ca8a04;
+  border-radius: 10px;
+  box-shadow: 0 34px 80px -30px rgba(15, 23, 42, 0.65);
+  animation: mt-rise 280ms ease-out both;
+}
+
+#national-dashboard-view-card-1-multi-source-budget-3 {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+#national-dashboard-view-card-1-multi-source-budget-3::after {
+  content: '۲۳';
+  position: absolute;
+  inset-inline-end: 8.5rem;
+  top: -0.7rem;
+  font-size: 4.4rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(202, 138, 4, 0.16);
+}
+
+/* -------------------------------------------------------------------------
+   ۲۴ · Create account — an "access badge".
+   Indigo command header, lanyard slot punched at the top, diagonal weave.
+   ------------------------------------------------------------------------- */
+#roles-and-access-view-create-user-modal-2 {
+  position: relative;
+  border: 1px solid #c7d2fe;
+  border-radius: 16px;
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgba(49, 46, 129, 0.03) 0 10px,
+    transparent 10px 20px
+  );
+  animation: mt-scale 240ms ease-out both;
+}
+
+#roles-and-access-view-create-user-modal-2::before {
+  content: '';
+  position: absolute;
+  top: 0.55rem;
+  left: 50%;
+  translate: -50% 0;
+  width: 54px;
+  height: 5px;
+  border-radius: 99px;
+  background: #c7d2fe;
+  z-index: 2;
+}
+
+#roles-and-access-view-create-user-modal-header {
+  padding-top: 1.7rem;
+  background: linear-gradient(120deg, #1e1b4b, #312e81);
+  border-bottom: 2px solid #818cf8;
+}
+
+#roles-and-access-view-create-user-modal-header::after {
+  content: '۲۴';
+  font-size: 1.6rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(199, 210, 254, 0.4);
+}
+
+/* -------------------------------------------------------------------------
+   ۲۵ · Permission editor — a "matrix board".
+   Squared slate frame, hard offset shadow, dense header band.
+   ------------------------------------------------------------------------- */
+#roles-and-access-view-permissions-modal-2 {
+  border: 1px solid #cbd5e1;
+  border-radius: 2px;
+  box-shadow:
+    8px 8px 0 -3px #e2e8f0,
+    0 30px 60px -30px rgba(15, 23, 42, 0.5);
+  animation: mt-rise 220ms ease-out both;
+}
+
+#roles-and-access-view-permissions-modal-header {
+  background: #0f172a;
+  border-bottom: 3px solid #6366f1;
+}
+
+#roles-and-access-view-permissions-modal-header::after {
+  content: '۲۵';
+  font-size: 1.6rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(129, 140, 248, 0.45);
+}
+
+#roles-and-access-view-permissions-modal-3 {
+  background: #f1f5f9;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+/* -------------------------------------------------------------------------
+   ۲۶ · Add priority (allocation table) — a "claim slip".
+   Narrow cream ticket, perforated top, amber dashed frame.
+   ------------------------------------------------------------------------- */
+#priority-allocation-table-add-priority-modal-2 {
+  position: relative;
+  max-width: 440px;
+  padding-top: 2.15rem;
+  background: #fffdf5;
+  border: 1px dashed #f59e0b;
+  border-radius: 12px;
+  box-shadow: 0 24px 50px -26px rgba(120, 53, 15, 0.5);
+  animation: mt-drop 220ms ease-out both;
+}
+
+#priority-allocation-table-add-priority-modal-2::before {
+  content: '';
+  position: absolute;
+  top: 0.65rem;
+  inset-inline: 1rem;
+  height: 4px;
+  background: radial-gradient(circle, #f59e0b 1.1px, transparent 1.5px) 0 0 / 10px 10px repeat-x;
+  opacity: 0.6;
+}
+
+#priority-allocation-table-add-priority-modal-2::after {
+  content: '۲۶';
+  position: absolute;
+  top: 1rem;
+  inset-inline-end: 1.1rem;
+  font-size: 1.5rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(245, 158, 11, 0.2);
+}
+
+#priority-allocation-table-add-priority-modal-2 input,
+#priority-allocation-table-add-priority-modal-2 select {
+  background: #fffef9;
+  border-radius: 4px;
+}
+
+/* -------------------------------------------------------------------------
+   ۲۷ · Priorities CRUD — a "balance sheet".
+   Purple top rule, generous rounding, lavender paper, soft fields.
+   ------------------------------------------------------------------------- */
+#priorities-view-crud-modal-2 {
+  background: #fdfaff;
+  border: 1px solid #e9d5ff;
+  border-top: 5px solid #7e22ce;
+  border-radius: 18px 18px 4px 4px;
+  animation: mt-scale 220ms ease-out both;
+}
+
+#priorities-view-crud-modal-3 {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e9d5ff;
+}
+
+#priorities-view-crud-modal-3::after {
+  content: '۲۷';
+  font-size: 1.5rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(126, 34, 206, 0.2);
+}
+
+#priorities-view-crud-modal input,
+#priorities-view-crud-modal select,
+#priorities-view-crud-modal textarea {
+  background: #faf5ff;
+  border-radius: 8px;
+}
+
+/* -------------------------------------------------------------------------
+   ۲۸ · Location edit — a "territory sheet".
+   Sky header with a compass ghost, soft contour wash, calm rounding.
+   ------------------------------------------------------------------------- */
+#location-module-edit-modal-2 {
+  border: 1px solid #bae6fd;
+  border-radius: 18px;
+  box-shadow: 0 30px 70px -30px rgba(3, 105, 161, 0.5);
+  background-image: radial-gradient(circle at 50% 0%, rgba(14, 165, 233, 0.07), transparent 60%);
+  animation: mt-rise 280ms ease-out both;
+}
+
+#location-module-edit-modal-header {
+  position: relative;
+  overflow: hidden;
+  background: #f0f9ff;
+  border-bottom: 1px solid #bae6fd;
+}
+
+#location-module-edit-modal-header::before {
+  content: '⌖';
+  position: absolute;
+  inset-inline-end: 3rem;
+  top: -0.9rem;
+  font-size: 3.4rem;
+  line-height: 1;
+  color: #0ea5e9;
+  opacity: 0.14;
+}
+
+#location-module-edit-modal-header::after {
+  content: '۲۸';
+  position: absolute;
+  inset-inline-end: 5.4rem;
+  top: -0.55rem;
+  font-size: 4.2rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(2, 132, 199, 0.12);
+}
+
+/* -------------------------------------------------------------------------
+   ۲۹ · Overlap warning — a "review ribbon".
+   Amber left ribbon, warm wash, no rounded-card softness: a raised flag.
+   ------------------------------------------------------------------------- */
+#create-project-view-overlap-alert > div {
+  border: 1px solid #fcd34d;
+  border-inline-start: 6px solid #f59e0b;
+  border-radius: 6px;
+  background-image: radial-gradient(420px 200px at 100% 0%, rgba(245, 158, 11, 0.16), transparent 70%);
+  box-shadow: 0 0 0 1px #fffbeb, 0 30px 60px -26px rgba(120, 53, 15, 0.5);
+  animation: mt-glide 260ms ease-out both;
+}
+
+#create-project-view-overlap-alert h3 {
+  letter-spacing: 0.01em;
+}
+
+/* -------------------------------------------------------------------------
+   ۳۰ · Validation warning — a "checklist card".
+   Rounded amber frame, dashed step rail, stacked rows.
+   ------------------------------------------------------------------------- */
+#create-project-view-validation-alert > div {
+  border: 1px solid #fde68a;
+  border-radius: 20px;
+  box-shadow: 0 26px 60px -30px rgba(120, 53, 15, 0.45);
+  animation: mt-scale 220ms ease-out both;
+}
+
+#create-project-view-validation-alert ul {
+  padding-inline-start: 1rem;
+  border-inline-start: 2px dashed #fbbf24;
+}
+
+#create-project-view-validation-alert li + li {
+  margin-top: 0.5rem;
+}
+
+/* -------------------------------------------------------------------------
+   ۳۱ · Demographic planner — a "glass analysis board".
+   Cyan glass panel, gradient top strip, large softening radius.
+   ------------------------------------------------------------------------- */
+#create-project-view-demographic-planner-modal > div {
+  border: 1px solid #a5f3fc;
+  border-radius: 26px;
+  box-shadow: 0 30px 80px -30px rgba(8, 145, 178, 0.45);
+  animation: mt-scale 260ms ease-out both;
+}
+
+#create-project-view-demographic-planner-modal > div::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 5px;
+  z-index: 20;
+  background: linear-gradient(90deg, #06b6d4, #3b82f6, #8b5cf6);
+}
+
+#create-project-view-header-row {
+  border-bottom-color: #67e8f9;
+}
+
+/* -------------------------------------------------------------------------
+   ۳۲ · Guided tour — a "spotlight card".
+   Amber spine and offset paper edge, so the tour reads as an annotation
+   pinned beside the highlighted control rather than another dialog.
+   ------------------------------------------------------------------------- */
+div[role='dialog'][aria-label='راهنمای سامانه'] > div:last-child {
+  border: 1px solid #fcd34d;
+  border-inline-start: 4px solid #f59e0b;
+  border-radius: 4px 20px 20px 4px;
+  box-shadow:
+    -10px 10px 0 -4px #fef3c7,
+    0 26px 60px -22px rgba(15, 23, 42, 0.5);
+}
+
+div[role='dialog'][aria-label='راهنمای سامانه'] > div:last-child > div:first-child > span:first-child {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+/* -------------------------------------------------------------------------
+   Folio numerals on form headers are watermarks, not flex items.
+   A bare `::after` inside a `justify-between` header becomes a third flex
+   child and would push the close button to the middle of the row. Pinning it
+   absolutely — behind the header content, inside the header's own stacking
+   context — keeps every header's controls exactly where they were.
+   ------------------------------------------------------------------------- */
+#budget-sources-view-crud-modal-3,
+#contractors-view-crud-modal-3,
+#crises-harms-view-crud-modal-3,
+#departments-view-crud-modal-3,
+#executors-view-modal-3,
+#priorities-view-crud-modal-3,
+#analysis-sources-view-form-modal > div > :first-child,
+#csr-domains-catalog-view-modal-add-sub-item-3,
+#csr-domains-catalog-view-modal-add-new-main-csr-domain-3,
+#csr-domains-catalog-view-modal-convert-sub-item-directly-3,
+#roles-and-access-view-create-user-modal-header,
+#roles-and-access-view-permissions-modal-header {
+  position: relative;
+  isolation: isolate;
+}
+
+#budget-sources-view-crud-modal-3::after,
+#contractors-view-crud-modal-3::after,
+#crises-harms-view-crud-modal-3::after,
+#departments-view-crud-modal-3::after,
+#executors-view-modal-3::after,
+#priorities-view-crud-modal-3::after,
+#analysis-sources-view-form-modal > div > :first-child::after,
+#csr-domains-catalog-view-modal-add-sub-item-3::after,
+#csr-domains-catalog-view-modal-add-new-main-csr-domain-3::after,
+#csr-domains-catalog-view-modal-convert-sub-item-directly-3::after,
+#roles-and-access-view-create-user-modal-header::after,
+#roles-and-access-view-permissions-modal-header::after {
+  position: absolute;
+  z-index: -1;
+  inset-inline-end: 1rem;
+  top: -0.1rem;
+}
+
+/* -------------------------------------------------------------------------
+   Small screens: side sheets go edge to edge, tall panels keep breathing room.
+   ------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  #ai-analysis-modal-root > div {
+    max-width: 100%;
+    border-radius: 0;
+    border-inline-start: 0;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Reduced motion: every entrance is opt-out, not shortened.
+   ------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  #ai-analysis-modal-root > div,
+  #csv-manager-modal-root > div,
+  #confirm-delete-modal > div,
+  #global-location-selector-dialog,
+  #budget-sources-view-detail-modal-panel,
+  #budget-sources-view-crud-modal-2,
+  #contractors-view-detail-modal-panel,
+  #crises-harms-view-detail-modal-panel,
+  #departments-view-detail-modal-panel,
+  #executors-view-detail-modal-panel,
+  #projects-view-detail-modal-panel,
+  #analysis-sources-view-detail-modal > div,
+  #analysis-sources-view-form-modal > div,
+  #csr-domains-catalog-view-modal-add-sub-item-2,
+  #csr-domains-catalog-view-modal-add-new-main-csr-domain-2,
+  #csr-domains-catalog-view-modal-convert-sub-item-directly-2,
+  #dashboard-predictive-engine-sector-detail-modal-2,
+  #national-dashboard-view-card-1-multi-source-budget,
+  #roles-and-access-view-create-user-modal-2,
+  #roles-and-access-view-permissions-modal-2,
+  #priority-allocation-table-add-priority-modal-2,
+  #priorities-view-crud-modal-2,
+  #location-module-edit-modal-2,
+  #create-project-view-overlap-alert > div,
+  #create-project-view-validation-alert > div,
+  #create-project-view-demographic-planner-modal > div {
+    animation: none !important;
+  }
+}
+
+@keyframes mt-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mt-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes mt-drawer {
+  from {
+    opacity: 0.4;
+    transform: translateX(48px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes mt-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mt-glide {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

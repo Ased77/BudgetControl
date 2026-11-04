@@ -65,6 +65,7 @@ const VALID_TABS = [
   'ANALYSIS_SOURCES',
   'ROLES_PERMISSIONS',
   'SETTINGS',
+  'USER_MINING',
 ];
 
 /**
@@ -113,6 +114,7 @@ const TAB_PATHS: Record<string, string> = {
   ANALYSIS_SOURCES: '/analysis-sources',
   ROLES_PERMISSIONS: '/roles-permissions',
   SETTINGS: '/settings',
+  USER_MINING: '/user-mining',
 };
 
 function pathForTab(tab: string): string {

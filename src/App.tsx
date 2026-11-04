@@ -20,6 +20,7 @@ import { CreateProjectView } from './components/CreateProjectView';
 import { RolesAndAccessView } from './components/RolesAndAccessView';
 import { AnalysisSourcesView } from './components/AnalysisSourcesView';
 import { SettingsView } from './components/SettingsView';
+import { UserMiningView } from './components/UserMiningView';
 import { QuotaView } from './components/QuotaView';
 import BranchedMenu, { type BranchedMenuItem } from './components/BranchedMenu';
 import { AiAnalysisModal } from './components/AiAnalysisModal';
@@ -63,6 +64,7 @@ import {
   Workflow,
   HelpCircle,
   Settings,
+  Radar,
   Bell,
   LogOut,
   Menu,
@@ -144,6 +146,9 @@ const NAV_MENU_ITEMS: BranchedMenuItem[] = [
       /* «عمومی» is the settings page proper; the governance view lives here too. */
       { value: 'SETTINGS', label: 'عمومی', icon: Settings, hue: 'var(--color-slate-600)' },
       { value: 'ROLES_PERMISSIONS', label: 'نقش‌ها و دسترسی‌ها', icon: ShieldCheck, hue: 'var(--color-slate-500)' },
+      /* Reserved for the technical manager and the system administrator; the
+         shared gate in sectionAccess hides it from every other role. */
+      { value: 'USER_MINING', label: 'داده‌کاوی کاربران', icon: Radar, hue: 'var(--color-cyan-600)' },
     ],
   },
 ];
@@ -733,6 +738,8 @@ function AppContent() {
           {activeTab === 'ROLES_PERMISSIONS' && <RolesAndAccessView />}
 
           {activeTab === 'SETTINGS' && <SettingsView />}
+
+          {activeTab === 'USER_MINING' && <UserMiningView />}
         </div>
       </div>
 

@@ -133,6 +133,25 @@ export function requirePermission(permission: keyof SystemRolePermission): Reque
   };
 }
 
+/**
+ * Role allow-list for a route whose audience is named roles rather than a
+ * matrix flag. Used by the user-mining report, which is reserved for the
+ * technical manager and the system administrator.
+ */
+export function requireRoles(...allowed: Array<SessionUser['role']>): RequestHandler {
+  return (req, res, next) => {
+    if (!req.auth) return unauthorized(res, 'احراز هویت لازم است');
+    if (!allowed.includes(req.auth.role)) {
+      return res.status(403).json({
+        error: 'این گزارش فقط برای مدیر فنی و مدیر کل سامانه در دسترس است',
+        code: 'FORBIDDEN',
+        role: req.auth.role,
+      });
+    }
+    return next();
+  };
+}
+
 /** Narrow guard for the admin-only account-management routes. */
 export const requireAdmin: RequestHandler = (req, res, next) => {
   if (req.auth?.role !== 'SYSTEM_ADMIN') {

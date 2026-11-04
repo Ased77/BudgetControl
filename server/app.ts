@@ -47,7 +47,8 @@ import { authRouter } from './auth/routes.js';
 // delete both halves of this comment block to remove the feature. ===
 import { devSeedRouter, isDevEnvironment } from './dev/seed-routes.js';
 import { restoreOriginalUrl } from './rewrite-path.js';
-import { requireAuth, requirePermission } from './auth/middleware.js';
+import { requireAuth, requirePermission, requireRoles } from './auth/middleware.js';
+import { buildUserMiningReport } from './db/repositories/user-mining.repository.js';
 import { BadRequestError } from './db/errors.js';
 import { calculateSmartRecommendations } from '../src/utils/recommendationEngine.js';
 import { toPersianDigits } from '../src/utils/numberUtils.js';
@@ -203,6 +204,19 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
   // this is requirement 1 — authentication-first on every user-data route.
   // -----------------------------------------------------------------
   app.use('/api', requireAuth);
+
+  // Early-warning user mining — technical manager + system administrator only.
+  // Read-only, server-computed, and private: the payload contains masked
+  // mobiles and per-account risk signals, never credentials or full contacts.
+  app.get(
+    '/api/user-mining',
+    requireRoles('SYSTEM_ADMIN', 'TECH_SUPPORT'),
+    wrap(async (req, res) => {
+      const report = await buildUserMiningReport(Number(req.query.dormantDays));
+      res.setHeader('Cache-Control', 'private, no-store');
+      res.json(report);
+    }),
+  );
 
   // Calculate budget allocation in Toman and Rial (from DB priorities)
   app.post('/api/calculate', wrap(async (req, res) => {
