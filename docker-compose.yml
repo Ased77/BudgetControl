@@ -116,6 +116,10 @@ services:
         condition: service_healthy
     environment:
       NODE_ENV: production
+      # Explicit production marker. The /dev/seed-* routes (which hand out test
+      # account passwords) mount only when APP_ENV=development, and an unset
+      # variable used to count as "development" here. Do not remove this line.
+      APP_ENV: production
       PORT: "3000"
       PGHOST: db
       PGPORT: "5432"

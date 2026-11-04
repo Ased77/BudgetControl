@@ -34,7 +34,10 @@ import { shutdownDatabase } from '../server/db/initialize.js';
 
 async function main(): Promise<void> {
   if (!isDevEnvironment()) {
-    console.error('[dev-seed] APP_ENV=production — refuse to create test accounts. Aborting.');
+    console.error(
+      '[dev-seed] APP_ENV is not "development" — refuse to create test accounts. ' +
+        'Set APP_ENV=development (or DEV_SEED_LOGIN=1) and re-run.',
+    );
     process.exitCode = 1;
     return;
   }

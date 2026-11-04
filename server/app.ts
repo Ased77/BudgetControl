@@ -163,6 +163,13 @@ export function createApp(options: CreateAppOptions = {}): express.Express {
   // server/dev/seed-routes.ts.
   if (isDevEnvironment()) {
     app.use('/dev', devSeedRouter);
+  } else {
+    // Fail closed *explicitly*. Without this the path falls through to the SPA
+    // fallback and answers 200 with index.html, which a caller (and a smoke
+    // test) cannot tell apart from the credential endpoint being live.
+    app.use('/dev', (_req, res) => {
+      res.status(404).json({ error: 'Not found', code: 'NOT_FOUND' });
+    });
   }
   // Health reflects real persistence state: it pings PostgreSQL on every call
   // and answers 503 while the database is unreachable, so an orchestrator

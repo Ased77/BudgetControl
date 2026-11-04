@@ -54,7 +54,9 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
  * `bun run dev` / `vercel dev`) and are deliberately unavailable on any
  * deployed Vercel function:
  *
- *  - `APP_ENV=production` disables them on any host (explicit opt-out).
+ *  - Only a positive development marker enables them: `APP_ENV=development`
+ *    (or `DEV_SEED_LOGIN=1`). `APP_ENV=production` AND an unset APP_ENV both
+ *    leave them off — the switch fails closed.
  *  - A Vercel deployment disables them even when APP_ENV was forgotten:
  *    production and preview both run with a public URL, and these routes would
  *    hand out test-account passwords to anyone who asks. Missing configuration
@@ -75,7 +77,12 @@ export function isDevEnvironment(env: NodeJS.ProcessEnv = process.env): boolean 
   if (env.DEV_SEED_LOGIN === '1') return true;
   if (env.APP_ENV === 'production') return false;
   if (env.VERCEL_ENV !== undefined) return env.VERCEL_ENV === 'development';
-  return env.VERCEL !== '1' && env.VERCEL !== 'true';
+  // Fail closed: only an explicit development marker turns these routes on. The
+  // production Docker service shipped with no APP_ENV at all, and "unset" used to
+  // read as "development" — so a production image served /dev/seed-users and the
+  // test-account passwords to anyone who asked. A missing variable must never
+  // mean "open".
+  return env.APP_ENV === 'development';
 }
 
 export const devSeedRouter = express.Router();
