@@ -26,6 +26,7 @@ import {
   ShieldCheck,
   History,
   LayoutGrid,
+  Radar,
 } from 'lucide-react';
 import AnimatedContent from './AnimatedContent/AnimatedContent';
 
@@ -94,6 +95,7 @@ export const SettingsView: React.FC = () => {
     currentUser,
     setActiveTab,
     addAuditLog,
+    canAccessTab,
   } = useAppContext();
 
   // Organization form — a local copy so typing never rewrites global state
@@ -532,6 +534,17 @@ export const SettingsView: React.FC = () => {
               <History className="w-3.5 h-3.5" />
               لاگ ممیزی
             </button>
+            {canAccessTab('USER_MINING') && (
+              <button
+                id="settings-view-open-user-mining"
+                type="button"
+                onClick={() => setActiveTab('USER_MINING')}
+                className="inline-flex items-center gap-1.5 text-[11px] font-bold text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/60 border border-cyan-200 dark:border-cyan-800 rounded-lg px-3 py-2 hover:bg-cyan-100 dark:hover:bg-cyan-900/60 transition-colors cursor-pointer"
+              >
+                <Radar className="w-3.5 h-3.5" />
+                داده‌کاوی کاربران
+              </button>
+            )}
           </div>
         </div>
       </AnimatedContent>
