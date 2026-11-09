@@ -25,7 +25,7 @@
 
 ## Snapshot
 
-**Active checklist:** 4 of 22 tasks checked.
+**Active checklist:** 5 of 22 tasks checked.
 
 `E1-PRJ-1` was the single unresolved ID in the recovered record. It is now
 retired, so the active map has 22 tasks while the historical table below still
@@ -185,11 +185,46 @@ Recovered historical status:
     one link button per resolvable suggestion, the «یافت نشد» fallback with no
     button, and no form controls in any state. Click, Escape and focus behaviour
     were **not** exercised in a browser (`E0-TAX-9` covers that matrix).
-- [ ] **E0-TAX-6 — Search, filters and empty state**
-  - [ ] Add text search.
-  - [ ] Add the five indicator-family filters.
-  - [ ] Add the uncovered-domain filter.
-  - [ ] Add reset behaviour and an explicit empty state.
+- [x] **E0-TAX-6 — Search, filters and empty state**
+  - [x] Add text search.
+  - [x] Add the five indicator-family filters.
+  - [x] Add the uncovered-domain filter.
+  - [x] Add reset behaviour and an explicit empty state.
+  - **Artifact:** `CulturalTaxonomyFilterBar`, `CulturalTaxonomyEmptyState` and the
+    filter state in `CulturalTaxonomyDomains`
+    (`src/components/CulturalTaxonomyDomains.tsx`); the pure matching rules live
+    in `src/utils/taxonomyFilters.ts` (`TaxonomyFilterState`,
+    `normalizeTaxonomyText`, `isTaxonomyFilterActive`, `matchesTaxonomyFilters`,
+    `filterCulturalDomains`).
+  - **Search:** covers code, title, short title, description, keywords,
+    outcomes, indicator labels and units, and action titles and descriptions.
+    Input is normalised first — Persian yeh/kaf, no harakat, ZWNJ treated as a
+    word break, single spaces, lower case — and every whitespace-separated term
+    must match, so `ct-04`, `سینما` and `موسیقی بومی` all work.
+  - **Families:** five toggle chips (`SUPPLY`, `PARTICIPATION`, `EQUITY`,
+    `WORKFORCE`, `HERITAGE`) with `aria-pressed`; a domain matches when it has
+    at least one indicator in any selected family (union inside the group, AND
+    with the other filters).
+  - **Uncovered filter:** takes its codes from `computeTaxonomyCoverage(...).uncoveredDomainCodes`,
+    the same helper behind the banner, so the filter and the KPI cannot
+    disagree. `uncoveredCodes` lists the domains **without** a mapping.
+  - **Reset and empty state:** reset clears all three filters and is disabled
+    while pristine; a zero-result state renders an explicit
+    `cultural-taxonomy-empty-state` panel with its own reset button.
+  - **Announcements:** the result line is a `role="status"` / `aria-live="polite"`
+    region and states either «۱۲ حوزه نمایش داده میشود.», «n از ۱۲ حوزه …» or
+    «هیچ حوزهای با این جستجو و فیلترها یافت نشد.», so both the count and the
+    empty result are announced rather than only drawn.
+  - **Verified (2026-11-09):** `tsc --noEmit` clean and 43 assertions pass over
+    the helpers and static renders: code/title/indicator search, Arabic-letter
+    and ZWNJ tolerance, multi-term AND, nonsense and blank queries; the SUPPLY
+    (6), HERITAGE (2) and union (7) domain sets; uncovered-only with all, none
+    and a single unmapped code plus combined filters; active-state detection;
+    agreement with the coverage helper; the labelled search field, six unpressed
+    chips, disabled/enabled reset, both result strings, the live region, the
+    empty state's heading and reset, and 12 collapsed cards with exactly one
+    input on first render. Typing, clicking and the announced behaviour were
+    **not** exercised in a browser (`E0-TAX-9`).
 - [ ] **E0-TAX-7 — Coverage calculation**
   - [ ] Count only priorities with an explicit matching `taxonomyDomainId`.
   - [ ] Do not count static reference links as coverage.
