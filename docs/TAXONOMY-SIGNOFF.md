@@ -2,9 +2,13 @@
 
 > Task: `E0-TAX-2` (domain review and sign-off).
 > Taxonomy version under approval: **`۱٫۱`** (`CULTURAL_TAXONOMY_VERSION`).
-> Status: **awaiting signature** — no owner approval exists yet.
+> Status: **awaiting signature** — the §3 dataset checks were prepared and
+> recorded on 2026-11-09, but no owner approval exists yet.
 > This file is the only accepted approval artifact. Chat messages, email and
 > commit messages do not constitute sign-off.
+> Demo copy: `docs/TAXONOMY-SIGNOFF.demo.md` carries mock values for
+> demonstration only. It is not an appointment, approval or signature and is
+> never accepted as one.
 
 ## 1. Owner and reviewers
 
@@ -31,7 +35,7 @@ state why in §4.
 | Source of truth | `src/data/culturalTaxonomy.ts` at commit `3a47d5d` |
 | Change-log rows | `1.0 draft — Initial 12-domain taxonomy section, read-only`; `1.1 draft — ۱۴۰۵/۰۸/۱۷ — Indicator evidence metadata and pending-state UI` |
 | Review date | _(to be filled at signature)_ |
-| Commit reviewed | _(full SHA)_ |
+| Commit reviewed | `79967510ee55c8eda582b152eaa8dbe37def6d48` |
 
 Approving this version approves the 12 domain codes, their titles, the 21
 indicators, the 36 actions, the reference priority links and the empty evidence
@@ -60,7 +64,38 @@ The owner confirms each line before deciding. A failed line blocks approval.
 - [ ] The version change log records `۱٫۱` and the document header will name
       this owner after signature.
 
+### 3a. Verification evidence (prepared 2026-11-09; not a signature)
+
+Mechanical checks against `src/data/culturalTaxonomy.ts` at commit `7996751`.
+Their purpose is to let the owner's review confirm already-verified facts; they
+do not substitute for the owner's own confirmation in §3 or the decision in §4.
+
+The reviewed file differs from `3a47d5d:src/data/culturalTaxonomy.ts` only by
+two additive blocks introduced by `E1-INT-3` — the `CulturalTaxonomyReference`
+interface and `getCulturalTaxonomyReference()`. Neither adds, removes or renames
+a domain, indicator or action, neither records an evidence value, and the
+version stays `۱٫۱`.
+
+| §3 line | Subject | Result | Evidence |
+|---|---|---|---|
+| 1 | Domain codes | Pass | 12 domains with 12 unique codes in `CT-01` … `CT-12` order, and 12 entries in the `CULTURAL_DOMAINS_BY_CODE` join-key map |
+| 2 | Indicators | Partial | 21 indicators, all 21 with a unit, a valid direction and a definition; consistency against the reference document is unverifiable here because `docs/CULTURAL-TAXONOMY.md` is absent from this checkout (it exists in commit `3a47d5d`; restoring it is `E0-TAX-10`) |
+| 3 | Actions | Pass | 36 unique action ids, exactly 3 per domain, all 36 with a valid delivery mode, each assigned to exactly one domain |
+| 4 | Reference priority links | Pass | 7 suggestions (`CT-01:p7`, `CT-02:p6`, `CT-03:p6`, `CT-08:p7`, `CT-09:p6`, `CT-10:p6`, `CT-11:p7`); every target id `p6`/`p7` exists in `src/data/initialData.ts`, and the dataset computes no coverage from them |
+| 5 | Coverage rule | Blocked | no coverage implementation exists in this checkout — the taxonomy view and route are absent (`E0-TAX-3` … `E0-TAX-8`) |
+| 6 | Evidence state | Pass | 0 of 21 indicators carry `source`, `referenceYear` or `confidence`, and `hasCulturalIndicatorEvidence()` is false for all 21 |
+| 7 | Label maps | Pass | 5 family labels, 5 delivery-mode labels and 3 confidence labels (`HIGH` / `MEDIUM` / `LOW`) exist with Persian text |
+| 8 | Version change log | Blocked | the document and its change log are absent from this checkout (`E0-TAX-10`), so neither the log line nor the post-signature header update can be performed yet |
+
+Lines 2, 5 and 8 stay open until `E0-TAX-3` … `E0-TAX-8` and `E0-TAX-10`
+land. The dataset itself is complete and versioned at `۱٫۱`.
+
 ## 4. Decision and signature
+
+Status as of 2026-11-09: **no decision taken.** §1 is still incomplete (owner
+full name, user id and appointment date are required) and §3 lines 2, 5 and 8
+stay open pending `E0-TAX-3` … `E0-TAX-8` and `E0-TAX-10`. The options below are
+recorded for the signature; nothing is selected.
 
 Decision (select one):
 
@@ -124,3 +159,4 @@ Rules:
 | Date | Change | By |
 |---|---|---|
 | 2026-11-09 | Record created; owner, version, checklist and approval process defined; awaiting signature | Backlog ambiguity revision |
+| 2026-11-09 | §2 commit reviewed recorded and §3 verification evidence attached from the current checkout; owner identity, review date and §4 decision still required | `E0-TAX-2` preparation |

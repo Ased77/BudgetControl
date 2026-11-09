@@ -90,6 +90,15 @@ Recovered historical status:
     of ownership. Inventing a name would be worse than the gap. The accountable
     role is fixed above; the appointing authority must complete §1 before the
     signature.
+  - **Prepared (2026-11-09):** §2 `Commit reviewed` and the §3 verification
+    evidence are recorded in `docs/TAXONOMY-SIGNOFF.md` against commit
+    `7996751`. Lines 2, 5 and 8 of §3 stay open until `E0-TAX-3` … `E0-TAX-8`
+    and `E0-TAX-10` land. Still missing: the owner's full name, user id,
+    appointment date and the §4 decision.
+  - **Demo fixture added (2026-11-09):** `docs/TAXONOMY-SIGNOFF.demo.md` holds
+    mock owner values and a mock decision for demonstration screens and tests.
+    It is explicitly not a sign-off, is not the artifact this task accepts, and
+    does not change the status below.
   - **Blocker:** the record is unsigned; no owner approval exists.
 - [ ] **E0-TAX-3 — Route, navigation and access**
   - [ ] Add `/cultural-taxonomy`.
