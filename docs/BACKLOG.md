@@ -25,7 +25,7 @@
 
 ## Snapshot
 
-**Active checklist:** 3 of 22 tasks checked.
+**Active checklist:** 4 of 22 tasks checked.
 
 `E1-PRJ-1` was the single unresolved ID in the recovered record. It is now
 retired, so the active map has 22 tasks while the historical table below still
@@ -153,11 +153,38 @@ Recovered historical status:
     opened in a browser.
   - **Overlap:** the same helper satisfies `E0-TAX-7`'s three counting rules;
     that task's own review can confirm them.
-- [ ] **E0-TAX-5 — Domain cards and expandable detail**
-  - [ ] Show domain code, title, short title and description.
-  - [ ] Show indicators, actions, outcomes and budget classification.
-  - [ ] Show suggested reference priority links.
-  - [ ] Add expandable detail and priority links.
+- [x] **E0-TAX-5 — Domain cards and expandable detail**
+  - [x] Show domain code, title, short title and description.
+  - [x] Show indicators, actions, outcomes and budget classification.
+  - [x] Show suggested reference priority links.
+  - [x] Add expandable detail and priority links.
+  - **Artifact:** `CulturalTaxonomyDomains` and `CulturalTaxonomyDomainCard`
+    (`src/components/CulturalTaxonomyDomains.tsx`), rendered by
+    `CulturalTaxonomyView`. Twelve cards in a responsive grid; each header is an
+    `h3 > button` carrying the code, title, short title, per-domain indicator and
+    action counts and the description, with `aria-expanded` and `aria-controls`
+    on a `role="region"` detail. One card is open at a time and Escape on the
+    trigger folds it without moving focus; the open state is local and never
+    persisted.
+  - **Detail sections:** «شاخص‌ها» (label, unit, direction, family), «اقدام‌های
+    استاندارد» (title, delivery mode, description), «پیامدهای مورد انتظار»,
+    «طبقه‌بندی بودجه», and «پیوندهای پیشنهادی اولویت». The summary panel keeps
+    the reference totals as one line (۱۲ حوزه · ۲۱ شاخص · ۳۶ اقدام).
+  - **Priority links:** suggestions resolve against the live priority list, so a
+    chip reads that priority's real title and navigates to `PRIORITIES`. An id
+    absent from the live data is rendered as a muted «یافت نشد» label instead of
+    a dead button; the note above the chips states they are suggestions and not
+    coverage. Hiding them per permission is `E0-TAX-8` and was not done here.
+  - **Verified (2026-11-09):** `tsc --noEmit` clean. A static render check
+    confirms 12 collapsed triggers and no detail on first render, all 12 codes,
+    titles, short titles and descriptions, 12 `h3` headers, and — rendering each
+    card expanded — the detail region with matching `id`/`aria-controls`/
+    `aria-labelledby`, all five section headings, 52 of 52 domain-level indicator
+    references (21 unique indicators, repeated across domains), 36 of 36 actions
+    with their delivery-mode label, every outcome, every budget classification,
+    one link button per resolvable suggestion, the «یافت نشد» fallback with no
+    button, and no form controls in any state. Click, Escape and focus behaviour
+    were **not** exercised in a browser (`E0-TAX-9` covers that matrix).
 - [ ] **E0-TAX-6 — Search, filters and empty state**
   - [ ] Add text search.
   - [ ] Add the five indicator-family filters.

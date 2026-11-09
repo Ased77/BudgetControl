@@ -2,6 +2,7 @@ import React from 'react';
 import { Landmark, Lock } from 'lucide-react';
 import { PageHeader } from './PageHeader';
 import { CulturalTaxonomyCoverage } from './CulturalTaxonomyCoverage';
+import { CulturalTaxonomyDomains } from './CulturalTaxonomyDomains';
 import { useAppContext } from '../context/AppContext';
 import {
   CULTURAL_DOMAINS,
@@ -14,23 +15,18 @@ import { toPersianDigits } from '../utils/numberUtils';
 /** Standard actions belong to their domain, so they are counted once here. */
 const CULTURAL_ACTION_COUNT = CULTURAL_DOMAINS.reduce(
   (total, domain) => total + domain.actions.length,
-  0
+  0,
 );
-
-const SUMMARY_ITEMS = [
-  { id: 'domains', label: 'حوزه فرهنگی', value: CULTURAL_DOMAINS.length },
-  { id: 'indicators', label: 'شاخص', value: CULTURAL_INDICATORS.length },
-  { id: 'actions', label: 'اقدام استاندارد', value: CULTURAL_ACTION_COUNT },
-];
 
 /**
  * Cultural taxonomy — the read-only reference section.
  *
- * The page states the shared vocabulary (twelve domains, their indicator and
- * action counts, the version under review) and derives its coverage banner and
- * KPI strip from the live priority list. Coverage is the only live figure; the
- * dataset itself is static, and `CT-xx` codes are the join key every other page
- * stores, with titles as display text only.
+ * The page states the shared vocabulary, derives its coverage banner and KPI
+ * strip from the live priority list, and lists the twelve domains with their
+ * indicators, standard actions, outcomes, budget classification and suggested
+ * priority links. Coverage is the only live figure; the dataset is static and
+ * `CT-xx` codes are the join key every other page stores, with titles as display
+ * text only.
  *
  * Nothing here writes: no selector, mutation or automatic mapping may be added
  * to this view — assigning a domain to a priority or project happens on that
@@ -38,7 +34,7 @@ const SUMMARY_ITEMS = [
  * (see `utils/sectionAccess`), so opening the page never grants a write.
  */
 export const CulturalTaxonomyView: React.FC = () => {
-  const { priorities } = useAppContext();
+  const { priorities, setActiveTab } = useAppContext();
 
   return (
     <div id="cultural-taxonomy-view" className="space-y-6">
@@ -77,22 +73,14 @@ export const CulturalTaxonomyView: React.FC = () => {
           تغییرشان کد را جابه‌جا نمی‌کند.
         </p>
 
-        <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {SUMMARY_ITEMS.map((item) => (
-            <div
-              key={item.id}
-              id={`cultural-taxonomy-summary-${item.id}`}
-              className="rounded-xl border border-slate-100 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-950/40"
-            >
-              <dt className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                {item.label}
-              </dt>
-              <dd className="mt-1 text-lg font-black text-slate-900 dark:text-slate-100">
-                {toPersianDigits(item.value)}
-              </dd>
-            </div>
-          ))}
-        </dl>
+        <p
+          id="cultural-taxonomy-reference-size"
+          className="mt-3 text-[11px] font-black text-slate-700 dark:text-slate-200"
+        >
+          {toPersianDigits(CULTURAL_DOMAINS.length)} حوزه ·{' '}
+          {toPersianDigits(CULTURAL_INDICATORS.length)} شاخص ·{' '}
+          {toPersianDigits(CULTURAL_ACTION_COUNT)} اقدام استاندارد
+        </p>
 
         <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-slate-100 pt-3.5 text-[11px] font-bold text-slate-500 dark:border-slate-800 dark:text-slate-400">
           <span id="cultural-taxonomy-version">
@@ -114,6 +102,11 @@ export const CulturalTaxonomyView: React.FC = () => {
           </span>
         </div>
       </section>
+
+      <CulturalTaxonomyDomains
+        priorities={priorities}
+        onOpenPriorities={() => setActiveTab('PRIORITIES')}
+      />
     </div>
   );
 };
