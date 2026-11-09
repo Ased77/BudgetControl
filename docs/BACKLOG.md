@@ -25,7 +25,7 @@
 
 ## Snapshot
 
-**Active checklist:** 0 of 22 tasks checked.
+**Active checklist:** 1 of 22 tasks checked.
 
 `E1-PRJ-1` was the single unresolved ID in the recovered record. It is now
 retired, so the active map has 22 tasks while the historical table below still
@@ -52,12 +52,21 @@ Recovered historical status:
 
 ### E0-TAX — Cultural taxonomy reference section
 
-- [ ] **E0-TAX-1 — Dataset and content model**
-  - [ ] Define 12 stable domain codes, `CT-01` … `CT-12`.
-  - [ ] Define 21 indicators with unit, direction and definition.
-  - [ ] Define 36 actions across the domains.
-  - [ ] Keep the taxonomy data-only and versioned.
-  - [ ] Treat titles as display text and `CT-xx` codes as join keys.
+- [x] **E0-TAX-1 — Dataset and content model**
+  - [x] Define 12 stable domain codes, `CT-01` … `CT-12`.
+  - [x] Define 21 indicators with unit, direction and definition.
+  - [x] Define 36 actions across the domains.
+  - [x] Keep the taxonomy data-only and versioned.
+  - [x] Treat titles as display text and `CT-xx` codes as join keys.
+  - **Artifact:** `src/data/culturalTaxonomy.ts` — restored on 2026-11-09 from
+    the `dist/server.cjs.map` `sourcesContent` of the recovered build, so the
+    dataset matches the version `۱٫۱` content that the sign-off record reviews.
+  - **Verified on the current checkout:** 12 unique codes in `CT-01` … `CT-12`
+    order; 21 unique indicators, each with unit, direction and definition and
+    no evidence value; 36 unique action ids, three per domain, each assigned
+    to exactly one domain; the module has no imports and no I/O, so it stays
+    data-only and versioned; `CULTURAL_DOMAINS_BY_CODE` and
+    `getCulturalDomainByCode()` resolve codes (titles are display text only).
 - [ ] **E0-TAX-2 — Domain review and sign-off**
   - [ ] Record the owner in `docs/TAXONOMY-SIGNOFF.md`: role
         `CULTURE_BUDGET_HEAD` («مدیرکل بودجه فرهنگی»), full name, user id and
