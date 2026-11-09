@@ -25,7 +25,7 @@
 
 ## Snapshot
 
-**Active checklist:** 2 of 22 tasks checked.
+**Active checklist:** 3 of 22 tasks checked.
 
 `E1-PRJ-1` was the single unresolved ID in the recovered record. It is now
 retired, so the active map has 22 tasks while the historical table below still
@@ -125,10 +125,34 @@ Recovered historical status:
     (`E0-TAX-4`), domain cards (`E0-TAX-5`), search and filters (`E0-TAX-6`),
     coverage calculation (`E0-TAX-7`) and permission-gated CTAs (`E0-TAX-8`)
     remain open and were deliberately not built here.
-- [ ] **E0-TAX-4 — Page shell, coverage banner and KPI**
-  - [ ] Add the coverage banner.
-  - [ ] Add the KPI strip.
-  - [ ] Derive coverage from live priorities rather than static claims.
+- [x] **E0-TAX-4 — Page shell, coverage banner and KPI**
+  - [x] Add the coverage banner.
+  - [x] Add the KPI strip.
+  - [x] Derive coverage from live priorities rather than static claims.
+  - **Artifact:** `CulturalTaxonomyCoverage` (`src/components/CulturalTaxonomyCoverage.tsx`)
+    renders the banner, its progressbar and a four-card KPI strip (coverage
+    percent, covered domains, mapped priorities, uncovered domains);
+    `CulturalTaxonomyView` feeds it `priorities` from `AppContext`.
+    `computeTaxonomyCoverage()` and `readTaxonomyDomainCode()` in
+    `src/utils/taxonomyCoverage.ts` hold the counting rule.
+  - **Live data only:** the banner has three states (`none` / `partial` /
+    `full`) chosen by the live count, and the progressbar exposes
+    `aria-valuemin=0`, `aria-valuemax=100`, `aria-valuenow` and a Persian
+    `aria-valuetext`. The reference map's `relatedPriorityIds` never contributes.
+  - **Missing DTO field:** `taxonomyDomainId` does not exist in this checkout's
+    `CsrPriority` DTO or API responses (`E1-INT-1` is not restored), so the
+    helper reads it defensively: absent, blank, non-string and unknown codes
+    mean “not mapped”. On today's data coverage is therefore 0 of 12, and the
+    banner states that instead of falling back to the static suggestions.
+  - **Verified (2026-11-09):** `tsc --noEmit` clean, plus 14 assertions over the
+    helper and a static render: empty 0/12, static suggestions never count,
+    trimmed codes accepted and unknown/non-string ignored, duplicate codes cover
+    once, 2 of 12 → 17%, full coverage → 100%, all three banner states, the
+    progressbar's name/min/max/now/value-text, KPI figures, and zero
+    `button`/`input`/`select`/`textarea`/`form` elements. The page was **not**
+    opened in a browser.
+  - **Overlap:** the same helper satisfies `E0-TAX-7`'s three counting rules;
+    that task's own review can confirm them.
 - [ ] **E0-TAX-5 — Domain cards and expandable detail**
   - [ ] Show domain code, title, short title and description.
   - [ ] Show indicators, actions, outcomes and budget classification.
