@@ -33,6 +33,10 @@ const SECTION_GATES: Record<string, SectionGate> = {
   // The register itself is read-only here; ProjectsView gates editing behind
   // canCreateProject/canApproveProjects and record scope.
   PROJECTS: (p) => p?.canViewDashboard ?? true,
+  // The taxonomy reference is read-only for every role that can see the
+  // dashboard: no new permission flag, and nothing on the page writes. Mapping
+  // a domain onto a record stays guarded by the priority/project gates.
+  CULTURAL_TAXONOMY: (p) => p?.canViewDashboard ?? true,
 
   QUOTA: (p) => p?.canManageBudget ?? true,
   BUDGET_SOURCES: (p) => p?.canManageBudget ?? true,
@@ -63,6 +67,7 @@ const FALLBACK_ORDER = [
   'POPULATION',
   'CHARTS',
   'LOCATIONS',
+  'CULTURAL_TAXONOMY',
   'CREATE_PROJECT',
   'PRIORITIES',
   'CRISES_HARMS',

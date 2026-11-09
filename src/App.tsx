@@ -5,6 +5,7 @@ import { triggerPrintPdf } from './utils/pdfExport';
 import { formatToman, toPersianDigits } from './utils/numberUtils';
 
 import { NationalDashboardView } from './components/NationalDashboardView';
+import { CulturalTaxonomyView } from './components/CulturalTaxonomyView';
 import { DepartmentsView } from './components/DepartmentsView';
 import { BudgetSourcesView } from './components/BudgetSourcesView';
 import { PrioritiesView } from './components/PrioritiesView';
@@ -60,6 +61,7 @@ import {
   Database,
   Gauge,
   Layers,
+  Landmark,
   Network,
   Workflow,
   HelpCircle,
@@ -90,6 +92,10 @@ import {
  */
 const NAV_MENU_ITEMS: BranchedMenuItem[] = [
   { value: 'DASHBOARD', label: 'داشبورد', icon: LayoutDashboard, hue: 'var(--color-indigo-500)' },
+  /* Top-level reference destination: a leaf, like the dashboard, because it is
+     one read-only page rather than a group of tools. Its access gate is
+     `canViewDashboard` in utils/sectionAccess. */
+  { value: 'CULTURAL_TAXONOMY', label: 'حوزه‌های فرهنگی', icon: Landmark, hue: 'var(--color-amber-600)' },
   {
     label: 'پایش و داده‌های پایه',
     icon: Database,
@@ -680,6 +686,8 @@ function AppContent() {
           </div>
 
           {activeTab === 'DASHBOARD' && <NationalDashboardView />}
+
+          {activeTab === 'CULTURAL_TAXONOMY' && <CulturalTaxonomyView />}
 
           {activeTab === 'POPULATION' && <PopulationView />}
 

@@ -50,6 +50,7 @@ const TAB_STORAGE_KEY = 'csr.activeTab';
 // the app on a blank page.
 const VALID_TABS = [
   'DASHBOARD',
+  'CULTURAL_TAXONOMY',
   'POPULATION',
   'DEPARTMENTS',
   'BUDGET_SOURCES',
@@ -100,6 +101,7 @@ function persistTab(tab: string) {
  *  middleware and the production build's `app.get('*')`. */
 const TAB_PATHS: Record<string, string> = {
   DASHBOARD: '/dashboard',
+  CULTURAL_TAXONOMY: '/cultural-taxonomy',
   POPULATION: '/population',
   DEPARTMENTS: '/departments',
   BUDGET_SOURCES: '/budget-sources',

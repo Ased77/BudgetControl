@@ -25,7 +25,7 @@
 
 ## Snapshot
 
-**Active checklist:** 1 of 22 tasks checked.
+**Active checklist:** 2 of 22 tasks checked.
 
 `E1-PRJ-1` was the single unresolved ID in the recovered record. It is now
 retired, so the active map has 22 tasks while the historical table below still
@@ -100,11 +100,31 @@ Recovered historical status:
     It is explicitly not a sign-off, is not the artifact this task accepts, and
     does not change the status below.
   - **Blocker:** the record is unsigned; no owner approval exists.
-- [ ] **E0-TAX-3 — Route, navigation and access**
-  - [ ] Add `/cultural-taxonomy`.
-  - [ ] Add the top-level «حوزه‌های فرهنگی» navigation destination.
-  - [ ] Make the section read-only for every role with `canViewDashboard`.
-  - [ ] Avoid introducing a new permission flag.
+- [x] **E0-TAX-3 — Route, navigation and access**
+  - [x] Add `/cultural-taxonomy`.
+  - [x] Add the top-level «حوزه‌های فرهنگی» navigation destination.
+  - [x] Make the section read-only for every role with `canViewDashboard`.
+  - [x] Avoid introducing a new permission flag.
+  - **Artifact:** `CulturalTaxonomyView` (`src/components/CulturalTaxonomyView.tsx`)
+    as a read-only page shell; `CULTURAL_TAXONOMY` added to `VALID_TABS` and
+    `TAB_PATHS` (`/cultural-taxonomy`) in `src/context/AppContext.tsx`; a
+    top-level leaf «حوزه‌های فرهنگی» in `NAV_MENU_ITEMS` (`src/App.tsx`); and the
+    gate `CULTURAL_TAXONOMY: (p) => p?.canViewDashboard ?? true` in
+    `src/utils/sectionAccess.ts`.
+  - **No new permission flag:** `SystemRolePermission` and the seed matrix are
+    untouched; the section reuses the `canViewDashboard` baseline, and the
+    `SYSTEM_ADMIN` bypass in `canAccessSection` applies as everywhere else.
+  - **Verified (2026-11-09):** `tsc --noEmit` clean. A static render of the page
+    confirms one `h1`, an `h1` before the `h2`, the version and review status,
+    the 12 / 21 / 36 counts, the `CT-xx` join-key text, and zero
+    `button`/`input`/`select`/`textarea`/`form` elements, so the page has no
+    write surface. Gate checks: a role with `canViewDashboard` opens it; a role
+    without it is denied; the `SYSTEM_ADMIN` bypass still applies; an unknown tab
+    is refused. The page was **not** opened in a browser.
+  - **Scope note:** the shell and access only. The coverage banner and KPI strip
+    (`E0-TAX-4`), domain cards (`E0-TAX-5`), search and filters (`E0-TAX-6`),
+    coverage calculation (`E0-TAX-7`) and permission-gated CTAs (`E0-TAX-8`)
+    remain open and were deliberately not built here.
 - [ ] **E0-TAX-4 — Page shell, coverage banner and KPI**
   - [ ] Add the coverage banner.
   - [ ] Add the KPI strip.
